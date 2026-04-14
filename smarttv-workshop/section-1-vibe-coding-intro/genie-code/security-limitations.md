@@ -1,0 +1,224 @@
+# 보안 제한사항 — 뭐가 되고 뭐가 안 되는지
+
+> Genie Code로 작업하다 보면 **Security Reason으로 차단**되는 경우가 있습니다. 미리 알면 삽질을 피할 수 있습니다.
+
+---
+
+## 핵심 요약: 한눈에 보기
+
+### 절대 안 되는 것 (Hard Limits)
+
+| 제한 | 이유 | 대안 |
+|------|------|------|
+| R / Scala 코드 실행 | Serverless Compute 미지원 | Python / SQL만 사용 |
+| Spark RDD API 사용 | Serverless는 Spark Connect만 지원 | DataFrame API 사용 |
+| DBFS 마운트 (`dbutils.fs.mount`) | Serverless 미지원 | Unity Catalog Volumes 사용 |
+| Init Scripts 실행 | Serverless 미지원 | `%pip install`로 대체 |
+| PySpark 패키지 직접 설치 | 세션 중단 발생 | 기본 내장 PySpark 사용 |
+| JAR / Maven 라이브러리 | Serverless 미지원 | Python 패키지로 대체 |
+| 환경 변수 (`os.environ`) | Serverless 미지원 | Databricks Widgets 사용 |
+| UDF에서 인터넷 접근 | 네트워크 격리 | UC External Functions 사용 |
+| Genie Space에 30개 초과 테이블 | 시스템 제한 (GCP: 25개) | 뷰/Metric View로 사전 결합 |
+| MCP 도구 20개 초과 | 시스템 제한 | 필요한 도구만 ON |
+
+### 조건부 가능한 것 (사용자 확인 필요)
+
+| 작업 | 조건 | 주의 |
+|------|------|------|
+| DROP/ALTER/DELETE TABLE | Agent Mode에서 **사용자 Allow 필요** | "Always Allow" 절대 금지 |
+| pip 패키지 설치 | `%pip install` 가능 | PySpark 관련 패키지 제외 |
+| 외부 API 호출 | 노트북 코드에서 `requests` 사용 가능 | UDF 안에서는 불가 |
+| dbutils.secrets | 사용자 권한에 따라 가능 | Genie Code가 자동 생성하는지 검증 필요 |
+
+### 권한 기반 (Unity Catalog)
+
+| 작업 | 가능 여부 |
+|------|----------|
+| 내 권한이 있는 테이블 읽기 | ✅ |
+| 내 권한이 있는 테이블 쓰기 | ✅ (Agent Mode Allow 후) |
+| 다른 사용자 데이터 접근 | ❌ UC 권한 모델 엄격 적용 |
+| 다른 사용자의 Genie 대화 보기 | ❌ (매니저도 쿼리 결과는 못 봄) |
+
+---
+
+## 상세 설명
+
+### 1. Serverless Compute 제한 (가장 많은 차단 원인)
+
+Genie Code는 기본적으로 **Serverless Compute** 위에서 실행됩니다. 일반 클러스터에서 되는 것 중 Serverless에서 안 되는 것들이 곧 Genie Code의 제한입니다.
+
+#### 안 되는 것
+
+```python
+# ❌ R 코드
+%r
+library(ggplot2)
+# → 에러: R is not supported on serverless compute
+
+# ❌ Scala 코드  
+%scala
+val df = spark.read.table("my_table")
+# → 에러: Scala is not supported on serverless compute
+
+# ❌ RDD API
+rdd = sc.parallelize([1, 2, 3])
+# → 에러: RDD operations are not supported
+
+# ❌ DBFS 마운트
+dbutils.fs.mount(...)
+# → 에러: Mount operations are not supported on serverless
+
+# ❌ 환경 변수
+import os
+os.environ["MY_VAR"] = "value"
+# → 작동하지 않음 (Serverless에서 환경 변수 미지원)
+
+# ❌ PySpark 패키지 직접 설치
+%pip install pyspark
+# → 세션 중단! 절대 하지 마세요
+
+# ❌ DataFrame 캐시
+df.cache()
+# → Serverless에서 캐시 API 미지원
+```
+
+#### 되는 것
+
+```python
+# ✅ Python 코드 실행
+import pandas as pd
+df = spark.sql("SELECT * FROM my_table")
+
+# ✅ pip 패키지 설치 (PySpark 제외)
+%pip install faker matplotlib seaborn plotly
+
+# ✅ Unity Catalog Volumes 접근
+df = spark.read.parquet("/Volumes/my_catalog/my_schema/my_volume/file.parquet")
+
+# ✅ SQL 실행
+%sql
+SELECT * FROM lge_smart_tv.gold.daily_viewing_summary LIMIT 10
+
+# ✅ 외부 API 호출 (노트북 코드에서)
+import requests
+response = requests.get("https://api.example.com/data")
+```
+
+> 📸 **[스크린샷]**: Serverless에서 R 코드 실행 시 에러 메시지
+
+---
+
+### 2. Genie Spaces vs Genie Code — 쓰기 작업 차이
+
+| | Genie Spaces (AI/BI) | Genie Code (Notebook) |
+|---|---|---|
+| SELECT | ✅ | ✅ |
+| INSERT | ❌ **불가** | ✅ (Allow 후) |
+| UPDATE | ❌ **불가** | ✅ (Allow 후) |
+| DELETE | ❌ **불가** | ✅ (Allow 후) |
+| DROP | ❌ **불가** | ✅ (Allow 후) |
+| CREATE TABLE | ❌ **불가** | ✅ (Allow 후) |
+
+> **Genie Spaces는 읽기 전용 SQL만 생성합니다.** 데이터 변경은 Genie Code(노트북)에서만 가능합니다.
+
+---
+
+### 3. Rate Limits (속도 제한)
+
+| 대상 | 한도 | 비고 |
+|------|------|------|
+| **Genie Spaces (UI)** | 워크스페이스당 **20 질문/분** | 고정, 변경 불가 |
+| **Genie Spaces (API)** | 워크스페이스당 **~5 질문/분** | Best-effort |
+| **Genie Code** | "Fair usage limits" | 구체적 수치 미공개 |
+| **MCP SQL 쿼리** | 워크스페이스당 **5 쿼리/초** | |
+
+> 💡 **팁**: 여러 사람이 동시에 Genie Spaces를 쓰면 20QPM을 나눠 쓰게 됩니다. 워크샵에서 30명이 동시에 질문하면 느려질 수 있습니다.
+
+---
+
+### 4. 콘텐츠 보안 필터링
+
+Genie Code에는 다층 보안 필터가 적용됩니다:
+
+| 레이어 | 기능 |
+|--------|------|
+| **입력 필터** | 유해/부적절 프롬프트 차단 |
+| **탈옥(Jailbreak) 방지** | 시스템 프롬프트 우회 시도 차단 |
+| **코드 안전성** | 안전하지 않은 코드 생성 방지 |
+| **저작권 보호** | 서드파티 저작권 코드 사용 방지 |
+| **PII 감지** | 개인정보 자동 감지 (AI Gateway Guardrails) |
+
+> **참고**: 데이터 자체는 AI 모델 학습에 사용되지 않습니다 (Zero Data Retention).
+
+---
+
+### 5. 지역(Region) 제한
+
+| 지역 | Genie Code 사용 |
+|------|----------------|
+| Americas (US 등) | ✅ 바로 사용 가능 |
+| Europe | ✅ 바로 사용 가능 |
+| Japan | ✅ 바로 사용 가능 |
+| Australia / NZ | ✅ 바로 사용 가능 |
+| **서울리전 (ap-northeast-2)** | ⚠️ **Cross-Geo 활성화 필요할 수 있음** |
+
+서울리전에서 Genie Code가 안 되면:
+- 워크스페이스 설정 → "Enforce data processing within workspace Geography for AI features" **비활성화** 필요
+- 관리자 권한 필요
+
+> 📸 **[스크린샷]**: 워크스페이스 설정 — AI features Cross-Geo 설정
+
+---
+
+### 6. 실무에서 자주 겪는 문제
+
+| 증상 | 원인 | 해결 |
+|------|------|------|
+| "Security policy violation" 에러 | Serverless 네트워크 정책 | 관리자에게 egress 정책 확인 요청 |
+| R/Scala 코드 실행 안 됨 | Serverless 언어 제한 | Python/SQL로 전환 |
+| `%pip install` 후 세션 죽음 | PySpark 관련 패키지 설치 시도 | PySpark 관련 패키지 설치 금지 |
+| DBFS 경로 접근 안 됨 | Serverless DBFS 제한 | UC Volumes 사용 |
+| 외부 API 호출 차단 | UDF 내부에서 시도 | 노트북 코드에서 직접 호출 |
+| Genie Space에 테이블 추가 안 됨 | 30개 제한 초과 | 뷰로 사전 결합 |
+| "Rate limit exceeded" | 워크스페이스 QPM 초과 | 잠시 대기 후 재시도 |
+| Agent가 무한 루프 | 같은 에러 반복 | Stop → 구체적 피드백 |
+| 다른 워크스페이스 테이블 접근 불가 | Cross-workspace 제한 | 같은 워크스페이스 내 테이블 사용 |
+
+---
+
+### 7. 관리자가 통제할 수 있는 것
+
+| 통제 항목 | 방법 |
+|-----------|------|
+| Genie Code 자체를 끄기 | 워크스페이스 설정 토글 |
+| Genie Space 생성 권한 제한 | 사용자 엔타이틀먼트 → Consumer Access |
+| SQL 결과 다운로드 차단 | Settings → Security |
+| 사용 가능 MCP 서버 제한 | 관리자가 서버 목록 관리 |
+| 네트워크 접근 통제 | Serverless egress control |
+| AI 기능 Cross-Geo 설정 | 워크스페이스 AI 설정 |
+
+---
+
+## 워크샵에서 주의할 점
+
+### 사전 확인 체크리스트
+
+| # | 확인 항목 | 확인 방법 |
+|---|----------|----------|
+| 1 | Genie Code가 활성화되어 있는지 | 노트북에서 Genie Code 아이콘 확인 |
+| 2 | Serverless Compute 접근 권한 | 노트북에서 Serverless 선택 가능 여부 |
+| 3 | 서울리전에서 AI 기능 사용 가능한지 | Cross-Geo 설정 확인 |
+| 4 | `lge_smart_tv` 카탈로그 권한 | `SHOW SCHEMAS IN lge_smart_tv` 실행 |
+| 5 | Genie Spaces Rate Limit | 30명 동시 사용 시 20QPM 공유 → 느려질 수 있음 주의 |
+
+### 워크샵 중 에러 대응 가이드
+
+```
+에러 발생 시 순서:
+1. 에러 메시지를 정확히 읽는다
+2. "Security" 키워드가 있으면 → 이 문서의 제한사항 확인
+3. "not supported on serverless" → Serverless 제한 (R, Scala, RDD 등)
+4. "permission denied" → Unity Catalog 권한 문제 → 관리자에게 GRANT 요청
+5. "rate limit" → 잠시 대기 (1분) 후 재시도
+6. 그 외 → Genie Code에 "이 에러를 진단해줘" 요청
+```
