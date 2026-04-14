@@ -2,3 +2,7 @@
 00-databricks-blog/
 01-databricks-training/
 20-handson-genie-code-lge-smarttv/
+
+# OS
+.DS_Store
+.claude/
