@@ -1,0 +1,682 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Databricks 한국어 가이드",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#FF3621",
+    "light": "#FF6B4A",
+    "dark": "#E02E1B"
+  },
+  "tabs": [
+    {
+      "name": "시작하기",
+      "url": "00-databricks-blog"
+    },
+    {
+      "name": "교육자료",
+      "url": "01-databricks-training"
+    },
+    {
+      "name": "워크샵",
+      "url": "20-handson-genie-code-lge-smarttv"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "시작하기",
+      "pages": [
+        "00-databricks-blog/README"
+      ]
+    },
+    {
+      "group": "AI Trends",
+      "pages": [
+        "00-databricks-blog/00-ai-trends/README",
+        "00-databricks-blog/00-ai-trends/openai",
+        "00-databricks-blog/00-ai-trends/anthropic-trends-2026",
+        "00-databricks-blog/00-ai-trends/google",
+        "00-databricks-blog/00-ai-trends/meta",
+        "00-databricks-blog/00-ai-trends/aws-microsoft",
+        "00-databricks-blog/00-ai-trends/tesla-xai-others",
+        "00-databricks-blog/00-ai-trends/korean-llm",
+        "00-databricks-blog/00-ai-trends/trends-summary"
+      ]
+    },
+    {
+      "group": "Platform Setup",
+      "pages": [
+        "00-databricks-blog/platform-setup/aws/README",
+        "00-databricks-blog/platform-setup/aws/marketplace",
+        "00-databricks-blog/platform-setup/aws/prerequisites",
+        "00-databricks-blog/platform-setup/aws/credential",
+        "00-databricks-blog/platform-setup/aws/storage",
+        "00-databricks-blog/platform-setup/aws/network",
+        "00-databricks-blog/platform-setup/aws/privatelink-backend",
+        "00-databricks-blog/platform-setup/aws/privatelink-frontend",
+        "00-databricks-blog/platform-setup/aws/workspace",
+        "00-databricks-blog/platform-setup/aws/unity-catalog",
+        "00-databricks-blog/platform-setup/aws/serverless-ncc",
+        "00-databricks-blog/platform-setup/aws/external-service-privatelink",
+        "00-databricks-blog/platform-setup/aws/privatelink-migration",
+        "00-databricks-blog/platform-setup/aws/terraform",
+        "00-databricks-blog/platform-setup/azure/README",
+        "00-databricks-blog/platform-setup/azure/prerequisites",
+        "00-databricks-blog/platform-setup/azure/resource-group",
+        "00-databricks-blog/platform-setup/azure/vnet",
+        "00-databricks-blog/platform-setup/azure/access-connector",
+        "00-databricks-blog/platform-setup/azure/storage-account",
+        "00-databricks-blog/platform-setup/azure/workspace",
+        "00-databricks-blog/platform-setup/azure/privatelink",
+        "00-databricks-blog/platform-setup/azure/unity-catalog",
+        "00-databricks-blog/guides/platform-setup/databricks-geos",
+        "00-databricks-blog/guides/platform-setup/authentication/README",
+        "00-databricks-blog/guides/platform-setup/authentication/oauth-u2m",
+        "00-databricks-blog/guides/platform-setup/authentication/oauth-m2m",
+        "00-databricks-blog/guides/platform-setup/authentication/pat-federation"
+      ]
+    },
+    {
+      "group": "AI/BI & Analytics",
+      "pages": [
+        "00-databricks-blog/guides/genie-space/README",
+        "00-databricks-blog/guides/genie-space/create-space",
+        "00-databricks-blog/guides/genie-space/data-config",
+        "00-databricks-blog/guides/genie-space/instructions",
+        "00-databricks-blog/guides/genie-space/testing",
+        "00-databricks-blog/guides/genie-space/sharing",
+        "00-databricks-blog/guides/genie-space/monitoring",
+        "00-databricks-blog/guides/genie-space/mcp",
+        "00-databricks-blog/guides/genie-selection/README",
+        "00-databricks-blog/guides/platform-comparison/README",
+        "00-databricks-blog/guides/platform-comparison/architecture",
+        "00-databricks-blog/guides/platform-comparison/compute",
+        "00-databricks-blog/guides/platform-comparison/data-engineering",
+        "00-databricks-blog/guides/platform-comparison/sql-analytics",
+        "00-databricks-blog/guides/platform-comparison/ml-ai",
+        "00-databricks-blog/guides/platform-comparison/governance",
+        "00-databricks-blog/guides/platform-comparison/pricing"
+      ]
+    },
+    {
+      "group": "GenAI & Agent",
+      "pages": [
+        "00-databricks-blog/guides/genie-code/README",
+        "00-databricks-blog/guides/genie-code/usage",
+        "00-databricks-blog/guides/genie-code/scenarios",
+        "00-databricks-blog/guides/genie-code/prompt-cookbook",
+        "00-databricks-blog/guides/genie-code/mcp",
+        "00-databricks-blog/guides/genie-code/settings-best-practices",
+        "00-databricks-blog/guides/genie-code/ai-dev-kit-skills",
+        "00-databricks-blog/guides/agent-bricks/README",
+        "00-databricks-blog/guides/agent-bricks/knowledge-assistant",
+        "00-databricks-blog/guides/agent-bricks/genie-agent",
+        "00-databricks-blog/guides/agent-bricks/supervisor",
+        "00-databricks-blog/guides/agent-bricks/evaluation",
+        "00-databricks-blog/guides/agent-bricks/best-practices",
+        "00-databricks-blog/guides/ai-dev-kit/README",
+        "00-databricks-blog/guides/ai-dev-kit/getting-started",
+        "00-databricks-blog/guides/ai-dev-kit/tools",
+        "00-databricks-blog/guides/ai-dev-kit/builder-app",
+        "00-databricks-blog/guides/ai-dev-kit/deployment-guide",
+        "00-databricks-blog/guides/ai-dev-kit/use-cases",
+        "00-databricks-blog/guides/genai-tools/README",
+        "00-databricks-blog/guides/genai-tools/coding-assistants",
+        "00-databricks-blog/guides/genai-tools/llm-platforms",
+        "00-databricks-blog/guides/genai-tools/ai-builders",
+        "00-databricks-blog/guides/genai-tools/ai-productivity",
+        "00-databricks-blog/guides/genai-tools/opensource-llm",
+        "00-databricks-blog/guides/genai-tools/ai-observability"
+      ]
+    },
+    {
+      "group": "Compute & Apps",
+      "pages": [
+        "00-databricks-blog/guides/apps/README",
+        "00-databricks-blog/guides/apps/create-app",
+        "00-databricks-blog/guides/apps/app-yaml",
+        "00-databricks-blog/guides/apps/authentication",
+        "00-databricks-blog/guides/apps/resources",
+        "00-databricks-blog/guides/apps/deployment",
+        "00-databricks-blog/guides/apps/examples"
+      ]
+    },
+    {
+      "group": "Data Engineering",
+      "pages": [
+        "00-databricks-blog/guides/lakeflow-incremental/README",
+        "00-databricks-blog/guides/lakeflow-incremental/streaming-table",
+        "00-databricks-blog/guides/lakeflow-incremental/materialized-view",
+        "00-databricks-blog/guides/lakeflow-incremental/cdc-checklist"
+      ]
+    },
+    {
+      "group": "Core Concepts",
+      "pages": [
+        "00-databricks-blog/guides/genai-concepts/README",
+        "00-databricks-blog/guides/genai-concepts/nlp-evolution/README",
+        "00-databricks-blog/guides/genai-concepts/nlp-evolution/rule-statistical",
+        "00-databricks-blog/guides/genai-concepts/nlp-evolution/embeddings",
+        "00-databricks-blog/guides/genai-concepts/nlp-evolution/rnn-lstm",
+        "00-databricks-blog/guides/genai-concepts/nlp-evolution/attention-transformer",
+        "00-databricks-blog/guides/genai-concepts/nlp-evolution/pretrain-era",
+        "00-databricks-blog/guides/genai-concepts/nlp-evolution/insights",
+        "00-databricks-blog/guides/genai-concepts/llm-basics/README",
+        "00-databricks-blog/guides/genai-concepts/llm-basics/transformer",
+        "00-databricks-blog/guides/genai-concepts/llm-basics/core-concepts",
+        "00-databricks-blog/guides/genai-concepts/llm-basics/training",
+        "00-databricks-blog/guides/genai-concepts/llm-basics/internals",
+        "00-databricks-blog/guides/genai-concepts/llm-basics/hallucination",
+        "00-databricks-blog/guides/genai-concepts/llm-basics/models",
+        "00-databricks-blog/guides/genai-concepts/llm-basics/practical",
+        "00-databricks-blog/guides/genai-concepts/llm-basics/reasoning",
+        "00-databricks-blog/guides/genai-concepts/llm-basics/multimodal",
+        "00-databricks-blog/guides/genai-concepts/agent-architecture/README",
+        "00-databricks-blog/guides/genai-concepts/agent-architecture/react-planning",
+        "00-databricks-blog/guides/genai-concepts/agent-architecture/tool-use",
+        "00-databricks-blog/guides/genai-concepts/agent-architecture/memory",
+        "00-databricks-blog/guides/genai-concepts/agent-architecture/multi-agent",
+        "00-databricks-blog/guides/genai-concepts/agent-architecture/frameworks",
+        "00-databricks-blog/guides/genai-concepts/agent-architecture/production",
+        "00-databricks-blog/guides/genai-concepts/prompt-engineering/README",
+        "00-databricks-blog/guides/genai-concepts/prompt-engineering/basics",
+        "00-databricks-blog/guides/genai-concepts/prompt-engineering/advanced",
+        "00-databricks-blog/guides/genai-concepts/prompt-engineering/korean",
+        "00-databricks-blog/guides/genai-concepts/prompt-engineering/security",
+        "00-databricks-blog/guides/genai-concepts/prompt-engineering/practical",
+        "00-databricks-blog/guides/genai-concepts/evaluation/README",
+        "00-databricks-blog/guides/genai-concepts/evaluation/metrics",
+        "00-databricks-blog/guides/genai-concepts/evaluation/judge",
+        "00-databricks-blog/guides/genai-concepts/evaluation/pipeline",
+        "00-databricks-blog/guides/genai-concepts/evaluation/practical",
+        "00-databricks-blog/guides/genai-concepts/a2a-protocol/README",
+        "00-databricks-blog/guides/genai-concepts/a2a-protocol/concepts",
+        "00-databricks-blog/guides/genai-concepts/a2a-protocol/implementation",
+        "00-databricks-blog/guides/genai-concepts/a2a-protocol/production",
+        "00-databricks-blog/guides/genai-concepts/agent-frameworks-detail/README",
+        "00-databricks-blog/guides/genai-concepts/agent-frameworks-detail/langchain-langgraph",
+        "00-databricks-blog/guides/genai-concepts/agent-frameworks-detail/crewai-openai-autogen",
+        "00-databricks-blog/guides/genai-concepts/agent-frameworks-detail/databricks-af",
+        "00-databricks-blog/guides/genai-concepts/agent-frameworks-detail/comparison",
+        "00-databricks-blog/guides/genai-concepts/ai-proficiency/README",
+        "00-databricks-blog/guides/genai-concepts/ai-proficiency/levels",
+        "00-databricks-blog/guides/genai-concepts/ai-proficiency/transition",
+        "00-databricks-blog/guides/genai-concepts/ai-proficiency/governance",
+        "00-databricks-blog/guides/genai-concepts/ai-proficiency/regulation",
+        "00-databricks-blog/guides/genai-concepts/agent-ui-detail/README",
+        "00-databricks-blog/guides/genai-concepts/agent-ui-detail/streamlit-gradio",
+        "00-databricks-blog/guides/genai-concepts/agent-ui-detail/chainlit-dash",
+        "00-databricks-blog/guides/genai-concepts/agent-ui-detail/fastapi-backend",
+        "00-databricks-blog/guides/genai-concepts/agent-ui-detail/databricks-apps",
+        "00-databricks-blog/guides/genai-concepts/agent-landscape/README",
+        "00-databricks-blog/guides/genai-concepts/agent-landscape/openai",
+        "00-databricks-blog/guides/genai-concepts/agent-landscape/anthropic",
+        "00-databricks-blog/guides/genai-concepts/agent-landscape/google",
+        "00-databricks-blog/guides/genai-concepts/agent-landscape/aws-others",
+        "00-databricks-blog/guides/genai-concepts/agent-landscape/databricks",
+        "00-databricks-blog/guides/genai-concepts/agent-landscape/multi-agent-trends",
+        "00-databricks-blog/guides/rag/README",
+        "00-databricks-blog/guides/rag/concepts/README",
+        "00-databricks-blog/guides/rag/concepts/embedding",
+        "00-databricks-blog/guides/rag/concepts/similarity",
+        "00-databricks-blog/guides/rag/concepts/vector-index",
+        "00-databricks-blog/guides/rag/concepts/bm25",
+        "00-databricks-blog/guides/rag/concepts/hybrid-search",
+        "00-databricks-blog/guides/rag/concepts/reranking",
+        "00-databricks-blog/guides/rag/data-preparation",
+        "00-databricks-blog/guides/rag/chunking-strategies",
+        "00-databricks-blog/guides/rag/vector-search",
+        "00-databricks-blog/guides/rag/advanced-retrieval/README",
+        "00-databricks-blog/guides/rag/advanced-retrieval/hybrid-search",
+        "00-databricks-blog/guides/rag/advanced-retrieval/preprocessing",
+        "00-databricks-blog/guides/rag/advanced-retrieval/reranking",
+        "00-databricks-blog/guides/rag/advanced-retrieval/postprocessing",
+        "00-databricks-blog/guides/rag/advanced-retrieval/chunking-advanced",
+        "00-databricks-blog/guides/rag/advanced-retrieval/implementation",
+        "00-databricks-blog/guides/rag/korean-nlp",
+        "00-databricks-blog/guides/rag/chain-building",
+        "00-databricks-blog/guides/rag/evaluation",
+        "00-databricks-blog/guides/rag/deployment",
+        "00-databricks-blog/guides/mcp/README",
+        "00-databricks-blog/guides/mcp/setup-general",
+        "00-databricks-blog/guides/mcp/popular-servers",
+        "00-databricks-blog/guides/mcp/databricks-mcp",
+        "00-databricks-blog/guides/mcp/best-practices",
+        "00-databricks-blog/guides/ml-fundamentals/README",
+        "00-databricks-blog/guides/ml-fundamentals/databricks-ml-features",
+        "00-databricks-blog/guides/ml-fundamentals/ml-trends",
+        "00-databricks-blog/guides/ml-fundamentals/retraining-strategies"
+      ]
+    },
+    {
+      "group": "Hands-on Workshop",
+      "pages": [
+        "00-databricks-blog/hands-on/predictive-maintenance/README",
+        "00-databricks-blog/hands-on/predictive-maintenance/getting-started",
+        "00-databricks-blog/hands-on/predictive-maintenance/00-team-collaboration",
+        "00-databricks-blog/hands-on/predictive-maintenance/01-overview",
+        "00-databricks-blog/hands-on/predictive-maintenance/02-feature-engineering",
+        "00-databricks-blog/hands-on/predictive-maintenance/03-model-training",
+        "00-databricks-blog/hands-on/predictive-maintenance/04-model-registration",
+        "00-databricks-blog/hands-on/predictive-maintenance/05-challenger-validation",
+        "00-databricks-blog/hands-on/predictive-maintenance/06-batch-inference",
+        "00-databricks-blog/hands-on/predictive-maintenance/07-anomaly-detection",
+        "00-databricks-blog/hands-on/predictive-maintenance/08-model-monitoring",
+        "00-databricks-blog/hands-on/predictive-maintenance/09-mlops-agent",
+        "00-databricks-blog/hands-on/predictive-maintenance/10-job-scheduling",
+        "00-databricks-blog/hands-on/smart-tv-vibe/README",
+        "00-databricks-blog/hands-on/smart-tv-vibe/getting-started",
+        "00-databricks-blog/hands-on/smart-tv-vibe/00-setup",
+        "00-databricks-blog/hands-on/smart-tv-vibe/01-foundation",
+        "00-databricks-blog/hands-on/smart-tv-vibe/01-foundation",
+        "00-databricks-blog/hands-on/smart-tv-vibe/02-data-engineering",
+        "00-databricks-blog/hands-on/smart-tv-vibe/03-analytics",
+        "00-databricks-blog/hands-on/smart-tv-vibe/04-streaming",
+        "00-databricks-blog/hands-on/smart-tv-vibe/05-ml",
+        "00-databricks-blog/hands-on/smart-tv-vibe/06-genai",
+        "00-databricks-blog/hands-on/smart-tv-vibe/07-apps-lakebase",
+        "00-databricks-blog/hands-on/smart-tv-vibe/notebooks/track-b-ai-guided/PROMPT_GUIDE",
+        "00-databricks-blog/hands-on/smart-tv-vibe/notebooks/track-c-genie-code/GENIE_CODE_GUIDE"
+      ]
+    },
+    {
+      "group": "Blog Translations",
+      "pages": [
+        "00-databricks-blog/blog-translations/README",
+        "00-databricks-blog/blog-translations/2026-04-06-multi-agent-audience-intelligence",
+        "00-databricks-blog/blog-translations/2026-04-03-aichemy-drug-discovery",
+        "00-databricks-blog/blog-translations/2026-04-02-unity-catalog-business-semantics-ga",
+        "00-databricks-blog/blog-translations/2026-04-02-lakeflow-connect-free-tier",
+        "00-databricks-blog/blog-translations/2026-04-02-agentic-analytics-governance",
+        "00-databricks-blog/blog-translations/2026-03-27-lakebase-zero-downtime-patching",
+        "00-databricks-blog/blog-translations/2026-03-27-default-warehouse",
+        "00-databricks-blog/blog-translations/2026-03-24-stop-hand-coding-cdc",
+        "00-databricks-blog/blog-translations/2026-03-24-lakewatch-agentic-siem",
+        "00-databricks-blog/blog-translations/2026-03-20-dasf-v3-agentic-ai-security",
+        "00-databricks-blog/blog-translations/2026-03-20-introducing-databricks-apps",
+        "00-databricks-blog/blog-translations/2026-03-18-genie-conversations-evaluation",
+        "00-databricks-blog/blog-translations/2026-03-18-lakebase-announcement",
+        "00-databricks-blog/blog-translations/2026-03-18-real-time-analytics-no-etl",
+        "00-databricks-blog/blog-translations/2026-03-17-evolving-lakehouse",
+        "00-databricks-blog/blog-translations/2026-03-17-lakebase-technical-design",
+        "00-databricks-blog/blog-translations/2026-03-17-introducing-lakewatch-siem",
+        "00-databricks-blog/blog-translations/2026-03-17-databricks-mcp-server",
+        "00-databricks-blog/blog-translations/2026-03-17-mosaic-ai-agent-trust-safety",
+        "00-databricks-blog/blog-translations/2026-03-17-introducing-genie-code",
+        "00-databricks-blog/blog-translations/2026-03-17-agent-bricks-announcement",
+        "00-databricks-blog/blog-translations/2026-03-17-mcp-at-scale-lessons",
+        "00-databricks-blog/blog-translations/2026-03-17-introducing-genie-agent",
+        "00-databricks-blog/blog-translations/2026-03-17-ai-dev-kit",
+        "00-databricks-blog/blog-translations/2026-03-14-lakehouse-monitoring-march",
+        "00-databricks-blog/blog-translations/2026-03-11-delta-lake-4",
+        "00-databricks-blog/blog-translations/2026-03-11-uc-metastore-migration",
+        "00-databricks-blog/blog-translations/2026-03-10-dlt-streaming-pipelines",
+        "00-databricks-blog/blog-translations/2026-03-10-delta-uniform",
+        "00-databricks-blog/blog-translations/2026-03-09-understanding-mcp",
+        "00-databricks-blog/blog-translations/2026-03-07-model-evaluation-compound-ai",
+        "00-databricks-blog/blog-translations/2026-03-05-agentic-etl-lakeflow",
+        "00-databricks-blog/blog-translations/2026-03-05-unified-ai-governance",
+        "00-databricks-blog/blog-translations/2026-03-04-uc-business-semantics",
+        "00-databricks-blog/blog-translations/2026-03-04-mlflow-openai-agents",
+        "00-databricks-blog/blog-translations/2026-02-27-uc-volumes-deep-dive",
+        "00-databricks-blog/blog-translations/2026-02-21-mlflow-3-release",
+        "00-databricks-blog/blog-translations/2026-02-18-databricksiq",
+        "00-databricks-blog/blog-translations/2026-02-06-delta-sharing",
+        "00-databricks-blog/blog-translations/2026-02-04-mosaic-ai-platform",
+        "00-databricks-blog/blog-translations/2026-01-31-apache-spark-4",
+        "00-databricks-blog/blog-translations/2026-01-30-intelligent-monitoring",
+        "00-databricks-blog/blog-translations/2026-01-27-feature-engineering",
+        "00-databricks-blog/blog-translations/2026-01-16-uc-best-practices",
+        "00-databricks-blog/blog-translations/2026-01-15-lakehouse-federation",
+        "00-databricks-blog/blog-translations/2026-01-14-mosaic-ai-training",
+        "00-databricks-blog/blog-translations/2026-01-09-dlt-declarative-etl",
+        "00-databricks-blog/blog-translations/2025-12-19-q3-2025-launch-summary",
+        "00-databricks-blog/blog-translations/2025-12-15-mlflow-tracing",
+        "00-databricks-blog/blog-translations/2025-10-01-introducing-lakeflow"
+      ]
+    },
+    {
+      "group": "Databricks 플랫폼",
+      "pages": [
+        "01-databricks-training/02-databricks-overview/what-is-databricks",
+        "01-databricks-training/02-databricks-overview/databricks-competitive",
+        "01-databricks-training/02-databricks-overview/databricks-pricing",
+        "01-databricks-training/02-databricks-overview/databricks-architecture",
+        "01-databricks-training/02-databricks-overview/workspace-ui-tour",
+        "01-databricks-training/02-databricks-overview/notebooks-basics",
+        "01-databricks-training/02-databricks-overview/notebooks-advanced",
+        "01-databricks-training/02-databricks-overview/getting-started-trial"
+      ]
+    },
+    {
+      "group": "레이크하우스 아키텍처",
+      "pages": [
+        "01-databricks-training/03-lakehouse-architecture/what-is-lakehouse",
+        "01-databricks-training/03-lakehouse-architecture/delta-lake-fundamentals",
+        "01-databricks-training/03-lakehouse-architecture/managed-vs-external-tables",
+        "01-databricks-training/03-lakehouse-architecture/time-travel",
+        "01-databricks-training/03-lakehouse-architecture/schema-evolution",
+        "01-databricks-training/03-lakehouse-architecture/medallion-architecture",
+        "01-databricks-training/03-lakehouse-architecture/delta-lake-operations",
+        "01-databricks-training/03-lakehouse-architecture/liquid-clustering",
+        "01-databricks-training/03-lakehouse-architecture/vacuum-and-optimize",
+        "01-databricks-training/03-lakehouse-architecture/deletion-vectors",
+        "01-databricks-training/03-lakehouse-architecture/predictive-optimization",
+        "01-databricks-training/03-lakehouse-architecture/delta-and-iceberg",
+        "01-databricks-training/03-lakehouse-architecture/uniform"
+      ]
+    },
+    {
+      "group": "컴퓨트",
+      "pages": [
+        "01-databricks-training/04-compute-and-workspace/spark-basics",
+        "01-databricks-training/04-compute-and-workspace/cluster-types",
+        "01-databricks-training/04-compute-and-workspace/cluster-configuration",
+        "01-databricks-training/04-compute-and-workspace/cluster-policies/README",
+        "01-databricks-training/04-compute-and-workspace/cluster-policies/basics-and-patterns",
+        "01-databricks-training/04-compute-and-workspace/cluster-policies/permissions-and-design",
+        "01-databricks-training/04-compute-and-workspace/cluster-policies/templates-and-monitoring",
+        "01-databricks-training/04-compute-and-workspace/instance-pools",
+        "01-databricks-training/04-compute-and-workspace/photon-engine",
+        "01-databricks-training/04-compute-and-workspace/spot-instances",
+        "01-databricks-training/04-compute-and-workspace/sql-warehouse",
+        "01-databricks-training/04-compute-and-workspace/serverless-compute"
+      ]
+    },
+    {
+      "group": "데이터 엔지니어링",
+      "pages": [
+        "01-databricks-training/05-data-engineering/data-engineering-overview",
+        "01-databricks-training/05-data-engineering/pipeline-orchestration-patterns",
+        "01-databricks-training/05-data-engineering/choosing-ingestion-method",
+        "01-databricks-training/05-data-engineering/auto-loader/README",
+        "01-databricks-training/05-data-engineering/auto-loader/what-is-auto-loader",
+        "01-databricks-training/05-data-engineering/auto-loader/file-notification-vs-directory-listing",
+        "01-databricks-training/05-data-engineering/auto-loader/schema-inference",
+        "01-databricks-training/05-data-engineering/auto-loader/auto-loader-options",
+        "01-databricks-training/05-data-engineering/auto-loader/auto-loader-hands-on/README",
+        "01-databricks-training/05-data-engineering/auto-loader/auto-loader-hands-on/setup-and-csv",
+        "01-databricks-training/05-data-engineering/auto-loader/auto-loader-hands-on/json-and-schema-evolution",
+        "01-databricks-training/05-data-engineering/auto-loader/auto-loader-hands-on/sdp-integration",
+        "01-databricks-training/05-data-engineering/auto-loader/auto-loader-hands-on/validation-and-troubleshooting",
+        "01-databricks-training/05-data-engineering/structured-streaming",
+        "01-databricks-training/05-data-engineering/streaming-advanced",
+        "01-databricks-training/05-data-engineering/spark-declarative-pipelines/README",
+        "01-databricks-training/05-data-engineering/spark-declarative-pipelines/what-is-sdp",
+        "01-databricks-training/05-data-engineering/spark-declarative-pipelines/streaming-tables-and-mvs",
+        "01-databricks-training/05-data-engineering/spark-declarative-pipelines/expectations",
+        "01-databricks-training/05-data-engineering/spark-declarative-pipelines/pipeline-configuration",
+        "01-databricks-training/05-data-engineering/spark-declarative-pipelines/event-log",
+        "01-databricks-training/05-data-engineering/spark-declarative-pipelines/cdc-and-scd",
+        "01-databricks-training/05-data-engineering/spark-declarative-pipelines/sdp-hands-on",
+        "01-databricks-training/05-data-engineering/lakeflow-connect/README",
+        "01-databricks-training/05-data-engineering/lakeflow-connect/what-is-lakeflow-connect",
+        "01-databricks-training/05-data-engineering/lakeflow-connect/ingestion-pipeline-setup",
+        "01-databricks-training/05-data-engineering/lakeflow-connect/lakeflow-connect-hands-on",
+        "01-databricks-training/05-data-engineering/lakeflow-jobs/README",
+        "01-databricks-training/05-data-engineering/lakeflow-jobs/what-is-lakeflow-jobs",
+        "01-databricks-training/05-data-engineering/lakeflow-jobs/job-configuration/README",
+        "01-databricks-training/05-data-engineering/lakeflow-jobs/job-configuration/tasks-and-dependencies",
+        "01-databricks-training/05-data-engineering/lakeflow-jobs/job-configuration/retry-and-alerts",
+        "01-databricks-training/05-data-engineering/lakeflow-jobs/job-configuration/cluster-and-parameters",
+        "01-databricks-training/05-data-engineering/lakeflow-jobs/job-configuration/hands-on-and-optimization",
+        "01-databricks-training/05-data-engineering/lakeflow-jobs/task-types",
+        "01-databricks-training/05-data-engineering/lakeflow-jobs/conditional-tasks",
+        "01-databricks-training/05-data-engineering/lakeflow-jobs/scheduling-and-triggers",
+        "01-databricks-training/05-data-engineering/lakeflow-jobs/monitoring-and-alerting"
+      ]
+    },
+    {
+      "group": "데이터 웨어하우징",
+      "pages": [
+        "01-databricks-training/06-data-warehousing/databricks-sql-overview",
+        "01-databricks-training/06-data-warehousing/sql-language-features",
+        "01-databricks-training/06-data-warehousing/window-functions",
+        "01-databricks-training/06-data-warehousing/sql-scripting",
+        "01-databricks-training/06-data-warehousing/pivot-unpivot/README",
+        "01-databricks-training/06-data-warehousing/pivot-unpivot/pivot-basics",
+        "01-databricks-training/06-data-warehousing/pivot-unpivot/advanced-patterns",
+        "01-databricks-training/06-data-warehousing/pivot-unpivot/practical-examples",
+        "01-databricks-training/06-data-warehousing/tables-and-views",
+        "01-databricks-training/06-data-warehousing/materialized-views",
+        "01-databricks-training/06-data-warehousing/ai-functions",
+        "01-databricks-training/06-data-warehousing/query-optimization"
+      ]
+    },
+    {
+      "group": "Unity Catalog",
+      "pages": [
+        "01-databricks-training/07-unity-catalog/what-is-unity-catalog",
+        "01-databricks-training/07-unity-catalog/namespace-and-objects",
+        "01-databricks-training/07-unity-catalog/external-locations",
+        "01-databricks-training/07-unity-catalog/storage-credentials",
+        "01-databricks-training/07-unity-catalog/functions",
+        "01-databricks-training/07-unity-catalog/access-control",
+        "01-databricks-training/07-unity-catalog/row-filters",
+        "01-databricks-training/07-unity-catalog/column-masks",
+        "01-databricks-training/07-unity-catalog/tags",
+        "01-databricks-training/07-unity-catalog/data-lineage/README",
+        "01-databricks-training/07-unity-catalog/data-lineage/basics-and-visualization",
+        "01-databricks-training/07-unity-catalog/data-lineage/use-cases-and-internals",
+        "01-databricks-training/07-unity-catalog/data-lineage/impact-analysis-and-governance",
+        "01-databricks-training/07-unity-catalog/delta-sharing",
+        "01-databricks-training/07-unity-catalog/marketplace",
+        "01-databricks-training/07-unity-catalog/clean-rooms",
+        "01-databricks-training/07-unity-catalog/volumes/README",
+        "01-databricks-training/07-unity-catalog/volumes/basics-and-types",
+        "01-databricks-training/07-unity-catalog/volumes/managed-vs-external",
+        "01-databricks-training/07-unity-catalog/volumes/advanced-usage",
+        "01-databricks-training/08-ai-bi/metric-views"
+      ]
+    },
+    {
+      "group": "AI/BI",
+      "pages": [
+        "01-databricks-training/08-ai-bi/aibi-overview",
+        "01-databricks-training/08-ai-bi/lakeview-dashboards",
+        "01-databricks-training/08-ai-bi/genie",
+        "01-databricks-training/08-ai-bi/alerts-and-scheduling",
+        "01-databricks-training/08-ai-bi/aibi-architecture",
+        "01-databricks-training/08-ai-bi/hybrid-bi-strategy"
+      ]
+    },
+    {
+      "group": "머신러닝",
+      "pages": [
+        "01-databricks-training/09-machine-learning/ml-on-databricks-overview",
+        "01-databricks-training/09-machine-learning/ml-runtime",
+        "01-databricks-training/09-machine-learning/automl",
+        "01-databricks-training/09-machine-learning/distributed-training",
+        "01-databricks-training/09-machine-learning/hyperparameter-tuning/README",
+        "01-databricks-training/09-machine-learning/hyperparameter-tuning/hyperopt-basics",
+        "01-databricks-training/09-machine-learning/hyperparameter-tuning/tpe-and-sparktrials",
+        "01-databricks-training/09-machine-learning/hyperparameter-tuning/optuna-and-mlflow",
+        "01-databricks-training/09-machine-learning/hyperparameter-tuning/early-stopping-and-strategies",
+        "01-databricks-training/09-machine-learning/mlflow/README",
+        "01-databricks-training/09-machine-learning/mlflow/what-is-mlflow",
+        "01-databricks-training/09-machine-learning/mlflow/experiment-tracking",
+        "01-databricks-training/09-machine-learning/mlflow/model-registry/README",
+        "01-databricks-training/09-machine-learning/mlflow/model-registry/basics-and-registration",
+        "01-databricks-training/09-machine-learning/mlflow/model-registry/permissions-and-serving",
+        "01-databricks-training/09-machine-learning/mlflow/model-registry/cicd-and-governance",
+        "01-databricks-training/09-machine-learning/mlflow/mlflow-tracing/README",
+        "01-databricks-training/09-machine-learning/mlflow/mlflow-tracing/basics-and-autolog",
+        "01-databricks-training/09-machine-learning/mlflow/mlflow-tracing/instrumentation-and-integration",
+        "01-databricks-training/09-machine-learning/mlflow/mlflow-tracing/query-and-monitoring",
+        "01-databricks-training/09-machine-learning/mlflow/mlflow-tracing/analysis-and-evaluation",
+        "01-databricks-training/09-machine-learning/mlflow/mlflow-evaluation",
+        "01-databricks-training/09-machine-learning/model-serving/README",
+        "01-databricks-training/09-machine-learning/model-serving/model-serving-overview",
+        "01-databricks-training/09-machine-learning/model-serving/foundation-model-api",
+        "01-databricks-training/09-machine-learning/model-serving/custom-model-deployment",
+        "01-databricks-training/09-machine-learning/model-serving/ai-gateway",
+        "01-databricks-training/09-machine-learning/model-serving/endpoint-monitoring",
+        "01-databricks-training/09-machine-learning/feature-engineering/README",
+        "01-databricks-training/09-machine-learning/feature-engineering/feature-engineering-overview",
+        "01-databricks-training/09-machine-learning/feature-engineering/feature-table-management",
+        "01-databricks-training/09-machine-learning/feature-engineering/online-serving",
+        "01-databricks-training/09-machine-learning/lakehouse-monitoring"
+      ]
+    },
+    {
+      "group": "AI 에이전트",
+      "pages": [
+        "01-databricks-training/10-agent-development/what-is-ai-agent",
+        "01-databricks-training/10-agent-development/vector-search",
+        "01-databricks-training/10-agent-development/rag-pipeline",
+        "01-databricks-training/10-agent-development/building-agents",
+        "01-databricks-training/10-agent-development/tools-and-functions",
+        "01-databricks-training/10-agent-development/agent-evaluation",
+        "01-databricks-training/10-agent-development/agent-deployment/README",
+        "01-databricks-training/10-agent-development/agent-deployment/logging-and-registration",
+        "01-databricks-training/10-agent-development/agent-deployment/endpoint-and-review",
+        "01-databricks-training/10-agent-development/agent-deployment/versioning-and-monitoring",
+        "01-databricks-training/10-agent-development/agent-deployment/guardrails-and-troubleshooting",
+        "01-databricks-training/10-agent-development/agent-bricks"
+      ]
+    },
+    {
+      "group": "Lakebase",
+      "pages": [
+        "01-databricks-training/11-lakebase/what-is-lakebase",
+        "01-databricks-training/11-lakebase/lakebase-setup",
+        "01-databricks-training/11-lakebase/data-sync",
+        "01-databricks-training/11-lakebase/lakebase-with-apps/README",
+        "01-databricks-training/11-lakebase/lakebase-with-apps/auth-and-connection",
+        "01-databricks-training/11-lakebase/lakebase-with-apps/framework-examples",
+        "01-databricks-training/11-lakebase/lakebase-with-apps/optimization-and-crud",
+        "01-databricks-training/11-lakebase/lakebase-with-apps/deployment"
+      ]
+    },
+    {
+      "group": "보안과 거버넌스",
+      "pages": [
+        "01-databricks-training/12-security-and-governance/security-overview",
+        "01-databricks-training/12-security-and-governance/cmk-encryption",
+        "01-databricks-training/12-security-and-governance/secret-management",
+        "01-databricks-training/12-security-and-governance/audit-logs",
+        "01-databricks-training/12-security-and-governance/identity-and-access",
+        "01-databricks-training/12-security-and-governance/sso-setup",
+        "01-databricks-training/12-security-and-governance/scim-provisioning",
+        "01-databricks-training/12-security-and-governance/service-principals",
+        "01-databricks-training/12-security-and-governance/network-security",
+        "01-databricks-training/12-security-and-governance/system-tables/README",
+        "01-databricks-training/12-security-and-governance/system-tables/overview-and-tables",
+        "01-databricks-training/12-security-and-governance/system-tables/practical-queries",
+        "01-databricks-training/12-security-and-governance/system-tables/dashboard-and-setup",
+        "01-databricks-training/12-security-and-governance/workspace-admin"
+      ]
+    },
+    {
+      "group": "모범 사례",
+      "pages": [
+        "01-databricks-training/14-best-practices/cost-optimization/README",
+        "01-databricks-training/14-best-practices/cost-optimization/cost-structure",
+        "01-databricks-training/14-best-practices/cost-optimization/compute-optimization",
+        "01-databricks-training/14-best-practices/cost-optimization/storage-and-warehouse",
+        "01-databricks-training/14-best-practices/cost-optimization/monitoring-and-checklist",
+        "01-databricks-training/14-best-practices/performance-tuning/README",
+        "01-databricks-training/14-best-practices/performance-tuning/spark-query-tuning",
+        "01-databricks-training/14-best-practices/performance-tuning/delta-lake-optimization",
+        "01-databricks-training/14-best-practices/performance-tuning/sql-warehouse-and-pipeline",
+        "01-databricks-training/14-best-practices/performance-tuning/ml-and-diagnostics",
+        "01-databricks-training/14-best-practices/enterprise-governance/README",
+        "01-databricks-training/14-best-practices/enterprise-governance/platform-design",
+        "01-databricks-training/14-best-practices/enterprise-governance/access-control",
+        "01-databricks-training/14-best-practices/enterprise-governance/data-classification",
+        "01-databricks-training/14-best-practices/enterprise-governance/data-quality-cicd"
+      ]
+    },
+    {
+      "group": "개발 도구",
+      "pages": [
+        "01-databricks-training/13-appendix/databricks-cli",
+        "01-databricks-training/13-appendix/databricks-asset-bundles",
+        "01-databricks-training/13-appendix/databricks-apps",
+        "01-databricks-training/13-appendix/databricks-sdk",
+        "01-databricks-training/13-appendix/databricks-connect",
+        "01-databricks-training/13-appendix/rest-api",
+        "01-databricks-training/13-appendix/ai-dev-kit",
+        "01-databricks-training/13-appendix/genie-code"
+      ]
+    },
+    {
+      "group": "부록 — 선행 지식",
+      "pages": [
+        "01-databricks-training/00-prerequisites/rdb-fundamentals",
+        "01-databricks-training/00-prerequisites/schema-design-patterns",
+        "01-databricks-training/00-prerequisites/bigdata-history",
+        "01-databricks-training/00-prerequisites/bigdata-ecosystem",
+        "01-databricks-training/00-prerequisites/realtime-processing"
+      ]
+    },
+    {
+      "group": "부록 — 데이터 기초",
+      "pages": [
+        "01-databricks-training/01-data-fundamentals/what-is-data-engineering",
+        "01-databricks-training/01-data-fundamentals/data-warehouse-vs-data-lake",
+        "01-databricks-training/01-data-fundamentals/etl-elt-basics",
+        "01-databricks-training/01-data-fundamentals/batch-vs-streaming",
+        "01-databricks-training/01-data-fundamentals/structured-semi-unstructured"
+      ]
+    },
+    {
+      "group": "부록 — 참고",
+      "pages": [
+        "01-databricks-training/13-appendix/glossary",
+        "01-databricks-training/13-appendix/learning-path"
+      ]
+    },
+    {
+      "group": "워크샵",
+      "pages": [
+        "20-handson-genie-code-lge-smarttv/README"
+      ]
+    },
+    {
+      "group": "Section 1: Genie Code 완전 가이드",
+      "pages": [
+        "20-handson-genie-code-lge-smarttv/section-1-vibe-coding-intro/genie-code/README",
+        "20-handson-genie-code-lge-smarttv/section-1-vibe-coding-intro/genie-code/what-is-genie-code",
+        "20-handson-genie-code-lge-smarttv/section-1-vibe-coding-intro/genie-code/getting-started",
+        "20-handson-genie-code-lge-smarttv/section-1-vibe-coding-intro/genie-code/prompt-principles",
+        "20-handson-genie-code-lge-smarttv/section-1-vibe-coding-intro/genie-code/tips-and-tricks",
+        "20-handson-genie-code-lge-smarttv/section-1-vibe-coding-intro/genie-code/prompt-templates",
+        "20-handson-genie-code-lge-smarttv/section-1-vibe-coding-intro/genie-code/custom-instructions",
+        "20-handson-genie-code-lge-smarttv/section-1-vibe-coding-intro/genie-code/common-mistakes",
+        "20-handson-genie-code-lge-smarttv/section-1-vibe-coding-intro/genie-code/security-limitations",
+        "20-handson-genie-code-lge-smarttv/section-1-vibe-coding-intro/genie-code/built-in-features",
+        "20-handson-genie-code-lge-smarttv/section-1-vibe-coding-intro/genie-code/screenshot-guide"
+      ]
+    },
+    {
+      "group": "Section 2: AI Builder App 배포",
+      "pages": [
+        "20-handson-genie-code-lge-smarttv/section-2-ai-builder-app/README"
+      ]
+    },
+    {
+      "group": "Section 3: AI 도구 환경 구성",
+      "pages": [
+        "20-handson-genie-code-lge-smarttv/section-3-ai-tools-setup/README",
+        "20-handson-genie-code-lge-smarttv/section-3-ai-tools-setup/ai-gateway",
+        "20-handson-genie-code-lge-smarttv/section-3-ai-tools-setup/claude-code",
+        "20-handson-genie-code-lge-smarttv/section-3-ai-tools-setup/ai-dev-kit-setup",
+        "20-handson-genie-code-lge-smarttv/section-3-ai-tools-setup/genie-code-aidevkit"
+      ]
+    },
+    {
+      "group": "Section 4: LG Smart TV E2E 핸즈온",
+      "pages": [
+        "20-handson-genie-code-lge-smarttv/section-4-smart-tv-handson/01-setup",
+        "20-handson-genie-code-lge-smarttv/section-4-smart-tv-handson/02-data-generation",
+        "20-handson-genie-code-lge-smarttv/section-4-smart-tv-handson/03-sdp-pipeline",
+        "20-handson-genie-code-lge-smarttv/section-4-smart-tv-handson/04-dashboard-genie",
+        "20-handson-genie-code-lge-smarttv/section-4-smart-tv-handson/05-agent-development"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,243 @@
+# 상황별 프롬프트 템플릿 — 복사해서 바로 사용
+
+> 프롬프트의 `{중괄호}` 부분만 실제 값으로 바꿔서 사용하세요.
+
+---
+
+## 데이터 탐색
+
+### 테이블 찾기
+```
+{주제} 관련 테이블을 찾아줘
+```
+
+> 💡 **완성된 예시**: `lge_smart_tv 카탈로그에서 시청 로그와 관련된 테이블을 찾아줘`
+
+### 테이블 프로파일링
+```
+@{catalog.schema.table}을 프로파일링해줘.
+row 수, 컬럼별 타입/NULL 비율/고유값 수/min/max/mean을 표로 보여줘.
+```
+
+> 💡 **완성된 예시**: `@lge_smart_tv.bronze.viewing_logs을 프로파일링해줘. row 수, 컬럼별 타입/NULL 비율/고유값 수/min/max/mean을 표로 보여줘.`
+
+### 데이터 품질 점검
+```
+@{catalog.schema.table}의 데이터 품질을 점검해줘:
+1. NULL이 10% 이상인 컬럼
+2. 중복 레코드 ({PK 컬럼} 기준)
+3. 이상치 ({컬럼} < {하한} 또는 > {상한})
+4. 참조 무결성 (@{마스터 테이블}과 비교)
+```
+
+> 💡 **완성된 예시**: `@lge_smart_tv.bronze.viewing_logs의 데이터 품질을 점검해줘: NULL이 10% 이상인 컬럼, event_id 기준 중복 레코드, duration_sec < 0 또는 > 86400인 이상치, device_id가 @lge_smart_tv.bronze.devices에 없는 건수`
+
+### 스키마 관계도
+```
+@{catalog.schema} 스키마의 모든 테이블과 테이블 간 관계(JOIN 키)를 정리해줘.
+```
+
+---
+
+## EDA (탐색적 데이터 분석)
+
+### 기본 EDA
+```
+@{catalog.schema.table}을 EDA 해줘.
+주요 패턴, 분포, 이상치를 시각화와 함께 보여줘.
+matplotlib 사용.
+```
+
+### 특정 관점 EDA
+```
+@{catalog.schema.table}에서 {분석 관점}을 분석해줘:
+1. {컬럼A}별 {메트릭} 분포 (히스토그램)
+2. {컬럼B}별 평균 {메트릭} (막대 차트)
+3. {컬럼C}별 비율 (파이 차트)
+4. {컬럼D}와 {컬럼E}의 상관관계 (산점도)
+
+각 차트에 인사이트를 한 줄씩 코멘트해줘.
+```
+
+### 두 테이블 비교
+```
+@{table_A}와 @{table_B}를 {JOIN 키}로 조인해서,
+{분석 질문}을 분석해줘.
+{조건A} vs {조건B} 차이도 비교해줘.
+```
+
+---
+
+## 데이터 변환 (Bronze → Silver → Gold)
+
+### Silver 테이블 생성
+```
+@{bronze_table}을 정제하여 {catalog}.silver.{table_name}을 만들어줘.
+
+변환 규칙:
+- {PK} 기준 중복 제거 (최신 timestamp 유지)
+- {FK}가 @{master_table}에 없는 레코드 제거
+- {컬럼}이 {이상치 조건}인 레코드 제거
+- {NULL 컬럼} → {기본값}으로 대체
+- event_date 파티션 추가
+
+기존 테이블 DROP하지 말고 CREATE OR REPLACE로.
+```
+
+> 💡 **완성된 예시**: `@lge_smart_tv.bronze.viewing_logs을 정제하여 lge_smart_tv.silver.viewing_sessions을 만들어줘. event_id 기준 중복 제거, duration_sec이 0 이하이거나 86400 초과 제거, NULL program_title은 'Unknown'으로 대체. event_date 파티셔닝. 기존 테이블 DROP하지 말고 CREATE OR REPLACE로.`
+
+### Gold 집계 테이블
+```
+@{silver_table}을 집계하여 {catalog}.gold.{table_name}을 만들어줘.
+
+그레인: {dimension1} × {dimension2}
+컬럼: {metric1}, {metric2}, {metric3}, ...
+@{master_table} 조인으로 {추가 컬럼} 추가.
+{파티션 키} 파티셔닝, {Z-ORDER 키} Z-ORDER.
+```
+
+---
+
+## SDP 파이프라인
+
+### 파이프라인 생성
+```
+Bronze → Silver → Gold 변환을 SDP로 만들어줘.
+
+파이프라인 이름: {pipeline_name}
+타겟 카탈로그: {catalog}
+- Bronze → Silver: Streaming Table (증분 처리)
+- Silver → Gold: Materialized View (자동 리프레시)
+- Expectations:
+  expect("{rule_name}", "{condition}")
+  expect("{rule_name}", "{condition}")
+- 위반 레코드는 quarantine 스키마로 분리
+```
+
+> 💡 **완성된 예시**: `Bronze → Silver → Gold 변환을 SDP로 만들어줘. 파이프라인 이름: lge_smart_tv_pipeline, 타겟 카탈로그: lge_smart_tv. Bronze→Silver는 Streaming Table, Silver→Gold는 Materialized View. 각 테이블에 Expectations 추가.`
+
+### Job 스케줄링
+```
+{pipeline_name}을 매일 자동 실행하는 Job을 만들어줘.
+- 스케줄: 매일 {시간} KST
+- 재시도: 최대 2회, 간격 10분
+- 서버리스 컴퓨트
+```
+
+---
+
+## AI/BI 대시보드
+
+### 대시보드 생성
+```
+@{gold_table}로 "{대시보드 이름}" 대시보드를 만들어줘.
+
+Row 1: KPI 카운터 {N}개 ({KPI1}, {KPI2}, {KPI3}, ...)
+Row 2: {차트타입1} ({설명}), {차트타입2} ({설명})
+Row 3: {차트타입3} ({설명}), {차트타입4} ({설명})
+
+필터: {필터1}, {필터2}, {필터3}
+```
+
+> 💡 **완성된 예시**: `@lge_smart_tv.gold.daily_viewing_summary로 "TV 시청 현황" 대시보드를 만들어줘. Row 1: KPI 카운터 3개 (활성 디바이스 수, 평균 시청시간, HDR 비율). Row 2: 일별 시청시간 추이 꺾은선, 지역별 시청시간 막대. 필터: 날짜 범위, 지역.`
+
+### 차트 타입 치트시트
+
+프롬프트에 사용할 수 있는 차트 타입:
+
+| 한국어 | 영어 | 적합한 데이터 |
+|--------|------|-------------|
+| 꺾은선 | Line chart | 시계열 추이 |
+| 막대 | Bar chart | 카테고리 비교 |
+| 가로 막대 | Horizontal bar | 랭킹 |
+| 도넛/파이 | Donut / Pie | 비율 구성 |
+| 히트맵 | Heatmap | 2차원 분포 |
+| 트리맵 | Treemap | 계층적 비율 |
+| KPI 카운터 | Counter / KPI | 단일 숫자 |
+| 산점도 | Scatter | 상관관계 |
+| 테이블 | Table | 상세 데이터 |
+
+---
+
+## Genie Space
+
+### 생성
+```
+다음 설정으로 Genie Space를 만들어줘.
+
+이름: {Space 이름}
+설명: {한 줄 설명}
+테이블: @{table1}, @{table2}, @{table3}
+
+General Instructions:
+- 날짜 미지정 시 최근 7일
+- 비율은 소수점 1자리
+- {비즈니스 규칙1}
+- {비즈니스 규칙2}
+```
+
+> 💡 **완성된 예시**: `다음 설정으로 Genie Space를 만들어줘. 이름: Smart TV 시청 분석. 테이블: @lge_smart_tv.gold.daily_viewing_summary, @lge_smart_tv.gold.content_popularity. General Instructions: 날짜 미지정 시 최근 7일, 비율은 소수점 1자리`
+
+### 테이블 COMMENT 추가 (정확도 향상)
+```
+@{catalog.schema} 스키마의 모든 테이블과 컬럼에 
+비즈니스 담당자가 이해할 수 있는 한국어 COMMENT를 달아줘.
+값의 의미, 단위, 범위를 포함해줘.
+```
+
+---
+
+## 에이전트
+
+### Knowledge Assistant
+```
+Knowledge Assistant를 만들어줘.
+이름: {이름}
+지식 소스: @{knowledge_table}
+Vector Search 엔드포인트: {endpoint_name}
+임베딩 모델: databricks-gte-large-en
+LLM: databricks-claude-sonnet-4
+System Prompt: "{역할 설명}"
+```
+
+> 💡 **완성된 예시**: `Knowledge Assistant를 만들어줘. 이름: LG Smart TV 가이드. 지식 소스: @lge_smart_tv.bronze.tv_knowledge_base. Vector Search 엔드포인트: vs-endpoint-smart-tv. 임베딩 모델: databricks-gte-large-en. LLM: databricks-claude-sonnet-4. System Prompt: "LG Smart TV webOS 전문 어시스턴트입니다. 제공된 문서에 기반하여 한국어로 답변하세요."`
+
+### Supervisor Agent
+```
+Supervisor Agent를 만들어줘.
+이름: {이름}
+하위 에이전트:
+1. "{KA 이름}" (Knowledge Assistant) → {라우팅 조건}
+2. "{Genie Agent 이름}" (Genie Agent) → {라우팅 조건}
+```
+
+---
+
+## 유틸리티
+
+### 가상 데이터 생성
+```
+{설명} 데이터 {N}건을 생성해줘.
+테이블: {catalog.schema.table}
+컬럼: {col1}, {col2}, {col3}, ...
+{col1} 분포: {값1}({비율1}%), {값2}({비율2}%), ...
+PySpark + Faker 사용, Delta 테이블로 저장, COMMENT 추가.
+```
+
+### 에러 디버깅
+```
+Stop. {무엇이 잘못됐는지 구체적으로 설명}.
+{올바른 방법} 으로 수정해줘.
+```
+
+### SQL 최적화
+```
+이 쿼리가 {문제}. 
+파티션 프루닝, Z-ORDER, 셔플 최소화 방향으로 최적화해줘.
+```
+
+---
+
+## 다음 단계
+
+- **[Custom Instructions 설정](custom-instructions.md)** — 매번 반복하는 규칙을 한 번에 설정합니다.
