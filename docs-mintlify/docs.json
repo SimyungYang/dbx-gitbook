@@ -27,6 +27,7 @@
           {
             "group": "변경 이력",
             "pages": [
+              "changelog/2026-06-10",
               "changelog/2026-06-03",
               "changelog/2026-05-27",
               "changelog/2026-05-20",
@@ -550,6 +551,8 @@
               "training/10-agent-development/agent-deployment/endpoint-and-review",
               "training/10-agent-development/agent-deployment/versioning-and-monitoring",
               "training/10-agent-development/agent-deployment/guardrails-and-troubleshooting",
+              "training/10-agent-development/guardrails",
+              "training/10-agent-development/review-app",
               "training/10-agent-development/agent-bricks"
             ]
           },
