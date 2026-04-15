@@ -25,6 +25,21 @@
             ]
           },
           {
+            "group": "변경 이력",
+            "pages": [
+              "changelog/2026-06-17",
+              "changelog/2026-06-10",
+              "changelog/2026-06-03",
+              "changelog/2026-05-27",
+              "changelog/2026-05-20",
+              "changelog/2026-05-13",
+              "changelog/2026-05-06",
+              "changelog/2026-04-29",
+              "changelog/2026-04-22",
+              "changelog/2026-04-15"
+            ]
+          },
+          {
             "group": "Platform Setup",
             "pages": [
               {
