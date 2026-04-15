@@ -25,6 +25,12 @@
             ]
           },
           {
+            "group": "변경 이력",
+            "pages": [
+              "changelog/2026-04-15"
+            ]
+          },
+          {
             "group": "Platform Setup",
             "pages": [
               "blog/platform-setup/aws/overview",
