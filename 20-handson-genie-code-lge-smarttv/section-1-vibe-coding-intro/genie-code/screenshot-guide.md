@@ -1,0 +1,70 @@
+# 스크린샷 가이드 — 교육 자료 캡처 체크리스트
+
+> 교육 자료에 스크린샷이 많을수록 이해도가 높아집니다. 워크샵 전에 아래 목록을 사전 캡처하세요.
+
+---
+
+## 필수 캡처 (★★★) — 반드시 포함
+
+| # | 화면 | 캡처 방법 | 설명 |
+|---|------|----------|------|
+| 1 | **Genie Code 아이콘 위치** | 아무 노트북 열고 우측 상단 | 아이콘이 어디 있는지 |
+| 2 | **Agent Mode 선택** | Genie Code 패널 → 모드 드롭다운 | Agent/Chat 선택 |
+| 3 | **Agent Plan 표시** | Agent에 작업 요청 후 Plan 단계 | Step 1, 2, 3 표시 |
+| 4 | **Allow 승인 옵션 3가지** | Agent 실행 시 승인 팝업 | Allow, Allow in thread, Always allow |
+| 5 | **`@` 테이블 자동완성** | 프롬프트에 `@` 입력 | 드롭다운 목록 |
+| 6 | **`/findTables` 결과** | `/findTables smart tv` 입력 | 검색 결과 목록 |
+| 7 | **SDP DAG + Expectations** | 파이프라인 실행 후 | 테이블 DAG + 통과율 |
+| 8 | **완성된 대시보드** | 대시보드 뷰 모드 | 전체 레이아웃 |
+| 9 | **Genie Space 질의** | Genie Space에서 질문 | 자연어 → SQL → 결과 |
+| 10 | **Genie Space 샘플 질문 등록** | Genie Space 설정 | Sample Questions 화면 |
+| 11 | **Supervisor Agent 답변** | Agent Playground에서 테스트 | 하이브리드 질문 답변 |
+
+---
+
+## 권장 캡처 (★★) — 가능하면 포함
+
+| # | 화면 | 캡처 방법 |
+|---|------|----------|
+| 12 | `Cmd+I` 인라인 프롬프트 | 노트북 셀에서 Cmd+I |
+| 13 | `/` 슬래시 명령어 목록 | 셀에 `/` 입력 |
+| 14 | `/fix` diff 뷰 | 에러 셀에서 /fix |
+| 15 | `/optimize` diff 뷰 | SQL 셀에서 /optimize |
+| 16 | Diagnose Error 버튼 | 에러 발생 셀 |
+| 17 | Quick Fix 제안 | Diagnose Error 후 |
+| 18 | Add context 버튼 | 프롬프트 입력창 |
+| 19 | 자연어 데이터 필터 | 셀 출력 테이블의 Filter 아이콘 |
+| 20 | Custom Instructions 편집 | Settings → Custom Instructions |
+| 21 | MCP Servers 도구 목록 | Settings → MCP Servers |
+| 22 | Skills 목록 | Settings → Skills |
+| 23 | Genie Space General Instructions | Genie Space 설정 |
+| 24 | KA 설정 화면 | Agent Bricks |
+| 25 | Pipeline Editor에서 Genie Code | Pipeline Editor 열고 사이드 패널 |
+| 26 | 대시보드 편집 중 Genie Code | Dashboard Editor에서 사이드 패널 |
+| 27 | SQL Editor에서 Genie Code | SQL Editor에서 Cmd+I |
+| 28 | EDA 차트 출력 | matplotlib 차트 여러 개 |
+| 29 | 프로파일링 결과 | 통계 테이블 + 분포 차트 |
+| 30 | 데이터 생성 후 미리보기 | display() 결과 |
+
+---
+
+## 선택 캡처 (★) — 시간 여유 있을 때
+
+| # | 화면 |
+|---|------|
+| 31 | 이미지 업로드 (드래그&드롭) |
+| 32 | 노트북 사이드패널 + 인라인 동시 |
+| 33 | Managed MCP vs Custom MCP 구분 |
+| 34 | Workspace Skills 디렉토리 구조 |
+| 35 | 대화 히스토리 (반복 개선 과정) |
+| 36 | 각 제품 영역의 Genie Code 아이콘 위치 (6개) |
+
+---
+
+## 캡처 팁
+
+1. **해상도**: 2x Retina 캡처 권장 (macOS: `Cmd+Shift+4`)
+2. **파일명**: `{번호}_{화면설명}.png` (예: `01_genie_code_icon.png`)
+3. **민감 정보**: 실제 데이터가 보이면 모자이크 처리
+4. **하이라이트**: 중요 버튼/영역에 빨간 사각형 or 화살표 표시
+5. **저장 위치**: `assets/screenshots/` 디렉토리에 정리

@@ -1,9 +1,3 @@
-# 각 프로젝트는 독립 git 리포로 관리
-00-databricks-blog/
-01-databricks-training/
-02-blog-translations/
-03-ai-trends/
-20-handson-genie-code-lge-smarttv/
 # OS
 .DS_Store
 .claude/
