@@ -1,15 +1,24 @@
 ---
-title: "Smart TV Vibe Coding 워크샵"
+title: "Genie Code Vibe 워크샵"
 ---
 
 
-> **교육 일시**: 2026년 4월 22일 | **대상**: LG전자 MS(Media Solution)사업본부
+> **대상**: MS · ES 부문 전체
 
 Databricks 환경에서 **Genie Code**와 **AI Dev Kit**을 활용한 Vibe Coding 실습 워크샵입니다.
 
-LG Smart TV webOS 텔레메트리 데이터를 기반으로, 자연어 프롬프트만으로 데이터 파이프라인부터 AI 에이전트까지 End-to-End로 구축합니다.
+실제 제품 IoT 데이터 구조를 기반으로, 자연어 프롬프트만으로 데이터 파이프라인부터 AI 에이전트까지 End-to-End로 구축합니다.
 
 > **학습 트랙**: 이 워크샵은 **Genie Code (Track C)** 전용입니다. 모든 실습을 Genie Code Agent Mode로 진행합니다.
+
+### 핸즈온 케이스
+
+| 케이스 | 대상 제품 | 데이터 | 섹션 |
+|--------|----------|--------|------|
+| **Smart TV** | webOS Smart TV | 텔레메트리 로그 17테이블 250만건 | [Section 4](section-4-smart-tv-handson/01-setup) |
+| **가전 IoT** | 공기청정기(PuriCare) + 에어컨(DUALCOOL) | IoT 센서 로그 17테이블 220만건 | [Section 5](section-5-appliance-handson/01-setup) |
+
+> 환경 구성(Section 1~3) 이후, 소속 조직에 맞는 케이스를 선택하여 Section 4 또는 Section 5를 진행합니다.
 
 ---
 
@@ -21,14 +30,14 @@ LG Smart TV webOS 텔레메트리 데이터를 기반으로, 자연어 프롬프
 | 10:00~10:30 | **Section 2** | AI Builder App 배포 핸즈온 | 30분 |
 | 10:30~11:30 | **Section 3** | AI Gateway(비용 관리) → Claude Code → AI Dev Kit → Genie Code 연결 | 1시간 |
 | 11:30~11:40 | ☕ | 휴식 | 10분 |
-| 11:40~11:45 | **Section 4-01** | 환경 설정 (카탈로그/스키마) | 5분 |
-| 11:45~12:00 | **Section 4-02** | 가상 데이터 생성 (250만건) | 15분 |
-| 12:00~12:30 | **Section 4-03** | SDP 파이프라인 — 데이터 품질 + 증분 처리 (전반) | 30분 |
+| 11:40~11:45 | **핸즈온-01** | 환경 설정 (카탈로그/스키마) | 5분 |
+| 11:45~12:00 | **핸즈온-02** | 가상 데이터 생성 | 15분 |
+| 12:00~12:30 | **핸즈온-03** | SDP 파이프라인 — 데이터 품질 + 증분 처리 (전반) | 30분 |
 | 12:30~13:30 | 🍚 | 점심 | 1시간 |
-| 13:30~14:00 | **Section 4-03** | SDP 파이프라인 (후반) | 30분 |
-| 14:00~15:30 | **Section 4-04** | AI/BI 대시보드 & Genie Space + 정확도 고도화 | 1.5시간 |
+| 13:30~14:00 | **핸즈온-03** | SDP 파이프라인 (후반) | 30분 |
+| 14:00~15:30 | **핸즈온-04** | AI/BI 대시보드 & Genie Space + 정확도 고도화 | 1.5시간 |
 | 15:30~15:40 | ☕ | 휴식 | 10분 |
-| 15:40~17:40 | **Section 4-05** | GenAI 에이전트 개발 (KA + Genie + Supervisor) | 2시간 |
+| 15:40~17:40 | **핸즈온-05** | GenAI 에이전트 개발 (KA + Genie + Supervisor) | 2시간 |
 | 17:40~18:00 | | Q&A 및 마무리 | 20분 |
 
 ---
@@ -54,7 +63,7 @@ LG Smart TV webOS 텔레메트리 데이터를 기반으로, 자연어 프롬프
 | [AI Dev Kit 설치](section-3-ai-tools-setup/ai-dev-kit-setup) | MCP 서버 + Skills로 Databricks를 확장한다 |
 | [Genie Code 연결](section-3-ai-tools-setup/genie-code-aidevkit) | 노트북 안에서도 크로스 프로덕트 작업이 가능해진다 |
 
-### Section 4: LG Smart TV E2E 핸즈온
+### Section 4: Smart TV E2E 핸즈온
 
 | 모듈 | 내용 |
 |------|------|
@@ -63,6 +72,17 @@ LG Smart TV webOS 텔레메트리 데이터를 기반으로, 자연어 프롬프
 | [03. SDP 파이프라인](section-4-smart-tv-handson/03-sdp-pipeline) | 데이터 품질, Medallion Architecture, 증분 처리, Expectations |
 | [04. 대시보드 & Genie Space](section-4-smart-tv-handson/04-dashboard-genie) | 대시보드 3개, Genie Space 3개, 정확도 고도화 |
 | [05. 에이전트 개발](section-4-smart-tv-handson/05-agent-development) | KA + Genie Agent + Supervisor Agent + Lakebase(선택) |
+
+### Section 5: 가전 IoT (공기청정기 + 에어컨) E2E 핸즈온
+
+| 모듈 | 내용 |
+|------|------|
+| [01. 환경 설정](section-5-appliance-handson/01-setup) | 카탈로그/스키마 생성, Custom Instructions 설정 |
+| [02. 공기청정기 데이터 생성](section-5-appliance-handson/02-air-purifier-data) | PuriCare IoT 센서 8테이블 — PM2.5, 필터, 에너지 |
+| [03. 에어컨 데이터 생성](section-5-appliance-handson/03-air-conditioner-data) | DUALCOOL/WHISEN IoT 센서 9테이블 — 온도, 컴프레서, 정비 |
+| [04. SDP 파이프라인](section-5-appliance-handson/04-sdp-pipeline) | 가전 IoT 데이터 Medallion Architecture, 데이터 품질 |
+| [05. 대시보드 & Genie Space](section-5-appliance-handson/05-dashboard-genie) | 대시보드 3개, Genie Space 3개, 가전 도메인 고도화 |
+| [06. 에이전트 개발](section-5-appliance-handson/06-agent-development) | KA + Genie Agent + Supervisor Agent + Lakebase(선택) |
 
 ---
 
@@ -103,7 +123,6 @@ LG Smart TV webOS 텔레메트리 데이터를 기반으로, 자연어 프롬프
 | 주제 | URL |
 |------|-----|
 | Genie Code + AI Dev Kit 구성 가이드 | [github.com/SimyungYang/genie-code-ai-dev-kit](https://github.com/SimyungYang/genie-code-ai-dev-kit) |
-| 이 워크샵 GitHub | [github.com/SimyungYang/genie-code-workshop-smarttv](https://github.com/SimyungYang/genie-code-workshop-smarttv) |
 | AI Dev Kit GitHub | [github.com/databricks-solutions/ai-dev-kit](https://github.com/databricks-solutions/ai-dev-kit) |
 | Genie Code 공식 문서 | [docs.databricks.com/genie-code](https://docs.databricks.com/en/genie-code/index.html) |
 | Genie Code 프롬프트 팁 | [docs.databricks.com/genie-code/tips](https://docs.databricks.com/en/genie-code/tips.html) |

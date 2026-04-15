@@ -919,10 +919,10 @@
         ]
       },
       {
-        "tab": "핸즈온(SmartTV)",
+        "tab": "Genie Code Vibe",
         "groups": [
           {
-            "group": "SmartTV 워크샵",
+            "group": "워크샵 개요",
             "pages": [
               "workshop/overview"
             ]
@@ -970,13 +970,24 @@
             ]
           },
           {
-            "group": "Section 4: Smart TV E2E 핸즈온",
+            "group": "Section 4: Smart TV E2E",
             "pages": [
               "workshop/section-4-smart-tv-handson/01-setup",
               "workshop/section-4-smart-tv-handson/02-data-generation",
               "workshop/section-4-smart-tv-handson/03-sdp-pipeline",
               "workshop/section-4-smart-tv-handson/04-dashboard-genie",
               "workshop/section-4-smart-tv-handson/05-agent-development"
+            ]
+          },
+          {
+            "group": "Section 5: 가전 IoT (공기청정기 + 에어컨) E2E",
+            "pages": [
+              "workshop/section-5-appliance-handson/01-setup",
+              "workshop/section-5-appliance-handson/02-air-purifier-data",
+              "workshop/section-5-appliance-handson/03-air-conditioner-data",
+              "workshop/section-5-appliance-handson/04-sdp-pipeline",
+              "workshop/section-5-appliance-handson/05-dashboard-genie",
+              "workshop/section-5-appliance-handson/06-agent-development"
             ]
           }
         ]

@@ -1,0 +1,233 @@
+---
+title: "02. 공기청정기 가상 데이터 생성"
+---
+
+
+> **소요 시간**: ~15분 | **사전 조건**: [01. 환경 설정](01-setup) 완료 | **컴퓨트**: Serverless 권장
+
+### 이 모듈에서 사용하는 Databricks 기능
+
+| 기능 | 설명 | 공식 문서 |
+|------|------|----------|
+| **PySpark** | Databricks의 분산 데이터 처리 엔진. 대규모 데이터를 클러스터에서 병렬로 생성/처리합니다. | [docs](https://docs.databricks.com/en/pyspark/index.html) |
+| **Faker** | 테스트용 가짜 데이터를 생성하는 Python 라이브러리. 현실적인 센서 값을 만듭니다. | [pypi](https://pypi.org/project/Faker/) |
+| **Delta Lake** | Databricks의 기본 테이블 형식. 트랜잭션 보장, 스키마 진화, 시간 여행(Time Travel) 기능을 제공합니다. | [docs](https://docs.databricks.com/en/delta/index.html) |
+
+## 개요
+
+PuriCare 공기청정기에서 수집되는 IoT 센서 데이터를 기반으로 **8개 테이블, 약 100만 건**의 가상 데이터를 생성합니다.
+
+ThinQ 플랫폼의 실제 IoT 데이터 구조를 반영하여, 공기질 센서·필터 상태·운전 모드 등 현실적인 필드와 값 분포를 가진 데이터를 만듭니다.
+
+---
+
+## 데이터 아키텍처
+
+```
+catalog: lge_appliance
+├── bronze (Raw IoT 센서 로그)
+│   ├── [Master] ap_devices                   5,000건   — 공기청정기 디바이스 마스터
+│   ├── [Sensor] ap_air_quality_logs        300,000건   — PM2.5, PM10, VOC, CO2 센서 측정값
+│   ├── [Sensor] ap_filter_status            50,000건   — 필터 잔여 수명, 교체 이력
+│   ├── [Operation] ap_operation_logs       200,000건   — 운전 모드(자동/수동/터보/수면), 풍량 단계
+│   ├── [Operation] ap_power_events          80,000건   — 전원 ON/OFF, 대기모드 전환
+│   ├── [Energy] ap_energy_consumption      150,000건   — 시간대별 전력 소비량(W)
+│   ├── [IoT] ap_thinq_commands              50,000건   — ThinQ 앱 원격 제어 명령
+│   └── [Alert] ap_alert_events              30,000건   — 필터 교체 알림, 센서 이상, 에러 코드
+```
+
+---
+
+## 테이블별 DDL 및 프롬프트
+
+### 1. 디바이스 마스터 (ap_devices)
+
+```
+lge_appliance.bronze.ap_devices 테이블을 생성해줘. 5,000건.
+
+DDL 정보:
+- device_id: STRING — 고유 디바이스 ID (AP-UUID 형식)
+- model_name: STRING — 모델명 (AS309DWA, AS300DWF, AS281DAW 등 PuriCare 모델)
+- product_line: STRING — 'PuriCare' 고정
+- manufactured_date: DATE — 2022-01-01 ~ 2026-03-31
+- firmware_version: STRING — 'v3.2.1' ~ 'v4.1.0' 범위
+- region: STRING — 서울, 경기, 부산, 대구, 광주, 대전, 인천, 세종
+- install_location: STRING — 거실, 침실, 사무실, 아이방, 주방
+- thinq_registered: BOOLEAN — ThinQ 앱 등록 여부 (80% true)
+- warranty_end_date: DATE — manufactured_date + 2년
+- registration_date: TIMESTAMP
+
+COMMENT: 'PuriCare 공기청정기 디바이스 마스터 테이블'
+Delta 형식으로 저장해줘.
+```
+
+### 2. 공기질 센서 로그 (ap_air_quality_logs)
+
+```
+lge_appliance.bronze.ap_air_quality_logs 테이블을 생성해줘. 300,000건.
+
+DDL 정보:
+- log_id: STRING — UUID
+- device_id: STRING — ap_devices.device_id 참조
+- measured_at: TIMESTAMP — 2025-10-01 ~ 2026-03-31 (10분 간격 측정)
+- pm25: DOUBLE — PM2.5 농도(μg/m³), 0~300 범위, 평균 25, 계절별 변동
+- pm10: DOUBLE — PM10 농도(μg/m³), 0~500 범위, 평균 45
+- voc: DOUBLE — 휘발성유기화합물(ppb), 0~1000
+- co2: DOUBLE — 이산화탄소(ppm), 400~2000
+- temperature: DOUBLE — 실내 온도(°C), 18~30
+- humidity: DOUBLE — 상대 습도(%), 20~80
+- air_quality_index: INT — 통합 대기질 지수 1(좋음)~5(매우나쁨)
+- event_date: DATE — measured_at에서 파생
+
+봄철(3~5월)에는 PM2.5/PM10 값이 높게, 여름철에는 VOC/습도가 높게 분포시켜줘.
+COMMENT: '공기질 센서 측정 로그 (10분 간격)'
+Delta 형식, event_date 파티셔닝.
+```
+
+### 3. 필터 상태 (ap_filter_status)
+
+```
+lge_appliance.bronze.ap_filter_status 테이블을 생성해줘. 50,000건.
+
+DDL 정보:
+- status_id: STRING — UUID
+- device_id: STRING — ap_devices.device_id 참조
+- checked_at: TIMESTAMP — 필터 상태 체크 시점
+- filter_type: STRING — 'HEPA', 'Deodorization', 'Pre-Filter'
+- remaining_life_pct: DOUBLE — 필터 잔여 수명(%), 0~100
+- usage_hours: INT — 사용 시간(시간)
+- replacement_needed: BOOLEAN — remaining_life_pct < 10이면 true
+- last_replaced_date: DATE — 마지막 교체일
+- event_date: DATE
+
+COMMENT: '필터 상태 모니터링 로그'
+Delta 형식, event_date 파티셔닝.
+```
+
+### 4. 운전 모드 로그 (ap_operation_logs)
+
+```
+lge_appliance.bronze.ap_operation_logs 테이블을 생성해줘. 200,000건.
+
+DDL 정보:
+- log_id: STRING — UUID
+- device_id: STRING — ap_devices.device_id 참조
+- event_at: TIMESTAMP — 운전 모드 변경 시점
+- operation_mode: STRING — 'Auto', 'Manual', 'Turbo', 'Sleep', 'Silent'
+- fan_speed: INT — 풍량 단계 1~6
+- air_volume: DOUBLE — 풍량(m³/min)
+- target_pm25: DOUBLE — 목표 PM2.5 농도 (Auto 모드 시)
+- duration_minutes: INT — 해당 모드 유지 시간
+- triggered_by: STRING — 'user', 'auto_sensor', 'schedule', 'thinq_app'
+- event_date: DATE
+
+자동 모드가 50%, 수동 20%, 수면 15%, 터보 10%, 무음 5% 비율.
+COMMENT: '운전 모드 변경 로그'
+Delta 형식, event_date 파티셔닝.
+```
+
+### 5. 전원 이벤트 (ap_power_events)
+
+```
+lge_appliance.bronze.ap_power_events 테이블을 생성해줘. 80,000건.
+
+DDL 정보:
+- event_id: STRING — UUID
+- device_id: STRING
+- event_at: TIMESTAMP
+- power_state: STRING — 'ON', 'OFF', 'STANDBY'
+- trigger_source: STRING — 'button', 'remote', 'thinq_app', 'schedule', 'auto_off'
+- previous_state: STRING — 이전 전원 상태
+- event_date: DATE
+
+COMMENT: '전원 ON/OFF/대기모드 전환 이벤트'
+Delta 형식, event_date 파티셔닝.
+```
+
+### 6. 전력 소비 (ap_energy_consumption)
+
+```
+lge_appliance.bronze.ap_energy_consumption 테이블을 생성해줘. 150,000건.
+
+DDL 정보:
+- record_id: STRING — UUID
+- device_id: STRING
+- measured_at: TIMESTAMP — 1시간 간격 측정
+- power_watts: DOUBLE — 소비 전력(W), 모드별: Sleep 5~10W, Auto 20~40W, Turbo 50~70W
+- cumulative_kwh: DOUBLE — 누적 전력량(kWh)
+- operation_mode: STRING — 측정 시점의 운전 모드
+- event_date: DATE
+
+COMMENT: '시간대별 전력 소비 측정 로그'
+Delta 형식, event_date 파티셔닝.
+```
+
+### 7. ThinQ 원격 제어 명령 (ap_thinq_commands)
+
+```
+lge_appliance.bronze.ap_thinq_commands 테이블을 생성해줘. 50,000건.
+
+DDL 정보:
+- command_id: STRING — UUID
+- device_id: STRING
+- sent_at: TIMESTAMP — 명령 발송 시각
+- command_type: STRING — 'power_on', 'power_off', 'mode_change', 'fan_speed', 'schedule_set', 'child_lock'
+- command_payload: STRING — JSON 형태 명령 파라미터
+- execution_result: STRING — 'success', 'failed', 'timeout', 'device_offline'
+- response_time_ms: INT — 명령 응답 시간(ms), 100~5000
+- app_version: STRING — ThinQ 앱 버전
+- event_date: DATE
+
+성공률 92%, 실패 5%, 타임아웃 2%, 오프라인 1%.
+COMMENT: 'ThinQ 앱 원격 제어 명령 로그'
+Delta 형식, event_date 파티셔닝.
+```
+
+### 8. 알림 이벤트 (ap_alert_events)
+
+```
+lge_appliance.bronze.ap_alert_events 테이블을 생성해줘. 30,000건.
+
+DDL 정보:
+- alert_id: STRING — UUID
+- device_id: STRING
+- alert_at: TIMESTAMP
+- alert_type: STRING — 'filter_replace', 'sensor_error', 'air_quality_warning', 'network_disconnect', 'firmware_update'
+- severity: STRING — 'info', 'warning', 'critical'
+- alert_message: STRING — 한글 알림 메시지
+- acknowledged: BOOLEAN — 사용자 확인 여부
+- resolved_at: TIMESTAMP — 해결 시각 (NULL 가능)
+- event_date: DATE
+
+필터 교체 40%, 센서 에러 15%, 공기질 경고 25%, 네트워크 끊김 10%, 펌웨어 10%.
+COMMENT: '공기청정기 알림 이벤트 로그'
+Delta 형식, event_date 파티셔닝.
+```
+
+---
+
+## 데이터 검증
+
+모든 테이블 생성 후 아래 프롬프트로 검증합니다:
+
+```
+lge_appliance.bronze 스키마에서 ap_로 시작하는 모든 테이블의 
+건수, 컬럼 수, 파티션 키를 정리해서 보여줘.
+```
+
+| 테이블 | 목표 건수 | 주요 컬럼 |
+|--------|----------|----------|
+| ap_devices | 5,000 | device_id, model_name, region |
+| ap_air_quality_logs | 300,000 | pm25, pm10, voc, co2 |
+| ap_filter_status | 50,000 | filter_type, remaining_life_pct |
+| ap_operation_logs | 200,000 | operation_mode, fan_speed |
+| ap_power_events | 80,000 | power_state, trigger_source |
+| ap_energy_consumption | 150,000 | power_watts, cumulative_kwh |
+| ap_thinq_commands | 50,000 | command_type, execution_result |
+| ap_alert_events | 30,000 | alert_type, severity |
+
+---
+
+## 다음 단계
+
+- **[03. 에어컨 데이터 생성](03-air-conditioner-data)** — 에어컨 IoT 센서 및 DDL 기반 가상 데이터 생성

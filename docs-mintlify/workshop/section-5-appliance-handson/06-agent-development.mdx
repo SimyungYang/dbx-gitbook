@@ -1,0 +1,198 @@
+---
+title: "06. 에이전트 개발 — Knowledge Assistant, Genie Agent, Supervisor"
+---
+
+
+> **소요 시간**: ~2시간 | **사전 조건**: [05. 대시보드 & Genie Space](05-dashboard-genie) 완료 (Genie Space 3개 필요)
+>
+> **핵심 메시지**: "대시보드는 보는 것, Genie는 묻는 것, 에이전트는 행동하는 것"
+
+### 이 모듈에서 사용하는 Databricks 기능
+
+| 기능 | 설명 | 공식 문서 |
+|------|------|----------|
+| **Agent Bricks** | AI 에이전트를 코드 없이 UI/API로 생성하는 기능. Knowledge Assistant, Genie Agent, Supervisor 세 가지 유형. | [docs](https://docs.databricks.com/en/generative-ai/agent-bricks/index.html) |
+| **Vector Search** | 텍스트를 벡터로 변환하여 의미적으로 유사한 문서를 검색하는 기능. Knowledge Assistant의 핵심. | [docs](https://docs.databricks.com/en/generative-ai/vector-search.html) |
+| **Model Serving** | AI 모델을 API 엔드포인트로 배포하여 실시간으로 호출하는 기능. | [docs](https://docs.databricks.com/en/machine-learning/model-serving/index.html) |
+| **Lakebase** | Databricks 내장 PostgreSQL 호환 OLTP DB. 에이전트 대화 이력 저장 등. (선택 사항) | [docs](https://docs.databricks.com/en/database/index.html) |
+
+## 개요
+
+3가지 유형의 에이전트를 구축하고, **Supervisor Agent**로 통합합니다:
+
+| 에이전트 | 역할 | 데이터 소스 | 사용 시나리오 |
+|---------|------|-----------|-------------|
+| **Knowledge Assistant** | 가전 제품 사용 가이드 Q&A | PDF/문서 (Vector Search) | "공기청정기 필터 교체 방법은?", "에어컨 CH10 에러 대처법은?" |
+| **Genie Agent** | IoT 데이터 기반 분석 질의 | Gold 테이블 (Genie Space) | "이번 주 평균 PM2.5는?", "에너지 효율이 가장 좋은 에어컨 모델은?" |
+| **Supervisor Agent** | 위 에이전트 오케스트레이션 | 위 에이전트들 | 질문 의도에 따라 적절한 에이전트로 라우팅 |
+
+```
+사용자 질문
+    │
+    ▼
+┌─────────────────┐
+│ Supervisor Agent │ ← 질문 의도 파악 & 라우팅
+└────────┬────────┘
+         │
+    ┌────┴────┐
+    ▼         ▼
+┌────────┐ ┌────────┐
+│ KA     │ │ Genie  │
+│ Agent  │ │ Agent  │
+└────────┘ └────────┘
+제품 가이드   데이터 분석
+```
+
+---
+
+## Part A: Knowledge Assistant (가전 제품 가이드)
+
+### Step 1: FAQ 문서 생성
+
+```
+가전 제품(공기청정기, 에어컨) FAQ 문서를 만들어줘. 
+Delta 테이블 형태로 lge_appliance.gold.product_faq에 저장.
+
+카테고리별 20개씩, 총 60개 FAQ:
+
+공기청정기:
+- 필터 교체 시기 및 방법
+- 각 센서(PM2.5, VOC, CO2)의 의미
+- 운전 모드(자동/터보/수면) 설명
+- ThinQ 앱 연결 방법
+- 에러 코드 대처법
+- 에너지 절약 팁
+
+에어컨:
+- 에러 코드(CH01~CH15) 원인 및 대처
+- 냉방/난방 효율 최적화 팁
+- 냉매 보충 시기 판단
+- AI 자동 모드 동작 원리
+- 정기 점검 체크리스트
+- 전기요금 절약 설정
+
+공통:
+- ThinQ 앱 기능 안내
+- 무상 보증 범위
+- 서비스 접수 방법
+- 스마트홈 연동 가이드
+
+각 FAQ는 question, answer, category, product_type 컬럼을 가지고,
+답변은 200~500자 한국어로 상세하게.
+```
+
+### Step 2: Vector Search 인덱스 생성
+
+```
+lge_appliance.gold.product_faq 테이블에 Vector Search 인덱스를 생성해줘.
+- 엔드포인트: lge_appliance_vs_endpoint
+- 인덱스: product_faq_index
+- 임베딩 대상: question + answer 결합
+- 임베딩 모델: databricks-gte-large-en (또는 사용 가능한 모델)
+```
+
+### Step 3: Knowledge Assistant 생성
+
+```
+Agent Bricks로 Knowledge Assistant를 만들어줘.
+- 이름: 가전 제품 가이드
+- 데이터 소스: product_faq_index (Vector Search)
+- 시스템 프롬프트: 
+  "당신은 가전제품(공기청정기, 에어컨) 전문 상담원입니다. 
+   고객의 질문에 친절하고 정확하게 답변해주세요. 
+   모르는 내용은 솔직히 모른다고 하고, 서비스센터 연락을 안내해주세요."
+```
+
+### 테스트
+
+```
+Knowledge Assistant에 다음 질문들을 테스트해줘:
+1. "공기청정기 HEPA 필터 교체 주기는 얼마나 되나요?"
+2. "에어컨에 CH10 에러가 뜨는데 어떻게 해야 하나요?"
+3. "ThinQ 앱에서 에어컨 스케줄 설정하는 방법 알려주세요"
+```
+
+---
+
+## Part B: Genie Agent (IoT 데이터 분석)
+
+### Step 1: Genie Agent 생성
+
+```
+Agent Bricks로 Genie Agent를 만들어줘.
+- 이름: 가전 IoT 데이터 분석
+- 연결할 Genie Space: 앞서 만든 3개 (공기질, 에너지, 서비스)
+- 시스템 프롬프트:
+  "당신은 가전 IoT 데이터 분석 전문가입니다.
+   공기청정기와 에어컨의 센서 데이터, 에너지 소비, 운영 현황을 분석합니다.
+   데이터에 기반한 객관적인 인사이트를 제공하세요."
+```
+
+### 테스트
+
+```
+Genie Agent에 다음 질문들을 테스트해줘:
+1. "지난 한 달간 서울 지역 공기청정기의 평균 PM2.5는?"
+2. "에너지 효율 1등급 에어컨의 평균 EER은?"
+3. "이번 달 필터 교체가 필요한 공기청정기 수는?"
+```
+
+---
+
+## Part C: Supervisor Agent (통합 오케스트레이션)
+
+### Step 1: Supervisor 생성
+
+```
+Agent Bricks로 Supervisor Agent를 만들어줘.
+- 이름: 가전 통합 어시스턴트
+- 하위 에이전트:
+  1. Knowledge Assistant (제품 가이드 → 사용법, 에러 대처, FAQ)
+  2. Genie Agent (데이터 분석 → 센서 현황, 에너지, 통계)
+- 라우팅 규칙:
+  - "방법", "어떻게", "에러", "교체", "설정" → Knowledge Assistant
+  - "평균", "추이", "비교", "통계", "몇 건", "얼마" → Genie Agent
+  - 애매한 경우 → 사용자에게 확인
+```
+
+### 통합 테스트
+
+```
+Supervisor Agent에 다양한 유형의 질문을 테스트해줘:
+
+1. [KA로 라우팅] "에어컨 필터 청소는 어떻게 하나요?"
+2. [Genie로 라우팅] "이번 달 에어컨 전력 소비 Top 5 모델은?"
+3. [KA로 라우팅] "공기청정기 VOC 센서가 뭔가요?"
+4. [Genie로 라우팅] "서울 vs 부산 평균 실내 공기질 비교해줘"
+5. [복합] "PM2.5가 나쁨 수준인데 어떤 모드로 돌려야 하나요?"
+```
+
+---
+
+## (선택) Lakebase 연동
+
+```
+Lakebase에 에이전트 대화 이력을 저장하는 테이블을 만들어줘.
+- DB 이름: lge_appliance_app
+- 테이블: conversation_logs
+  - session_id, user_id, question, answer, agent_type, created_at
+- 에이전트가 응답할 때마다 자동으로 로깅
+
+이를 기반으로 "자주 묻는 질문 Top 10" 같은 분석도 가능하게 해줘.
+```
+
+---
+
+## 워크샵 마무리
+
+이 핸즈온을 통해 다음을 경험했습니다:
+
+| 단계 | 구축한 것 | 핵심 가치 |
+|------|----------|----------|
+| 환경 설정 | Unity Catalog 구성 | 거버넌스 기반 |
+| 데이터 생성 | 공기청정기 8개 + 에어컨 9개 테이블 | 현실적 IoT 데이터 |
+| SDP 파이프라인 | Bronze → Silver → Gold | 자동화된 데이터 품질 |
+| 대시보드 & Genie | 대시보드 3개, Genie Space 3개 | 셀프서비스 분석 |
+| 에이전트 | KA + Genie + Supervisor | AI 기반 지능형 서비스 |
+
+> **모든 과정을 Genie Code 자연어 프롬프트만으로 수행했습니다.**
