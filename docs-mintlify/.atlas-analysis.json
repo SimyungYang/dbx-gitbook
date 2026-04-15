@@ -1,0 +1,119 @@
+{
+  "projectType": "data-platform",
+  "projectName": "Databricks 한국어 가이드",
+  "projectDescription": "Databricks 플랫폼을 한국어로 배울 수 있는 통합 가이드 — 블로그, 교육자료, 워크샵을 한 곳에서 제공합니다.",
+  "theme": "maple",
+  "primaryColor": "#FF3621",
+  "lightColor": "#FF6B5B",
+  "darkColor": "#C42A15",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "시작하기",
+        "groups": [
+          {
+            "group": "소개",
+            "pages": [
+              "introduction",
+              "platform-overview",
+              "getting-started"
+            ]
+          },
+          {
+            "group": "플랫폼 기초",
+            "pages": [
+              "platform/lakehouse",
+              "platform/compute",
+              "platform/unity-catalog"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "교육자료",
+        "groups": [
+          {
+            "group": "데이터 엔지니어링",
+            "pages": [
+              "training/data-engineering",
+              "training/delta-lake",
+              "training/workflows"
+            ]
+          },
+          {
+            "group": "데이터 웨어하우스",
+            "pages": [
+              "training/data-warehouse",
+              "training/sql-analytics"
+            ]
+          },
+          {
+            "group": "AI & ML",
+            "pages": [
+              "training/machine-learning",
+              "training/mlflow",
+              "training/agents",
+              "training/lakebase"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "AI 가이드",
+        "groups": [
+          {
+            "group": "GenAI & RAG",
+            "pages": [
+              "blog/genai-overview",
+              "blog/rag-guide",
+              "blog/ai-trends"
+            ]
+          },
+          {
+            "group": "플랫폼 설정",
+            "pages": [
+              "blog/platform-setup",
+              "blog/best-practices"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "워크샵",
+        "groups": [
+          {
+            "group": "SmartTV 워크샵",
+            "pages": [
+              "workshop/overview",
+              "workshop/setup",
+              "workshop/hands-on",
+              "workshop/wrap-up"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Databricks 플랫폼 한국어 종합 가이드",
+    "레이크하우스 아키텍처 교육자료",
+    "데이터 엔지니어링 & Delta Lake 실습",
+    "Unity Catalog 데이터 거버넌스",
+    "GenAI, RAG, LLM 에이전트 가이드",
+    "MLflow & 머신러닝 워크플로우",
+    "LG SmartTV AI 핸즈온 워크샵",
+    "AI Vibe Coding 실습"
+  ],
+  "publicApiSurface": [
+    "Databricks Lakehouse Platform",
+    "Delta Lake",
+    "Unity Catalog",
+    "Databricks Workflows",
+    "Databricks SQL / Data Warehouse",
+    "MLflow",
+    "Databricks Model Serving",
+    "AI Agents / LLM Integration",
+    "Lakebase",
+    "Databricks Compute (Clusters)"
+  ]
+}
