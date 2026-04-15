@@ -1,0 +1,64 @@
+---
+title: "2026년 6월 17일"
+description: "교육자료: 에이전트 배포 파이프라인, UC Functions 도구 가이드, Auto Loader 심화, 클러스터 정책 가이드, 워크샵 범용화"
+---
+
+## 교육자료: 에이전트 배포 파이프라인
+
+**교육자료** 탭의 AI 에이전트 섹션에 프로덕션 배포 전 과정을 다루는 4개 가이드가 추가되었습니다.
+
+[**에이전트 배포**](/training/10-agent-development/agent-deployment/overview) 시리즈에서 개발 완료된 에이전트를 프로덕션으로 안전하게 배포하는 전체 파이프라인을 안내합니다.
+
+- [**모델 로깅과 등록**](/training/10-agent-development/agent-deployment/logging-and-registration) — MLflow로 에이전트를 로깅하고 Unity Catalog에 등록하는 과정
+- [**엔드포인트 생성과 Review App**](/training/10-agent-development/agent-deployment/endpoint-and-review) — Model Serving 엔드포인트 생성 및 베타 테스트 환경 구성
+- [**버전 관리와 모니터링**](/training/10-agent-development/agent-deployment/versioning-and-monitoring) — 트래픽 라우팅, A/B 테스트, 성능 모니터링 설정
+- [**Guardrails와 트러블슈팅**](/training/10-agent-development/agent-deployment/guardrails-and-troubleshooting) — 프로덕션 안전 장치 설정 및 일반적인 배포 문제 해결
+
+---
+
+## 교육자료: UC Functions을 에이전트 도구로 활용
+
+[**에이전트 도구(Tools)와 UC 함수**](/training/10-agent-development/tools-and-functions) 가이드에서 Unity Catalog 함수를 AI 에이전트의 도구로 등록하고 활용하는 방법을 다룹니다.
+
+- **SQL 함수 도구** — 데이터 조회, 집계, 검색용 SQL 기반 UC 함수를 에이전트 도구로 등록
+- **Python 함수 도구** — 외부 API 호출, 복잡한 비즈니스 로직 처리용 Python UC 함수 활용
+- **Retriever 도구** — Vector Search 기반 문서 검색을 에이전트에 연결
+- 기존 거버넌스 체계(권한, 감사, 리니지)가 도구 호출에도 자동 적용
+
+---
+
+## 교육자료: Agent Bricks 교육 가이드
+
+[**Agent Bricks — 사전 구축 에이전트**](/training/10-agent-development/agent-bricks) 가이드가 교육자료에 추가되었습니다. 코드 없이 AI 에이전트를 빠르게 구축하는 방법을 단계별로 안내합니다.
+
+- **Knowledge Assistant** — PDF/문서 기반 Q&A 챗봇을 UI에서 생성
+- **Genie (SQL Agent)** — 자연어 → SQL 변환 에이전트 구성
+- **Supervisor Agent** — 여러 에이전트를 조율하는 멀티 에이전트 오케스트레이터
+- 에이전트 유형별 선택 가이드와 의사결정 플로차트 포함
+
+---
+
+## 교육자료: Auto Loader & 클러스터 정책
+
+### Auto Loader 종합 가이드
+
+[**Auto Loader**](/training/05-data-engineering/auto-loader/overview) 시리즈에서 클라우드 스토리지 파일 수집의 전 과정을 다룹니다. 개념 학습부터 SDP 연동 실습까지 9개 페이지로 구성됩니다.
+
+- [**Auto Loader란?**](/training/05-data-engineering/auto-loader/what-is-auto-loader) — Directory Listing vs File Notification 모드, 스키마 추론·진화 처리
+- [**주요 옵션**](/training/05-data-engineering/auto-loader/auto-loader-options) — 파일 포맷별 설정, Rescue Data Column, 메타데이터 컬럼
+- [**핸즈온 실습**](/training/05-data-engineering/auto-loader/auto-loader-hands-on/overview) — CSV/JSON 수집, 스키마 진화 대응, SDP 통합, 검증·트러블슈팅까지 4단계 실습
+
+### 클러스터 정책 가이드
+
+[**클러스터 정책**](/training/04-compute-and-workspace/cluster-policies/overview) 시리즈에서 조직 내 컴퓨트 거버넌스를 체계적으로 관리하는 방법을 안내합니다.
+
+- [**기본 개념과 주요 패턴**](/training/04-compute-and-workspace/cluster-policies/basics-and-patterns) — 정책 유형, 속성 제어 방식, 일반적인 제한 패턴
+- [**정책 적용과 설계 가이드**](/training/04-compute-and-workspace/cluster-policies/permissions-and-design) — 팀별 정책 할당, 권한 모델 설계
+- [**실전 템플릿과 모니터링**](/training/04-compute-and-workspace/cluster-policies/templates-and-monitoring) — 역할별 정책 템플릿, 비용 모니터링 연동
+
+---
+
+## 개선 사항
+
+- **워크샵 범용 교육 자료화** — [Smart TV 워크샵](/workshop/overview)에서 특정 기업·날짜 참조가 모두 제거되어 누구나 활용할 수 있는 범용 교육 콘텐츠로 정비되었습니다
+- **AI Dev Kit 스크린샷 정리** — AI Dev Kit 구성 가이드의 모든 스크린샷에서 브라우저 UI 요소가 제거되어 핵심 내용에 집중할 수 있습니다
