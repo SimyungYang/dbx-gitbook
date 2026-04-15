@@ -27,6 +27,7 @@
           {
             "group": "변경 이력",
             "pages": [
+              "changelog/2026-07-08",
               "changelog/2026-07-01",
               "changelog/2026-06-24",
               "changelog/2026-06-17",
