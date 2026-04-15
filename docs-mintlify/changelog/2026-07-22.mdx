@@ -1,0 +1,57 @@
+---
+title: "2026년 7월 22일"
+description: "A2A 프로토콜 가이드, Prompt Engineering 실전편, GenAI 평가 방법론, Agent 프레임워크 & UI 비교 가이드"
+---
+
+## 가이드: A2A (Agent-to-Agent) 프로토콜
+
+[**A2A 프로토콜**](/blog/guides/genai-concepts/a2a-protocol/overview) 시리즈에서 Google이 발표한 에이전트 간 통신 표준을 다룹니다. 서로 다른 프레임워크로 만든 AI Agent들이 표준화된 방식으로 협업하는 방법을 안내합니다.
+
+- [**핵심 개념**](/blog/guides/genai-concepts/a2a-protocol/concepts) — Agent Card, Task 라이프사이클(submitted → working → completed), Artifact 교환 구조. MCP와의 차이를 명확히 비교합니다
+- [**구현 가이드**](/blog/guides/genai-concepts/a2a-protocol/implementation) — Python 기반 A2A 서버/클라이언트 구현, Agent Card 작성, Task 관리 플로우를 코드 수준에서 안내합니다
+- [**프로덕션 적용**](/blog/guides/genai-concepts/a2a-protocol/production) — 보안, 인증, 에러 처리 등 실 서비스에 A2A를 적용할 때 고려해야 할 사항
+
+---
+
+## 가이드: Prompt Engineering 실전 시리즈
+
+[**Prompt Engineering**](/blog/guides/genai-concepts/prompt-engineering/overview) 가이드에서 LLM에게 원하는 결과를 이끌어내기 위한 프롬프트 설계 기법을 체계적으로 다룹니다.
+
+- [**기초 기법**](/blog/guides/genai-concepts/prompt-engineering/basics) — Zero-shot, Few-shot, Chain-of-Thought 기법을 동일 예시로 비교. System Prompt 설계 5가지 패턴 포함
+- [**고급 기법**](/blog/guides/genai-concepts/prompt-engineering/advanced) — ReAct, Tree of Thought, Self-Consistency 등 복합 추론이 필요한 시나리오에 적합한 고급 전략
+- [**한국어 프롬프팅**](/blog/guides/genai-concepts/prompt-engineering/korean) — 한국어 특유의 어순, 존댓말, 맥락 의존성을 고려한 프롬프트 최적화 기법
+- [**보안**](/blog/guides/genai-concepts/prompt-engineering/security) — Prompt Injection 공격의 원리와 방어 전략. 입력 검증, 출력 필터링, 샌드박스 패턴
+- [**실무 적용**](/blog/guides/genai-concepts/prompt-engineering/practical) — Databricks AI Playground와 MLflow Prompt Registry를 활용한 프롬프트 관리 워크플로우
+
+---
+
+## 가이드: GenAI 평가 방법론
+
+[**GenAI 평가**](/blog/guides/genai-concepts/evaluation/overview) 가이드에서 LLM 및 Agent 시스템의 품질을 측정하고 개선하는 체계적인 방법론을 소개합니다.
+
+- [**평가 메트릭**](/blog/guides/genai-concepts/evaluation/metrics) — Faithfulness, Relevance, Groundedness 등 핵심 메트릭의 정의와 측정 방법
+- [**LLM-as-Judge**](/blog/guides/genai-concepts/evaluation/judge) — 사람 대신 LLM을 평가자로 활용하는 방법. 비용 대비 정확도의 균형점을 찾는 전략
+- [**평가 파이프라인**](/blog/guides/genai-concepts/evaluation/pipeline) — MLflow Evaluate를 활용한 자동화된 평가 파이프라인 구축. CI/CD에 평가를 통합하는 패턴
+- [**실전 적용**](/blog/guides/genai-concepts/evaluation/practical) — Review App을 통한 피드백 수집, 평가 결과 기반 프롬프트 개선 워크플로우
+
+---
+
+## 가이드: Agent 프레임워크 비교
+
+[**Agent 프레임워크 생태계**](/blog/guides/genai-concepts/agent-frameworks-detail/overview) 가이드에서 주요 AI Agent 프레임워크의 설계 철학과 아키텍처를 코드 수준에서 비교합니다.
+
+- [**LangChain & LangGraph**](/blog/guides/genai-concepts/agent-frameworks-detail/langchain-langgraph) — LCEL에서 StateGraph로의 진화. 체크포인트, Human-in-the-Loop 패턴 포함
+- [**CrewAI, OpenAI Agents SDK & AutoGen**](/blog/guides/genai-concepts/agent-frameworks-detail/crewai-openai-autogen) — 역할 기반 멀티에이전트(CrewAI), Handoff 패턴(OpenAI), 대화 기반 협업(AutoGen) 비교
+- [**Databricks Agent Framework**](/blog/guides/genai-concepts/agent-frameworks-detail/databricks-af) — ChatAgent 인터페이스, UC Functions as Tools, MLflow 통합 아키텍처
+- [**종합 비교 & 선택 가이드**](/blog/guides/genai-concepts/agent-frameworks-detail/comparison) — 전체 비교 테이블과 프로젝트 요구사항별 의사결정 트리
+
+---
+
+## 가이드: Agent UI & 배포 기술 스택
+
+[**Agent UI 가이드**](/blog/guides/genai-concepts/agent-ui-detail/overview)에서 AI Agent를 사용자에게 전달하기 위한 UI/UX 프레임워크를 비교합니다. PoC부터 프로덕션까지 단계별 최적의 기술 스택 선택 기준을 제공합니다.
+
+- [**Streamlit & Gradio**](/blog/guides/genai-concepts/agent-ui-detail/streamlit-gradio) — Python만으로 빠르게 채팅 UI를 구현하는 프로토타이핑 도구 비교
+- [**Chainlit & Dash**](/blog/guides/genai-concepts/agent-ui-detail/chainlit-dash) — Agent 추론 과정 시각화(Chainlit)와 데이터 대시보드 특화(Dash) 프레임워크
+- [**FastAPI 백엔드**](/blog/guides/genai-concepts/agent-ui-detail/fastapi-backend) — REST API, SSE 스트리밍, WebSocket 양방향 통신을 활용한 프론트엔드 분리 아키텍처
+- [**Databricks Apps 배포**](/blog/guides/genai-concepts/agent-ui-detail/databricks-apps) — Databricks Apps를 활용한 프로덕션 배포와 단계별 기술 스택 선택 종합 가이드
