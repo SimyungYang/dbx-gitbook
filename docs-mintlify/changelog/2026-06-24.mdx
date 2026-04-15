@@ -1,0 +1,40 @@
+---
+title: "2026년 6월 24일"
+description: "Genie Code 심화 가이드 강화, 워크샵 3단계 학습 구조 개편, AI Dev Kit MCP 도구 매핑 통합"
+---
+
+## Genie Code 심화 가이드 강화
+
+[**Genie Code 소개 페이지**](/workshop/section-1-vibe-coding-intro/genie-code/what-is-genie-code)가 대폭 보강되었습니다. 실무 의사결정에 필요한 핵심 정보를 한곳에서 확인할 수 있습니다.
+
+- **비용 구조** — AI 영역(무료)과 컴퓨트 영역(과금)의 명확한 구분표 추가. 어떤 작업이 무료이고 어떤 작업에 비용이 발생하는지 한눈에 파악 가능
+- **Multi-Agent 아키텍처** — Task Planner → Model Router → Tool Executor로 이어지는 4레이어 내부 구조 설명
+- **LLM 모델 상세** — Azure OpenAI GPT와 Anthropic Claude 자동 선택 방식, Zero Data Retention 보안 모델 안내
+- **Chat Mode vs Agent Mode 비교** — 동작 방식, 사용자 개입 수준, 적합한 작업 유형을 비교표로 정리
+
+---
+
+## 워크샵 3단계 학습 구조 개편
+
+[**Smart TV 핸즈온 워크샵**](/blog/hands-on/smart-tv-vibe/overview)이 **사전 학습 → 환경 구성 → 핸즈온 실습** 3단계로 재구성되었습니다.
+
+- **구조화된 학습 경로** — 각 단계별 소요 시간이 명시되어, 워크샵 전에 필요한 사전 학습 범위를 쉽게 파악할 수 있습니다
+- **범용 교육 자료** — 특정 기업 참조가 모두 제거되고 Smart TV 시나리오로 통일되어, 누구나 동일한 실습을 진행할 수 있습니다
+- **통일된 실습 환경** — 모든 핸즈온 모듈이 [Genie Code + AI Dev Kit MCP](/workshop/section-3-ai-tools-setup/genie-code-aidevkit) 환경을 전제로 재작성되었습니다
+
+---
+
+## AI Dev Kit MCP 도구 매핑 가이드
+
+[**Genie Code에 AI Dev Kit 구성하기**](/workshop/section-3-ai-tools-setup/genie-code-aidevkit) 페이지에 실무 활용도를 높이는 콘텐츠가 추가되었습니다.
+
+- **작업별 MCP 도구 매핑** — 10가지 주요 작업(Genie Space 생성, 대시보드 생성, Job 스케줄링 등)에 필요한 필수/보조 MCP 도구를 한눈에 확인
+- **Cold Start 대응** — MCP 앱 첫 호출 시 지연을 방지하는 Warm-up 팁 ("현재 사용자 정보 알려줘"로 앱 깨우기)
+- **Fallback 대응** — MCP 도구 호출 실패 시 "다시 MCP 도구로 시도해줘" 프롬프트로 재시도하는 방법 안내
+
+---
+
+## 개선 사항
+
+- **Custom Instructions에 MCP 규칙 추가** — [환경 설정 가이드](/workshop/section-4-smart-tv-handson/01-setup)의 Custom Instructions에 `manage_genie`, `manage_dashboard` 등 MCP 도구 활용 규칙이 포함되어, 실습 시작부터 MCP 연동이 자동 적용됩니다
+- **핸즈온 모듈 환경 표시** — Section 4 각 모듈([SDP 파이프라인](/workshop/section-4-smart-tv-handson/03-sdp-pipeline), [대시보드 & Genie](/workshop/section-4-smart-tv-handson/04-dashboard-genie), [에이전트 개발](/workshop/section-4-smart-tv-handson/05-agent-development)) 상단에 실습 환경과 사용할 MCP 도구가 명시되었습니다
