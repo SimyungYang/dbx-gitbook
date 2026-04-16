@@ -1,0 +1,85 @@
+---
+title: "2026년 11월 4일"
+description: "교육자료 212페이지 완성: Databricks 플랫폼 기초부터 머신러닝, Unity Catalog, 컴퓨트 최적화까지 전 영역 커리큘럼 공개"
+---
+
+## 교육자료 커리큘럼 전면 공개
+
+[**교육자료**](/training/02-databricks-overview/what-is-databricks) 탭에 Databricks 플랫폼 전 영역을 다루는 **212페이지 커리큘럼**이 완성되었습니다. 처음 접하는 분부터 운영 담당자까지, 역할과 수준에 맞춰 필요한 내용을 찾아 학습할 수 있습니다.
+
+### 플랫폼 기초 (8편)
+
+[**Databricks 플랫폼**](/training/02-databricks-overview/what-is-databricks) 섹션에서 Databricks가 무엇이고, 왜 필요하며, 어떻게 시작하는지를 다룹니다.
+
+- **경쟁 환경 & 가격 구조** — Snowflake, BigQuery, Fabric과의 비교와 DBU 기반 과금 체계를 설명합니다
+- **아키텍처 & UI 투어** — Control Plane/Data Plane 구조와 Workspace UI 주요 메뉴를 안내합니다
+- **노트북 기초·고급** — 셀 실행부터 위젯, `%run`, `dbutils`, Git 연동까지 노트북 활용 전 과정을 다룹니다
+
+---
+
+### 레이크하우스 아키텍처 (13편)
+
+[**레이크하우스 아키텍처**](/training/03-lakehouse-architecture/what-is-lakehouse) 섹션에서 Delta Lake를 중심으로 한 레이크하우스의 핵심 개념을 배울 수 있습니다.
+
+- **Delta Lake 심화** — [Time Travel](/training/03-lakehouse-architecture/time-travel), [Schema Evolution](/training/03-lakehouse-architecture/schema-evolution), [Liquid Clustering](/training/03-lakehouse-architecture/liquid-clustering), [Deletion Vectors](/training/03-lakehouse-architecture/deletion-vectors) 등 9편의 Delta Lake 기능 가이드
+- **메달리온 아키텍처** — [Bronze → Silver → Gold](/training/03-lakehouse-architecture/medallion-architecture) 패턴의 설계 원칙과 실전 적용 방법
+- **Iceberg & UniForm** — [Delta와 Iceberg 비교](/training/03-lakehouse-architecture/delta-and-iceberg), [UniForm](/training/03-lakehouse-architecture/uniform)을 통한 멀티 엔진 호환 전략
+
+---
+
+### 컴퓨트 & SQL Warehouse (12편)
+
+[**컴퓨트**](/training/04-compute-and-workspace/spark-basics) 섹션에서 Spark 기초부터 클러스터·SQL Warehouse·서버리스까지 컴퓨팅 리소스 선택과 최적화를 안내합니다.
+
+- **클러스터 설정 5편** — [클러스터 종류](/training/04-compute-and-workspace/cluster-types), [구성 옵션](/training/04-compute-and-workspace/cluster-configuration), [Instance Pool](/training/04-compute-and-workspace/instance-pools), [Photon 엔진](/training/04-compute-and-workspace/photon-engine), [Spot 인스턴스](/training/04-compute-and-workspace/spot-instances) 활용법
+- **클러스터 정책 4편** — [정책 기초와 패턴](/training/04-compute-and-workspace/cluster-policies/basics-and-patterns)부터 [권한 설계](/training/04-compute-and-workspace/cluster-policies/permissions-and-design), [템플릿과 모니터링](/training/04-compute-and-workspace/cluster-policies/templates-and-monitoring)까지 팀 단위 비용 관리 전략
+- **SQL Warehouse & 서버리스** — [SQL Warehouse](/training/04-compute-and-workspace/sql-warehouse)와 [Serverless Compute](/training/04-compute-and-workspace/serverless-compute)의 특징, 사이징, 비용 비교
+
+---
+
+### Unity Catalog (21편)
+
+[**Unity Catalog**](/training/07-unity-catalog/what-is-unity-catalog) 섹션에서 3-Level 네임스페이스부터 접근 제어, 데이터 리니지, 데이터 공유까지 통합 거버넌스의 전체 그림을 다룹니다.
+
+- **스토리지 & 외부 연결** — [External Locations](/training/07-unity-catalog/external-locations)과 [Storage Credentials](/training/07-unity-catalog/storage-credentials)로 클라우드 스토리지를 안전하게 연결하는 방법
+- **접근 제어 4편** — [GRANT/REVOKE 기반 권한 관리](/training/07-unity-catalog/access-control), [Row Filter](/training/07-unity-catalog/row-filters), [Column Mask](/training/07-unity-catalog/column-masks), [Tags](/training/07-unity-catalog/tags)를 조합한 세밀한 데이터 보호
+- **데이터 리니지 & 공유** — [리니지 추적과 Impact Analysis](/training/07-unity-catalog/data-lineage/overview), [Delta Sharing](/training/07-unity-catalog/delta-sharing), [Marketplace](/training/07-unity-catalog/marketplace), [Clean Rooms](/training/07-unity-catalog/clean-rooms)를 활용한 조직 간 데이터 협업
+- **Volumes 3편** — [파일 기반 데이터 관리](/training/07-unity-catalog/volumes/overview)를 위한 Managed/External Volume 구성과 고급 활용법
+
+---
+
+### AI/BI (6편)
+
+[**AI/BI**](/training/08-ai-bi/aibi-overview) 섹션에서 Lakeview Dashboard, Genie, Alert, AI/BI 아키텍처까지 데이터 분석·시각화 도구를 다룹니다.
+
+- [**Lakeview 대시보드**](/training/08-ai-bi/lakeview-dashboards) — 위젯 구성, 필터, 파라미터 활용법
+- [**Genie**](/training/08-ai-bi/genie) — 자연어 질의 기반 데이터 탐색과 정확도 최적화
+- [**하이브리드 BI 전략**](/training/08-ai-bi/hybrid-bi-strategy) — Databricks AI/BI와 기존 BI 도구(Tableau, Power BI)의 공존 전략
+
+---
+
+### 머신러닝 (33편)
+
+[**머신러닝**](/training/09-machine-learning/ml-on-databricks-overview) 섹션에서 AutoML, MLflow, Model Serving, Feature Engineering까지 ML 워크플로우 전 과정을 다룹니다.
+
+- **MLflow 심화** — [실험 추적](/training/09-machine-learning/mlflow/experiment-tracking), [Model Registry](/training/09-machine-learning/mlflow/model-registry/overview) 4편, [MLflow Tracing](/training/09-machine-learning/mlflow/mlflow-tracing/overview) 5편으로 모델 라이프사이클 관리
+- **하이퍼파라미터 튜닝 5편** — [Hyperopt 기초](/training/09-machine-learning/hyperparameter-tuning/hyperopt-basics)부터 [Optuna + MLflow 연동](/training/09-machine-learning/hyperparameter-tuning/optuna-and-mlflow), [Early Stopping 전략](/training/09-machine-learning/hyperparameter-tuning/early-stopping-and-strategies)까지
+- **Model Serving 6편** — [Foundation Model API](/training/09-machine-learning/model-serving/foundation-model-api), [Custom 모델 배포](/training/09-machine-learning/model-serving/custom-model-deployment), [AI Gateway](/training/09-machine-learning/model-serving/ai-gateway), [엔드포인트 모니터링](/training/09-machine-learning/model-serving/endpoint-monitoring)
+- **Feature Engineering 3편** — [Feature Table 관리](/training/09-machine-learning/feature-engineering/feature-table-management)부터 [Online Serving](/training/09-machine-learning/feature-engineering/online-serving)까지 Feature Store 활용법
+
+---
+
+### 개발 도구 & 부록 (20편)
+
+[**개발 도구**](/training/13-appendix/databricks-cli) 섹션에서 CLI, Asset Bundles, SDK, REST API, Databricks Connect 등 개발 생산성 도구를 안내합니다. [**선행 지식**](/training/00-prerequisites/rdb-fundamentals)과 [**데이터 기초**](/training/01-data-fundamentals/what-is-data-engineering) 부록에서 RDB, 빅데이터, ETL/ELT 등 배경 지식도 제공합니다.
+
+- [**Databricks CLI & Asset Bundles**](/training/13-appendix/databricks-cli) — IaC 기반 프로젝트 구성과 CI/CD 자동화
+- [**Databricks SDK & REST API**](/training/13-appendix/databricks-sdk) — Python/Java SDK와 REST API를 활용한 워크스페이스 자동화
+- [**용어집 & 학습 경로**](/training/13-appendix/glossary) — 핵심 용어 정리와 역할별 추천 학습 순서
+
+---
+
+## 개선 사항
+
+- **Metric Views** — [Unity Catalog Metric Views](/training/08-ai-bi/metric-views) 교육자료가 추가되어, 비즈니스 메트릭을 UC 오브젝트로 정의하고 일관되게 재사용하는 방법을 확인할 수 있습니다
+- **Predictive Optimization** — [레이크하우스 아키텍처](/training/03-lakehouse-architecture/predictive-optimization) 섹션에 Predictive Optimization 가이드가 추가되어, VACUUM·OPTIMIZE·ANALYZE를 AI가 자동 실행하는 방식을 안내합니다
