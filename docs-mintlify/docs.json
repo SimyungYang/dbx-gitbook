@@ -349,46 +349,6 @@
               "blog/guides/ml-fundamentals/retraining-strategies"
             ]
           },
-          {
-            "group": "Hands-on Workshop",
-            "pages": [
-              {
-                "group": "예지보전 MLOps",
-                "pages": [
-                  "blog/hands-on/predictive-maintenance/overview",
-                  "blog/hands-on/predictive-maintenance/getting-started",
-                  "blog/hands-on/predictive-maintenance/00-team-collaboration",
-                  "blog/hands-on/predictive-maintenance/01-overview",
-                  "blog/hands-on/predictive-maintenance/02-feature-engineering",
-                  "blog/hands-on/predictive-maintenance/03-model-training",
-                  "blog/hands-on/predictive-maintenance/04-model-registration",
-                  "blog/hands-on/predictive-maintenance/05-challenger-validation",
-                  "blog/hands-on/predictive-maintenance/06-batch-inference",
-                  "blog/hands-on/predictive-maintenance/07-anomaly-detection",
-                  "blog/hands-on/predictive-maintenance/08-model-monitoring",
-                  "blog/hands-on/predictive-maintenance/09-mlops-agent",
-                  "blog/hands-on/predictive-maintenance/10-job-scheduling"
-                ]
-              },
-              {
-                "group": "AI Vibe Workshop",
-                "pages": [
-                  "blog/hands-on/smart-tv-vibe/overview",
-                  "blog/hands-on/smart-tv-vibe/getting-started",
-                  "blog/hands-on/smart-tv-vibe/00-setup",
-                  "blog/hands-on/smart-tv-vibe/01-foundation",
-                  "blog/hands-on/smart-tv-vibe/02-data-engineering",
-                  "blog/hands-on/smart-tv-vibe/03-analytics",
-                  "blog/hands-on/smart-tv-vibe/04-streaming",
-                  "blog/hands-on/smart-tv-vibe/05-ml",
-                  "blog/hands-on/smart-tv-vibe/06-genai",
-                  "blog/hands-on/smart-tv-vibe/07-apps-lakebase",
-                  "blog/hands-on/smart-tv-vibe/notebooks/track-b-ai-guided/PROMPT_GUIDE",
-                  "blog/hands-on/smart-tv-vibe/notebooks/track-c-genie-code/GENIE_CODE_GUIDE"
-                ]
-              }
-            ]
-          }
         ]
       },
       {
@@ -990,6 +950,46 @@
               "workshop/section-5-appliance-handson/04-sdp-pipeline",
               "workshop/section-5-appliance-handson/05-dashboard-genie",
               "workshop/section-5-appliance-handson/06-agent-development"
+            ]
+          },
+          {
+            "group": "AI Vibe Workshop (3-Track)",
+            "pages": [
+              "blog/hands-on/smart-tv-vibe/overview",
+              "blog/hands-on/smart-tv-vibe/getting-started",
+              "blog/hands-on/smart-tv-vibe/00-setup",
+              "blog/hands-on/smart-tv-vibe/01-foundation",
+              "blog/hands-on/smart-tv-vibe/02-data-engineering",
+              "blog/hands-on/smart-tv-vibe/03-analytics",
+              "blog/hands-on/smart-tv-vibe/04-streaming",
+              "blog/hands-on/smart-tv-vibe/05-ml",
+              "blog/hands-on/smart-tv-vibe/06-genai",
+              "blog/hands-on/smart-tv-vibe/07-apps-lakebase",
+              "blog/hands-on/smart-tv-vibe/notebooks/track-b-ai-guided/PROMPT_GUIDE",
+              "blog/hands-on/smart-tv-vibe/notebooks/track-c-genie-code/GENIE_CODE_GUIDE"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "MLOps 핸즈온",
+        "groups": [
+          {
+            "group": "예지보전 MLOps",
+            "pages": [
+              "blog/hands-on/predictive-maintenance/overview",
+              "blog/hands-on/predictive-maintenance/getting-started",
+              "blog/hands-on/predictive-maintenance/00-team-collaboration",
+              "blog/hands-on/predictive-maintenance/01-overview",
+              "blog/hands-on/predictive-maintenance/02-feature-engineering",
+              "blog/hands-on/predictive-maintenance/03-model-training",
+              "blog/hands-on/predictive-maintenance/04-model-registration",
+              "blog/hands-on/predictive-maintenance/05-challenger-validation",
+              "blog/hands-on/predictive-maintenance/06-batch-inference",
+              "blog/hands-on/predictive-maintenance/07-anomaly-detection",
+              "blog/hands-on/predictive-maintenance/08-model-monitoring",
+              "blog/hands-on/predictive-maintenance/09-mlops-agent",
+              "blog/hands-on/predictive-maintenance/10-job-scheduling"
             ]
           }
         ]
