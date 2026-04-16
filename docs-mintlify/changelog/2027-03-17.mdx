@@ -1,0 +1,33 @@
+---
+title: "2027년 3월 17일"
+description: "Genie Space 운영 가이드 전 과정 완성, Genie Code 활용 시나리오 & 프롬프트 쿡북 추가, AI Dev Kit 배포·운영 가이드 확장"
+---
+
+## Genie Space 운영 가이드 — 생성부터 MCP 연동까지 전 과정 완성
+
+[**Genie Space 운영 가이드**](/blog/guides/genie-space/overview)의 8개 모듈이 모두 완성되어, Space 생성부터 MCP 기반 에이전트 연동까지 전체 운영 라이프사이클을 한곳에서 따라갈 수 있습니다.
+
+- [**Space 생성하기**](/blog/guides/genie-space/create-space) — Unity Catalog에서 테이블을 선택하고 Space를 생성하는 절차와, Title·Description이 LLM의 SQL 생성 컨텍스트로 작용하는 원리를 설명합니다
+- [**인스트럭션 작성**](/blog/guides/genie-space/instructions) — SQL Expression → 예제 SQL → 텍스트 인스트럭션 3단계 우선순위로 비즈니스 로직을 정확하게 전달하는 방법을 안내합니다
+- [**공유 & 권한 관리**](/blog/guides/genie-space/sharing) — Space 권한(CAN VIEW/RUN/EDIT/MANAGE)과 Unity Catalog 데이터 권한, 두 계층이 동시에 충족되어야 하는 구조와 SME 검증 워크플로를 다룹니다
+- [**MCP 연동**](/blog/guides/genie-space/mcp) — Genie Space를 AI Agent가 호출할 수 있는 도구(Tool)로 전환하는 MCP 구성법과, Supervisor Agent에서 하위 데이터 에이전트로 활용하는 시나리오를 소개합니다
+
+이전에 공개된 [데이터 구성](/blog/guides/genie-space/data-config), [테스트 & 벤치마크](/blog/guides/genie-space/testing), [모니터링 & 피드백](/blog/guides/genie-space/monitoring)과 함께, Genie Space의 구축·최적화·운영·확장 전 과정을 하나의 가이드로 학습할 수 있습니다.
+
+---
+
+## Genie Code 활용 시나리오 & 프롬프트 쿡북
+
+[**Genie Code 가이드**](/blog/guides/genie-code/overview)에 실전 활용도를 높이는 2개 페이지가 추가되었습니다.
+
+- [**활용 시나리오**](/blog/guides/genie-code/scenarios) — 데이터 사이언스, 데이터 엔지니어링, SQL 분석, 대시보드 생성, Agent 개발 등 5개 시나리오별 구체적인 대화 예시와 ROI가 높은 Top 5 패턴(Agent 모드 EDA, 대시보드 자동 생성, Diagnose Error 디버깅 등)을 정리합니다
+- [**프롬프트 쿡북**](/blog/guides/genie-code/prompt-cookbook) — 20개 섹션으로 구성된 실전 프롬프트 레시피로, 복사해서 바로 사용할 수 있는 프롬프트와 예상 결과를 제공합니다
+
+---
+
+## AI Dev Kit 배포·운영 가이드 확장
+
+[**AI Dev Kit 가이드**](/blog/guides/ai-dev-kit/overview)에 Builder App의 배포와 활용을 다루는 2개 페이지가 추가되었습니다.
+
+- [**Builder App 배포 가이드**](/blog/guides/ai-dev-kit/deployment-guide) — 로컬 개발 환경과 Databricks Apps 배포의 차이, FastAPI + React 아키텍처, Lakebase 연동 대화 이력 저장, 서비스 프린시펄 기반 인증 구성까지 단계별로 안내합니다
+- [**활용 사례**](/blog/guides/ai-dev-kit/use-cases) — 자연어 한 문장으로 테이블 생성, DLT 파이프라인 구성, 대시보드 배포, RAG 챗봇 구축 등을 수행하는 실전 시나리오와 에이전트의 의사결정 과정을 설명합니다
