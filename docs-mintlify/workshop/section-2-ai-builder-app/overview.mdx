@@ -65,7 +65,7 @@ databricks current-user me
 
 > **워크스페이스 URL 형식**: `https://<workspace-id>.azuredatabricks.net` (Azure) 또는 `https://<workspace-id>.cloud.databricks.com` (AWS). 브라우저에서 Databricks 워크스페이스에 접속했을 때 주소창에 표시되는 URL을 그대로 사용하세요.
 
-> 📸 **[스크린샷]**: `databricks current-user me` 실행 결과 — 사용자 정보 확인
+> 💡 **화면 참고**: `databricks current-user me` 실행 결과 — 사용자 정보 확인
 
 ### jq 설치 (JSON 파싱용)
 
@@ -86,7 +86,7 @@ git clone https://github.com/databricks-solutions/ai-dev-kit.git
 cd ai-dev-kit
 ```
 
-> 📸 **[스크린샷]**: git clone 완료 후 디렉토리 구조
+> 💡 **화면 참고**: git clone 완료 후 디렉토리 구조
 
 ---
 
@@ -99,7 +99,7 @@ databricks apps create mcp-ai-dev-kit \
   --description "AI Dev Kit MCP Server for Genie Code"
 ```
 
-> 📸 **[스크린샷]**: 앱 생성 결과 — app_url, service_principal 등 출력
+> 💡 **화면 참고**: 앱 생성 결과 — app_url, service_principal 등 출력
 
 ---
 
@@ -126,7 +126,7 @@ databricks apps deploy mcp-ai-dev-kit --source-code-path "$APP_PATH"
 databricks apps get mcp-ai-dev-kit
 ```
 
-> 📸 **[스크린샷]**: 배포 결과 — status: RUNNING 확인
+> 💡 **화면 참고**: 배포 결과 — status: RUNNING 확인
 
 ---
 
@@ -180,7 +180,7 @@ curl -X PATCH "$HOST/api/2.0/permissions/warehouses/$WH_ID" \
   }]}"
 ```
 
-> 📸 **[스크린샷]**: 권한 부여 후 확인 — SQL Warehouse Permissions 화면
+> 💡 **화면 참고**: 권한 부여 후 확인 — SQL Warehouse Permissions 화면
 
 ---
 
@@ -196,7 +196,7 @@ databricks apps get mcp-ai-dev-kit -o json | jq -r .url
 
 앱이 `RUNNING` 상태이면 성공입니다!
 
-> 📸 **[스크린샷]**: 앱 상태 RUNNING + URL 확인
+> 💡 **화면 참고**: 앱 상태 RUNNING + URL 확인
 
 ---
 
