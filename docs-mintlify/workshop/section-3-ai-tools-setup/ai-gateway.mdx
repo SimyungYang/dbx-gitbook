@@ -13,30 +13,47 @@ Databricks AI Gateway는 모든 AI 모델 호출(Genie Code, Claude Code, Cursor
 
 > 💡 **DBU(Databricks Unit)란?** Databricks의 컴퓨트 과금 단위입니다. Foundation Model API를 통해 AI 모델을 호출하면 사용한 토큰 수에 비례하여 DBU가 과금됩니다. 외부에서 각 AI 모델을 별도로 구독할 필요 없이, Databricks 청구서 하나로 통합 관리됩니다.
 
-```mermaid
-flowchart TB
-    subgraph Users["사용자"]
-        GC["Genie Code"]
-        CC["Claude Code"]
-        CU["Cursor"]
-    end
-
-    subgraph Gateway["Databricks AI Gateway (Model Serving)"]
-        direction LR
-        RL["Rate Limit"]
-        CT["비용 추적"]
-        AL["감사 로그"]
-    end
-
-    subgraph Models["Foundation Models"]
-        Claude["Claude"]
-        GPT["GPT"]
-        Llama["Llama"]
-    end
-
-    Users --> Gateway
-    Gateway --> Models
-```
+<Steps>
+  <Step title="사용자 (AI 도구)">
+    <CardGroup cols={3}>
+      <Card title="Genie Code" icon="sparkles">
+        Databricks 노트북 내장 AI
+      </Card>
+      <Card title="Claude Code" icon="terminal">
+        터미널 기반 AI 코딩
+      </Card>
+      <Card title="Cursor" icon="code">
+        IDE 기반 AI 코딩
+      </Card>
+    </CardGroup>
+  </Step>
+  <Step title="Databricks AI Gateway (Model Serving)" icon="shield-check">
+    <CardGroup cols={3}>
+      <Card title="Rate Limit" icon="gauge">
+        사용자/팀별 요청 수 제한
+      </Card>
+      <Card title="비용 추적" icon="chart-line">
+        토큰 사용량 실시간 모니터링
+      </Card>
+      <Card title="감사 로그" icon="clipboard-list">
+        누가, 언제, 얼마나 사용했는지 기록
+      </Card>
+    </CardGroup>
+  </Step>
+  <Step title="Foundation Models">
+    <CardGroup cols={3}>
+      <Card title="Claude" icon="brain">
+        Anthropic
+      </Card>
+      <Card title="GPT" icon="robot">
+        OpenAI
+      </Card>
+      <Card title="Llama" icon="meta">
+        Meta (오픈소스)
+      </Card>
+    </CardGroup>
+  </Step>
+</Steps>
 
 ### 왜 중요한가?
 
