@@ -69,6 +69,18 @@ AI/BI 대시보드로 생성해줘.
 
 ### 대시보드 생성 확인
 
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/Dashboard_1_1_Genie_Done.png" alt="Operations Dashboard - Genie Code로 생성 완료" />
+</Frame>
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/Dashboard_1_2_Main.png" alt="Operations Dashboard - 메인 뷰 상단" />
+</Frame>
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/Dashboard_1_3_Main.png" alt="Operations Dashboard - 메인 뷰 하단" />
+</Frame>
+
 ```
 방금 만든 "Smart TV Operations Dashboard"가 잘 생성됐는지 확인해줘.
 대시보드 URL과 포함된 위젯 목록을 보여줘.
@@ -110,6 +122,14 @@ Row 3 — 분석 (4개):
 AI/BI 대시보드로 생성해줘.
 ```
 
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/Dashboard_2_1_Main.png" alt="Ad Performance Dashboard - 상단" />
+</Frame>
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/Dashboard_2_2_Main.png" alt="Ad Performance Dashboard - 하단" />
+</Frame>
+
 ### 대시보드 3: Content & Engagement Dashboard
 
 > 콘텐츠 전략팀이 확인하는 콘텐츠/시청 분석 대시보드
@@ -141,6 +161,14 @@ Row 3 — 사용자 행동 (4개):
 
 AI/BI 대시보드로 생성해줘.
 ```
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/Dashboard_3_1_Main.png" alt="Content & Engagement Dashboard - 상단" />
+</Frame>
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/Dashboard_3_2_Main.png" alt="Content & Engagement Dashboard - 하단" />
+</Frame>
 
 ---
 
@@ -179,6 +207,14 @@ General Instructions:
 
 ### Genie Space 생성 확인 & 첫 테스트
 
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/GenieSpace_1_1.png" alt="Genie Space 시청 분석 - 생성 완료" />
+</Frame>
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/GenieSpace_1_2.png" alt="Genie Space 시청 분석 - 테이블 설정" />
+</Frame>
+
 ```
 방금 만든 "LG Smart TV 시청 분석" Genie Space에 테스트 질문을 해줘:
 "최근 7일간 가장 인기 있는 앱 Top 5는?"
@@ -209,6 +245,10 @@ General Instructions:
 - "실적이 좋은"은 CTR > 평균 CTR AND VCR > 평균 VCR 의미
 ```
 
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/GenieSpace_2.png" alt="Genie Space 광고 성과 분석" />
+</Frame>
+
 ### Genie Space 3: 디바이스 운영/건강
 
 #### Genie Code 프롬프트
@@ -234,6 +274,44 @@ General Instructions:
 - 에러율은 (에러 건수 / 활성 디바이스 수) * 100 으로 계산
 ```
 
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/GenieSpace_3.png" alt="Genie Space 디바이스 운영 분석" />
+</Frame>
+
+### Genie Space 설정 UI 가이드
+
+Genie Space를 UI에서 직접 설정할 때의 화면입니다.
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/Configure_1.png" alt="Genie Space 설정 - 기본 정보" />
+</Frame>
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/Configure_2.png" alt="Genie Space 설정 - 테이블 선택" />
+</Frame>
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/Configure_3.png" alt="Genie Space 설정 - General Instructions" />
+</Frame>
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/Configure_4.png" alt="Genie Space 설정 - 샘플 질문" />
+</Frame>
+
+### Genie Space 질의 예시
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/GenieSpace_Example_Query_1.png" alt="Genie Space 질의 예시 1" />
+</Frame>
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/GenieSpace_Example_Query_2.png" alt="Genie Space 질의 예시 2" />
+</Frame>
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/GenieSpace_Example_Query_3_Step4.png" alt="Genie Space 질의 예시 3 - Step 4" />
+</Frame>
+
 ---
 
 ## Part C: Genie 정확도 고도화 ⭐
@@ -249,6 +327,32 @@ General Instructions:
 | 3 | **General Instructions** | ★★★★☆ | 비즈니스 규칙, 용어 정의, 계산 공식 |
 | 4 | **테이블 간 관계 (Joins)** | ★★★★☆ | 올바른 조인 경로를 안내 |
 | 5 | **인증된 쿼리** | ★★★☆☆ | 자주 쓰는 패턴을 사전 검증 |
+
+아래는 Genie Code가 고도화 작업을 순차적으로 수행하는 과정입니다:
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/GenieCode_Inside_Chain_1.png" alt="Genie Code Chain 1 - 테이블 분석 시작" />
+</Frame>
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/GenieCode_Inside_Chain_2.png" alt="Genie Code Chain 2 - 컬럼 분석" />
+</Frame>
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/GenieCode_Inside_Chain_3_result.png" alt="Genie Code Chain 3 - COMMENT 적용 결과" />
+</Frame>
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/GenieCode_Inside_Chain_4_result.png" alt="Genie Code Chain 4 - 샘플 질문 등록" />
+</Frame>
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/GenieCode_Inside_Chain_5_result.png" alt="Genie Code Chain 5 - Instructions 설정" />
+</Frame>
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/GenieCode_Inside_Chain_6_result.png" alt="Genie Code Chain 6 - 정확도 검증" />
+</Frame>
 
 ### Step 1: 테이블/컬럼 코멘트 추가
 
@@ -277,6 +381,10 @@ COMMENT ON COLUMN lge_smart_tv.gold.daily_viewing_summary.hdr_viewing_pct IS
 
 모든 Gold 테이블(daily_viewing_summary, content_popularity, ad_campaign_kpi, device_health_score, streaming_qoe, user_engagement_360)의 모든 컬럼에 COMMENT를 달아줘.
 ```
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/genie_table_comments.png" alt="Table COMMENT가 적용된 모습" />
+</Frame>
 
 ### Step 2: 샘플 질문 (Curated Questions) 등록 ⭐⭐⭐
 
@@ -750,6 +858,12 @@ Smart TV Operations Dashboard를 Databricks Apps로 배포해줘.
 ```
 
 > 실행 중 Code execution 블록이 나타나면 **Run**을 눌러 계속 진행합니다. 배포가 완료되면 앱 URL이 표시됩니다. 화면이 정상적으로 나타나지 않으면 증상을 요약하여 Genie Code에 디버깅을 요청하세요.
+
+> **주의**: App 배포 시 서비스 프린시펄에 카탈로그 사용 권한(GRANT)을 부여해야 합니다. [Section 3 Genie Code AI Dev Kit 구성](../section-3-ai-tools-setup/genie-code-aidevkit#step-5-서비스-프린시펄-권한-부여)의 권한 설정을 참고하세요.
+
+<Frame>
+  <img src="/workshop/section-4-smart-tv-handson/images/GenieSpace_to_App.png" alt="Genie Space를 Databricks App으로 배포" />
+</Frame>
 
 ---
 
