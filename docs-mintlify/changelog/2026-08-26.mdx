@@ -1,0 +1,86 @@
+---
+title: "2026년 8월 26일"
+description: "Genie Code 사용 가이드, MCP 실전 가이드, GenAI 도구 생태계, AI Agent 아키텍처, Lakeflow 증분 처리, AI 시장 트렌드 2026, ML 핵심 개념"
+---
+
+## 가이드: Genie Code — AI 코딩 어시스턴트 완벽 가이드
+
+[**Genie Code 사용 가이드**](/blog/guides/genie-code/overview) 7개 페이지에서 Databricks 내장 AI 코딩 어시스턴트의 활용법을 체계적으로 다룹니다. Unity Catalog 메타데이터를 자동으로 인식하고, Agent 모드에서 다단계 작업을 자율 수행하는 Genie Code의 실전 활용 가이드입니다.
+
+- [**활용 시나리오**](/blog/guides/genie-code/scenarios) — EDA 자동화, 대시보드 생성, 디버깅 등 ROI가 높은 사용 패턴 Top 5와 구체적인 대화 예시
+- [**프롬프트 쿡북**](/blog/guides/genie-code/prompt-cookbook) — 데이터 엔지니어링, SQL 분석, ML, GenAI 등 전 영역에서 바로 사용할 수 있는 실전 프롬프트 레시피북
+- [**MCP 연동**](/blog/guides/genie-code/mcp) — Slack, JIRA, GitHub 등 외부 도구를 MCP로 연결하여 Genie Code를 워크스페이스 경계를 넘는 AI 에이전트로 확장
+- [**설정 & 모범사례**](/blog/guides/genie-code/settings-best-practices) — Custom Instructions, Agent 모드 설정, 팀 단위 운영 전략
+- [**AI Dev Kit 스킬 연동**](/blog/guides/genie-code/ai-dev-kit-skills) — AI Dev Kit의 30개 이상 도구를 Genie Code에서 자연어로 호출
+
+---
+
+## 가이드: MCP (Model Context Protocol) — AI 에이전트의 표준 인터페이스
+
+[**MCP 실전 가이드**](/blog/guides/mcp/overview) 5개 페이지에서 Anthropic이 발표한 AI 에이전트-외부 도구 연결 표준 프로토콜을 다룹니다. "AI의 USB-C"로 불리는 MCP의 개념부터 Databricks 환경에서의 활용까지 안내합니다.
+
+- [**일반 MCP 설정**](/blog/guides/mcp/setup-general) — MCP 아키텍처, 클라이언트-서버 구조, 설치 및 설정 절차
+- [**인기 MCP 서버**](/blog/guides/mcp/popular-servers) — GitHub, Slack, Notion, PostgreSQL 등 실무에서 많이 사용되는 MCP 서버와 활용 시나리오
+- [**Databricks MCP 활용**](/blog/guides/mcp/databricks-mcp) — Managed·External·Custom 세 가지 MCP 서버 유형으로 Unity Catalog 자산을 AI 에이전트에 노출하는 방법
+- [**베스트 프랙티스**](/blog/guides/mcp/best-practices) — 인증, 보안, 성능 최적화, 프로덕션 운영 가이드
+
+---
+
+## 가이드: GenAI 도구 생태계 — 2024~2026 AI 도구 지형도
+
+[**GenAI 도구 생태계**](/blog/guides/genai-tools/overview) 7개 페이지에서 실무에서 사용되는 GenAI 도구를 6개 카테고리로 분류하고, 각 도구의 핵심 특징과 Databricks 연동 포인트를 정리합니다.
+
+- [**AI 코딩 어시스턴트**](/blog/guides/genai-tools/coding-assistants) — GitHub Copilot, Cursor, Claude Code, Windsurf의 비교와 선택 기준
+- [**LLM API & 플랫폼**](/blog/guides/genai-tools/llm-platforms) — GPT-4.1, Claude 4, Gemini 2.5, Llama 4 등 주요 모델 비교
+- [**노코드 AI 빌더**](/blog/guides/genai-tools/ai-builders) · [**AI 생산성 도구**](/blog/guides/genai-tools/ai-productivity) — Dify, n8n 등 비개발자용 워크플로 도구와 Perplexity, NotebookLM 등 업무 자동화 도구
+- [**오픈소스 LLM**](/blog/guides/genai-tools/opensource-llm) · [**AI 관측성**](/blog/guides/genai-tools/ai-observability) — Ollama, vLLM 기반 자체 호스팅과 MLflow Tracing, LangSmith 기반 품질 모니터링
+
+---
+
+## 가이드: AI Agent 아키텍처 — 설계 패턴과 프로덕션 운영
+
+[**AI Agent 아키텍처**](/blog/guides/genai-concepts/agent-architecture/overview) 7개 페이지에서 AI 에이전트의 핵심 설계 패턴을 다룹니다. 단순 LLM 호출과 에이전트의 차이부터 프로덕션 배포까지 체계적으로 안내합니다.
+
+- [**ReAct 패턴 & Planning**](/blog/guides/genai-concepts/agent-architecture/react-planning) — Thought→Action→Observation 루프의 구체적 동작 방식
+- [**Tool Use / Function Calling**](/blog/guides/genai-concepts/agent-architecture/tool-use) — JSON 수준에서의 도구 호출 메커니즘
+- [**Agent Memory**](/blog/guides/genai-concepts/agent-architecture/memory) — 단기·장기 메모리 시스템 설계와 구현
+- [**Multi-Agent 패턴**](/blog/guides/genai-concepts/agent-architecture/multi-agent) — Supervisor, Swarm, 계층형 등 3가지 멀티 에이전트 오케스트레이션 패턴
+- [**프로덕션 운영**](/blog/guides/genai-concepts/agent-architecture/production) — 에이전트 안정성, 비용 관리, 모니터링 전략
+
+---
+
+## 가이드: Lakeflow 증분 처리 — Full Refresh 방지와 CDC 체크리스트
+
+[**Lakeflow 증분 처리 가이드**](/blog/guides/lakeflow-incremental/overview) 4개 페이지에서 Streaming Table과 Materialized View의 증분 처리 메커니즘을 설명하고, 비용 폭증을 유발하는 Full Refresh를 방지하는 전략을 제공합니다.
+
+- [**Streaming Table 증분 처리**](/blog/guides/lakeflow-incremental/streaming-table) — 체크포인트 기반 처리 모델, Full Refresh가 강제되는 조건과 안전한 스키마 변경 방법
+- [**Materialized View 증분 처리**](/blog/guides/lakeflow-incremental/materialized-view) — Enzyme 엔진의 자동 incremental/full 선택 메커니즘과 비용 최적화
+- [**CDC & 실전 체크리스트**](/blog/guides/lakeflow-incremental/cdc-checklist) — APPLY CHANGES를 활용한 선언적 CDC 파이프라인 구성, 배포 전 점검 체크리스트
+
+---
+
+## AI 시장 트렌드 2026
+
+[**AI 시장 트렌드 2026**](/ai-trends/overview) 탭이 9개 페이지로 구성되었습니다. 2025~2026년 AI 시장이 "모델 경쟁"에서 "에이전트 플랫폼 경쟁"으로 전환되는 흐름을 주요 기업별로 분석합니다.
+
+- [**OpenAI**](/ai-trends/openai) · [**Anthropic**](/ai-trends/anthropic-trends-2026) — 추론 모델(o3/o4-mini)과 Agent SDK, MCP 프로토콜과 Claude Code 전략
+- [**Google**](/ai-trends/google) · [**Meta**](/ai-trends/meta) — A2A 프로토콜과 Agentspace, 오픈소스 MoE(Llama 4) 전략
+- [**AWS & Microsoft**](/ai-trends/aws-microsoft) · [**Tesla & xAI**](/ai-trends/tesla-xai-others) — 클라우드 AI 플랫폼과 물리적 AI 동향
+- [**한국어 LLM**](/ai-trends/korean-llm) — HyperCLOVA X, SOLAR, Qwen, DeepSeek의 한국어 지원 현황
+- [**트렌드 종합**](/ai-trends/trends-summary) — Agentic AI, 추론 모델, 멀티모달, 오픈소스 등 2026년 핵심 키워드 정리
+
+---
+
+## 가이드: ML 핵심 개념 — 전통 ML의 현재와 운영 전략
+
+[**ML 핵심 개념**](/blog/guides/ml-fundamentals/overview) 4개 페이지에서 GenAI 시대에도 여전히 중요한 전통 ML/DL 지식을 정리합니다. 예측 모델링, 이상 탐지, 추천 시스템 등 많은 비즈니스 문제는 전통 ML로 해결됩니다.
+
+- [**Databricks ML/AI 기능 가이드**](/blog/guides/ml-fundamentals/databricks-ml-features) — AutoML, MLflow, Feature Store, Model Serving 등 Databricks의 ML 기능 전체 맵
+- [**ML 트렌드 & 최신 기법**](/blog/guides/ml-fundamentals/ml-trends) — Foundation Model Fine-tuning, Federated Learning 등 2026년 ML 트렌드
+- [**재학습 전략**](/blog/guides/ml-fundamentals/retraining-strategies) — 모델 드리프트 감지, 주기적·이벤트 기반 재학습, Lakehouse Monitoring 연동
+
+---
+
+## 개선 사항
+
+- **공식 블로그 번역** — [번역 글 목록](/translations/overview) 페이지에서 Databricks 공식 블로그 48편의 한국어 번역을 한 곳에서 확인할 수 있습니다. Agent Bricks, Genie Code, Lakebase, MCP 등 최신 기능 발표부터 기술 심화 포스트까지 포함합니다
