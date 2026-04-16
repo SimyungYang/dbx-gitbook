@@ -1,0 +1,46 @@
+---
+title: "2026년 9월 23일"
+description: "교육자료 전체 커리큘럼 완성, RAG 파이프라인 종합 가이드, Genie Code 워크샵 완전 가이드"
+---
+
+## 교육자료: 전체 커리큘럼 완성 — 14개 모듈, 200+ 페이지
+
+[**교육자료**](/training/02-databricks-overview/what-is-databricks) 탭이 Databricks 플랫폼 전 영역을 포괄하는 체계적인 커리큘럼으로 완성되었습니다. 데이터 기초부터 AI 에이전트, 엔터프라이즈 거버넌스까지 14개 모듈로 구성됩니다.
+
+- [**레이크하우스 아키텍처**](/training/03-lakehouse-architecture/what-is-lakehouse) — Delta Lake, Liquid Clustering, Deletion Vectors, Predictive Optimization 등 레이크하우스 핵심 개념과 Iceberg/UniForm 상호운용성
+- [**컴퓨트 설정**](/training/04-compute-and-workspace/spark-basics) — 클러스터 타입·정책·인스턴스 풀 설계, Photon Engine, SQL Warehouse, Serverless Compute 선택 기준
+- [**데이터 엔지니어링**](/training/05-data-engineering/data-engineering-overview) — Auto Loader(스키마 추론·핸즈온 포함), SDP 파이프라인, Lakeflow Connect, Lakeflow Jobs의 Task 구성·스케줄링·모니터링
+- [**데이터 웨어하우징**](/training/06-data-warehousing/databricks-sql-overview) — SQL 고급 기능, Window Functions, SQL Scripting, Pivot/Unpivot 패턴, Materialized Views, AI Functions, 쿼리 최적화
+- [**머신러닝**](/training/09-machine-learning/ml-on-databricks-overview) — AutoML, 분산 학습, Hyperopt/Optuna 튜닝, MLflow(실험 추적·Model Registry·Tracing·Evaluation), Model Serving(Foundation Model API·AI Gateway), Feature Engineering
+- [**비용 최적화 & 성능 튜닝**](/training/14-best-practices/cost-optimization/overview) — DBU 비용 구조, 컴퓨트·스토리지·웨어하우스 최적화, Spark 쿼리 튜닝, Delta Lake 최적화, 엔터프라이즈 거버넌스 설계 패턴
+
+---
+
+## 가이드: RAG 파이프라인 — 데이터 준비부터 프로덕션 배포까지
+
+[**RAG 종합 가이드**](/blog/guides/rag/overview) 12개 페이지에서 검색 증강 생성의 전체 파이프라인을 다룹니다. 핵심 개념(이전 발표)에 이어, 실전 파이프라인 구축에 필요한 단계별 가이드가 추가되었습니다.
+
+- [**데이터 준비**](/blog/guides/rag/data-preparation) — 문서 수집, 전처리, 메타데이터 추출 전략. PDF·HTML·마크다운 등 비정형 문서의 구조화 방법
+- [**청킹 전략**](/blog/guides/rag/chunking-strategies) — Fixed-size, Recursive, Semantic 청킹 비교와 문서 유형별 최적 청킹 설정
+- [**Vector Search 구성**](/blog/guides/rag/vector-search) — Databricks Vector Search 인덱스 생성, 임베딩 모델 선택, Delta Sync를 통한 자동 인덱스 갱신
+- [**체인 빌딩**](/blog/guides/rag/chain-building) — LangChain 기반 RAG 체인 구성, 프롬프트 템플릿 설계, 검색-생성 파이프라인 연결
+- [**평가 & 배포**](/blog/guides/rag/evaluation) — MLflow Evaluate 기반 품질 측정(Faithfulness·Relevance), Model Serving 엔드포인트 배포와 [프로덕션 운영](/blog/guides/rag/deployment) 가이드
+
+---
+
+## 워크샵: Genie Code 완전 가이드 — 9개 페이지 상세 안내
+
+[**Genie Code Vibe 워크샵**](/workshop/overview)의 Section 1에 Genie Code를 효과적으로 활용하기 위한 9개 페이지의 상세 가이드가 포함되어 있습니다.
+
+- [**Genie Code란?**](/workshop/section-1-vibe-coding-intro/genie-code/what-is-genie-code) — 일반 코딩 AI와의 핵심 차이, 6개 제품 영역별 동작 방식, 비용 구조(Pro·Agent Mode 요금)와 아키텍처 상세
+- [**시작하기**](/workshop/section-1-vibe-coding-intro/genie-code/getting-started) — Agent Mode vs Chat Mode 비교, 단축키 목록, 인라인 프롬프트 사용법
+- [**프롬프트 원칙 & 템플릿**](/workshop/section-1-vibe-coding-intro/genie-code/prompt-principles) — 5대 프롬프트 원칙, 상황별 프롬프트 템플릿, [Custom Instructions](/workshop/section-1-vibe-coding-intro/genie-code/custom-instructions) 설정 가이드
+- [**보안 제한사항**](/workshop/section-1-vibe-coding-intro/genie-code/security-limitations) — Serverless Compute의 Hard Limit(R/Scala 미지원, RDD API 미지원, Init Scripts 미지원 등)과 조건부 가능 항목, 대안 정리
+- [**빌트인 기능 & 스크린샷 가이드**](/workshop/section-1-vibe-coding-intro/genie-code/built-in-features) — Unity Catalog 자동 인식, 에러 자동 수정 등 내장 기능 목록과 [UI 스크린샷 가이드](/workshop/section-1-vibe-coding-intro/genie-code/screenshot-guide)
+
+---
+
+## 개선 사항
+
+- **AI Dev Kit 도구 가이드** — [AI Dev Kit 시작하기](/blog/guides/ai-dev-kit/getting-started)와 [도구 레퍼런스](/blog/guides/ai-dev-kit/tools) 페이지에서 CLI 인증, 앱 생성, 44개 MCP 도구의 카테고리별 설명과 호출 예시를 확인할 수 있습니다
+- **Databricks Apps app.yaml 레퍼런스** — [app.yaml 설정](/blog/guides/apps/app-yaml)과 [리소스 관리](/blog/guides/apps/resources) 페이지에서 배포 구성 파일의 전체 스키마와 SQL Warehouse·Model Serving·Secret 리소스 바인딩 방법을 안내합니다
