@@ -1,0 +1,29 @@
+---
+title: "2026년 9월 30일"
+description: "Genie Code 기술 가이드 대폭 보강, 워크샵 카탈로그 범용화, MCP 도구 활용 안내 추가"
+---
+
+## Genie Code 기술 가이드 보강
+
+[**Genie Code란?**](/workshop/section-1-vibe-coding-intro/genie-code/what-is-genie-code) 페이지에 실무에 필요한 기술 정보가 대폭 추가되었습니다. Genie Code의 동작 원리와 비용을 이해하고 팀 내 도입 판단에 활용할 수 있습니다.
+
+- **비용 구조 상세화** — AI 영역(무료)과 컴퓨트 영역(과금)을 분리한 비용 테이블이 추가되었습니다. 코드 생성·리팩토링·설명은 무료, 데이터 조회·Agent Mode 실행은 컴퓨트 과금이라는 기준이 명확해졌습니다
+- **Multi-Agent 아키텍처** — Task Planner → Model Router → Tool Executor 4레이어 구조와 약 50개 내장 도구 목록이 정리되었습니다
+- **LLM 모델 상세** — Azure OpenAI GPT + Anthropic Claude 자동 선택 방식, Zero Data Retention 정책, 암호화(TLS/AES-256) 및 콘텐츠 필터링 정보가 추가되었습니다
+- **Chat Mode vs Agent Mode 비교** — 동작 방식, 사용자 개입 수준, 적합한 작업, 컨텍스트 범위를 비교하는 테이블이 추가되었습니다
+
+---
+
+## 워크샵 카탈로그 범용화
+
+[**Smart TV E2E 핸즈온**](/workshop/section-4-smart-tv-handson/01-setup) 전체에서 카탈로그 이름이 `smart_tv`로 통일되어, 어떤 Databricks 워크스페이스에서든 바로 실습할 수 있습니다.
+
+- **카탈로그·디바이스ID 통일** — 카탈로그, 디바이스 ID 접두사, 광고주 목록 등 18개 파일에서 조직별 참조가 제거되었습니다
+- **Genie Code 접근 방법 확장** — [시작하기](/workshop/section-1-vibe-coding-intro/genie-code/getting-started) 가이드에 상단 바 아이콘, 노트북 사이드바, `Cmd+I` 인라인 호출 3가지 방법이 표로 정리되었습니다. 노트북이 아닌 어디서든 Genie Code를 열 수 있다는 점이 명시되었습니다
+
+---
+
+## 개선 사항
+
+- **MCP 도구 활용 안내 추가** — [환경 설정](/workshop/section-4-smart-tv-handson/01-setup) 가이드의 Custom Instructions에 AI Dev Kit MCP 도구 매핑 섹션이 추가되었습니다. Genie Space 생성(`manage_genie`), 대시보드(`manage_dashboard`), Job 스케줄링(`manage_jobs`) 등 각 작업에 필요한 MCP 도구를 바로 확인할 수 있습니다
+- **에이전트 개발 MCP 도구 명세** — [에이전트 개발](/workshop/section-4-smart-tv-handson/05-agent-development) 가이드 상단에 사용하는 MCP 도구(`manage_ka`, `manage_mas`, `manage_vs_index` 등)가 명시되어 사전에 필요한 도구를 파악할 수 있습니다
