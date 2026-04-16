@@ -1,0 +1,28 @@
+---
+title: "2026년 9월 23일"
+description: "Smart TV 워크샵 Section 4 프롬프트 정확도 개선, Gold 테이블 간소화, Supervisor Agent 안내 추가"
+---
+
+## Smart TV 워크샵 프롬프트 정확도 개선
+
+[**Section 4: Smart TV E2E 핸즈온**](/workshop/section-4-smart-tv-handson/03-sdp-pipeline) 전반의 Genie Code 프롬프트가 실제 데이터 스키마에 맞게 수정되었습니다. 프롬프트를 그대로 사용해도 올바른 결과를 얻을 수 있습니다.
+
+- **Silver 테이블 프롬프트 수정** — `viewing_sessions` 중복 제거 기준이 `timestamp`에서 실제 컬럼명 `session_start`로 수정되었고, `resource_utilization`에 누락되었던 중복 제거 로직과 5분 버킷 계산식이 추가되었습니다
+- **컬럼명·지표 정확도 향상** — `firmware_age_days`가 `device_age_days`로, `channel_diversity_index`가 `unique_channel_count`로 변경되어 실제 테이블 스키마와 일치합니다
+- **Error Events 조인 컬럼 수정** — devices 테이블 조인 시 `webos_version` 대신 `product_line, model_name`을 사용하도록 수정되었습니다
+
+---
+
+## Gold 테이블 구조 간소화
+
+[대시보드 & Genie Space](/workshop/section-4-smart-tv-handson/04-dashboard-genie) 핸즈온에서 사용하는 Gold 테이블 목록이 정리되었습니다. 실습에 집중할 수 있도록 불필요한 테이블이 제거되었습니다.
+
+- **사용하지 않는 Gold 테이블 제거** — `hourly_engagement`, `error_rate_by_firmware`, `voice_usage_analytics`, `iot_ecosystem_stats` 4개 테이블이 프롬프트·대시보드·Genie Space 설정에서 모두 제거되었습니다
+- **대시보드 프롬프트 업데이트** — 제거된 테이블을 참조하던 위젯이 기존 테이블 기반으로 재작성되었습니다
+- **광고 분석 쿼리 개선** — 프라임타임 광고 분석이 `hourly_engagement` 조인 방식에서 `silver.ad_funnel` 직접 조회로 변경되어 더 정확한 결과를 제공합니다
+
+---
+
+## 개선 사항
+
+- **Supervisor Agent 생성 안내 추가** — [에이전트 개발](/workshop/section-4-smart-tv-handson/05-agent-development) 가이드에 Genie Code에서 Supervisor Agent 생성 시 파라미터 오류가 발생할 수 있다는 안내와 함께, Databricks Console UI를 통한 대체 생성 방법이 추가되었습니다
