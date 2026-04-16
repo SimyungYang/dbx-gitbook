@@ -1,0 +1,39 @@
+---
+title: "2026년 10월 28일"
+description: "AWS·Azure Workspace 구성 가이드 22편 공개, 교육자료 모범 사례 15편 추가, Genie Code AI Dev Kit 스킬 연동 가이드 신설"
+---
+
+## AWS·Azure Workspace 구성 가이드 공개
+
+[**AWS Workspace 구성 가이드**](/blog/platform-setup/aws/overview)와 [**Azure Workspace 구성 가이드**](/blog/platform-setup/azure/overview)가 전체 공개되었습니다. Marketplace 구독부터 PrivateLink, Unity Catalog까지 엔터프라이즈 환경에 필요한 모든 단계를 다룹니다.
+
+- **AWS 13단계 가이드** — Credential, Storage, Network, Backend/Frontend PrivateLink, Serverless NCC, Terraform까지 AWS Console 기반의 전체 구성 과정을 순서대로 따라할 수 있습니다
+- **Azure 9단계 가이드** — Resource Group, VNet, Access Connector, Storage Account, Private Endpoint, Unity Catalog까지 Azure Portal 기반의 전체 구성 과정을 제공합니다
+- **AWS vs Azure 비교** — 두 클라우드 간 아키텍처 차이점을 한눈에 비교할 수 있어, 멀티 클라우드 환경을 준비하는 팀에게 유용합니다
+
+---
+
+## 교육자료: 모범 사례 시리즈
+
+[**교육자료**](/training/14-best-practices/cost-optimization/overview) 탭에 엔터프라이즈 운영을 위한 모범 사례 3개 시리즈(총 15편)가 추가되었습니다.
+
+- [**비용 최적화**](/training/14-best-practices/cost-optimization/cost-structure) — DBU 과금 구조 이해, 컴퓨트·스토리지·SQL Warehouse 영역별 최적화 전략, 비용 모니터링 대시보드 구축 방법을 제공합니다
+- [**성능 튜닝**](/training/14-best-practices/performance-tuning/spark-query-tuning) — Query Profile 읽는 법, Spark 조인 전략, Delta Lake 최적화(Liquid Clustering, Z-Order), SQL Warehouse 사이징, ML 워크로드 진단까지 다룹니다
+- [**엔터프라이즈 거버넌스**](/training/14-best-practices/enterprise-governance/platform-design) — Workspace 분리 전략, Unity Catalog 기반 접근 제어, 데이터 분류 체계, CI/CD 자동화까지 대규모 조직의 플랫폼 설계 가이드를 제공합니다
+
+---
+
+## Genie Code × AI Dev Kit 스킬 연동 가이드
+
+[**AI Dev Kit 스킬 연동**](/blog/guides/genie-code/ai-dev-kit-skills) 가이드가 새로 추가되었습니다. MCP 서버가 Genie Code의 실행 능력("손")이라면, AI Dev Kit 스킬은 도메인 지식("머리")에 해당합니다.
+
+- **30개 이상의 SKILL.md** — 메달리온 아키텍처, SDP 파이프라인, MLflow 평가 워크플로 등 Databricks 베스트 프랙티스가 Agent 모드에 자동으로 로드됩니다
+- **MCP 도구와의 역할 분담** — 스킬이 "어떻게" 만들어야 하는지 안내하고, MCP 도구가 실제 실행을 담당하는 구조를 설명합니다
+- **실전 활용 시나리오** — 스킬 기반 코드 생성부터 파이프라인 구성까지, Genie Code에서 AI Dev Kit 스킬을 활용하는 전체 과정을 안내합니다
+
+---
+
+## 개선 사항
+
+- **교육자료: 데이터 웨어하우징** — [AI 함수 가이드](/training/06-data-warehousing/ai-functions)가 추가되어, SQL 쿼리 한 줄로 감정 분석·텍스트 분류·정보 추출 등 LLM 기능을 호출하는 방법을 확인할 수 있습니다
+- **교육자료: Pivot & Unpivot** — [Pivot/Unpivot 패턴](/training/06-data-warehousing/pivot-unpivot/overview) 4편이 추가되어, 기초 문법부터 고급 패턴, 실전 예제까지 단계별로 학습할 수 있습니다
