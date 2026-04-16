@@ -35,7 +35,7 @@ Gold 테이블을 기반으로:
 #### Genie Code 프롬프트
 
 ```
-gold.daily_viewing_summary, gold.device_health_score, gold.streaming_qoe, gold.error_rate_by_firmware 테이블을 활용하여 "Smart TV Operations Dashboard"를 만들어줘.
+gold.daily_viewing_summary, gold.device_health_score, gold.streaming_qoe 테이블을 활용하여 "Smart TV Operations Dashboard"를 만들어줘.
 
 포함할 위젯 (총 12개):
 
@@ -55,7 +55,7 @@ Row 3 — 분포 차트 (3개):
 9. 건강 등급 분포 (Stacked Bar: A/B/C/D/F)
 
 Row 4 — 운영 지표 (3개):
-10. 펌웨어 버전별 에러율 히트맵 (X축: 날짜, Y축: 버전, 색상: 에러율)
+10. 건강 등급별 크래시/OOM 발생 건수 (Stacked Bar)
 11. 앱별 스트리밍 QoE 비교 (막대 차트: Netflix, YouTube, Wavve 등)
 12. 시간대별 동시 접속자 히트맵 (X축: 시간, Y축: 요일, 색상: 접속자 수)
 
@@ -117,7 +117,7 @@ AI/BI 대시보드로 생성해줘.
 #### Genie Code 프롬프트
 
 ```
-gold.content_popularity, gold.daily_viewing_summary, gold.hourly_engagement, gold.user_engagement_360을 활용하여 "Content & Engagement Dashboard"를 만들어줘.
+gold.content_popularity, gold.daily_viewing_summary, gold.user_engagement_360을 활용하여 "Content & Engagement Dashboard"를 만들어줘.
 
 위젯 (총 10개):
 
@@ -165,7 +165,6 @@ AI/BI 대시보드로 생성해줘.
 포함 테이블:
 - lge_smart_tv.gold.daily_viewing_summary
 - lge_smart_tv.gold.content_popularity
-- lge_smart_tv.gold.hourly_engagement
 - lge_smart_tv.gold.user_engagement_360
 - lge_smart_tv.silver.viewing_sessions (상세 분석용)
 - lge_smart_tv.bronze.devices (디바이스 마스터)
@@ -223,7 +222,6 @@ General Instructions:
 포함 테이블:
 - lge_smart_tv.gold.device_health_score
 - lge_smart_tv.gold.streaming_qoe
-- lge_smart_tv.gold.error_rate_by_firmware
 - lge_smart_tv.silver.error_events
 - lge_smart_tv.silver.system_metrics
 - lge_smart_tv.bronze.devices
@@ -277,7 +275,7 @@ COMMENT ON COLUMN lge_smart_tv.gold.daily_viewing_summary.primetime_min IS
 COMMENT ON COLUMN lge_smart_tv.gold.daily_viewing_summary.hdr_viewing_pct IS 
   'HDR 콘텐츠 시청 비율(%). DolbyVision + HDR10 + HDR10Plus + HLG';
 
-모든 Gold 테이블(daily_viewing_summary, content_popularity, ad_campaign_kpi, device_health_score, streaming_qoe, hourly_engagement, voice_usage_analytics, iot_ecosystem_stats, error_rate_by_firmware, user_engagement_360)의 모든 컬럼에 COMMENT를 달아줘.
+모든 Gold 테이블(daily_viewing_summary, content_popularity, ad_campaign_kpi, device_health_score, streaming_qoe, user_engagement_360)의 모든 컬럼에 COMMENT를 달아줘.
 ```
 
 ### Step 2: 샘플 질문 (Curated Questions) 등록 ⭐⭐⭐
@@ -474,21 +472,18 @@ ORDER BY ctr_pct DESC
 
 **질문 12**: 프라임타임 vs 비프라임타임 광고 eCPM 차이는?
 
-> **참고**: `ad_campaign_kpi`에는 시간대(hour) 컬럼이 없어 `hourly_engagement`와 `event_date` 기준으로 조인합니다. 이 방식은 근사값이며, 정확한 시간대별 분석이 필요하면 `silver.ad_funnel` 테이블의 timestamp를 직접 사용하세요.
+> **참고**: `ad_campaign_kpi`에는 시간대(hour) 컬럼이 없으므로, `silver.ad_funnel`의 timestamp를 직접 사용하여 프라임타임 분석을 수행합니다.
 
 ```sql
--- hourly_engagement 테이블과 조인하여 시간대별 광고 성과 비교 (근사값)
--- 정확한 분석이 필요하면 silver.ad_funnel의 timestamp 사용 권장
+-- silver.ad_funnel의 timestamp로 시간대별 광고 성과 비교
 SELECT
-  CASE WHEN h.hour_of_day BETWEEN 20 AND 23 THEN '프라임타임 (20~23시)' ELSE '비프라임타임' END AS time_slot,
-  ROUND(AVG(a.ecpm), 2) AS avg_ecpm,
-  SUM(a.impressions) AS total_impressions,
-  ROUND(SUM(a.total_revenue_usd), 2) AS total_revenue
-FROM lge_smart_tv.gold.ad_campaign_kpi a
-JOIN lge_smart_tv.gold.hourly_engagement h 
-  ON a.event_date = h.event_date
-WHERE a.event_date >= CURRENT_DATE - INTERVAL 7 DAYS
-GROUP BY CASE WHEN h.hour_of_day BETWEEN 20 AND 23 THEN '프라임타임 (20~23시)' ELSE '비프라임타임' END
+  CASE WHEN HOUR(timestamp) BETWEEN 20 AND 23 THEN '프라임타임 (20~23시)' ELSE '비프라임타임' END AS time_slot,
+  COUNT(CASE WHEN event_type = 'AD_IMPRESSION' THEN 1 END) AS impressions,
+  COUNT(CASE WHEN event_type = 'AD_CLICK' THEN 1 END) AS clicks,
+  ROUND(AVG(bid_price_usd), 2) AS avg_bid_price
+FROM lge_smart_tv.silver.ad_funnel
+WHERE event_date >= CURRENT_DATE - INTERVAL 7 DAYS
+GROUP BY CASE WHEN HOUR(timestamp) BETWEEN 20 AND 23 THEN '프라임타임 (20~23시)' ELSE '비프라임타임' END
 ```
 
 **질문 13**: 상위 5개 광고주의 캠페인 성과 비교
@@ -633,7 +628,6 @@ Genie Space 설정 → General Instructions에 아래 내용을 추가합니다:
 ## 테이블 관계 (조인 키)
 - daily_viewing_summary ↔ devices: device_id
 - content_popularity ↔ viewing_sessions: program_title + event_date
-- hourly_engagement ↔ daily_viewing_summary: event_date
 - user_engagement_360 ↔ devices: device_id
 - 디바이스 속성 (region, product_line, screen_size) 질문 시 반드시 devices 테이블 조인
 
