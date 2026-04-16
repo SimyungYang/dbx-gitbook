@@ -924,7 +924,9 @@
           {
             "group": "워크샵 개요",
             "pages": [
-              "workshop/overview"
+              "workshop/overview",
+              "workshop/timetable-fullday",
+              "workshop/timetable-halfday"
             ]
           },
           {
