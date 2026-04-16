@@ -1,0 +1,26 @@
+---
+title: "2027년 1월 27일"
+description: "AI 에이전트 교육자료 2편 추가: AI 가드레일(Guardrails) 상세 가이드, Review App 활용 가이드"
+---
+
+## 교육자료: AI 에이전트 안전 운영 & 품질 검증
+
+[**AI 에이전트**](/training/10-agent-development/what-is-ai-agent) 교육 섹션에 에이전트를 프로덕션에 배포하기 전 반드시 알아야 할 2개의 심화 가이드가 추가되었습니다.
+
+### AI 가드레일(Guardrails) 상세
+
+[**AI 가드레일 가이드**](/training/10-agent-development/guardrails)에서 AI Gateway를 활용하여 에이전트의 입력·출력을 안전하게 필터링하는 방법을 다룹니다.
+
+- **입력 필터** — Safety Filter로 유해 콘텐츠를 자동 차단하고, Topic Filter로 에이전트의 응답 범위를 허용/금지 주제 단위로 제한할 수 있습니다
+- **출력 필터** — PII(개인식별정보) 감지 시 응답을 차단(BLOCK)하거나 마스킹(MASK)하며, 키워드 필터로 특정 단어가 포함된 응답을 차단합니다
+- **Rate Limiting** — 사용자별·엔드포인트별 요청 수를 분/시/일 단위로 제한하여 남용을 방지합니다
+- **종합 설정 예제** — Safety + Topic + PII + Rate Limit을 조합한 프로덕션 수준 설정 코드를 제공합니다
+
+### Review App 상세
+
+[**Review App 가이드**](/training/10-agent-development/review-app)에서 에이전트 배포 전 품질을 검증하고 피드백 기반으로 지속 개선하는 방법을 다룹니다.
+
+- **피드백 수집 체계** — Thumbs Up/Down, 코멘트, Expected Response, Retrieval Quality 등 4가지 피드백 유형과 각각의 활용 방법
+- **평가 데이터셋 자동 생성** — 테스터 피드백을 MLflow Evaluate용 평가 데이터셋으로 변환하여 정량적 성능 측정에 활용하는 파이프라인
+- **에이전트 개선 사이클** — 배포 → 피드백 수집 → 분석 → 개선 → 평가 → 재배포의 8단계 반복 프로세스와 실전 사례
+- **테스터 선정 가이드** — 현업 담당자, 도메인 전문가, QA 전문가, 비전문가를 조합한 효과적인 테스터 구성법과 온보딩 체크리스트

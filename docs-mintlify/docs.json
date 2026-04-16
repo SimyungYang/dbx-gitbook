@@ -666,6 +666,8 @@
               "training/10-agent-development/building-agents",
               "training/10-agent-development/tools-and-functions",
               "training/10-agent-development/agent-evaluation",
+              "training/10-agent-development/review-app",
+              "training/10-agent-development/guardrails",
               {
                 "group": "에이전트 배포",
                 "pages": [
