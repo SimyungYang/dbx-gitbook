@@ -1,0 +1,41 @@
+---
+title: "2027년 1월 13일"
+description: "GenAI 평가 방법론 5편 스포트라이트, Agent 프레임워크 코드 비교, Agent UI 기술 스택 심화, AI 성숙도 진단 가이드"
+---
+
+## 스포트라이트: GenAI 평가 방법론 — LLM 품질을 측정하는 체계적 접근
+
+[**GenAI 평가 방법론**](/blog/guides/genai-concepts/evaluation/overview) 5개 페이지에서 LLM·RAG·Agent 시스템의 품질을 측정하고 개선하는 전체 과정을 다룹니다. "잘 동작하는 것 같다"를 넘어 정량적으로 품질을 관리하려는 팀에게 유용합니다.
+
+- [**핵심 평가 메트릭**](/blog/guides/genai-concepts/evaluation/metrics) — Faithfulness(충실도), Relevance(관련성), Groundedness(근거성) 등 RAG·Agent 시스템에서 반드시 측정해야 하는 메트릭을 구체적인 성공/실패 예시와 함께 설명합니다
+- [**Human vs LLM-as-Judge**](/blog/guides/genai-concepts/evaluation/judge) — Human Evaluation과 LLM-as-Judge의 비용·속도·일관성을 비교하고, 대량 자동 평가 후 낮은 점수만 정밀 검토하는 하이브리드 전략을 안내합니다
+- [**평가 파이프라인**](/blog/guides/genai-concepts/evaluation/pipeline) — 평가 데이터셋 설계(정상 60% + 엣지 30% + 적대적 10%), MLflow Evaluate 코드, CI/CD 연동까지 자동화된 평가 파이프라인 구축 방법을 다룹니다
+- [**실전 적용**](/blog/guides/genai-concepts/evaluation/practical) — Review App을 통한 피드백 수집 → 평가셋 구축 → 모델 개선의 5단계 워크플로우와 프로덕션 모니터링 전략을 안내합니다
+
+---
+
+## 스포트라이트: Agent 프레임워크 코드 수준 비교
+
+[**Agent 프레임워크 심화**](/blog/guides/genai-concepts/agent-frameworks-detail/overview) 가이드의 개별 프레임워크 페이지를 소개합니다. 동일한 에이전트를 각 프레임워크로 구현한 코드를 비교하여 도입 결정에 도움을 줍니다.
+
+- [**LangChain & LangGraph**](/blog/guides/genai-concepts/agent-frameworks-detail/langchain-langgraph) — 체인 기반 LangChain에서 그래프 기반 LangGraph로의 전환, StateGraph 패턴, Human-in-the-Loop 구현 방법
+- [**CrewAI · OpenAI Agents SDK · AutoGen**](/blog/guides/genai-concepts/agent-frameworks-detail/crewai-openai-autogen) — 역할 기반 CrewAI, 경량 OpenAI SDK, 대화형 AutoGen의 설계 철학과 적합한 사용 시나리오
+- [**Databricks Agent Framework**](/blog/guides/genai-concepts/agent-frameworks-detail/databricks-af) — Unity Catalog 통합, MLflow Tracing 자동 추적, 원클릭 서빙 등 Databricks 네이티브 에이전트 개발 환경
+- [**종합 비교 & 선택 가이드**](/blog/guides/genai-concepts/agent-frameworks-detail/comparison) — 6개 프레임워크를 학습 난이도, 멀티 에이전트 지원, 프로덕션 준비도 등 10개 항목으로 비교하는 의사결정 테이블
+
+---
+
+## 스포트라이트: Agent UI 기술 스택 심화
+
+[**Agent UI 가이드**](/blog/guides/genai-concepts/agent-ui-detail/overview)에서 AI 에이전트의 사용자 인터페이스를 구축하기 위한 프레임워크를 PoC → 파일럿 → 프로덕션 단계별로 비교합니다.
+
+- [**Streamlit & Gradio**](/blog/guides/genai-concepts/agent-ui-detail/streamlit-gradio) — Python만으로 빠르게 채팅 UI를 만들 수 있는 두 프레임워크의 특성과 Databricks Apps 배포 방법
+- [**Chainlit & Dash**](/blog/guides/genai-concepts/agent-ui-detail/chainlit-dash) — 에이전트 전용 Chainlit의 스트리밍·도구 실행 시각화와 데이터 분석 특화 Dash 비교
+- [**FastAPI 백엔드**](/blog/guides/genai-concepts/agent-ui-detail/fastapi-backend) — 프론트엔드 분리형 아키텍처를 위한 FastAPI 기반 에이전트 API 서버 구성
+- [**Databricks Apps**](/blog/guides/genai-concepts/agent-ui-detail/databricks-apps) — Unity Catalog 인증 자동 통합, 서비스 프린시펄 기반 배포, Apps 네이티브 환경의 장점
+
+---
+
+## 개선 사항
+
+- **AI 성숙도 진단 심화** — [AI 성숙도 가이드](/blog/guides/genai-concepts/ai-proficiency/overview)의 하위 페이지에서 4단계 성숙도 모델(Exploring → Building → Scaling → Transforming)별 구체적인 진단 기준, 단계 전환 전략, 한국 AI 규제 동향을 확인할 수 있습니다
