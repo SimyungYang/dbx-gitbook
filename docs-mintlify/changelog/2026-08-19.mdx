@@ -1,0 +1,80 @@
+---
+title: "2026년 8월 19일"
+description: "가전 IoT E2E 핸즈온, 워크샵 범용화, Agent Bricks 가이드, RAG 핵심 개념 & 고급 Retrieval, AI Dev Kit Builder App, Genie 선택 가이드, Lakebase 교육자료"
+---
+
+## 핸즈온: 가전 IoT (공기청정기 + 에어컨) E2E 핸즈온
+
+[**Genie Code Vibe 워크샵**](/workshop/overview)에 가전 IoT 핸즈온이 추가되었습니다. 공기청정기(PuriCare)와 에어컨(DUALCOOL/WHISEN)의 IoT 센서 데이터를 기반으로 Databricks 핵심 기능을 체험하는 6개 모듈입니다.
+
+- [**환경 설정**](/workshop/section-5-appliance-handson/01-setup) — Unity Catalog 네임스페이스 구성, Genie Code Agent Mode 준비, Custom Instructions 설정
+- [**공기청정기 데이터 생성**](/workshop/section-5-appliance-handson/02-air-purifier-data) — PM2.5·VOC·CO2 센서, 필터 상태, ThinQ 원격 제어 등 8개 테이블 100만 건 생성
+- [**에어컨 데이터 생성**](/workshop/section-5-appliance-handson/03-air-conditioner-data) — 온도·습도 센서, 컴프레서 이벤트, 에너지 효율, 정비 이력 등 9개 테이블 120만 건 생성
+- [**SDP 파이프라인**](/workshop/section-5-appliance-handson/04-sdp-pipeline) — 17개 Bronze 테이블의 Medallion Architecture 변환, Expectations 기반 데이터 품질 검증
+- [**대시보드 & Genie Space**](/workshop/section-5-appliance-handson/05-dashboard-genie) — 공기청정기·에어컨·통합 모니터링 대시보드 3종, 도메인 특화 Genie Space 3종
+- [**에이전트 개발**](/workshop/section-5-appliance-handson/06-agent-development) — Knowledge Assistant(제품 FAQ) + Genie Agent(IoT 분석) + Supervisor Agent 멀티 에이전트 구성
+
+기존 Smart TV 케이스와 함께, 소속 조직에 맞는 핸즈온을 선택하여 진행할 수 있습니다.
+
+---
+
+## 워크샵 범용화
+
+워크샵이 더 넓은 대상으로 확대되었습니다.
+
+- **탭 이름 변경** — "핸즈온(SmartTV)" → "Genie Code Vibe"로 변경하여 특정 제품에 한정되지 않는 범용 워크샵으로 전환
+- **케이스 선택제** — [워크샵 개요](/workshop/overview)에서 Smart TV(Section 4)와 가전 IoT(Section 5) 중 선택 가능
+
+---
+
+## 가이드: Agent Bricks — 선언형 AI 에이전트 빌더
+
+[**Agent Bricks 실전 가이드**](/blog/guides/agent-bricks/overview)가 5개 페이지로 구성되었습니다. 코드 없이 프로덕션 수준의 AI 에이전트를 구축·평가·배포하는 전 과정을 다룹니다.
+
+- [**Knowledge Assistant**](/blog/guides/agent-bricks/knowledge-assistant) — Unity Catalog 데이터 소스를 연결하여 사내 문서 기반 Q&A 에이전트를 선언형으로 구성
+- [**Genie Spaces 연동**](/blog/guides/agent-bricks/genie-agent) — Genie Space를 에이전트의 도구로 통합하여 자연어 데이터 분석을 에이전트 워크플로우에 포함
+- [**Supervisor Agent**](/blog/guides/agent-bricks/supervisor) — 여러 하위 에이전트를 오케스트레이션하는 멀티 에이전트 아키텍처 구성
+- [**평가 & 베스트 프랙티스**](/blog/guides/agent-bricks/evaluation) — MLflow Evaluate 기반 품질 측정, Synthetic Task Generation을 통한 자동 테스트, 운영 노하우
+
+---
+
+## 가이드: RAG 핵심 개념 & 고급 Retrieval 전략
+
+[**RAG 핵심 개념**](/blog/guides/rag/concepts/overview) 시리즈 6개 페이지에서 검색 증강 생성의 기반 기술을 수식 수준까지 설명합니다.
+
+- [**임베딩**](/blog/guides/rag/concepts/embedding) · [**유사도 측정**](/blog/guides/rag/concepts/similarity) — 텍스트를 벡터로 변환하고, 코사인 유사도·내적·L2 거리로 비교하는 원리
+- [**벡터 인덱스 & ANN**](/blog/guides/rag/concepts/vector-index) — 수백만 벡터에서 밀리초 안에 유사 벡터를 찾는 HNSW, IVF 등의 자료 구조
+- [**BM25**](/blog/guides/rag/concepts/bm25) · [**하이브리드 검색**](/blog/guides/rag/concepts/hybrid-search) · [**Reranking**](/blog/guides/rag/concepts/reranking) — 키워드 검색과 Dense 검색을 결합하는 RRF 알고리즘, Cross-Encoder 기반 정밀 재순위
+
+[**고급 Retrieval 전략**](/blog/guides/rag/advanced-retrieval/overview) 7개 페이지에서는 프로덕션 RAG의 검색 품질을 높이는 실전 기법을 다룹니다.
+
+- [**하이브리드 검색**](/blog/guides/rag/advanced-retrieval/hybrid-search) — Dense + Sparse 결합, 다국어 토크나이저 고려사항
+- [**전처리 & 후처리**](/blog/guides/rag/advanced-retrieval/preprocessing) — Query Rewrite, HyDE, 컨텍스트 압축
+- [**고급 청킹**](/blog/guides/rag/advanced-retrieval/chunking-advanced) — Semantic Chunking, Parent-Child 구조, 슬라이딩 윈도우
+- [**한국어 RAG 최적화**](/blog/guides/rag/korean-nlp) — 교착어 특성, 형태소 분석 기반 토큰화, 한국어 특화 임베딩 모델 선택
+
+---
+
+## 가이드: AI Dev Kit Builder App & 배포
+
+[**AI Dev Kit**](/blog/guides/ai-dev-kit/overview) 가이드에 Builder App 관련 3개 페이지가 추가되었습니다. 브라우저에서 대화하며 30개 이상의 Databricks 도구를 자연어로 실행할 수 있는 풀스택 애플리케이션입니다.
+
+- [**Builder App**](/blog/guides/ai-dev-kit/builder-app) — React + FastAPI 아키텍처, MCP 통합을 통한 자동 도구 발견
+- [**배포 가이드**](/blog/guides/ai-dev-kit/deployment-guide) — Databricks Apps 배포 절차, Lakebase 기반 대화 이력 영구 저장
+- [**활용 사례**](/blog/guides/ai-dev-kit/use-cases) — 데이터 엔지니어링, 분석, AI 개발 등 역할별 시나리오
+
+---
+
+## 가이드: Genie Space & Code 선택 가이드
+
+[**Genie Space & Code 선택 가이드**](/blog/guides/genie-selection/overview)에서 이름이 비슷하지만 용도가 다른 두 기능의 차이를 정리합니다. Genie Space는 비기술 사용자가 자연어로 데이터에 질문하는 전용 공간이고, Genie Code는 기술 사용자의 코딩 작업을 AI가 가속하는 내장 어시스턴트입니다. 대상 사용자, 출력 형태, 비용 구조를 비교하여 상황에 맞는 도구를 선택할 수 있습니다.
+
+---
+
+## 교육자료: Lakebase — 관리형 OLTP 데이터베이스
+
+[**Lakebase 교육자료**](/training/11-lakebase/what-is-lakebase) 8개 페이지에서 Databricks의 PostgreSQL 호환 관리형 OLTP 데이터베이스를 학습할 수 있습니다.
+
+- [**Lakebase란?**](/training/11-lakebase/what-is-lakebase) — OLTP-OLAP 통합 아키텍처, ETL 없는 실시간 동기화, PostgreSQL 호환성
+- [**설정 & Data Sync**](/training/11-lakebase/lakebase-setup) — 인스턴스 생성, 네트워크 구성, Lakebase ↔ Delta Lake 간 자동 동기화
+- [**Databricks Apps 연동**](/training/11-lakebase/lakebase-with-apps/overview) — Streamlit, FastAPI, Django 등 프레임워크별 연결 방법, CRUD 패턴, 프로덕션 배포
