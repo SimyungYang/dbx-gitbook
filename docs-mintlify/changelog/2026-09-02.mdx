@@ -1,0 +1,29 @@
+---
+title: "2026년 9월 2일"
+description: "Genie Code + AI Dev Kit 통합 가이드 전면 재작성, 워크샵 타임테이블 개선, Genie Code 비용 구조 및 아키텍처 상세 안내"
+---
+
+## 가이드: Genie Code + AI Dev Kit 통합 가이드 전면 재작성
+
+[**Genie Code에 AI Dev Kit 구성하기**](/workshop/section-3-ai-tools-setup/genie-code-aidevkit) 가이드가 A-to-Z 자립형 가이드로 완전히 재작성되었습니다. CLI 인증부터 앱 배포, MCP 서버 연결, 도구 테스트까지 모든 단계를 전제조건 없이 따라할 수 있습니다.
+
+- **44개 크로스 프로덕트 도구** — Genie Code 단독으로는 불가능한 Genie Space 생성, 대시보드 생성, Job 스케줄링, Knowledge Assistant·Supervisor Agent 구성, Lakebase 관리 등을 하나의 대화에서 수행할 수 있습니다
+- **MCP Tools + Workspace Skills 이중 경로** — MCP 서버를 통한 수동 연결과 `/Workspace/.assistant/skills/` 기반 자동 로딩, 두 가지 확장 방식을 모두 안내합니다
+- **역할별 도구 선택 프로필** — 데이터 엔지니어, 분석가, AI 개발자 등 5가지 역할에 맞는 권장 도구 조합을 제공합니다
+
+---
+
+## 워크샵: Genie Code 비용 구조 및 아키텍처 상세 추가
+
+[**Genie Code 완전 가이드**](/workshop/section-1-vibe-coding-intro/genie-code/what-is-genie-code)에 비용 구조와 내부 아키텍처에 대한 상세 설명이 추가되었습니다.
+
+- **비용 구조 명확화** — AI 영역(프롬프트·LLM 추론)은 무료, 컴퓨트 영역(코드 실행)만 기존 클러스터 요금이 발생합니다. 무료 작업과 과금 작업의 구분표를 제공합니다
+- **Multi-Agent 아키텍처** — Task Planner → Model Router → Tool Executor 구조와 Azure OpenAI GPT·Anthropic Claude 자동 선택 메커니즘, Zero Data Retention 정책을 설명합니다
+- **Chat Mode vs Agent Mode 비교** — 인라인 코드 제안(Chat)과 자율 계획-실행-검증(Agent)의 차이를 한눈에 비교할 수 있습니다
+
+---
+
+## 개선 사항
+
+- **풀데이 워크샵 타임테이블 조정** — [풀데이 타임테이블](/workshop/timetable-fullday)이 8시간에서 7시간(09:30~16:30)으로 조정되어 더 집중적인 진행이 가능합니다
+- **워크샵 네비게이션 정리** — 모든 섹션 제목에서 번호 접두사(01., 02. 등)를 제거하여 메뉴가 깔끔해졌습니다
