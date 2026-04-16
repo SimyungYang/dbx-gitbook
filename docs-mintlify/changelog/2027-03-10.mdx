@@ -1,0 +1,26 @@
+---
+title: "2027년 3월 10일"
+description: "예지보전 MLOps 핸즈온 6개 모듈 추가, Lakebase + Databricks Apps 연동 교육자료 확장"
+---
+
+## 핸즈온: 예지보전 MLOps 파이프라인 완성
+
+[**예지보전 MLOps 핸즈온**](/blog/hands-on/predictive-maintenance/overview)의 나머지 6개 모듈이 추가되어, 전체 11단계 파이프라인이 완성되었습니다. 데이터 준비부터 자동화된 재학습까지, MLOps의 전 과정을 하나의 실습으로 따라갈 수 있습니다.
+
+- [**전체 아키텍처 소개**](/blog/hands-on/predictive-maintenance/01-overview) — PoC 시나리오와 11단계 MLOps 파이프라인의 전체 구조를 한눈에 파악합니다
+- [**모델 등록**](/blog/hands-on/predictive-maintenance/04-model-registration) — MLflow에서 최적 모델을 자동 검색하고, Unity Catalog Model Registry에 등록한 뒤 Champion/Challenger 에일리어스를 설정합니다
+- [**챌린저 검증**](/blog/hands-on/predictive-maintenance/05-challenger-validation) — 새 모델 배포 전 4단계 체계적 검증(성능, 일관성, 임계값, 규모)을 자동으로 수행하고, 통과 시 Champion으로 승급합니다
+- [**배치 추론**](/blog/hands-on/predictive-maintenance/06-batch-inference) — Champion 모델을 PySpark UDF로 변환하여 클러스터 전체에서 분산 추론하고, 위험 등급을 자동 부여합니다
+- [**모델 모니터링**](/blog/hands-on/predictive-maintenance/08-model-monitoring) — PSI 기반 데이터 드리프트 탐지와 Lakehouse Monitoring을 설정하여 운영 중인 모델의 성능 저하를 자동으로 감지합니다
+- [**Job 스케줄링**](/blog/hands-on/predictive-maintenance/10-job-scheduling) — Lakeflow Jobs로 MLOps 파이프라인을 스케줄링하고, 환경(운영/개발)별 Multi-task Job을 구성합니다
+
+---
+
+## 교육자료: Lakebase + Databricks Apps 연동 심화
+
+[**Lakebase 교육자료**](/training/11-lakebase/what-is-lakebase) 가운데 Databricks Apps 연동 섹션이 4개 상세 페이지로 확장되었습니다. OLTP 데이터베이스를 풀스택 애플리케이션에 연결하는 실전 패턴을 다룹니다.
+
+- [**OAuth 인증과 커넥션 풀링**](/training/11-lakebase/lakebase-with-apps/auth-and-connection) — Service Principal 인증과 사용자별 인증(On-behalf-of) 두 가지 패턴, 커넥션 풀 설정으로 동시 접속 성능을 확보하는 방법을 안내합니다
+- [**프레임워크별 연결 예제**](/training/11-lakebase/lakebase-with-apps/framework-examples) — Streamlit, FastAPI, Django 등 주요 프레임워크에서 Lakebase에 연결하는 코드 예시를 제공합니다
+- [**성능 최적화와 CRUD 패턴**](/training/11-lakebase/lakebase-with-apps/optimization-and-crud) — 인덱스 전략, 쿼리 최적화, 벌크 INSERT/UPSERT 등 운영 수준의 데이터 액세스 패턴을 다룹니다
+- [**배포 및 운영**](/training/11-lakebase/lakebase-with-apps/deployment) — Databricks Apps 배포 절차, 환경 분리, 모니터링 설정까지 프로덕션 운영에 필요한 체크리스트를 정리합니다
