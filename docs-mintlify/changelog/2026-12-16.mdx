@@ -1,0 +1,48 @@
+---
+title: "2026년 12월 16일"
+description: "Agent 프레임워크 비교 가이드 4편, Agent 업계 동향 분석 7편, GenAI 평가 방법론 5편, Agent UI 기술 스택 5편 공개"
+---
+
+## 가이드: Agent 프레임워크 비교 (4편)
+
+[**Agent 프레임워크 상세 가이드**](/blog/guides/genai-concepts/agent-frameworks-detail/overview)에서 주요 AI Agent 프레임워크의 설계 철학과 코드 수준의 차이를 비교합니다. 프로젝트 요구사항에 맞는 프레임워크 선택 기준을 제공합니다.
+
+- [**LangChain & LangGraph**](/blog/guides/genai-concepts/agent-frameworks-detail/langchain-langgraph) — LCEL 기반 Chain 패턴에서 StateGraph 기반 그래프 오케스트레이션으로의 진화 과정을 코드 예시와 함께 설명합니다. Checkpoint를 활용한 Human-in-the-Loop 패턴도 포함합니다
+- [**CrewAI, OpenAI Agents SDK & AutoGen**](/blog/guides/genai-concepts/agent-frameworks-detail/crewai-openai-autogen) — 역할 기반 멀티에이전트(CrewAI), Handoff 패턴(OpenAI), 대화 기반 협업(AutoGen) 세 가지 접근 방식을 비교합니다
+- [**Databricks Agent Framework**](/blog/guides/genai-concepts/agent-frameworks-detail/databricks-af) — ChatAgent 인터페이스, UC Functions as Tools, MLflow 통합 등 Databricks 환경에 최적화된 에이전트 구축 방법을 다룹니다
+- [**종합 비교 & 선택 가이드**](/blog/guides/genai-concepts/agent-frameworks-detail/comparison) — 전체 프레임워크 비교 테이블과 의사결정 트리로 상황별 최적의 선택을 안내합니다
+
+---
+
+## 가이드: Agent 업계 동향 (7편)
+
+[**Agent 생태계 가이드**](/blog/guides/genai-concepts/agent-landscape/overview)에서 OpenAI, Anthropic, Google, AWS, Microsoft, Meta 등 주요 기업의 Agent 전략을 비교 분석합니다. "모델 경쟁"에서 "에이전트 플랫폼 경쟁"으로 전환되는 2024~2025년 AI 시장의 핵심 흐름을 정리합니다.
+
+- [**OpenAI**](/blog/guides/genai-concepts/agent-landscape/openai) — Responses API, Agents SDK, Codex 등 Consumer+Developer 이중 Agent 전략과 GPT-4.1/o3 모델 라인업
+- [**Anthropic**](/blog/guides/genai-concepts/agent-landscape/anthropic) — MCP 프로토콜, Claude Code, Computer Use 등 "도구 사용 표준화" 중심의 Agent 생태계 전략
+- [**Google**](/blog/guides/genai-concepts/agent-landscape/google) — A2A 프로토콜, ADK, Agentspace 등 엔터프라이즈 멀티에이전트 오케스트레이션 전략
+- [**AWS & 기타**](/blog/guides/genai-concepts/agent-landscape/aws-others) — Bedrock Agents, Microsoft Copilot Studio 등 클라우드 벤더의 Agent 플랫폼 접근
+- [**Databricks**](/blog/guides/genai-concepts/agent-landscape/databricks) — Agent Framework, Agent Bricks, Genie Agent 등 데이터 플랫폼 기반 Agent 전략의 차별점
+- [**멀티에이전트 트렌드**](/blog/guides/genai-concepts/agent-landscape/multi-agent-trends) — MCP·A2A 표준화 동향과 멀티에이전트 오케스트레이션의 미래
+
+---
+
+## 가이드: GenAI 평가 방법론 (5편)
+
+[**GenAI 평가 방법론**](/blog/guides/genai-concepts/evaluation/overview)에서 LLM과 Agent 시스템의 품질을 체계적으로 측정하는 방법을 다룹니다. 전통 ML과 근본적으로 다른 GenAI 평가의 핵심 개념부터 MLflow 기반 실전 파이프라인까지 안내합니다.
+
+- [**핵심 평가 메트릭**](/blog/guides/genai-concepts/evaluation/metrics) — Faithfulness, Relevance, Groundedness, Safety 등 GenAI 평가의 핵심 지표를 구체적인 예시로 설명합니다
+- [**LLM-as-Judge**](/blog/guides/genai-concepts/evaluation/judge) — 사람 대신 LLM으로 평가하는 방법의 원리, 장단점, Databricks에서의 활용법을 다룹니다
+- [**평가 파이프라인**](/blog/guides/genai-concepts/evaluation/pipeline) — MLflow Evaluate를 사용한 자동화된 평가 워크플로우 설계와 구현
+- [**실전 가이드**](/blog/guides/genai-concepts/evaluation/practical) — Review App을 활용한 피드백 수집부터 평가 결과 기반 개선 사이클까지의 전체 프로세스
+
+---
+
+## 가이드: Agent UI & 배포 기술 스택 (5편)
+
+[**Agent UI 가이드**](/blog/guides/genai-concepts/agent-ui-detail/overview)에서 AI Agent를 사용자에게 전달하기 위한 UI/UX 프레임워크와 배포 기술을 비교합니다. PoC에서 프로덕션까지 단계별 최적의 기술 스택 선택 기준을 제공합니다.
+
+- [**Streamlit & Gradio**](/blog/guides/genai-concepts/agent-ui-detail/streamlit-gradio) — Python 기반 빠른 프로토타이핑 도구의 채팅 UI 구현, 스트리밍 지원, 성능 비교
+- [**Chainlit & Dash**](/blog/guides/genai-concepts/agent-ui-detail/chainlit-dash) — Agent 추론 과정 시각화(Chainlit)와 데이터 대시보드 특화(Dash) 프레임워크
+- [**FastAPI 백엔드**](/blog/guides/genai-concepts/agent-ui-detail/fastapi-backend) — REST API, SSE 스트리밍, WebSocket 양방향 통신을 활용한 프론트엔드 분리 아키텍처
+- [**Databricks Apps & 종합 가이드**](/blog/guides/genai-concepts/agent-ui-detail/databricks-apps) — Databricks Apps 배포 방법과 단계별 기술 스택 선택 가이드
