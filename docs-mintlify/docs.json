@@ -951,28 +951,6 @@
               "workshop/section-5-appliance-handson/05-dashboard-genie",
               "workshop/section-5-appliance-handson/06-agent-development"
             ]
-          },
-          {
-            "group": "종합 가이드 (3-Track, Streaming, ML)",
-            "pages": [
-              "blog/hands-on/smart-tv-vibe/overview",
-              "blog/hands-on/smart-tv-vibe/getting-started",
-              {
-                "group": "Track A: 노트북 실행",
-                "pages": [
-                  "blog/hands-on/smart-tv-vibe/01-foundation",
-                  "blog/hands-on/smart-tv-vibe/04-streaming",
-                  "blog/hands-on/smart-tv-vibe/05-ml",
-                  "blog/hands-on/smart-tv-vibe/07-apps-lakebase"
-                ]
-              },
-              {
-                "group": "Track B: Claude Code + AI Dev Kit",
-                "pages": [
-                  "blog/hands-on/smart-tv-vibe/notebooks/track-b-ai-guided/PROMPT_GUIDE"
-                ]
-              }
-            ]
           }
         ]
       },
