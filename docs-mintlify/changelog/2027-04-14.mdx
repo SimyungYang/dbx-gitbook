@@ -1,0 +1,17 @@
+---
+title: "2027년 4월 14일"
+description: "AI Dev Kit 배포 스크립트 옵션 확장(--profile, --app-name), 다중 프로필 자동 감지, 제거 스크립트 추가"
+---
+
+## 업데이트
+
+- **AI Dev Kit 배포 스크립트: `--profile`, `--app-name` 옵션 추가** — [Genie Code + AI Dev Kit 구성 가이드](/workshop/section-3-ai-tools-setup/genie-code-aidevkit)에서 안내하는 `deploy.sh`에 Databricks CLI 프로필을 지정하는 `--profile`과 앱 이름을 커스터마이즈하는 `--app-name` 옵션이 추가되었습니다. 여러 워크스페이스를 관리하거나 동일 워크스페이스에 여러 MCP 앱을 운영하는 환경에서 기본값 충돌 없이 배포할 수 있습니다
+- **Windows Git Bash 인증 자동 감지** — `databricks current-user me` 명령이 프로필 없이 실패할 때 `DEFAULT` 프로필로 자동 재시도한 뒤, 여전히 실패하면 프로필 힌트가 포함된 안내 메시지를 표시하도록 개선되었습니다. Windows Git Bash(MINGW64) 환경에서 자주 발생하던 초기 인증 에러가 크게 줄어듭니다
+
+## 새 기능
+
+- **제거 스크립트(`uninstall.sh`) 추가** — AI Dev Kit MCP 앱을 설치한 뒤 실습이나 PoC가 끝났을 때, 앱·소스 코드·Skills를 한 번에 정리할 수 있는 제거 스크립트가 추가되었습니다. 재시도 전 환경을 깨끗하게 초기화하거나, 여러 워크스페이스에 배포해본 뒤 불필요한 리소스를 정리할 때 사용합니다
+
+## 버그 수정
+
+- **앱 배포 소스 경로 수정** — `databricks apps deploy --source-code-path`가 로컬 경로 대신 워크스페이스 경로를 요구하는 제약에 맞춰, 배포 직전에 소스 코드를 워크스페이스에 먼저 업로드한 뒤 해당 경로를 참조하도록 수정되었습니다. 이전까지 로컬 경로를 그대로 전달해 실패하던 배포가 정상 완료됩니다
