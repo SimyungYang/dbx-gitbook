@@ -1,0 +1,20 @@
+---
+title: "2027년 3월 17일"
+description: "Databricks Apps 가이드 대폭 확장 (네트워킹, 고급 기능, 실전 예제), AI 동향 2026년 4월 핫 키워드 추가, AI Dev Kit Windows 호환성 수정"
+---
+
+## 새 기능
+
+- **Databricks Apps 네트워킹 & 접근 제어 가이드** — [네트워킹 & 접근 제어](/blog/guides/apps/networking) 페이지가 [Databricks Apps 가이드](/blog/guides/apps/overview)에 추가되었습니다. 컨트롤 플레인 내 네트워크 아키텍처, IP Access List를 통한 접근 제어, Private Link 구성, SSO 없는 공개 접근 방법을 다룹니다
+- **Databricks Apps 고급 기능 가이드** — [고급 기능](/blog/guides/apps/advanced) 페이지가 추가되었습니다. Scale to Zero(App Spaces Private Preview), Lakebase(PostgreSQL) 연동, Databricks Asset Bundles(DABs) 기반 CI/CD 배포, AppKit 프레임워크, Horizontal Scaling 전략을 실전 패턴 중심으로 설명합니다
+- **Databricks Apps 실전 예제 모음** — [예제](/blog/guides/apps/examples) 페이지가 추가되었습니다. Streamlit 테이블 CRUD 앱, Gradio AI 챗봇, AppKit 대시보드, FastAPI + Lakebase REST API 등 주요 프레임워크별 완성된 예제 코드와 `app.yaml` 설정을 제공합니다
+- **AI 동향: 2026년 4월 핫 키워드** — [2026년 4월 AI 핫 키워드](/ai-trends/hot-keywords-2026-04) 페이지가 추가되었습니다. Claude Design, Harness Engineering, Agentic Engineering 등 10개 핵심 키워드를 종합 정리하며, 각 키워드별 상세 페이지([Claude Design](/ai-trends/keywords/claude-design), [Harness Engineering](/ai-trends/keywords/harness-engineering), [Vibe Coding → Agentic Engineering](/ai-trends/keywords/agentic-engineering))에서 배경과 실무 적용 방안을 다룹니다
+
+## 업데이트
+
+- **Databricks Apps 개요 페이지 개선** — [개요](/blog/guides/apps/overview) 페이지에 Scale to Zero(Private Preview) 상태 정정, AppKit 프레임워크 소개, 로드맵, 전체 가이드 목차가 추가되었습니다. 배포·리소스·인증 페이지에도 관련 페이지 간 크로스 레퍼런스가 추가되었습니다
+- **Anthropic 동향 업데이트** — [Anthropic 트렌드](/ai-trends/anthropic-trends-2026) 페이지에 Claude Opus 4.7 모델 정보, Claude Design(Research Preview), Claude Managed Agents 섹션이 추가되었습니다
+
+## 버그 수정
+
+- **AI Dev Kit: Windows Git Bash 경로 변환 수정** — Windows Git Bash(MINGW64) 환경에서 `/Workspace/...` 경로가 `C:/Program Files/Git/Workspace/...`로 잘못 변환되어 `databricks workspace import-dir` 명령이 실패하던 문제가 수정되었습니다. macOS/Linux에서는 영향 없습니다
