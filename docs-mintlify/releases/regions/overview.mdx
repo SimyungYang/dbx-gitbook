@@ -1,0 +1,202 @@
+---
+title: "리전별 기능 가용성"
+description: "US 리전과 서울(ap-northeast-2) 리전의 Databricks 기능 가용성 비교"
+---
+
+## 리전 개요
+
+Databricks AWS는 전세계 여러 리전에서 운영됩니다. 대부분의 기능은 모든 리전에서 사용 가능하지만, 일부 기능은 특정 리전에서만 지원됩니다.
+
+<Note>
+**Cross-Geography Routing이란?** 서울 리전에서 특정 AI 기능을 사용할 때, 요청이 US 리전의 모델 서빙 인프라로 라우팅됩니다. 데이터는 처리 후 반환되며 외부에 저장되지 않지만, 데이터 거주(Data Residency) 요구사항이 있는 경우 주의가 필요합니다.
+</Note>
+
+---
+
+## 서울 리전 (ap-northeast-2) 기능 현황
+
+### 완전 지원 (서울 리전 내 처리)
+
+<AccordionGroup>
+  <Accordion title="Platform & Compute" icon="server">
+    | 기능 | 상태 |
+    |------|------|
+    | All-Purpose / Job Clusters | ✅ GA |
+    | Serverless Compute (Notebooks, Jobs, Pipelines, SQL) | ✅ GA |
+    | Serverless Workspaces | ✅ GA |
+    | Databricks Apps | ✅ GA |
+    | Photon Engine | ✅ GA |
+    | Instance Pools | ✅ GA |
+    | Cluster Policies | ✅ GA |
+  </Accordion>
+
+  <Accordion title="Data Engineering" icon="gears">
+    | 기능 | 상태 |
+    |------|------|
+    | Spark Declarative Pipelines (SDP) | ✅ GA |
+    | Auto Loader | ✅ GA |
+    | Lakeflow Connect (관리형 커넥터) | ✅ GA |
+    | Lakeflow Jobs | ✅ GA |
+    | Zerobus Ingest | ✅ GA |
+    | Delta Lake (전체 기능) | ✅ GA |
+    | Structured Streaming | ✅ GA |
+  </Accordion>
+
+  <Accordion title="Unity Catalog & Governance" icon="shield">
+    | 기능 | 상태 |
+    |------|------|
+    | UC 3-Level Namespace | ✅ GA |
+    | Row Filters / Column Masks | ✅ GA |
+    | Data Lineage | ✅ GA |
+    | Delta Sharing | ✅ GA |
+    | Governed Tags | ✅ GA |
+    | Data Classification | ✅ GA |
+    | Predictive Optimization | ✅ GA |
+    | Metric Views | ✅ GA |
+  </Accordion>
+
+  <Accordion title="Security" icon="lock">
+    | 기능 | 상태 |
+    |------|------|
+    | Customer-Managed Keys (CMK) | ✅ GA |
+    | AWS PrivateLink (Classic) | ✅ GA |
+    | Firewall for Serverless | ✅ GA |
+    | SSO (SAML) / SCIM | ✅ GA |
+    | Audit Logs / System Tables | ✅ GA |
+    | IP Access Lists | ✅ GA |
+  </Accordion>
+
+  <Accordion title="DBSQL & Analytics" icon="chart-bar">
+    | 기능 | 상태 |
+    |------|------|
+    | SQL Warehouse (Serverless) | ✅ GA |
+    | AI/BI Dashboards (Lakeview) | ✅ GA |
+    | Genie | ✅ GA (in-region 2026.02~, cross-geo OFF 시 서울 내 처리) |
+    | SQL Scripting | ✅ GA |
+  </Accordion>
+
+  <Accordion title="AI/ML (리전 내 처리)" icon="brain">
+    | 기능 | 상태 |
+    |------|------|
+    | Model Serving (CPU & GPU) | ✅ GA |
+    | Vector Search | ✅ GA |
+    | MLflow (Tracking, Registry) | ✅ GA |
+    | External Models | ✅ GA |
+    | Unity AI Gateway | ✅ GA |
+    | Foundation Model APIs (Provisioned) | ✅ GA |
+    | Foundation Model Fine-tuning | ✅ GA |
+    | Agent Framework & Evaluation | ✅ GA |
+    | Genie Code | ✅ GA |
+  </Accordion>
+</AccordionGroup>
+
+---
+
+### Cross-Geography Routing 필요 (서울 → US 처리)
+
+<Warning>
+아래 기능은 서울 리전에서 사용 가능하지만, 요청이 US 리전으로 라우팅됩니다. 2026년 2월부터 일본/한국 리전 모델 호스팅이 GA되어 일부 기능은 cross-geo 없이 사용 가능합니다.
+</Warning>
+
+| 기능 | 상태 | 비고 |
+|------|------|------|
+| Foundation Model APIs (Pay-per-token) | ✅ GA | US로 라우팅 |
+| ai_query (배치 추론) | ✅ GA | US로 라우팅 |
+| ai_parse_document v2 | ✅ GA | US로 라우팅 |
+| ai_prep_search | ✅ GA | US로 라우팅 |
+| ai_extract / ai_classify v2 | Public Preview | US로 라우팅 |
+| 기타 AI Functions | ✅ GA | US로 라우팅 |
+| Knowledge Assistant | ✅ GA | cross-geo 필요 |
+
+### Genie 서울 리전 In-Region 모델 호스팅 (2026.02 GA)
+
+2026년 1월 30일부터 Genie 전용 LLM이 서울 리전에 배포되었으며, **2월에 Regional Model Hosting이 GA**되었습니다.
+
+<Warning>
+**Cross-Geo 설정과 데이터 거주 트레이드오프**
+
+서울 리전에서 Genie를 **in-region으로만** 처리하려면 워크스페이스의 **Cross-Geography Processing을 OFF**해야 합니다. 하지만 이 설정은 워크스페이스 전체에 적용되므로 다른 Designated Services에 영향을 줍니다:
+
+| Cross-Geo OFF 시 | 결과 |
+|-------------------|------|
+| Genie | ✅ 서울 리전 내 처리 (in-region) |
+| Foundation Model APIs (PT) | ✅ 한국/일본 리전으로 라우팅 |
+| AI Functions (ai_query 등) | ✅ 한국/일본 리전으로 라우팅 |
+| Pay-per-token (PPT) | ✅ 한국/일본 리전으로 라우팅 |
+| Databricks Assistant / Genie Code | ❌ cross-geo 필요 기능은 비활성화 |
+| Knowledge Assistant / Supervisor Agent | ❌ 비활성화 |
+
+**권장 방안**: 데이터 거주 규제가 엄격한 고객(금융권, 통신사 등)은 Genie 전용 워크스페이스를 분리하여 cross-geo OFF로 운영하고, 일반 업무용 워크스페이스는 cross-geo ON을 유지하는 것이 좋습니다. Delta Sharing으로 Genie 워크스페이스에 데이터를 피딩하는 구성도 가능합니다.
+
+참고: [Designated Services 문서](https://docs.databricks.com/aws/en/resources/designated-services)
+</Warning>
+
+### 서울 Partner-Powered AI In-Country (2026.03 GA)
+
+2026년 3월부터 아래 AI 기능이 **서울 리전에서 데이터 라우팅 보장** (cross-geo ON 상태에서도)과 함께 사용 가능합니다:
+
+- Genie Code
+- AI-generated comments
+- AI/BI 대시보드 AI 기능
+
+---
+
+### 서울 리전 미지원 / 제한적 기능
+
+| 기능 | 상태 | 비고 |
+|------|------|------|
+| **Lakebase** (전 버전) | 🔜 **2026.05 런칭 예정** | 서울 리전 5월 지원 시작 |
+| **Knowledge Assistant** | 🔜 **서울 지원 임박** | 현재 미지원 (공식 문서 기준), cross-geo 포함 출시 예정 |
+| **Supervisor Agent** | 🔜 **서울 지원 임박** | 현재 미지원 (공식 문서 기준), cross-geo 포함 출시 예정 |
+| **Default Storage** | ❌ 미지원 | 서울 리전에서 사용 불가 |
+| **Agent Bricks: Information Extraction** | ❌ | US만 지원 |
+| **Agent Bricks: Custom LLM** | ❌ | US만 지원 |
+| **Serverless GPU Compute** | ❌ | US만 지원 |
+| **Online Feature Stores** | ❌ | Lakebase 의존 (5월 이후 변경 가능) |
+| **AI Runtime (GPU)** | ❌ | US만 지원 |
+| **Declarative Feature Engineering APIs** | ❌ | us-east-1, us-west-2만 |
+| **Claude Provisioned Throughput** | ❌ | 2026 후반 예정 |
+| **Databricks One** | 미확인 | 서울 미확인 |
+| **Discovery Page** | ❌ | US만 지원 |
+
+---
+
+## US 리전 vs 서울 리전 요약
+
+| 카테고리 | US (us-east-1) | 서울 (ap-northeast-2) |
+|----------|---------------|----------------------|
+| Core Platform | ✅ 전체 | ✅ 전체 |
+| Serverless | ✅ 전체 | ✅ (Default Storage 제외) |
+| Data Engineering | ✅ 전체 | ✅ 전체 |
+| Unity Catalog | ✅ 전체 | ✅ 전체 |
+| DBSQL & Analytics | ✅ 전체 | ✅ 전체 |
+| AI/ML Core | ✅ 전체 | ✅ 대부분 (일부 cross-geo) |
+| Agent Bricks | ✅ 전체 | 🔜 KA/Supervisor 서울 지원 임박 |
+| Lakebase | ✅ GA | 🔜 2026.05 런칭 예정 |
+| AI Runtime (GPU) | Beta | 미정 |
+| 최신 Preview 기능 | 일반적으로 먼저 | 1~3개월 후 |
+
+---
+
+## 리전 선택 가이드
+
+<CardGroup cols={2}>
+  <Card title="서울 리전 권장" icon="check">
+    - 한국 데이터 거주 요구사항
+    - 한국 사용자 대상 낮은 레이턴시
+    - 대부분의 DE, DBSQL, UC 워크로드
+    - AI 기능 중 cross-geo 허용 가능한 경우
+  </Card>
+  <Card title="US 리전 권장" icon="flag">
+    - 모든 최신 기능 즉시 사용 필요
+    - Lakebase 즉시 사용 필요 (서울은 2026.05 예정)
+    - AI Runtime (GPU 서버리스) 필요
+    - Agent Bricks Information Extraction 필요
+  </Card>
+</CardGroup>
+
+---
+
+<Card title="Databricks 공식 리전별 기능 지원 페이지" icon="link" href="https://docs.databricks.com/aws/resources/feature-region-support">
+  최신 리전별 기능 가용성 확인 (영문)
+</Card>

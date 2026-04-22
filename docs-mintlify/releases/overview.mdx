@@ -1,0 +1,82 @@
+---
+title: "Databricks 릴리스 & 로드맵"
+description: "Databricks 플랫폼의 최신 기능 출시 현황, 영역별 로드맵, 리전별 가용성을 한눈에 확인합니다."
+---
+
+## 이 섹션에서 다루는 내용
+
+Databricks 플랫폼은 매주 새로운 기능이 출시됩니다. 이 섹션에서는 **한국 고객 관점**에서 중요한 릴리스 정보를 정리합니다.
+
+<CardGroup cols={3}>
+  <Card title="기능 그룹별 로드맵" icon="map" href="/releases/roadmap/unity-catalog">
+    UC, DE, DBSQL, AI/ML, Compute, Apps 등 영역별 현재 상태와 출시 예정 기능
+  </Card>
+  <Card title="월별 릴리스" icon="calendar" href="/releases/monthly/2026-04">
+    날짜별 출시된 기능을 GA / Public Preview / Beta 상태로 분류
+  </Card>
+  <Card title="리전별 가용성" icon="globe" href="/releases/regions/overview">
+    US 리전 vs 서울(ap-northeast-2) 리전의 기능 가용성 비교
+  </Card>
+</CardGroup>
+
+---
+
+## 릴리스 상태 정의
+
+| 상태 | 설명 |
+|------|------|
+| **GA** (General Availability) | 프로덕션 사용 가능. SLA 적용. |
+| **Public Preview** | 모든 고객 사용 가능하나 SLA 미적용. 프로덕션 사용 시 주의. |
+| **Beta** | 초기 단계. 기능 변경 가능성 높음. 테스트 목적 권장. |
+| **Private Preview** | 신청 고객만 사용 가능. SA를 통해 신청. |
+
+---
+
+## 최근 주요 릴리스 하이라이트
+
+<AccordionGroup>
+  <Accordion title="2026년 4월" icon="star">
+    - **Data Classification** (GA) — Unity Catalog에서 AI 기반 자동 데이터 분류 및 태깅
+    - **Claude Opus 4.7** (GA) — Foundation Model APIs pay-per-token으로 사용 가능
+    - **ai_parse_document** (GA) — PDF, 이미지, Word 문서에서 구조화된 데이터 추출
+    - **Query-Based Connectors** (Public Preview) — Oracle, Teradata, SQL Server 등 6개 DB 커넥터
+    - **AI Gateway for MCP Servers** (Beta) — MCP 서버 접근 제어 및 사용량 모니터링
+  </Accordion>
+  <Accordion title="2026년 3월" icon="star">
+    - **Genie Code** (GA) — Databricks Assistant의 에이전틱 업그레이드
+    - **Lakebase High Availability** (GA) — AZ 간 자동 페일오버
+    - **Multi-Table Transactions** (Public Preview) — Delta 테이블 간 원자적 트랜잭션
+    - **Partner-Powered AI In-Country** (GA) — 한국 리전에서 Genie Code, AI/BI 대시보드 사용 가능
+    - **Managed OAuth for MCP** (GA) — Glean, GitHub, Google Drive 등 외부 MCP 서버 연동
+  </Accordion>
+  <Accordion title="서울 리전 주요 예정" icon="flag">
+    - **Lakebase** — 2026년 5월 서울(ap-northeast-2) 리전 런칭 예정
+    - **Agent Bricks** (KA/Supervisor) — 서울 리전 지원 임박
+  </Accordion>
+  <Accordion title="2026년 2월" icon="star">
+    - **Supervisor Agent** (GA) — 멀티 에이전트 오케스트레이션
+    - **AI Gateway** (Beta) — LLM 엔드포인트 및 코딩 에이전트 거버넌스
+    - **Japan/Korea Regional Model Hosting** (GA) — 서울 리전 모델 호스팅 (cross-geo 불필요)
+    - **Anthropic Claude Opus 4.6** (GA) — Databricks 호스팅 모델
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 참고 소스
+
+<CardGroup cols={3}>
+  <Card title="Databricks Release Notes (AWS)" icon="link" href="https://docs.databricks.com/aws/release-notes/index">
+    Databricks 공식 릴리스 노트 페이지 (영문)
+  </Card>
+  <Card title="What's Coming" icon="rocket" href="https://docs.databricks.com/aws/release-notes/whats-coming">
+    Databricks 공식 출시 예정 기능 (영문)
+  </Card>
+  <Card title="Regional Feature Support" icon="globe" href="https://docs.databricks.com/aws/resources/feature-region-support">
+    리전별 기능 가용성 공식 페이지 (영문)
+  </Card>
+</CardGroup>
+
+<Note>
+이 섹션의 정보는 Databricks 공식 릴리스 노트와 공식 문서를 기반으로 작성되었습니다. 최신 정보는 위 공식 소스를 확인해주세요.
+</Note>

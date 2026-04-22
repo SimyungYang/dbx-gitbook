@@ -1,0 +1,76 @@
+---
+title: "Security & Compliance"
+description: "네트워크 보안, 암호화, 컴플라이언스, ID 관리 등 보안 영역의 현재 상태와 로드맵"
+---
+
+## 현재 GA 기능
+
+| 기능 | GA 시점 | 서울 리전 | 설명 |
+|------|---------|-----------|------|
+| Customer-Managed Keys (CMK) | 2023 | ✅ | 고객 관리형 암호화 키 |
+| AWS PrivateLink (Classic) | 2023 | ✅ | 백엔드/프런트엔드 프라이빗링크 |
+| Firewall for Serverless | 2024 | ✅ | 서버리스 방화벽 설정 |
+| SSO (SAML) | 기본 제공 | ✅ | 싱글 사인온 |
+| SCIM Provisioning | 기본 제공 | ✅ | 사용자/그룹 자동 프로비저닝 |
+| Service Principals | 기본 제공 | ✅ | 서비스 주체 인증 |
+| Secret Management | 기본 제공 | ✅ | 시크릿 저장·관리 |
+| Audit Logs | 기본 제공 | ✅ | 감사 로그 (System Tables) |
+| IP Access Lists | 기본 제공 | ✅ | IP 기반 접근 제어 |
+| ISMAP Compliance | 2026.02 | ✅ | 일본 정부 클라우드 인증 |
+| Scoped PATs | 2026.04 | ✅ | API 작업별 토큰 권한 제한 |
+| PAT Expiration Notifications | 2026.01 | ✅ | 토큰 만료 사전 알림 |
+| PAT Preservation on Revoke/Restore | 2026.02 | ✅ | 권한 회수/복원 시 토큰 유지 |
+
+## Public Preview
+
+| 기능 | Preview 시점 | 서울 리전 | 설명 |
+|------|-------------|-----------|------|
+| CMK for Unity Catalog | 2026.03 | 미정 | UC 데이터 고객 관리형 암호화 |
+| CMK Query History Decryption | 2026.02 | 미정 | CMK 환경 쿼리 이력 복호화 |
+| HITRUST Compliance Controls | 2026.02 | 미정 | HITRUST 컴플라이언스 도구 |
+| Scoped PATs (확장) | 2026.02 | ✅ | 세분화된 토큰 권한 |
+| Inbound PrivateLink for Perf Services | 2026.03 | 미정 | Zerobus·Lakebase PrivateLink |
+
+## Beta
+
+| 기능 | Beta 시점 | 서울 리전 | 설명 |
+|------|----------|-----------|------|
+| Front-end PrivateLink Services | 2026.01 | 미정 | 프런트엔드 서비스 PrivateLink |
+
+## 컴플라이언스 지원 현황
+
+| 인증/표준 | 상태 | 서울 리전 |
+|-----------|------|-----------|
+| SOC 2 Type II | ✅ GA | ✅ |
+| ISO 27001 | ✅ GA | ✅ |
+| HIPAA | ✅ GA | ✅ |
+| FedRAMP | ✅ GA | ❌ (GovCloud) |
+| ISMAP | ✅ GA | ✅ |
+| C5 | ✅ GA | EU 리전 |
+| TISAX | ✅ GA | EU 리전 |
+| HITRUST | Public Preview | 미정 |
+
+## 주요 업데이트 예정
+
+| 기능 | 상태 | 설명 |
+|------|------|------|
+| **Lakewatch** (Open Agentic SIEM) | Private Preview (03월) | Okta, Zscaler, Palo Alto, Wiz 파트너 통합 |
+| **Disaster Recovery - Workspace Replication** | Private Preview (01월) | Beta 2026 중반, GA 2026 후반 예정 |
+| **Disaster Recovery - UC Replication** | Private Preview (01월) | Public Preview 2026 중반 예정 |
+| **Delta Sharing Network Gateway** | Public Preview (02월), GA (05월) | 네트워크 수준 Delta Sharing 관리 |
+| **Serverless Access Controls** | Private Preview (2025.09) | 사용량 정책 기반 |
+| **AIM (Auto Identity Mgmt) for AWS** | Private Preview (03월) | Azure는 Entra ID로 GA |
+| **Context-Based Ingress Control** | Public Preview (2026) | 조건부 접근 제어 |
+
+## 예상 로드맵
+
+| 기능 | 예상 시기 | 방향성 |
+|------|----------|--------|
+| CMK for Unity Catalog GA | 2026 중반 | UC 데이터 암호화 정식 지원 |
+| Delta Sharing Network Gateway GA | 2026.05 | 네트워크 수준 공유 관리 |
+| Disaster Recovery Beta | 2026 중반 | 워크스페이스 복제 |
+| Disaster Recovery GA | 2026 후반 | 프로덕션 DR |
+| Lakewatch GA | 2026 후반 | 에이전틱 SIEM |
+| HITRUST GA | 2026 | 헬스케어 컴플라이언스 |
+| AIM for AWS GA | 2026 후반 | 자동 ID 관리 |
+| Data Residency 확장 | 지속 업데이트 | 더 많은 리전에서 데이터 거주 보장 |

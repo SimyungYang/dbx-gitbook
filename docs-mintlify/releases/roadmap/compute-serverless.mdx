@@ -1,0 +1,64 @@
+---
+title: "Compute & Serverless"
+description: "클러스터, 서버리스 컴퓨트, 런타임, Databricks Apps 등 컴퓨트 영역의 현재 상태와 로드맵"
+---
+
+## 현재 GA 기능
+
+| 기능 | GA 시점 | 서울 리전 | 설명 |
+|------|---------|-----------|------|
+| All-Purpose Clusters | 기본 제공 | ✅ | 대화형 워크로드용 클러스터 |
+| Job Clusters | 기본 제공 | ✅ | 잡 실행 전용 클러스터 |
+| Instance Pools | 기본 제공 | ✅ | 사전 프로비저닝된 인스턴스 풀 |
+| Photon Engine | 2023 | ✅ | C++ 네이티브 벡터화 엔진 |
+| Serverless Compute (Notebooks) | 2024 | ✅ | 서버리스 노트북 |
+| Serverless Compute (Jobs) | 2024 | ✅ | 서버리스 잡 |
+| Serverless Compute (Pipelines) | 2024 | ✅ | 서버리스 파이프라인 |
+| Serverless SQL Warehouses | 2024 | ✅ | 서버리스 SQL 웨어하우스 |
+| Serverless Workspaces | 2026.01 | ✅ | 서버리스 워크스페이스 |
+| Compute Sizing for Apps | 2026.01 | ✅ | 앱 컴퓨트 사이징 |
+| Databricks Runtime 18.1 | 2026.03 | ✅ | Apache Spark 4.1.0 기반 |
+| Cluster Policies | 기본 제공 | ✅ | 클러스터 정책 관리 |
+
+### Databricks Runtime 버전
+
+| 런타임 | 상태 | Spark 버전 | 비고 |
+|--------|------|-----------|------|
+| 18.2 | Beta | Spark 4.1.0 | 최신 베타 |
+| 18.1 | GA | Spark 4.1.0 | 최신 GA |
+| 18.0 | GA | Spark 4.0.0 | |
+| 17.3 LTS | GA (LTS) | Spark 3.5.x | 장기 지원 |
+| 16.4 LTS | GA (LTS) | Spark 3.5.x | 장기 지원 |
+| 15.4 LTS | GA (LTS) | Spark 3.5.x | 장기 지원 |
+| 14.3 LTS | GA (LTS) | Spark 3.5.x | 장기 지원 |
+
+## Public Preview
+
+| 기능 | Preview 시점 | 서울 리전 | 설명 |
+|------|-------------|-----------|------|
+| JAR Tasks on Serverless | 2026.02 | 미정 | 서버리스에서 JAR 잡 실행 |
+| Serverless Outbound IPs (JSON) | 2026.02 | 미정 | 서버리스 아웃바운드 IP 조회 |
+| Workspace Browser Tree View | 2026.03 | ✅ | 폴더 확장 가능한 트리 뷰 |
+| Inbound PrivateLink for Perf Services | 2026.03 | 미정 | Zerobus·Lakebase PrivateLink |
+
+## Beta
+
+| 기능 | Beta 시점 | 서울 리전 | 설명 |
+|------|----------|-----------|------|
+| Databricks Runtime 18.2 | 2026.02 | ✅ | Spark 4.1.0 최신 베타 |
+| AI Runtime (Distributed) | 2026.03 | 미정 | 서버리스 분산 딥러닝 GPU |
+| AI Runtime 1xH100 | 2026.04 | 미정 | H100 GPU 가속 옵션 |
+
+## 예상 로드맵
+
+<Note>
+아래는 공개된 정보와 Preview 상태를 기반으로 한 예측입니다. 실제 출시 시점은 변경될 수 있습니다.
+</Note>
+
+| 기능 | 예상 상태 | 방향성 |
+|------|----------|--------|
+| Runtime 18.2 | GA 예정 | Spark 4.1.0 정식 출시 |
+| AI Runtime | GA 예정 | 서버리스 GPU 컴퓨트 |
+| JAR Tasks on Serverless | GA 예정 | JVM 워크로드 서버리스 지원 |
+| Serverless 전면 확대 | 방향성 | 모든 워크로드의 서버리스 기본값화 |
+| ARM 기반 인스턴스 | 방향성 | Graviton 등 비용 효율 컴퓨트 |

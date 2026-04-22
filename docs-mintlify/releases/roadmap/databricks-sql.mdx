@@ -1,0 +1,63 @@
+---
+title: "Databricks SQL & Analytics"
+description: "SQL Warehouse, AI/BI 대시보드, Genie, 쿼리 기능 등 SQL & 분석 영역의 현재 상태와 로드맵"
+---
+
+## 현재 GA 기능
+
+| 기능 | GA 시점 | 서울 리전 | 설명 |
+|------|---------|-----------|------|
+| SQL Warehouse (Serverless) | 2024 | ✅ | 서버리스 SQL 웨어하우스 |
+| AI/BI Dashboards (Lakeview) | 2024 | ✅ | AI 기반 대시보드 |
+| Genie | 2025 | ✅ (in-region 2026.02~) | 자연어 → SQL 분석. cross-geo OFF 시 서울 리전 내 처리 |
+| SQL Scripting | 2025 | ✅ | 변수, 조건문, 루프 등 절차적 SQL |
+| Window Functions | 기본 제공 | ✅ | ROW_NUMBER, RANK, LAG/LEAD 등 |
+| AI Functions (ai_query, ai_classify 등) | 2025 | ✅ (cross-geo) | SQL 내 AI 함수 호출 |
+| Dynamic Parameters in SQL Editor | 2026.03 | ✅ | 동적 드롭다운 파라미터 |
+| Databricks Usage Dashboard | 2026.03 | ✅ | 계정 수준 사용량 대시보드 |
+| Default SQL Warehouse Settings | 2026.02 | ✅ | 워크스페이스 기본 웨어하우스 설정 |
+| ADBC Default for Power BI | 2026.02 | ✅ | Power BI Arrow DB 연결 기본값 |
+| Google Sheets Connector | 2026.04 | ✅ | UC 테이블/메트릭 뷰 조회 |
+| Google Sheets Pivot Tables | 2026.02 | ✅ | 피봇 테이블 생성 |
+
+## Public Preview
+
+| 기능 | Preview 시점 | 서울 리전 | 설명 |
+|------|-------------|-----------|------|
+| Google Sheets Scheduled Refreshes | 2026.03 | 미정 | 시간/일/주 단위 자동 새로고침 |
+| Databricks Excel Add-in | 2026.03 | 미정 | Excel에서 직접 데이터 조회·분석 |
+| Query Tags for SQL Warehouses | 2026.02 | 미정 | 워크로드 분류·비용 귀속 태그 |
+| Foreign Iceberg Table Sharing | 2026.04 | 미정 | Delta Sharing으로 페더레이티드 Iceberg 테이블 공유 |
+
+## Beta
+
+| 기능 | Beta 시점 | 서울 리전 | 설명 |
+|------|----------|-----------|------|
+| 5X-Large SQL Warehouse | 2026.03 | ✅ (모든 리전) | 초대형 서버리스/프로 웨어하우스 |
+| BI Compatibility Mode for Metric Views | 2026.03 | 미정 | Power BI 집계 함수 자동 변환 |
+| Warehouse Activity Details | 2026.02 | 미정 | 쿼리 활동·세션 시각적 표시 |
+| Sample Data Explorer with Genie Code | 2026.04 | 미정 | UC 테이블에서 자연어 질의 |
+
+## 주요 업데이트 예정
+
+| 기능 | 상태 | 설명 |
+|------|------|------|
+| **Reyden** (Accelerated Query Engine) | Beta (04.28~) | 차세대 쿼리 가속 엔진. Data+AI Summit에서 Public Preview 예정 |
+| **New SQL Editor 기본값** | GA (05월 말) | 모든 워크스페이스에서 기본 에디터로 전환 |
+| **Stored Procedures** | Public Preview (2025.09~) | 절차적 SQL 저장 프로시저 |
+
+## 예상 로드맵
+
+<Note>
+아래는 공개된 정보와 Preview 상태를 기반으로 한 예측입니다. 실제 출시 시점은 변경될 수 있습니다.
+</Note>
+
+| 기능 | 예상 시기 | 방향성 |
+|------|----------|--------|
+| Reyden Public Preview | Data+AI Summit 2026 | 쿼리 성능 대폭 개선 |
+| Reyden GA | 2026 후반 | 프로덕션 쿼리 가속 |
+| Excel Add-in GA | 2026 중반 | 기업 환경 Excel 통합 |
+| Dashboard Local Metric Views Public Preview | 2026 | 대시보드 내 로우코드 메트릭 뷰 |
+| Genie Code 고도화 | 지속 업데이트 | 에이전틱 데이터 분석, 멀티스텝 태스크 |
+| Genie Space Embed (iFrame) | Public Preview Beta (04월~) | Genie Space 외부 앱 임베딩 |
+| 5X-Large Warehouse GA | 2026 | 초대형 워크로드 정식 지원 |

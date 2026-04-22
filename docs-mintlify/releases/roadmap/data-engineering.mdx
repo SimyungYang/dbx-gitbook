@@ -1,0 +1,77 @@
+---
+title: "Data Engineering & Lakeflow"
+description: "Lakeflow, SDP, Auto Loader, Structured Streaming 등 데이터 엔지니어링 기능의 현재 상태와 로드맵"
+---
+
+## 현재 GA 기능
+
+| 기능 | GA 시점 | 서울 리전 | 설명 |
+|------|---------|-----------|------|
+| Spark Declarative Pipelines (SDP) | 2024 | ✅ | Streaming Tables, MV, Expectations |
+| Lakeflow Jobs | 2024 | ✅ | 워크플로우 오케스트레이션 |
+| Auto Loader | 2023 | ✅ | 클라우드 스토리지 파일 자동 수집 |
+| Lakeflow Connect (관리형 커넥터) | 2025 | ✅ | Salesforce, MySQL, PostgreSQL 등 |
+| Trigger on Update for Pipelines | 2026.01 | ✅ | 파이프라인 업데이트 시 트리거 |
+| Lakeflow Jobs System Tables | 2026.01 | ✅ | 잡 실행 이력 시스템 테이블 |
+| Pipeline Metadata Governance | 2026.02 | ✅ | ETL 출력에 필터·마스크·태그 적용 |
+| Declarative Automation Bundles | 2026.03 | ✅ | (구 Asset Bundles) CI/CD 배포 패키지 |
+| Custom Base Environments (Serverless Jobs) | 2026.01 | ✅ | 서버리스 잡 커스텀 환경 |
+| Compute Log Delivery to Volumes | 2026.04 | ✅ | Spark 로그를 UC Volume에 저장 |
+
+## Public Preview
+
+| 기능 | Preview 시점 | 서울 리전 | 설명 |
+|------|-------------|-----------|------|
+| Query-Based Connectors | 2026.04 | 미정 | Oracle, Teradata, SQL Server, MySQL, MariaDB, PostgreSQL |
+| Auto Loader Type Widening | 2026.03 | ✅ | JSON/CSV/XML 자동 타입 확장 |
+| JAR Tasks on Serverless | 2026.02 | 미정 | 서버리스에서 JAR 잡 실행 |
+| Default Python Repositories | 2026.02 | 미정 | 파이프라인 기본 패키지 저장소 설정 |
+| Zerobus Ingest PrivateLink | 2026.03 | ✅ | Zerobus 인제스트 프라이빗링크 |
+
+## Beta
+
+| 기능 | Beta 시점 | 서울 리전 | 설명 |
+|------|----------|-----------|------|
+| SQL Pipelines Notifications | 2026.03 | 미정 | MV/ST 실패 알림 및 서버리스 성능 모드 |
+| Workday HCM Connector | 2026.03 | 미정 | Workday HR 데이터 수집 |
+| Declarative Feature Engineering APIs | 2026.03 | ❌ (us-east-1, us-west-2만) | 선언적 시간 윈도우 집계 |
+| SQL Alert Task for Jobs | 2026.03 | 미정 | 잡 내 SQL 알림 조건 체크 |
+| TikTok Ads / HubSpot / Google Ads / Zendesk Connector | 2026.02 | 미정 | 관리형 광고·CRM 데이터 수집 |
+| Google Drive Connector | 2026.01 | 미정 | Google Drive 데이터 수집 |
+| Salesforce Incremental Formula Fields | 2026.01 | 미정 | Salesforce 수식 필드 증분 수집 |
+
+## 주요 업데이트 예정
+
+| 기능 | 상태 | 설명 |
+|------|------|------|
+| **Lakeflow Designer** | Public Preview (04월~) | 로우코드 ETL 디자이너 |
+| **Lakeflow Connect (Snowflake)** | Private Preview (04월) | Snowflake 데이터 수집 |
+| **Lakeflow Connect (Postgres)** | Gated Public Preview (04월) | 크로스 클라우드 지원 |
+| **Zerobus Ingest OTEL** | Beta (04월) | OTEL 호환 로그/트레이스/메트릭 → Delta |
+
+### 서울 리전 Lakeflow Connect 가용성
+
+| 커넥터 | 서울 리전 | GA 시점 |
+|--------|-----------|---------|
+| Salesforce | ✅ (2025.12~) | 2025.07 GA |
+| Workday | ✅ (2025.12~) | 2025.07 GA |
+| Google Analytics | ✅ (2025.09~) | 2025.09 GA |
+| ServiceNow | ✅ (2025.08~) | 2025.08 GA |
+| SQL Server | ✅ (2025.12~) | QBC Public Preview 2025.07 |
+| MySQL | Public Preview | 2025.12 Public Preview |
+
+## 예상 로드맵
+
+<Note>
+아래는 공개된 정보와 Preview 상태를 기반으로 한 예측입니다. 실제 출시 시점은 변경될 수 있습니다.
+</Note>
+
+| 기능 | 예상 시기 | 방향성 |
+|------|----------|--------|
+| Lakeflow Designer Public Preview | 2026.04~ | 로우코드 파이프라인 디자인 |
+| Query-Based Connectors GA | 2026 중반 | Oracle, Teradata 등 JDBC 기반 수집 |
+| Lakeflow Connect (Snowflake) Public Preview | 2026 중반 | Snowflake 마이그레이션 가속 |
+| Agentic ETL | 고도화 중 | 자연어 기반 ETL 파이프라인 생성·관리 |
+| Zerobus Ingest 확장 | 지속 업데이트 | 더 많은 리전, 더 높은 처리량 |
+| Lakeflow Connect 커넥터 확장 | 지속 추가 | 20+ 데이터 소스 목표 |
+| SQL Pipelines 성능 모드 | GA 예정 | MV/ST 서버리스 최적화 |

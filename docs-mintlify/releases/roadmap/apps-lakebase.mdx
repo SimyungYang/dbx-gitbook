@@ -1,0 +1,104 @@
+---
+title: "Apps & Lakebase"
+description: "Databricks Apps, Lakebase (관리형 PostgreSQL), 개발 도구 등의 현재 상태와 로드맵"
+---
+
+## Databricks Apps
+
+### GA 기능
+
+| 기능 | GA 시점 | 서울 리전 | 설명 |
+|------|---------|-----------|------|
+| Databricks Apps 기본 | 2025 | ✅ | Python/React 앱 배포 플랫폼 |
+| Apps Python Dependencies (uv) | 2026.03 | ✅ | pyproject.toml + uv.lock 지원 |
+| Apps New Resources (Table, App-to-App) | 2026.03 | ✅ | 테이블 리소스, 앱 간 통신 |
+| Apps Compliance Security Profile | 2026.03 | ✅ | 컴플라이언스 프로파일 지원 |
+| Git-Backed App Deployments | 2026.04 | ✅ | Git 저장소에서 직접 배포 |
+| Compute Sizing for Apps | 2026.01 | ✅ | 앱 컴퓨트 사이즈 설정 |
+
+### Public Preview
+
+| 기능 | Preview 시점 | 서울 리전 | 설명 |
+|------|-------------|-----------|------|
+| Tag Databricks Apps | 2026.02 | 미정 | 앱에 커스텀 태그 부착 |
+
+### Beta
+
+| 기능 | Beta 시점 | 서울 리전 | 설명 |
+|------|----------|-----------|------|
+| Updated Apps UI | 2026.04 | 미정 | 앱 관리 UI 리디자인 |
+| Apps Telemetry (OTel) | 2026.03 | 미정 | 트레이스·로그·메트릭 수집 |
+
+---
+
+## Lakebase (관리형 PostgreSQL)
+
+### GA 기능
+
+| 기능 | GA 시점 | 서울 리전 | 설명 |
+|------|---------|-----------|------|
+| Lakebase Unified Platform | 2026.01 | 🔜 2026.05 예정 | 관리형 PostgreSQL |
+| Lakebase Autoscaling (기본값) | 2026.03 | 🔜 2026.05 예정 | 자동 스케일링, Scale-to-Zero |
+| Lakebase High Availability | 2026.03 | 🔜 2026.05 예정 | AZ 간 자동 페일오버 |
+| Lakebase Compliance Support | 2026.03 | 🔜 2026.05 예정 | HIPAA, C5, TISAX 컴플라이언스 |
+| Lakebase as App Resource | 2026.03 | 🔜 2026.05 예정 | Databricks Apps에서 Lakebase 접근 |
+| OAuth Role Management | 2026.03 | 🔜 2026.05 예정 | OAuth 기반 역할 관리 |
+
+### Beta
+
+| 기능 | Beta 시점 | 서울 리전 | 설명 |
+|------|----------|-----------|------|
+| Lakehouse Sync (CDC) | 2026.03 | 🔜 2026.05 예정 | Delta Lake → Lakebase CDC 복제 |
+
+### 리전 가용성
+
+| 리전 | 상태 |
+|------|------|
+| us-east-1, us-west-2 | ✅ GA |
+| eu-west-1 | ✅ GA |
+| ca-central-1 | ✅ GA (2026.03) |
+| eu-west-2 | ✅ GA (2026.03) |
+| sa-east-1 | ✅ GA (2026.03) |
+| ap-northeast-2 (서울) | 🔜 2026.05 런칭 예정 |
+
+---
+
+## 개발 도구
+
+### GA 기능
+
+| 기능 | GA 시점 | 서울 리전 | 설명 |
+|------|---------|-----------|------|
+| Databricks CLI | 기본 제공 | ✅ | 커맨드라인 도구 |
+| Databricks SDK (Python) | 기본 제공 | ✅ | Python SDK |
+| Databricks Connect | 기본 제공 | ✅ | IDE에서 원격 Spark 실행 |
+| REST API | 기본 제공 | ✅ | RESTful API |
+| JDBC Driver 2.8.0 | 2026.03 | ✅ | SLF4J 2.0.13, Log4j 제거 |
+| ODBC Driver (Databricks) | 2026.02 | ✅ | (구 Simba Spark ODBC) |
+| Scoped Personal Access Tokens | 2026.04 | ✅ | API 작업별 토큰 권한 제한 |
+| Python Unit Testing in Workspace | 2026.02 | ✅ | pytest 기반 단위 테스트 |
+| PAT Expiration Notifications | 2026.01 | ✅ | 토큰 만료 알림 |
+
+## 주요 업데이트 예정
+
+| 기능 | 상태 | 설명 |
+|------|------|------|
+| **Databricks One** | GA (03월) | 통합 소비자 경험 (모바일 앱은 Private Preview) |
+| **OneChat (Agent Chat)** | Beta (03월) | 통합 에이전트 채팅 |
+| **Lakebase Autoscaling CMK** | Available (04월) | 고객 관리형 암호화 키 |
+| **Lakebase OpenTelemetry** | Beta (04월) | OTel 기반 모니터링 |
+
+<Tip>
+**서울 리전 Lakebase 런칭 예정 (2026년 5월)**: Lakebase가 2026년 5월 서울(ap-northeast-2) 리전에 런칭 예정입니다. 런칭 후 Autoscaling, HA, Compliance 등 GA 기능을 모두 사용할 수 있습니다.
+</Tip>
+
+## 예상 로드맵
+
+| 기능 | 예상 시기 | 방향성 |
+|------|----------|--------|
+| Apps Telemetry GA | 2026 중반 | OTel 기반 관측성 정식 지원 |
+| Lakebase 서울 리전 | **2026.05 런칭 예정** | ap-northeast-2 정식 지원 |
+| Lakebase Provisioned 확장 | 고도화 중 | 고성능 OLTP 워크로드 |
+| Lakehouse Sync GA | 2026 중반 | Delta ↔ Lakebase CDC 동기화 |
+| AI Dev Kit 확장 | 지속 업데이트 | 더 많은 스킬·도구 |
+| Databricks One 모바일 | Private Preview | 모바일 앱 |

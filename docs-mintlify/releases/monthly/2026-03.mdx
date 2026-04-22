@@ -1,0 +1,68 @@
+---
+title: "2026년 3월 릴리스"
+description: "2026년 3월 Databricks 플랫폼 릴리스 내역"
+---
+
+## GA (정식 출시)
+
+| 날짜 | 기능 | 영역 | 서울 리전 |
+|------|------|------|-----------|
+| 03.31 | **Agent Bricks 리전 확장** — ap-south-1 (뭄바이) 추가 | AI/ML | ⚠️ 일부 |
+| 03.27 | **Agent Bricks 확장** — 선언적 에이전트 외 모든 AI 기능 우산 | AI/ML | ⚠️ 일부 |
+| 03.25 | **Type Widening** — 파일 재작성 없이 컬럼 타입 확장 | UC & Governance | ✅ |
+| 03.25 | **Lineage System Table 확장** — genie_space_id, alert_id 추가 | UC & Governance | ✅ |
+| 03.24 | **Dynamic Parameters in SQL Editor** — 동적 드롭다운 파라미터 | DBSQL & Analytics | ✅ |
+| 03.21 | **Supervisor Agent Long-Running Tasks** — 장시간 태스크 지속 지원 | AI/ML | ⚠️ 제한적 |
+| 03.18 | **JDBC Driver 2.8.0** — SLF4J 2.0.13, Log4j 제거 | 개발 도구 | ✅ |
+| 03.18 | **Databricks Usage Dashboard** — 계정 수준 사용량 대시보드 | DBSQL & Analytics | ✅ |
+| 03.17 | **Apps Python uv 지원** — pyproject.toml + uv.lock | Apps | ✅ |
+| 03.17 | **OpenAI GPT-5.4 Mini/Nano** — Foundation Model APIs | AI/ML | ✅ (cross-geo) |
+| 03.16 | **Lakebase as App Resource** — Lakebase Autoscaling → Apps 연결 | Apps & Lakebase | 미정 |
+| 03.16 | **Declarative Automation Bundles** — (구 Asset Bundles) | 개발 도구 | ✅ |
+| 03.13 | **ABAC Policy Functions** — has_tag, has_tag_value | UC & Governance | ✅ |
+| 03.13 | **Partner-Powered AI In-Country** — 한국·일본·브라질 등 데이터 라우팅 | AI/ML | ✅ |
+| 03.13 | **Vector Search 과금 변경** — 빈 엔드포인트 무과금 | AI/ML | ✅ |
+| 03.12 | **Lakebase Autoscaling 기본값** — 새 인스턴스 자동 Autoscaling | Apps & Lakebase | 미정 |
+| 03.11 | **Databricks Runtime 18.1** — Spark 4.1.0 기반 | Compute | ✅ |
+| 03.11 | **Genie Code** — 에이전틱 데이터 분석 어시스턴트 | AI/ML | ✅ |
+| 03.09 | **Apps New Resources** — 테이블 리소스, 앱 간 통신 | Apps | ✅ |
+| 03.09 | **Apps Compliance Security Profile** — 컴플라이언스 기본 지원 | Apps | ✅ |
+| 03.06 | **Google Gemini 3.1 Flash Lite** — 비전·배치 추론 지원 | AI/ML | ✅ (cross-geo) |
+| 03.05 | **OpenAI GPT-5.4** — Foundation Model APIs | AI/ML | ✅ (cross-geo) |
+| 03.04 | **Lakebase Compliance** — HIPAA, C5, TISAX 지원 | Apps & Lakebase | 미정 |
+| 03.03 | **Supervisor Agent 리전 확장** — 추가 리전 | AI/ML | ⚠️ 제한적 |
+| 03.03 | **Knowledge Assistant 기본 사용 가능** — HIPAA 컴플라이언스 포함 | AI/ML | ⚠️ cross-geo |
+| 03.02 | **Managed OAuth for MCP** — Glean, GitHub, Google Drive 등 | AI/ML | ✅ |
+| 03.02 | **Lakebase HA** — AZ 간 자동 페일오버 | Apps & Lakebase | 미정 |
+| 03.02 | **Lakebase 리전 확장** — ca-central-1, eu-west-2, sa-east-1 | Apps & Lakebase | ❌ |
+
+## Public Preview
+
+| 날짜 | 기능 | 영역 | 서울 리전 |
+|------|------|------|-----------|
+| 03.27 | **Classification & Information Extraction UI** | AI/ML | 미정 |
+| 03.27 | **ai_classify / ai_extract v2** | AI/ML | ✅ (cross-geo) |
+| 03.25 | **Auto Loader Type Widening** — JSON/CSV 자동 타입 확장 | Data Engineering | ✅ |
+| 03.13 | **Catalog Explorer Health Indicators** — 테이블 이상 탐지 | UC & Governance | ✅ |
+| 03.09 | **Multi-Table Transactions** — Delta 원자적 트랜잭션 | UC & Governance | ✅ |
+| 03.09 | **Inbound PrivateLink** — Zerobus·Lakebase | Security | 미정 |
+| 03.05 | **Workspace Browser Tree View** | Compute | ✅ |
+| 03.02 | **CMK for Unity Catalog** | Security | 미정 |
+| 03.02 | **Notebook Tagging** — 인증·비활성화 태그 | UC & Governance | ✅ |
+| 03.02 | **Google Sheets Scheduled Refreshes** | DBSQL & Analytics | 미정 |
+| 03.02 | **Databricks Excel Add-in** | DBSQL & Analytics | 미정 |
+
+## Beta
+
+| 날짜 | 기능 | 영역 | 서울 리전 |
+|------|------|------|-----------|
+| 03.19 | **Data Quality Monitoring Alerts** — 이상 탐지 알림 | UC & Governance | 미정 |
+| 03.19 | **AI Runtime** — 서버리스 GPU (Single: PP, Distributed: Beta) | Compute | 미정 |
+| 03.19 | **SQL Alert Task for Jobs** — 잡 내 SQL 알림 | Data Engineering | 미정 |
+| 03.13 | **5X-Large SQL Warehouse** — 초대형 웨어하우스 | DBSQL & Analytics | ✅ |
+| 03.11 | **SQL Pipelines Notifications** — MV/ST 실패 알림 | Data Engineering | 미정 |
+| 03.09 | **Workday HCM Connector** | Data Engineering | 미정 |
+| 03.09 | **Declarative Feature Engineering APIs** | AI/ML | ❌ (US만) |
+| 03.09 | **BI Compatibility Mode for Metric Views** | DBSQL & Analytics | 미정 |
+| 03.06 | **Custom Model Serving Telemetry** — OTel 통합 | AI/ML | 미정 |
+| 03.06 | **Databricks Apps Telemetry** — OTel 지원 | Apps | 미정 |
