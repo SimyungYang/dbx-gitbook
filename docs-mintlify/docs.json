@@ -164,6 +164,8 @@
               "blog/guides/apps/authentication",
               "blog/guides/apps/resources",
               "blog/guides/apps/deployment",
+              "blog/guides/apps/networking",
+              "blog/guides/apps/advanced",
               "blog/guides/apps/examples"
             ]
           },
@@ -807,13 +809,22 @@
             "group": "AI 시장 트렌드 2026",
             "pages": [
               "ai-trends/overview",
+              {
+                "group": "2026년 4월 핫 키워드",
+                "pages": [
+                  "ai-trends/hot-keywords-2026-04",
+                  "ai-trends/keywords/claude-design",
+                  "ai-trends/keywords/harness-engineering",
+                  "ai-trends/keywords/agentic-engineering"
+                ]
+              },
               "ai-trends/anthropic-trends-2026",
-              "ai-trends/aws-microsoft",
-              "ai-trends/google",
-              "ai-trends/korean-llm",
-              "ai-trends/meta",
               "ai-trends/openai",
+              "ai-trends/google",
+              "ai-trends/meta",
+              "ai-trends/aws-microsoft",
               "ai-trends/tesla-xai-others",
+              "ai-trends/korean-llm",
               "ai-trends/trends-summary"
             ]
           }
@@ -881,7 +892,7 @@
         ]
       },
       {
-        "tab": "Genie Code Vibe",
+        "tab": "Genie Code 핸즈온",
         "groups": [
           {
             "group": "워크샵 개요",
@@ -952,6 +963,44 @@
               "workshop/section-5-appliance-handson/04-sdp-pipeline",
               "workshop/section-5-appliance-handson/05-dashboard-genie",
               "workshop/section-5-appliance-handson/06-agent-development"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "릴리스 & 로드맵",
+        "groups": [
+          {
+            "group": "개요",
+            "pages": [
+              "releases/overview"
+            ]
+          },
+          {
+            "group": "기능 그룹별 로드맵",
+            "pages": [
+              "releases/roadmap/unity-catalog",
+              "releases/roadmap/data-engineering",
+              "releases/roadmap/databricks-sql",
+              "releases/roadmap/ai-ml",
+              "releases/roadmap/compute-serverless",
+              "releases/roadmap/apps-lakebase",
+              "releases/roadmap/security"
+            ]
+          },
+          {
+            "group": "월별 릴리스",
+            "pages": [
+              "releases/monthly/2026-04",
+              "releases/monthly/2026-03",
+              "releases/monthly/2026-02",
+              "releases/monthly/2026-01"
+            ]
+          },
+          {
+            "group": "리전별 가용성",
+            "pages": [
+              "releases/regions/overview"
             ]
           }
         ]

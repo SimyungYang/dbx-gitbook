@@ -541,6 +541,468 @@ if prompt := st.chat_input("질문을 입력하세요..."):
 
 ---
 
+## 예제 4: Gradio 챗봇 (Foundation Model API)
+
+Gradio의 내장 챗봇 UI를 사용하여 Databricks Foundation Model API를 호출하는 예제입니다. 스트리밍 응답을 지원합니다.
+
+### requirements.txt
+
+```
+databricks-sdk
+gradio
+```
+
+### app.yaml
+
+```yaml
+command: ['python', 'app.py']
+env:
+  - name: SERVING_ENDPOINT
+    valueFrom: serving_endpoint
+resources:
+  - name: serving_endpoint
+    type: serving-endpoint
+```
+
+### app.py
+
+```python
+import os
+import gradio as gr
+from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+endpoint_name = os.getenv("SERVING_ENDPOINT")
+port = int(os.environ.get("DATABRICKS_APP_PORT", 7860))
+
+
+def chat(message, history, request: gr.Request):
+    """스트리밍 응답을 지원하는 챗 함수"""
+    # 대화 이력을 API 형식으로 변환
+    messages = []
+    for user_msg, bot_msg in history:
+        messages.append({"role": "user", "content": user_msg})
+        if bot_msg:
+            messages.append({"role": "assistant", "content": bot_msg})
+    messages.append({"role": "user", "content": message})
+
+    # 스트리밍 응답
+    response = w.serving_endpoints.query(
+        name=endpoint_name,
+        messages=messages,
+        stream=True,
+    )
+
+    partial_message = ""
+    for chunk in response:
+        if chunk.choices and chunk.choices[0].delta.content:
+            partial_message += chunk.choices[0].delta.content
+            yield partial_message
+
+
+# Gradio 챗봇 UI
+demo = gr.ChatInterface(
+    fn=chat,
+    title="AI Assistant",
+    description="Databricks Foundation Model API 기반 AI 챗봇",
+    examples=["데이터 레이크하우스란 무엇인가요?", "Delta Lake의 장점을 설명해주세요"],
+    theme=gr.themes.Soft(),
+)
+
+demo.launch(server_name="0.0.0.0", server_port=port)
+```
+
+> **참고**
+**Gradio의 장점**: Gradio는 AI/ML 데모에 최적화되어 있습니다. `gr.ChatInterface`로 스트리밍 챗봇 UI를 10줄 내외로 구현할 수 있고, `examples` 파라미터로 예시 질문 버튼을 자동 생성합니다. `gr.Request`를 사용하면 사용자 인증 토큰(`x-forwarded-access-token`)도 가져올 수 있습니다.
+
+
+---
+
+## 예제 5: AppKit (React + TypeScript 대시보드)
+
+**AppKit** 프레임워크를 사용한 타입 안전한 매출 분석 대시보드입니다. SQL 쿼리 결과의 TypeScript 타입이 자동 생성되고, 내장 차트 컴포넌트를 사용합니다.
+
+### 프로젝트 생성
+
+```bash
+# 매니페스트 확인
+databricks apps manifest --profile <PROFILE>
+
+# 프로젝트 생성
+databricks apps init \
+  --name sales-dashboard \
+  --features analytics \
+  --set analytics.sql-warehouse.id=<WAREHOUSE_ID> \
+  --description "매출 분석 대시보드" \
+  --run none \
+  --profile <PROFILE>
+
+cd sales-dashboard && npm install
+```
+
+### SQL 쿼리 파일
+
+**config/queries/monthly_revenue.sql:**
+
+```sql
+SELECT
+  DATE_FORMAT(order_date, 'yyyy-MM') AS month,
+  SUM(total_amount) AS revenue,
+  COUNT(*) AS order_count,
+  AVG(total_amount) AS avg_order_value
+FROM catalog.schema.orders
+WHERE order_date >= :start_date
+  AND order_date <= :end_date
+GROUP BY DATE_FORMAT(order_date, 'yyyy-MM')
+ORDER BY month
+```
+
+**config/queries/top_products.sql:**
+
+```sql
+SELECT
+  product_name,
+  SUM(quantity) AS total_sold,
+  SUM(total_amount) AS total_revenue
+FROM catalog.schema.order_items
+WHERE order_date >= :start_date
+  AND order_date <= :end_date
+GROUP BY product_name
+ORDER BY total_revenue DESC
+LIMIT 10
+```
+
+### 타입 생성
+
+```bash
+npm run typegen
+# ✓ monthly_revenue
+# ✓ top_products
+```
+
+### client/src/App.tsx
+
+```tsx
+import { useState } from 'react';
+import {
+  BarChart,
+  LineChart,
+  DataTable,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from '@databricks/appkit-ui/react';
+import { useAnalyticsQuery } from '@databricks/appkit-ui/react';
+import { sql } from '@databricks/appkit-ui/js';
+
+function App() {
+  const [startDate, setStartDate] = useState('2024-01-01');
+  const [endDate, setEndDate] = useState('2024-12-31');
+
+  const params = {
+    start_date: sql.date(startDate),
+    end_date: sql.date(endDate),
+  };
+
+  // KPI 데이터 조회
+  const { data: monthlyData } = useAnalyticsQuery('monthly_revenue', params);
+
+  // KPI 계산
+  const totalRevenue = monthlyData
+    ? monthlyData.reduce((sum, row) => sum + Number(row.revenue), 0)
+    : 0;
+  const totalOrders = monthlyData
+    ? monthlyData.reduce((sum, row) => sum + Number(row.order_count), 0)
+    : 0;
+  const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+  return (
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">매출 분석 대시보드</h1>
+
+      {/* 날짜 필터 */}
+      <div className="flex gap-4 mb-6">
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="border rounded p-2"
+        />
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="border rounded p-2"
+        />
+      </div>
+
+      {/* KPI 카드 */}
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        <Card>
+          <CardHeader><CardTitle>총 매출</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              ${Number(totalRevenue).toLocaleString()}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle>총 주문 수</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              {Number(totalOrders).toLocaleString()}건
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle>평균 주문 금액</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              ${Number(avgOrderValue).toFixed(2)}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 월별 매출 추이 (라인 차트) */}
+      <Card className="mb-8">
+        <CardHeader><CardTitle>월별 매출 추이</CardTitle></CardHeader>
+        <CardContent>
+          <LineChart
+            queryKey="monthly_revenue"
+            parameters={params}
+            xKey="month"
+            yKey={["revenue", "order_count"]}
+            colors={['#FF3621', '#4462c9']}
+            height={400}
+          />
+        </CardContent>
+      </Card>
+
+      {/* TOP 10 상품 (바 차트 + 테이블) */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardHeader><CardTitle>TOP 10 상품 매출</CardTitle></CardHeader>
+          <CardContent>
+            <BarChart
+              queryKey="top_products"
+              parameters={params}
+              xKey="product_name"
+              yKey="total_revenue"
+              colors={['#40d1f5']}
+              height={400}
+            />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle>상세 데이터</CardTitle></CardHeader>
+          <CardContent>
+            <DataTable
+              queryKey="top_products"
+              parameters={params}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+export default App;
+```
+
+### 배포
+
+```bash
+# 스모크 테스트 업데이트 (tests/smoke.spec.ts에서 heading 수정)
+# 유효성 검사
+databricks apps validate --profile <PROFILE>
+
+# 배포
+databricks apps deploy --profile <PROFILE>
+```
+
+### AppKit 핵심 규칙
+
+| 규칙 | 설명 |
+|------|------|
+| **SQL은 반드시 `config/queries/`에** | tRPC로 SELECT 쿼리를 실행하지 마세요 |
+| **`parameters={{}}`는 필수** | 파라미터가 없어도 빈 객체를 전달해야 합니다 |
+| **숫자는 `Number()`로 변환** | SQL 결과가 문자열로 올 수 있으므로 항상 변환 |
+| **typegen 먼저 실행** | UI 코드 작성 전에 반드시 `npm run typegen` 실행 |
+| **tRPC는 Mutation과 외부 API 전용** | 데이터 조회는 항상 SQL 쿼리 + 차트/훅 사용 |
+
+---
+
+## 예제 6: FastAPI + Lakebase (피드백 수집 앱)
+
+Lakebase(PostgreSQL)를 사용하여 사용자 피드백을 수집하고 조회하는 REST API입니다.
+
+### requirements.txt
+
+```
+databricks-sdk
+fastapi
+uvicorn
+psycopg2-binary
+```
+
+### app.yaml
+
+```yaml
+command:
+  - uvicorn
+  - app:app
+  - --host
+  - '0.0.0.0'
+  - --port
+  - '${DATABRICKS_APP_PORT}'
+env:
+  - name: DB_CONNECTION
+    valueFrom: lakebase_db
+resources:
+  - name: lakebase_db
+    type: postgres
+```
+
+### app.py
+
+```python
+import os
+from datetime import datetime
+from typing import Optional
+
+import psycopg2
+from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+
+app = FastAPI(title="피드백 수집 API")
+
+DB_CONNECTION = os.getenv("DB_CONNECTION")
+
+
+def get_db():
+    """Lakebase PostgreSQL 연결"""
+    return psycopg2.connect(DB_CONNECTION)
+
+
+# 앱 시작 시 테이블 생성
+@app.on_event("startup")
+def init_db():
+    conn = get_db()
+    with conn.cursor() as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS feedback (
+                id SERIAL PRIMARY KEY,
+                user_email VARCHAR(255),
+                category VARCHAR(100),
+                message TEXT NOT NULL,
+                rating INT CHECK (rating >= 1 AND rating <= 5),
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+        conn.commit()
+    conn.close()
+
+
+class FeedbackCreate(BaseModel):
+    user_email: Optional[str] = None
+    category: str
+    message: str
+    rating: int
+
+
+class FeedbackResponse(BaseModel):
+    id: int
+    user_email: Optional[str]
+    category: str
+    message: str
+    rating: int
+    created_at: datetime
+
+
+@app.post("/api/feedback", response_model=FeedbackResponse)
+def create_feedback(fb: FeedbackCreate):
+    """피드백을 Lakebase에 저장합니다."""
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO feedback (user_email, category, message, rating)
+                   VALUES (%s, %s, %s, %s) RETURNING id, created_at""",
+                (fb.user_email, fb.category, fb.message, fb.rating)
+            )
+            row = cur.fetchone()
+            conn.commit()
+            return FeedbackResponse(
+                id=row[0], created_at=row[1],
+                **fb.model_dump()
+            )
+    finally:
+        conn.close()
+
+
+@app.get("/api/feedback", response_model=list[FeedbackResponse])
+def list_feedback(category: Optional[str] = None, limit: int = 50):
+    """피드백 목록을 조회합니다."""
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            if category:
+                cur.execute(
+                    "SELECT id, user_email, category, message, rating, created_at "
+                    "FROM feedback WHERE category = %s ORDER BY created_at DESC LIMIT %s",
+                    (category, limit)
+                )
+            else:
+                cur.execute(
+                    "SELECT id, user_email, category, message, rating, created_at "
+                    "FROM feedback ORDER BY created_at DESC LIMIT %s",
+                    (limit,)
+                )
+            rows = cur.fetchall()
+            return [
+                FeedbackResponse(
+                    id=r[0], user_email=r[1], category=r[2],
+                    message=r[3], rating=r[4], created_at=r[5]
+                ) for r in rows
+            ]
+    finally:
+        conn.close()
+
+
+@app.get("/api/feedback/stats")
+def feedback_stats():
+    """피드백 통계를 반환합니다."""
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT
+                    category,
+                    COUNT(*) as count,
+                    AVG(rating) as avg_rating
+                FROM feedback
+                GROUP BY category
+                ORDER BY count DESC
+            """)
+            rows = cur.fetchall()
+            return [
+                {"category": r[0], "count": r[1], "avg_rating": float(r[2])}
+                for r in rows
+            ]
+    finally:
+        conn.close()
+```
+
+> **참고**
+**Lakebase의 장점**: SQL Warehouse를 통한 UC 테이블 접근은 분석 쿼리에 최적화되어 있어 쓰기 작업에는 지연이 있습니다. Lakebase는 PostgreSQL 호환이므로 `INSERT`, `UPDATE`, `DELETE`가 수 ms 내에 처리됩니다. 피드백 수집, 채팅 이력 저장, 세션 관리 등 OLTP 워크로드에 적합합니다.
+
+
+---
+
 ## 흔한 오류와 디버깅 방법
 
 모든 예제에서 공통으로 발생할 수 있는 오류와 해결 방법을 정리합니다.

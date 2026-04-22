@@ -329,6 +329,8 @@ Azure DevOps에서도 패턴은 동일합니다. `DATABRICKS_HOST`와 `DATABRICK
 5. **프로덕션 배포**: 메인 앱 배포
 6. **상태 검증**: 배포 후 앱 상태가 `Running`인지 확인
 
+더 체계적인 배포 관리가 필요하다면 **Databricks Asset Bundles (DABs)** 를 사용하세요. DABs는 앱 설정, 리소스, 권한을 코드로 선언하여 환경별 자동 배포를 가능하게 합니다. 자세한 내용은 [고급 기능 — DABs](/blog/guides/apps/advanced) 페이지를 참고하세요.
+
 
 ---
 
@@ -370,8 +372,12 @@ Databricks Apps는 현재 **수평적 자동 스케일링을 지원하지 않습
 | **수직 스케일링**(더 큰 컨테이너) | Medium에서 Large로 변경 가능 | 사이즈 변경 후 재배포 |
 | **수평 스케일링**(컨테이너 복제) | 지원하지 않음 | 앱 내부에서 다중 워커 사용 (Gunicorn `-w`) |
 | **트래픽 기반 자동 스케일링** | 지원하지 않음 | SQL Warehouse의 Serverless 스케일링 활용 |
+| **Scale to Zero** | Private Preview (App Spaces) | 유휴 30분 후 자동 중지, 요청 시 자동 재시작 |
+| **Horizontal Scaling** | Private Preview | 최대 5 인스턴스, 세션 친화성, 무중단 배포 |
 
 > **참고**
+**Scale to Zero** (App Spaces)는 현재 Private Preview입니다. GA 전까지는 Databricks Jobs로 업무 시간 외에 앱을 자동 중지하는 스크립트를 구성하세요. **Horizontal Scaling** 은 Private Preview로, 최대 5개 인스턴스까지 수평 확장이 가능합니다. 자세한 내용은 [고급 기능](/blog/guides/apps/advanced) 페이지를 참고하세요.
+
 **스케일링 팁**: 앱 자체의 스케일링보다 **백엔드 리소스의 스케일링** 에 집중하세요. Databricks Apps는 주로 프록시 역할(사용자 요청을 SQL Warehouse나 Model Serving에 전달)을 하므로, 병목은 대부분 백엔드에서 발생합니다. Serverless SQL Warehouse와 Model Serving Endpoint는 자동으로 스케일링되므로, 앱 컨테이너 자체가 병목이 되는 경우는 드뭅니다.
 
 
