@@ -824,8 +824,7 @@
               "ai-trends/meta",
               "ai-trends/aws-microsoft",
               "ai-trends/tesla-xai-others",
-              "ai-trends/korean-llm",
-              "ai-trends/trends-summary"
+              "ai-trends/korean-llm"
             ]
           }
         ]
