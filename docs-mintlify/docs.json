@@ -891,6 +891,44 @@
         ]
       },
       {
+        "tab": "릴리스 & 로드맵",
+        "groups": [
+          {
+            "group": "개요",
+            "pages": [
+              "releases/overview"
+            ]
+          },
+          {
+            "group": "기능 그룹별 로드맵",
+            "pages": [
+              "releases/roadmap/unity-catalog",
+              "releases/roadmap/data-engineering",
+              "releases/roadmap/databricks-sql",
+              "releases/roadmap/ai-ml",
+              "releases/roadmap/compute-serverless",
+              "releases/roadmap/apps-lakebase",
+              "releases/roadmap/security"
+            ]
+          },
+          {
+            "group": "월별 릴리스",
+            "pages": [
+              "releases/monthly/2026-04",
+              "releases/monthly/2026-03",
+              "releases/monthly/2026-02",
+              "releases/monthly/2026-01"
+            ]
+          },
+          {
+            "group": "리전별 가용성",
+            "pages": [
+              "releases/regions/overview"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Genie Code 핸즈온",
         "groups": [
           {
@@ -962,44 +1000,6 @@
               "workshop/section-5-appliance-handson/04-sdp-pipeline",
               "workshop/section-5-appliance-handson/05-dashboard-genie",
               "workshop/section-5-appliance-handson/06-agent-development"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "릴리스 & 로드맵",
-        "groups": [
-          {
-            "group": "개요",
-            "pages": [
-              "releases/overview"
-            ]
-          },
-          {
-            "group": "기능 그룹별 로드맵",
-            "pages": [
-              "releases/roadmap/unity-catalog",
-              "releases/roadmap/data-engineering",
-              "releases/roadmap/databricks-sql",
-              "releases/roadmap/ai-ml",
-              "releases/roadmap/compute-serverless",
-              "releases/roadmap/apps-lakebase",
-              "releases/roadmap/security"
-            ]
-          },
-          {
-            "group": "월별 릴리스",
-            "pages": [
-              "releases/monthly/2026-04",
-              "releases/monthly/2026-03",
-              "releases/monthly/2026-02",
-              "releases/monthly/2026-01"
-            ]
-          },
-          {
-            "group": "리전별 가용성",
-            "pages": [
-              "releases/regions/overview"
             ]
           }
         ]
