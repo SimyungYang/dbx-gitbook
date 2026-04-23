@@ -252,7 +252,7 @@ Account Console (단일 관리 포인트)
 | PrivateLink 유형 | 용도 | VPC Endpoint Service |
 |----------------|------|---------------------|
 | **Front-end (Workspace)** | 사용자 → Workspace UI/API | Workspace 접근 |
-| **Back-end (Data Plane)** | Data Plane → Control Plane | 클러스터 ↔ 관리 서비스 통신 |
+| **Back-end (Compute Plane)** | Compute Plane → Control Plane | 클러스터 ↔ 관리 서비스 통신 |
 | **SCC Relay** | Secure Cluster Connectivity | NAT 없이 아웃바운드 통신 |
 
 ```text
@@ -264,10 +264,10 @@ Account Console (단일 관리 포인트)
 │  사용자 브라우저 ──┼── Front-end ──→│  Workspace UI/API   │
 │                  │  PrivateLink   │                     │
 │                  │                │                     │
-│  Data Plane VPC ─┼── Back-end ───→│  Control Plane      │
+│  Compute Plane VPC ─┼── Back-end ───→│  Control Plane      │
 │  (클러스터)       │  PrivateLink   │  Services           │
 │                  │                │                     │
-│  Data Plane VPC ─┼── SCC Relay ──→│  SCC Relay          │
+│  Compute Plane VPC ─┼── SCC Relay ──→│  SCC Relay          │
 │                  │  PrivateLink   │  Endpoint           │
 └──────────────────┘                └─────────────────────┘
 ```
