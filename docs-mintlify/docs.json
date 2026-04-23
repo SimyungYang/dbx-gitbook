@@ -16,7 +16,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "교육자료",
+        "tab": "기능 가이드",
         "groups": [
           {
             "group": "Databricks 플랫폼",
@@ -292,23 +292,28 @@
                 ]
               },
               "training/11-lakebase/data-sync",
-              "training/11-lakebase/lakebase-with-apps/overview",
-              "training/11-lakebase/lakebase-with-apps/auth-and-connection",
-              "training/11-lakebase/lakebase-with-apps/framework-examples",
               {
-                "group": "성능 최적화와 CRUD 패턴",
+                "group": "Lakebase + Apps 연동",
                 "pages": [
-                  "training/11-lakebase/lakebase-with-apps/optimization-and-crud",
-                  "training/11-lakebase/lakebase-with-apps/optimization-and-crud-basics",
-                  "training/11-lakebase/lakebase-with-apps/optimization-and-crud-advanced"
-                ]
-              },
-              {
-                "group": "배포 및 운영",
-                "pages": [
-                  "training/11-lakebase/lakebase-with-apps/deployment",
-                  "training/11-lakebase/lakebase-with-apps/deployment-architecture",
-                  "training/11-lakebase/lakebase-with-apps/deployment-operations"
+                  "training/11-lakebase/lakebase-with-apps/overview",
+                  "training/11-lakebase/lakebase-with-apps/auth-and-connection",
+                  "training/11-lakebase/lakebase-with-apps/framework-examples",
+                  {
+                    "group": "최적화와 CRUD",
+                    "pages": [
+                      "training/11-lakebase/lakebase-with-apps/optimization-and-crud",
+                      "training/11-lakebase/lakebase-with-apps/optimization-and-crud-basics",
+                      "training/11-lakebase/lakebase-with-apps/optimization-and-crud-advanced"
+                    ]
+                  },
+                  {
+                    "group": "배포",
+                    "pages": [
+                      "training/11-lakebase/lakebase-with-apps/deployment",
+                      "training/11-lakebase/lakebase-with-apps/deployment-architecture",
+                      "training/11-lakebase/lakebase-with-apps/deployment-operations"
+                    ]
+                  }
                 ]
               }
             ]
@@ -346,14 +351,9 @@
               {
                 "group": "접근 제어",
                 "pages": [
-                  {
-                    "group": "권한 관리",
-                    "pages": [
-                      "training/07-unity-catalog/access-control",
-                      "training/07-unity-catalog/access-control-basics",
-                      "training/07-unity-catalog/access-control-patterns"
-                    ]
-                  },
+                  "training/07-unity-catalog/access-control",
+                  "training/07-unity-catalog/access-control-basics",
+                  "training/07-unity-catalog/access-control-patterns",
                   "training/07-unity-catalog/row-filters",
                   "training/07-unity-catalog/column-masks",
                   "training/07-unity-catalog/tags"
@@ -382,20 +382,15 @@
             "group": "AI/BI",
             "pages": [
               "training/08-ai-bi/overview",
-              {
-                "group": "AI/BI 개요",
-                "pages": [
-                  "training/08-ai-bi/aibi-overview",
-                  "training/08-ai-bi/aibi-overview-concepts",
-                  "training/08-ai-bi/aibi-overview-details"
-                ]
-              },
+              "training/08-ai-bi/aibi-overview",
+              "training/08-ai-bi/aibi-overview-concepts",
+              "training/08-ai-bi/aibi-overview-details",
               "training/08-ai-bi/aibi-architecture",
               "training/08-ai-bi/lakeview-dashboards",
               "training/08-ai-bi/genie",
               "training/08-ai-bi/alerts-and-scheduling",
               {
-                "group": "Metric Views — 비즈니스 시맨틱 레이어",
+                "group": "Metric Views",
                 "pages": [
                   "training/08-ai-bi/metric-views",
                   "training/08-ai-bi/metric-views-basics",
@@ -588,7 +583,7 @@
                 "pages": [
                   "training/12-security-and-governance/identity-and-access",
                   {
-                    "group": "SSO (Single Sign-On) 설정 상세 가이드",
+                    "group": "SSO 설정",
                     "pages": [
                       "training/12-security-and-governance/sso-setup",
                       "training/12-security-and-governance/sso-setup-guide",
@@ -606,15 +601,10 @@
               {
                 "group": "System Tables",
                 "pages": [
-                  {
-                    "group": "시스템 테이블",
-                    "pages": [
-                      "training/12-security-and-governance/system-tables/overview",
-                      "training/12-security-and-governance/system-tables/overview-and-tables-advanced",
-                      "training/12-security-and-governance/system-tables/overview-and-tables-intro",
-                      "training/12-security-and-governance/system-tables/overview-and-tables"
-                    ]
-                  },
+                  "training/12-security-and-governance/system-tables/overview",
+                  "training/12-security-and-governance/system-tables/overview-and-tables",
+                  "training/12-security-and-governance/system-tables/overview-and-tables-intro",
+                  "training/12-security-and-governance/system-tables/overview-and-tables-advanced",
                   "training/12-security-and-governance/system-tables/practical-queries",
                   "training/12-security-and-governance/system-tables/dashboard-and-setup"
                 ]
@@ -799,20 +789,23 @@
           {
             "group": "AI/BI",
             "pages": [
-              "blog/guides/genie-selection/overview",
+              "training/08-ai-bi/overview",
+              "training/08-ai-bi/aibi-overview",
+              "training/08-ai-bi/aibi-overview-concepts",
+              "training/08-ai-bi/aibi-overview-details",
+              "training/08-ai-bi/aibi-architecture",
+              "training/08-ai-bi/lakeview-dashboards",
+              "training/08-ai-bi/genie",
+              "training/08-ai-bi/alerts-and-scheduling",
               {
-                "group": "Genie Space 운영 가이드",
+                "group": "Metric Views",
                 "pages": [
-                  "blog/guides/genie-space/overview",
-                  "blog/guides/genie-space/create-space",
-                  "blog/guides/genie-space/data-config",
-                  "blog/guides/genie-space/instructions",
-                  "blog/guides/genie-space/testing",
-                  "blog/guides/genie-space/sharing",
-                  "blog/guides/genie-space/monitoring",
-                  "blog/guides/genie-space/mcp"
+                  "training/08-ai-bi/metric-views",
+                  "training/08-ai-bi/metric-views-basics",
+                  "training/08-ai-bi/metric-views-advanced"
                 ]
-              }
+              },
+              "training/08-ai-bi/hybrid-bi-strategy"
             ]
           },
           {
@@ -825,30 +818,20 @@
                   "blog/guides/genie-code/usage",
                   "blog/guides/genie-code/scenarios",
                   {
-                    "group": "프롬프트 쿡북",
+                    "group": "Genie Code 프롬프트 쿡북",
                     "pages": [
-                      {
-                        "group": "Genie Code 프롬프트 쿡북",
-                        "pages": [
-                          "blog/guides/genie-code/prompt-cookbook",
-                          "blog/guides/genie-code/prompt-cookbook-data",
-                          "blog/guides/genie-code/prompt-cookbook-ml",
-                          "blog/guides/genie-code/prompt-cookbook-ops"
-                        ]
-                      }
+                      "blog/guides/genie-code/prompt-cookbook",
+                      "blog/guides/genie-code/prompt-cookbook-data",
+                      "blog/guides/genie-code/prompt-cookbook-ml",
+                      "blog/guides/genie-code/prompt-cookbook-ops"
                     ]
                   },
                   {
                     "group": "MCP 연동",
                     "pages": [
-                      {
-                        "group": "MCP 연동",
-                        "pages": [
-                          "blog/guides/genie-code/mcp",
-                          "blog/guides/genie-code/mcp-architecture",
-                          "blog/guides/genie-code/mcp-usage"
-                        ]
-                      }
+                      "blog/guides/genie-code/mcp",
+                      "blog/guides/genie-code/mcp-architecture",
+                      "blog/guides/genie-code/mcp-usage"
                     ]
                   },
                   {
@@ -928,31 +911,21 @@
               {
                 "group": "배포 워크플로우",
                 "pages": [
-                  {
-                    "group": "배포 워크플로우",
-                    "pages": [
-                      "blog/guides/apps/deployment",
-                      "blog/guides/apps/deployment-dev-deploy",
-                      "blog/guides/apps/deployment-operations"
-                    ]
-                  }
+                  "blog/guides/apps/deployment",
+                  "blog/guides/apps/deployment-dev-deploy",
+                  "blog/guides/apps/deployment-operations"
                 ]
               },
               "blog/guides/apps/updating",
               "blog/guides/apps/networking",
               {
-                "group": "고급 기능",
+                "group": "고급 기능 (Scale to Zero, Lakebase, DABs, AppKit)",
                 "pages": [
-                  {
-                    "group": "고급 기능 (Scale to Zero, Lakebase, DABs, AppKit)",
-                    "pages": [
-                      "blog/guides/apps/advanced",
-                      "blog/guides/apps/advanced-scaling",
-                      "blog/guides/apps/advanced-lakebase",
-                      "blog/guides/apps/advanced-dabs",
-                      "blog/guides/apps/advanced-appkit"
-                    ]
-                  }
+                  "blog/guides/apps/advanced",
+                  "blog/guides/apps/advanced-scaling",
+                  "blog/guides/apps/advanced-lakebase",
+                  "blog/guides/apps/advanced-dabs",
+                  "blog/guides/apps/advanced-appkit"
                 ]
               },
               {
@@ -1046,7 +1019,6 @@
                     "group": "Agent Memory 시스템",
                     "pages": [
                       "blog/guides/genai-concepts/agent-architecture/memory",
-                      "blog/guides/genai-concepts/agent-architecture/memory-overview",
                       "blog/guides/genai-concepts/agent-architecture/memory-foundations",
                       "blog/guides/genai-concepts/agent-architecture/memory-details",
                       "blog/guides/genai-concepts/agent-architecture/memory-advanced"
