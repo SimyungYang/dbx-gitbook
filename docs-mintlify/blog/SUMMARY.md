@@ -30,7 +30,6 @@ title: "Table of contents"
   * [Workspace 배포](platform-setup/azure/workspace)
   * [Backend Private Link](platform-setup/azure/privatelink)
   * [Unity Catalog](platform-setup/azure/unity-catalog)
-* [Databricks Geo (데이터 거주)](guides/platform-setup/databricks-geos)
 * [인증 종합 가이드](guides/platform-setup/authentication/README)
   * [OAuth U2M (사용자 인증)](guides/platform-setup/authentication/oauth-u2m)
   * [OAuth M2M (서비스 인증)](guides/platform-setup/authentication/oauth-m2m)

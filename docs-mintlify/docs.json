@@ -954,7 +954,7 @@
               "training/12-security-and-governance/secret-management",
               "training/12-security-and-governance/cmk-encryption",
               "training/12-security-and-governance/audit-logs",
-              "blog/guides/platform-setup/databricks-geos",
+              "training/12-security-and-governance/databricks-geos",
               {
                 "group": "System Tables",
                 "pages": [
