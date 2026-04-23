@@ -1,0 +1,147 @@
+---
+title: "에이전트 평가 — 심화 — 심화"
+---
+
+> 이 문서는 **[AI 에이전트](/training/10-agent-development/overview)** 섹션의 일부입니다.
+
+## 프로덕션 모니터링
+
+배포 후에도 **Inference Table + MLflow Tracing** 으로 에이전트 품질을 지속 모니터링합니다. 프로덕션 환경에서는 사전 평가 때와 다른 질문 패턴이 등장할 수 있으므로, 실시간 모니터링은 필수적입니다.
+
+### 핵심 모니터링 지표
+
+| 지표 | 설명 | 경고 기준 (예시) |
+|------|------|----------------|
+| **응답 지연시간** | 요청부터 응답까지 걸리는 시간입니다 | P95 > 5초 |
+| **토큰 사용량** | 입력/출력 토큰 수입니다. 비용과 직결됩니다 | 평균 > 2000 토큰/요청 |
+| **오류율** | 에이전트가 오류를 반환하는 비율입니다 | > 2% |
+| **사용자 피드백** | 👍/👎 비율 또는 CSAT 점수입니다 | 부정 피드백 > 15% |
+| **환각율** | 검색 문서에 근거하지 않은 답변 비율입니다 | > 10% |
+
+### SQL로 모니터링 대시보드 구축
+
+```sql
+-- 최근 7일간 에이전트 성능 요약
+SELECT
+    DATE(timestamp) AS day,
+    COUNT(*) AS total_requests,
+    AVG(latency_ms) AS avg_latency,
+    PERCENTILE(latency_ms, 0.95) AS p95_latency,
+    SUM(total_tokens) AS total_tokens,
+    SUM(CASE WHEN status = 'ERROR' THEN 1 ELSE 0 END) / COUNT(*) AS error_rate
+FROM system.mlflow.traces
+WHERE experiment_name = 'customer-support-agent'
+    AND timestamp >= CURRENT_DATE() - INTERVAL 7 DAYS
+GROUP BY DATE(timestamp)
+ORDER BY day;
+```
+
+```sql
+-- 낮은 품질 응답 탐지 (주기적 평가)
+SELECT
+    request_id,
+    input_text,
+    output_text,
+    latency_ms,
+    timestamp
+FROM inference_table
+WHERE latency_ms > 5000           -- 느린 응답
+   OR output_text IS NULL          -- 빈 응답
+   OR LENGTH(output_text) < 10     -- 너무 짧은 응답
+ORDER BY timestamp DESC
+LIMIT 100;
+```
+
+### 자동 재평가 파이프라인
+
+프로덕션 트레이스를 주기적으로 수집하여 자동 재평가를 수행하면, 에이전트 품질 저하를 조기에 발견할 수 있습니다.
+
+```python
+# 주간 자동 재평가 (Lakeflow Jobs로 스케줄링)
+import mlflow
+from pyspark.sql import functions as F
+
+# 1. 최근 1주 프로덕션 트레이스에서 평가 데이터 추출
+traces = spark.table("system.mlflow.traces") \
+    .filter(F.col("experiment_name") == "customer-support-agent") \
+    .filter(F.col("timestamp") >= F.current_date() - F.expr("INTERVAL 7 DAYS")) \
+    .select("input_text", "output_text") \
+    .limit(200) \
+    .toPandas()
+
+# 2. Safety 및 Groundedness 재평가
+eval_data = [
+    {"inputs": {"question": row["input_text"]},
+     "outputs": {"response": row["output_text"]}}
+    for _, row in traces.iterrows()
+]
+
+results = mlflow.genai.evaluate(
+    data=eval_data,
+    scorers=[
+        mlflow.genai.scorers.Safety(),
+        mlflow.genai.scorers.RetrievalGroundedness(),
+    ]
+)
+
+# 3. 품질 저하 시 알림
+safety_mean = results.metrics["safety/mean"]
+if safety_mean < 0.95:
+    # Slack 또는 이메일 알림 발송
+    notify_team(f"⚠️ Safety 점수 하락: {safety_mean:.2f} (기준: 0.95)")
+```
+
+---
+
+## CI/CD 파이프라인에서의 평가 자동화
+
+에이전트를 코드로 관리할 때, CI/CD 파이프라인에 평가를 포함시키면 품질 게이트를 자동화할 수 있습니다. 프롬프트 변경이나 Tool 수정 시 자동으로 평가가 실행되어, 품질 저하를 사전에 방지합니다.
+
+```python
+# CI/CD 파이프라인에서의 평가 게이트 예시
+def evaluate_and_gate(agent, min_correctness=0.85, min_safety=0.95):
+    """배포 전 자동 품질 검증"""
+    results = mlflow.genai.evaluate(
+        data=eval_dataset,  # 사전 정의된 평가 데이터셋
+        predict_fn=agent.predict,
+        scorers=[
+            mlflow.genai.scorers.Correctness(),
+            mlflow.genai.scorers.Safety(),
+            mlflow.genai.scorers.RetrievalGroundedness(),
+        ]
+    )
+
+    metrics = results.metrics
+
+    # 품질 게이트 검증
+    assert metrics["correctness/mean"] >= min_correctness, \
+        f"Correctness {metrics['correctness/mean']:.2f} < {min_correctness}"
+    assert metrics["safety/mean"] >= min_safety, \
+        f"Safety {metrics['safety/mean']:.2f} < {min_safety}"
+
+    print("✅ 품질 게이트 통과! 배포를 진행합니다.")
+    return True
+```
+
+---
+
+## 정리
+
+| 핵심 개념 | 설명 |
+|-----------|------|
+| **mlflow.genai.evaluate()** | 에이전트 품질을 자동으로 평가하는 핵심 함수입니다. 평가 데이터와 Scorer를 인수로 받아 체계적인 평가를 수행합니다 |
+| **내장 Scorer** | Correctness, Safety, RetrievalGroundedness, RetrievalRelevance, Guidelines 5종의 사전 구축 평가 기준을 제공합니다 |
+| **커스텀 Scorer** | `@scorer` 데코레이터로 비즈니스 맞춤형 평가 기준을 Python 함수로 구현할 수 있습니다 |
+| **LLM Judge** | LLM을 심판으로 사용하여 자연어 답변의 의미적 품질을 자동 판단합니다 |
+| **평가 데이터셋** | 수동 작성, 프로덕션 트레이스, FAQ, 합성 데이터 등 다양한 소스로 구축합니다 |
+| **프로덕션 모니터링** | Inference Table + Tracing으로 배포 후에도 지속적으로 품질을 모니터링합니다 |
+| **CI/CD 통합** | 평가를 배포 파이프라인에 포함시켜 품질 게이트를 자동화할 수 있습니다 |
+
+---
+
+## 참고 링크
+
+- [Databricks: Agent Evaluation](https://docs.databricks.com/aws/en/generative-ai/agent-evaluation/)
+- [MLflow: Evaluate](https://mlflow.org/docs/latest/llms/llm-evaluate/)
+- [MLflow: Scorers](https://mlflow.org/docs/latest/llms/llm-evaluate/index.html#built-in-scorers)
+- [Databricks: Inference Tables](https://docs.databricks.com/aws/en/machine-learning/model-serving/inference-tables.html)

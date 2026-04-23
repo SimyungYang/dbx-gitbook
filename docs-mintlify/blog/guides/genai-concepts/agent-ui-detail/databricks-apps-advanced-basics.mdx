@@ -1,0 +1,124 @@
+---
+title: "Databricks Apps 심화 — 기초"
+---
+
+> 이 문서는 **[GenAI 개념](/blog/guides/genai-concepts/overview)** 섹션의 일부입니다.
+
+## 단계별 기술 스택 선택 가이드
+
+Agent 프로젝트는 PoC → 파일럿 → 프로덕션의 단계를 거칩니다. 각 단계마다 최적의 기술 스택이 다릅니다.
+
+### PoC (1~2주): "동작하는 데모"
+
+| 항목 | 선택 | 이유 |
+|------|------|------|
+| **프론트엔드** | Streamlit 또는 Chainlit | 최소 코드로 채팅 UI 구현 (Streamlit: 30분, Chainlit: Agent 추론 과정 시각화) |
+| **백엔드** | Agent 직접 호출 (인프로세스) | API 서버 없이 앱 내에서 직접 LLM/Tool 호출 |
+| **배포** | 로컬 (`streamlit run`) 또는 노트북 | 배포 인프라 불필요, 로컬에서 데모 |
+| **인증** | PAT (Personal Access Token) | 개인 토큰으로 빠른 설정 |
+| **데이터** | 하드코딩 또는 직접 SQL | 유연하고 빠른 반복 개발 |
+
+**구조:** Streamlit (로컬 실행) → Agent 직접 호출 (인프로세스) → Databricks (Model Serving)
+
+### 파일럿 (1~2개월): "팀 내부 사용"
+
+| 항목 | 선택 | 이유 |
+|------|------|------|
+| **프론트엔드** | Streamlit + Databricks Apps | 팀원들이 URL로 접근 가능, OAuth 자동 인증 |
+| **백엔드** | Model Serving 엔드포인트 | Agent를 엔드포인트로 배포, 안정적 API 제공 |
+| **배포** | Databricks Apps | 서버리스 호스팅, SSL, 인증 자동화 |
+| **인증** | 서비스 프린시펄 (자동) | PAT 노출 위험 제거 |
+| **데이터** | SQL Warehouse + Unity Catalog | 거버넌스 적용, 접근 제어 |
+
+```
+┌──────────────┐      ┌──────────────┐      ┌──────────────┐
+│  Streamlit   │─────→│Model Serving │─────→│ Unity Catalog│
+│  (Dbx Apps)  │ HTTP │  (Agent EP)  │      │ SQL Warehouse│
+└──────────────┘      └──────────────┘      └──────────────┘
+```
+
+### 프로덕션 (지속 운영): "전사 사용"
+
+**옵션 A: Streamlit/Dash + Databricks Apps**(사용자 수 \< 100명)
+
+| 항목 | 선택 | 이유 |
+|------|------|------|
+| **프론트엔드** | Streamlit 또는 Dash | 유지보수 용이, Python 단일 스택 |
+| **백엔드** | Model Serving + Agent Framework | 안정적 엔드포인트, A/B 테스팅 가능 |
+| **배포** | Databricks Apps + CI/CD | GitHub Actions 또는 Azure DevOps 연동 |
+| **모니터링** | Inference Table + Lakehouse Monitoring | 요청/응답 로깅, 품질 모니터링 |
+
+**옵션 B: React/Next.js + FastAPI**(사용자 수 100명+ 또는 커스텀 UX 필수)
+
+| 항목 | 선택 | 이유 |
+|------|------|------|
+| **프론트엔드** | React/Next.js | 커스텀 디자인, 기업 포털 통합, 모바일 대응 |
+| **백엔드** | FastAPI (Databricks Apps) | API 서버로 Agent 기능 노출 |
+| **배포** | Databricks Apps (백엔드) + CDN/Vercel (프론트) | 프론트/백 독립 배포 |
+| **모니터링** | Inference Table + 외부 APM (Datadog 등) | 엔드투엔드 모니터링 |
+
+> **주의**
+**프로덕션 전환 시 반드시 확인할 것**:
+1. **인증**: PAT → 서비스 프린시펄 전환 완료 여부
+2. **시크릿 관리**: 환경 변수 또는 Databricks Secret Scope 사용 여부
+3. **에러 핸들링**: Agent 호출 실패 시 사용자에게 적절한 메시지 표시 여부
+4. **Rate Limiting**: Model Serving 엔드포인트의 동시 요청 제한 설정 여부
+5. **로깅**: 모든 요청/응답이 Inference Table에 기록되는지 확인
+
+
+---
+
+
+## 종합 비교 테이블
+
+### 기능별 비교
+
+| 항목 | Streamlit | Gradio | Chainlit | Dash | FastAPI |
+|------|-----------|--------|----------|------|---------|
+| **주요 용도** | 대시보드 + 채팅 | ML 데모 | Agent 채팅 | 대시보드 | API 서버 |
+| **개발 속도** | 매우 빠름 | 빠름 | 빠름 | 보통 | 보통 |
+| **채팅 UI** | 좋음 | 좋음 | 최고 | 어려움 | 직접 구현 |
+| **대시보드** | 좋음 | 제한적 | 없음 | 최고 | 직접 구현 |
+| **프로덕션 적합성** | 보통 | 제한적 | 제한적 | 좋음 | 최고 |
+| **Databricks Apps** | 지원 | 지원 | 미지원 | 지원 | 지원 |
+| **멀티유저 지원** | 제한적 | 제한적 | 제한적 | 좋음 | 최고 |
+| **커스텀 디자인** | 제한적 | 제한적 | 보통 | 좋음 | 완전 자유 |
+| **스트리밍** | `write_stream` | 내장 | 내장 | 어려움 | SSE/WS |
+| **Agent 추론 시각화** | 직접 구현 | 제한적 | 내장 (최고) | 직접 구현 | 직접 구현 |
+
+### 의사결정 흐름도
+
+```
+Agent UI 기술 선택
+│
+├─ "2주 안에 데모를 보여줘야 한다"
+│   └─→ Streamlit (채팅+대시보드) 또는 Chainlit (Agent 추론 시각화)
+│
+├─ "Hugging Face 모델을 데모하고 싶다"
+│   └─→ Gradio
+│
+├─ "차트 중심 모니터링 대시보드를 만든다"
+│   └─→ Dash
+│
+├─ "기존 웹 포털에 Agent를 통합해야 한다"
+│   └─→ FastAPI (백엔드) + 기존 프론트엔드
+│
+├─ "Databricks Apps에 배포해야 한다"
+│   ├─ 채팅 UI 중심 → Streamlit
+│   ├─ 대시보드 중심 → Dash
+│   └─ API 서버 → FastAPI
+│
+└─ "사용자 100명+, 커스텀 UX 필수"
+    └─→ FastAPI + React/Next.js
+```
+
+### 비용 관점 비교
+
+| 항목 | Streamlit | Gradio | Chainlit | Dash | FastAPI + React |
+|------|-----------|--------|----------|------|-----------------|
+| **개발 인력** | Python 1명 | Python 1명 | Python 1명 | Python 1명 | Python + Frontend 2명 |
+| **초기 개발 기간** | 1~2주 | 1~2주 | 1~2주 | 2~4주 | 4~8주 |
+| **유지보수 난이도** | 낮음 | 낮음 | 보통 | 보통 | 높음 |
+| **인프라 비용** | Databricks Apps DBU | Databricks Apps DBU | 별도 서버 | Databricks Apps DBU | Databricks Apps + CDN |
+
+---

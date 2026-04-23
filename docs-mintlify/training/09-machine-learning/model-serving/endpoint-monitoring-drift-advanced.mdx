@@ -1,0 +1,123 @@
+---
+title: "드리프트 감지와 시스템 모니터링 — 심화"
+---
+
+> 이 문서는 **[머신러닝](/training/09-machine-learning/overview)** 섹션의 일부입니다.
+
+## MLflow Tracing (에이전트/LLM 서빙)
+
+LLM 기반 에이전트를 서빙하는 경우, **MLflow Tracing** 을 통해 각 요청의 내부 실행 경로를 추적할 수 있습니다.
+
+| 구성 요소 | 역할 | 설명 |
+|-----------|------|------|
+| **사용자 요청** | 입력 | 에이전트에 요청을 전송합니다 |
+| **에이전트** | 오케스트레이션 | 요청을 분석하고 필요한 작업을 수행합니다 |
+| **문서 검색** | Vector Search | 관련 문서를 검색합니다 |
+| **LLM 호출** | Foundation Model | 답변을 생성합니다 |
+| **도구 실행** | SQL, API 등 | 외부 도구를 호출합니다 |
+| **최종 응답** | 출력 | 사용자에게 결과를 반환합니다 |
+
+Tracing이 캡처하는 정보는 다음과 같습니다.
+
+| 트레이스 항목 | 설명 |
+|-------------|------|
+| **Span 계층구조** | 에이전트의 각 단계(검색, LLM 호출, 도구 실행)를 트리 형태로 표시합니다 |
+| **입출력** | 각 단계의 입력과 출력을 기록합니다 |
+| **토큰 사용량** | LLM 호출별 입력/출력 토큰 수를 추적합니다 |
+| **지연 시간** | 각 단계별 소요 시간을 밀리초 단위로 측정합니다 |
+| **에러 정보** | 실패 시 에러 메시지와 스택 트레이스를 기록합니다 |
+
+```python
+# MLflow Tracing은 에이전트 서빙 시 자동 활성화됩니다
+# Inference Table에서 트레이스 데이터를 조회할 수 있습니다
+
+import json
+
+# 트레이스 데이터 분석 쿼리 (SQL)
+# SELECT
+#     request_id,
+#     trace:spans[0].name AS root_span,
+#     trace:spans[0].attributes.total_tokens AS total_tokens,
+#     execution_time_ms
+# FROM ml_prod.monitoring.agent_payload
+# WHERE date = CURRENT_DATE()
+# ORDER BY execution_time_ms DESC
+# LIMIT 10;
+```
+
+---
+
+## 시스템 테이블 활용
+
+Databricks 시스템 테이블(`system.serving`)에는 모든 서빙 엔드포인트의 운영 메트릭이 자동으로 기록됩니다.
+
+```sql
+-- 엔드포인트별 일일 요청량 및 에러율
+SELECT
+    endpoint_name,
+    DATE(request_time) AS day,
+    COUNT(*) AS total_requests,
+    SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) AS errors,
+    ROUND(
+        SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2
+    ) AS error_rate_pct,
+    ROUND(AVG(execution_time_ms), 1) AS avg_latency_ms,
+    ROUND(PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY execution_time_ms), 1) AS p99_latency_ms
+FROM system.serving.served_model_requests
+WHERE DATE(request_time) >= CURRENT_DATE() - INTERVAL 7 DAYS
+GROUP BY endpoint_name, DATE(request_time)
+ORDER BY day DESC, endpoint_name;
+
+-- 엔드포인트별 프로비저닝된 동시성 변화 추적
+SELECT
+    endpoint_name,
+    change_time,
+    scaled_entity_name,
+    previous_scale,
+    new_scale
+FROM system.serving.endpoint_scaling_events
+WHERE DATE(change_time) >= CURRENT_DATE() - INTERVAL 7 DAYS
+ORDER BY change_time DESC;
+```
+
+> 💡 **시스템 테이블** 은 Unity Catalog의 `system` 카탈로그에 위치하며, 워크스페이스 관리자가 활성화해야 합니다. 추가 비용 없이 90일간의 데이터를 보존합니다.
+
+---
+
+## 비용 모니터링
+
+### 토큰 사용량 추적 (LLM 엔드포인트)
+
+```sql
+-- LLM 엔드포인트 일별 토큰 사용량 및 추정 비용
+SELECT
+    DATE(timestamp_ms / 1000) AS day,
+    COUNT(*) AS total_requests,
+    SUM(request:usage.prompt_tokens) AS total_input_tokens,
+    SUM(request:usage.completion_tokens) AS total_output_tokens,
+    SUM(request:usage.total_tokens) AS total_tokens,
+    -- 대략적인 비용 추정 (모델별로 단가가 다릅니다)
+    ROUND(SUM(request:usage.total_tokens) / 1000000.0 * 2.0, 2) AS estimated_cost_usd
+FROM ml_prod.monitoring.agent_payload
+WHERE date >= CURRENT_DATE() - INTERVAL 30 DAYS
+GROUP BY DATE(timestamp_ms / 1000)
+ORDER BY day DESC;
+```
+
+### DBU 기반 비용 추적
+
+```sql
+-- 서빙 엔드포인트의 DBU 사용량 (system.billing 테이블)
+SELECT
+    usage_date,
+    workspace_id,
+    sku_name,
+    usage_metadata.endpoint_name,
+    SUM(usage_quantity) AS total_dbus,
+    SUM(usage_quantity * list_price) AS estimated_cost
+FROM system.billing.usage
+WHERE sku_name LIKE '%SERVING%'
+    AND usage_date >= CURRENT_DATE() - INTERVAL 30 DAYS
+GROUP BY usage_date, workspace_id, sku_name, usage_metadata.endpoint_name
+ORDER BY usage_date DESC;
+```

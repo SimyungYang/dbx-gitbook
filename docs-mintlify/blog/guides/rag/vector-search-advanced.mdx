@@ -1,0 +1,116 @@
+---
+title: "Vector Search 설정 — 심화"
+---
+
+> 이 문서는 **[RAG](/blog/guides/rag/overview)** 섹션의 일부입니다.
+
+## 4. 인덱스 쿼리
+
+### 유사도 검색
+
+```python
+results = index.similarity_search(
+    query_text="Databricks에서 RAG를 구축하는 방법은?",
+    columns=["chunk_id", "content", "source"],
+    num_results=5
+)
+
+for doc in results.get("result", {}).get("data_array", []):
+    print(f"[{doc[0]}] {doc[1][:100]}...")
+```
+
+### 메타데이터 필터링
+
+```python
+results = index.similarity_search(
+    query_text="보안 설정 방법",
+    columns=["chunk_id", "content", "source"],
+    filters={"source": "security_guide.pdf"},
+    num_results=3
+)
+```
+
+### 하이브리드 검색 (유사도 + 키워드)
+
+하이브리드 검색은 **벡터 유사도 검색** 과 **BM25 키워드 검색** 을 동시에 수행하고 결과를 병합합니다. 벡터 검색은 "자동차"와 "차량"의 의미적 유사성을 잡아내는 데 강하지만, 정확한 고유명사나 코드명 검색에는 약합니다. 반대로 키워드 검색은 정확한 용어 매칭에 강합니다. 두 방식을 결합하면 단독 사용 대비 검색 재현율(recall)이 10~20% 향상됩니다.
+
+결과 병합에는 **RRF(Reciprocal Rank Fusion)** 알고리즘이 사용됩니다. RRF는 각 검색 방식에서 문서의 순위(rank)를 기반으로 점수를 계산합니다: `score = 1 / (k + rank)` (k는 상수, 보통 60). 두 검색 방식 모두에서 상위에 랭크된 문서가 가장 높은 점수를 받으며, 한쪽에서만 검색된 문서도 결과에 포함됩니다.
+
+```python
+results = index.similarity_search(
+    query_text="Delta Lake ACID 트랜잭션",
+    columns=["chunk_id", "content"],
+    num_results=5,
+    query_type="HYBRID"   # RRF로 결과 병합, 최대 200개
+)
+```
+
+## 5. 인덱스 튜닝 가이드
+
+### pipeline_type 선택
+
+Delta Sync Index의 동기화 방식은 데이터 업데이트 빈도와 비용 허용 범위에 따라 선택합니다.
+
+| 옵션 | 동기화 방식 | 비용 | 적합한 케이스 |
+|------|-----------|------|-------------|
+| **TRIGGERED** | 수동 트리거 또는 스케줄 | 낮음 | 배치 업데이트, 일 단위 갱신 |
+| **CONTINUOUS** | 실시간 자동 동기화 | 높음 | 실시간 데이터, 자주 변경되는 문서 |
+
+```python
+# TRIGGERED: 수동으로 동기화 실행
+index.sync()
+
+# CONTINUOUS: 소스 테이블 변경 시 자동 동기화 (CDF 기반)
+# pipeline_type="CONTINUOUS"로 생성 시 자동 활성화
+```
+
+> **팁**
+대부분의 RAG 사용 사례에서는 **TRIGGERED** 모드로 충분합니다. 문서가 자주 변경되지 않는 경우 불필요한 CONTINUOUS 동기화 비용을 절약할 수 있습니다. 일 단위 갱신이면 Databricks Job으로 `index.sync()`를 스케줄링하세요.
+
+
+### 인덱스 상태 모니터링
+
+```python
+# 인덱스 상태 확인
+status = index.describe()
+print(f"상태: {status.get('status', {}).get('ready')}")
+print(f"벡터 수: {status.get('status', {}).get('num_rows')}")
+print(f"마지막 동기화: {status.get('status', {}).get('last_sync_time')}")
+
+# 동기화 진행 상황 확인 (TRIGGERED 모드)
+sync_status = index.wait_until_ready(timeout=timedelta(minutes=30))
+```
+
+## 6. 비용 최적화 가이드
+
+### Standard vs Storage-Optimized 선택 기준
+
+| 기준 | Standard | Storage-Optimized |
+|------|----------|-------------------|
+| **문서 수** | \< 100만 청크 | 100만+ 청크 |
+| **쿼리 빈도** | 높음 (실시간 서빙) | 낮음~중간 (배치 검색) |
+| **응답 시간 요구** | P95 \< 200ms | P95 \< 500ms 허용 |
+| **비용 우선순위** | 성능 > 비용 | 비용 > 성능 |
+| **인덱스 빌드** | 소규모 빠르게 | 대규모 효율적으로 |
+
+### 비용 절감 팁
+
+1. **불필요한 컬럼 제거**: 인덱스에 포함하는 컬럼(columns)을 최소화합니다. 검색에 필요한 컬럼만 포함하세요.
+2. **Triggered Sync 사용**: Continuous 대신 Triggered를 사용하고, 필요할 때만 동기화합니다.
+3. **임베딩 차원 최적화**: 1024차원 대신 768차원 모델을 사용하면 스토리지 비용이 25% 절감됩니다. 품질 차이가 미미한 경우가 많습니다.
+4. **엔드포인트 통합**: 여러 인덱스를 하나의 엔드포인트에서 서빙합니다. 엔드포인트당 최대 50개 인덱스를 지원합니다.
+5. **문서 수명 관리**: 더 이상 필요 없는 문서는 소스 테이블에서 삭제하여 인덱스 크기를 줄입니다.
+
+> **주의**
+Storage-Optimized 엔드포인트는 쿼리 지연이 약 250ms 추가되지만, 대규모 데이터셋에서 인덱싱 비용이 크게 절감됩니다. 10만 건 이하에서는 Standard가 비용 효율적이고, 100만 건 이상에서는 Storage-Optimized를 고려하세요.
+
+
+## 다음 단계
+
+Vector Search 인덱스가 준비되면, [RAG 체인 구축](chain-building)에서 검색 결과를 LLM과 연결하는 체인을 만듭니다.
+
+## 참고 문서
+
+- [Vector Search 공식 문서](https://docs.databricks.com/aws/en/generative-ai/vector-search/index.html)
+- [Vector Search 가격 정책](https://www.databricks.com/product/pricing/vector-search)
+- [Vector Search API 레퍼런스](https://docs.databricks.com/api/workspace/vectorsearchindexes)

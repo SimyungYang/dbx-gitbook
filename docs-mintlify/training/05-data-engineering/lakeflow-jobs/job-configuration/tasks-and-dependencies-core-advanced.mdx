@@ -1,0 +1,196 @@
+---
+title: "태스크 유형, 의존성, 실패 처리 — 심화"
+---
+
+> 이 문서는 **[데이터 엔지니어링](/training/05-data-engineering/overview)** 섹션의 일부입니다.
+
+## 의존성 설정
+
+태스크 간 의존성을 설정하면 **DAG(Directed Acyclic Graph)** 형태로 실행 순서가 결정됩니다. Databricks는 세 가지 핵심 의존성 패턴을 지원합니다.
+
+### 의존성 패턴
+
+| 패턴 | 설명 | 사용 사례 |
+|------|------|-----------|
+| **선형 (Sequential)** | A → B → C 순서대로 실행합니다 | 단계별 ETL 파이프라인 |
+| **팬아웃/팬인 (Fan-out/Fan-in)** | 여러 태스크를 동시에 실행한 후 합류합니다 | 독립적인 데이터 소스 동시 수집 |
+| **조건부 (Conditional)** | 선행 태스크 결과에 따라 분기합니다 | 데이터 검증 결과에 따른 처리 |
+
+### 복잡한 태스크 DAG 예제
+
+```
+ingest_orders ──┐
+                ├── transform_orders ── validate_data ──┬── build_gold_tables ──┬── update_dashboard
+ingest_products─┘                                       │                       └── notify_success
+                                                        └── send_alert (실패 시)
+```
+
+| Task | 유형 | 의존성 | 설명 |
+|------|------|--------|------|
+| ingest_orders | Pipeline Task | - | 주문 데이터를 수집합니다 |
+| ingest_products | Pipeline Task | - | 상품 데이터를 수집합니다 |
+| transform_orders | Notebook Task | ingest_orders, ingest_products | 데이터를 변환합니다 |
+| validate_data | SQL Task | transform_orders | 데이터 품질을 검증합니다 |
+| build_gold_tables | dbt Task | validate_data (성공 시) | Gold 테이블을 생성합니다 |
+| send_alert | Notebook Task | validate_data (실패 시) | 알림을 발송합니다 |
+| update_dashboard | SQL Task | build_gold_tables | 대시보드를 갱신합니다 |
+| notify_success | Notebook Task | build_gold_tables | 성공 알림을 발송합니다 |
+
+위 DAG에서:
+- `ingest_orders`와 `ingest_products`는 **병렬** 로 실행됩니다
+- 두 수집 태스크가 모두 완료되면 `transform_orders`가 실행됩니다 (팬인)
+- `validate_data` 결과에 따라 **조건부 분기** 가 발생합니다
+- `build_gold_tables` 완료 후 대시보드 갱신과 알림이 **병렬** 로 실행됩니다 (팬아웃)
+
+### If/Else 조건부 태스크
+
+**If/Else 태스크** 는 이전 태스크의 결과값 또는 Job 파라미터를 기반으로 실행 경로를 동적으로 분기합니다. 예를 들어 데이터 검증 태스크가 반환한 행 수가 임계값 이하이면 경고 경로로, 초과하면 정상 경로로 분기할 수 있습니다.
+
+```yaml
+- task_key: "route_by_quality"
+  condition_task:
+    op: "GREATER_THAN"
+    left: "{{tasks.validate_data.values.row_count}}"
+    right: "0"
+
+- task_key: "build_gold_tables"
+  depends_on:
+    - task_key: "route_by_quality"
+      outcome: "true"
+  dbt_task:
+    project_directory: "/dbt"
+    commands: ["dbt run --select gold.*"]
+
+- task_key: "send_alert"
+  depends_on:
+    - task_key: "route_by_quality"
+      outcome: "false"
+  notebook_task:
+    notebook_path: "/Workspace/utils/alert"
+```
+
+> 참고: [조건부 태스크 공식 문서](https://docs.databricks.com/en/workflows/jobs/conditional-tasks.html)
+
+---
+
+## 태스크 값 전달 (Task Values)
+
+태스크 간 데이터를 전달하려면 **`dbutils.jobs.taskValues`** API를 사용합니다. 이 메커니즘으로 한 태스크의 출력을 후속 태스크의 입력으로 활용할 수 있습니다.
+
+> 주의: 태스크 값의 최대 크기는 **48KB** 입니다. 대용량 데이터는 Delta 테이블 또는 외부 스토리지를 경유하십시오.
+
+### 태스크 값 설정 (upstream 태스크)
+
+```python
+# validate_data 태스크 (노트북)에서 행 수를 downstream으로 전달합니다
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
+
+row_count = spark.table("silver.orders").filter("sale_date = current_date()").count()
+error_count = spark.table("silver.orders").filter("status = 'ERROR'").count()
+
+# 태스크 값 설정
+dbutils.jobs.taskValues.set(key="row_count", value=row_count)
+dbutils.jobs.taskValues.set(key="error_count", value=error_count)
+dbutils.jobs.taskValues.set(key="validation_status", value="passed" if error_count == 0 else "failed")
+
+print(f"row_count={row_count}, error_count={error_count}")
+```
+
+### 태스크 값 읽기 (downstream 태스크)
+
+```python
+# build_gold_tables 태스크에서 upstream의 값을 읽습니다
+row_count = dbutils.jobs.taskValues.get(
+    taskKey="validate_data",   # upstream 태스크 key
+    key="row_count",           # 읽을 값의 key
+    default=0,                 # 값이 없을 경우 기본값
+    debugValue=9999            # 노트북을 독립 실행할 때 사용할 디버그 값
+)
+
+validation_status = dbutils.jobs.taskValues.get(
+    taskKey="validate_data",
+    key="validation_status",
+    default="unknown"
+)
+
+print(f"수신된 행 수: {row_count}, 검증 상태: {validation_status}")
+
+if validation_status == "failed":
+    raise Exception("Upstream validation failed. Aborting gold table build.")
+```
+
+### Asset Bundle YAML에서 태스크 값 참조
+
+```yaml
+- task_key: "notify_success"
+  depends_on:
+    - task_key: "build_gold_tables"
+  notebook_task:
+    notebook_path: "/Workspace/utils/notify"
+    base_parameters:
+      row_count: "{{tasks.validate_data.values.row_count}}"
+      status: "{{tasks.validate_data.values.validation_status}}"
+```
+
+> 참고: [Task values 공식 문서](https://docs.databricks.com/en/workflows/jobs/share-task-context.html)
+
+---
+
+## 실패 처리
+
+### 재시도 설정
+
+각 태스크에 재시도 횟수와 대기 시간을 설정하면 일시적인 장애(네트워크 오류, 클러스터 시작 지연 등)를 자동으로 복구할 수 있습니다.
+
+```yaml
+- task_key: "ingest_orders"
+  pipeline_task:
+    pipeline_id: "${var.pipeline_id}"
+  max_retries: 3                # 최대 3회 재시도합니다
+  min_retry_interval_millis: 60000   # 재시도 전 1분 대기합니다
+  retry_on_timeout: true        # 타임아웃 시에도 재시도합니다
+  timeout_seconds: 3600         # 1시간 후 타임아웃 처리합니다
+```
+
+### 태스크 실패 시 전체 Job 동작
+
+기본적으로 하나의 태스크가 실패하면 해당 태스크에 **의존하는 후속 태스크들은 실행되지 않습니다.** 그러나 의존성이 없는 병렬 태스크는 계속 실행됩니다.
+
+`run_if` 속성으로 후속 태스크의 실행 조건을 명시적으로 제어할 수 있습니다:
+
+| `run_if` 값 | 설명 |
+|-------------|------|
+| `ALL_SUCCESS` (기본값) | 모든 선행 태스크가 성공해야 실행됩니다 |
+| `ALL_DONE` | 선행 태스크의 성공/실패 여부와 무관하게 실행됩니다 |
+| `AT_LEAST_ONE_SUCCESS` | 선행 태스크 중 하나 이상이 성공하면 실행됩니다 |
+| `ALL_FAILED` | 모든 선행 태스크가 실패해야 실행됩니다 |
+| `AT_LEAST_ONE_FAILED` | 선행 태스크 중 하나 이상이 실패하면 실행됩니다 |
+
+```yaml
+# 실패 여부와 관계없이 항상 클린업을 실행하는 예시
+- task_key: "cleanup"
+  run_if: "ALL_DONE"
+  depends_on:
+    - task_key: "transform_orders"
+  notebook_task:
+    notebook_path: "/Workspace/utils/cleanup"
+```
+
+### 조건부 실행으로 에러 핸들링
+
+```python
+# transform_orders 태스크: 에러가 발생해도 빈 값을 설정하여 후속 태스크가 판단할 수 있게 합니다
+try:
+    df = spark.table("bronze.orders").transform(clean_orders)
+    df.write.mode("overwrite").saveAsTable("silver.orders")
+    dbutils.jobs.taskValues.set(key="transform_status", value="success")
+    dbutils.jobs.taskValues.set(key="record_count", value=df.count())
+except Exception as e:
+    dbutils.jobs.taskValues.set(key="transform_status", value="failed")
+    dbutils.jobs.taskValues.set(key="error_message", value=str(e))
+    raise  # Job 레벨에서도 실패를 감지할 수 있도록 예외를 다시 던집니다
+```
+
+> 참고: [재시도 및 타임아웃 공식 문서](https://docs.databricks.com/en/workflows/jobs/job-task-settings.html#retry-policy)

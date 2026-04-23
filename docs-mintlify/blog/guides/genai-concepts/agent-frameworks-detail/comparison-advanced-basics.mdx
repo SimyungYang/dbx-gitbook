@@ -1,0 +1,64 @@
+---
+title: "종합 비교 & 선택 가이드 — 심화 — 기초"
+---
+
+> 이 문서는 **[GenAI 개념](/blog/guides/genai-concepts/overview)** 섹션의 일부입니다.
+
+## 2025 Agent 생태계 트렌드
+
+### 1) Agentic AI의 부상
+
+2025년은 "LLM의 시대"에서 "Agent의 시대"로 전환하는 원년입니다. 단순히 질문에 답하는 것을 넘어, 스스로 계획하고 도구를 사용하고 결과를 검증하는 Agentic AI가 엔터프라이즈의 핵심 화두가 되었습니다.
+
+| 세대 | 특징 | 예시 |
+|------|------|------|
+| **1세대 (2023)** | LLM 호출 + 프롬프트 엔지니어링 | ChatGPT, Copilot Chat |
+| **2세대 (2024)** | RAG + Tool Use + 단일 Agent | 지식 검색 봇, SQL Agent |
+| **3세대 (2025)** | 멀티에이전트 + 자율적 워크플로 | Supervisor Agent, 업무 자동화 시스템 |
+
+### 2) MCP + A2A: 도구 접근과 Agent 간 통신의 표준화
+
+| 프로토콜 | 주도 | 목적 | 비유 |
+|----------|------|------|------|
+| **MCP (Model Context Protocol)** | Anthropic | LLM이 외부 도구/데이터에 접근하는 표준 | USB-C (기기와 주변기기 연결) |
+| **A2A (Agent-to-Agent)** | Google | Agent 간 통신/협업의 표준 | HTTP (서버 간 통신) |
+
+이 두 프로토콜이 결합되면, 서로 다른 프레임워크로 만든 Agent들이 표준 프로토콜로 도구를 공유하고 협업할 수 있게 됩니다.
+
+### 3) Vibe Coding: AI가 코드를 짜는 시대
+
+Agent가 개발자의 IDE 안에 들어와 코드를 직접 작성하는 "Vibe Coding" 트렌드가 가속화되고 있습니다.
+
+| 도구 | 특징 |
+|------|------|
+| **Claude Code** | 터미널 기반 Agent. 파일 읽기/쓰기/실행까지 자율 수행 |
+| **Cursor** | AI 네이티브 IDE. 코드베이스 컨텍스트 이해 |
+| **GitHub Copilot Agent Mode** | PR 생성, 이슈 해결까지 자동화 |
+| **Databricks AI Dev Kit** | Databricks 리소스 생성/관리를 IDE에서 수행 |
+
+### 4) Agent Observability: "블랙박스를 열다"
+
+Agent의 동작을 추적하고 디버깅하는 Observability 도구가 필수가 되었습니다.
+
+| 도구 | 특징 | 가격 |
+|------|------|------|
+| **MLflow Tracing** | Databricks 네이티브. 자동 계측 | 무료 (Databricks 포함) |
+| **LangSmith** | LangChain/LangGraph 전용 | 유료 (월 $39~) |
+| **Arize AI** | 모델 모니터링 + Agent 추적 | 유료 |
+| **Weights & Biases Weave** | 실험 추적 + Agent 로깅 | 유료 |
+
+### 5) 프레임워크 수렴 추세
+
+2024년의 "프레임워크 춘추전국시대"에서 2025년은 2~3개 핵심 프레임워크로 수렴하는 추세입니다.
+
+| 수렴 방향 | 설명 |
+|-----------|------|
+| **LangGraph** | 오픈소스 Agent 워크플로의 사실상 표준 (de facto standard) |
+| **Databricks Agent Framework** | 엔터프라이즈 배포/운영의 표준 |
+| **OpenAI Agents SDK** | OpenAI 생태계 내 표준 |
+
+> **성공**
+**2025년 핵심 메시지**: "어떤 프레임워크를 쓸지 고민하는 시간"보다 "Agent가 해결할 비즈니스 문제를 정의하는 시간"이 더 중요합니다. 프레임워크는 도구일 뿐이고, 진짜 가치는 비즈니스 문제 해결에 있습니다.
+
+
+---

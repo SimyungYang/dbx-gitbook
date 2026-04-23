@@ -1,0 +1,134 @@
+---
+title: "청킹 전략 — 심화"
+---
+
+> 이 문서는 **[RAG](/blog/guides/rag/overview)** 섹션의 일부입니다.
+
+## 4. 청크 오버랩 전략
+
+오버랩(overlap)은 인접 청크 간에 겹치는 영역을 두어 경계에서의 정보 손실을 방지하는 기법입니다. 예를 들어 "A 기능은 B 조건에서 작동합니다"라는 문장이 청크 경계에 걸려 "A 기능은"과 "B 조건에서 작동합니다"로 나뉘면, 두 청크 모두 의미가 불완전해집니다. 오버랩을 설정하면 이 문장이 양쪽 청크에 모두 포함되어 정보 손실을 방지합니다.
+
+아래 테이블은 오버랩 비율별 장단점을 비교한 것입니다.
+
+| 오버랩 비율 | 장점 | 단점 |
+|------------|------|------|
+| **0%** | 중복 없음, 인덱스 크기 최소 | 경계에서 문맥 단절 |
+| **10~20%**(권장) | 경계 문맥 보존, 검색 품질 향상 | 약간의 인덱스 증가 |
+| **30% 이상** | 문맥 보존 극대화 | 중복 과다, 비용 증가, 검색 노이즈 |
+
+```python
+# 권장: chunk_size의 10~20% 오버랩
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,
+    chunk_overlap=75,  # 15% 오버랩
+)
+```
+
+> **팁**
+오버랩이 너무 크면 동일한 내용이 여러 청크에 포함되어 검색 결과가 중복될 수 있습니다. **10~20%** 를 시작점으로 설정하고 평가를 통해 조정하세요.
+
+
+## 5. 메타데이터 첨부
+
+청크에 메타데이터를 첨부하면 검색 시 필터링으로 정밀도를 높일 수 있습니다.
+
+### 권장 메타데이터 필드
+
+| 필드 | 용도 | 예시 |
+|------|------|------|
+| `source` | 원본 파일 경로/이름 | `"policies/hr-guide.pdf"` |
+| `page` | 페이지 번호 | `3` |
+| `section` | 섹션/챕터 제목 | `"휴가 정책"` |
+| `doc_type` | 문서 유형 | `"policy"`, `"faq"`, `"manual"` |
+| `created_at` | 문서 생성/수정 일자 | `"2025-01-15"` |
+
+### 메타데이터 첨부 예제
+
+```python
+from langchain.schema import Document
+
+def create_chunks_with_metadata(file_path, text, splitter):
+    """청크 생성 시 메타데이터 첨부"""
+    chunks = splitter.split_text(text)
+    documents = []
+    for i, chunk in enumerate(chunks):
+        doc = Document(
+            page_content=chunk,
+            metadata={
+                "source": file_path,
+                "chunk_index": i,
+                "total_chunks": len(chunks),
+                "doc_type": "guide",
+                "created_at": "2025-06-15",
+            }
+        )
+        documents.append(doc)
+    return documents
+
+docs = create_chunks_with_metadata(
+    "guides/rag-overview.md", long_text, splitter
+)
+```
+
+### 메타데이터 기반 필터 검색
+
+```python
+from langchain_databricks import DatabricksVectorSearch
+
+vs = DatabricksVectorSearch(
+    endpoint="vs-endpoint",
+    index_name="catalog.schema.docs_index",
+    columns=["content", "source", "doc_type", "created_at"]
+)
+
+retriever = vs.as_retriever(
+    search_kwargs={
+        "k": 5,
+        "filters": {"doc_type": "policy"}  # 정책 문서만 검색
+    }
+)
+```
+
+> **참고**
+Databricks Vector Search는 메타데이터 필터를 서버 사이드에서 처리하므로, 대규모 인덱스에서도 효율적으로 필터링됩니다. Self-Query Retriever와 결합하면 사용자의 자연어 질문에서 자동으로 필터를 추출할 수 있습니다.
+
+
+## 6. 청킹 전략 선택 플로우
+
+어떤 청킹 전략을 선택할지 결정하는 데 도움이 되는 가이드입니다:
+
+```
+문서의 구조가 명확한가? (Markdown, HTML 등)
+  ├─ Yes → MarkdownHeaderTextSplitter (구조 보존)
+  │         └─ 섹션이 너무 긴가?
+  │              └─ Yes → + RecursiveCharacterTextSplitter (2차 분할)
+  └─ No → 문서의 주제가 자주 전환되는가?
+            ├─ Yes → SemanticChunker (의미 경계 자동 감지)
+            │         └─ 문서 수가 많은가? (10K+)
+            │              └─ Yes → 비용 문제 → Recursive로 전환
+            └─ No → RecursiveCharacterTextSplitter (범용적)
+                     └─ 한국어인가?
+                          ├─ Yes → 종결어미 구분자 추가
+                          └─ No → 기본 구분자 사용
+```
+
+### 프로덕션 환경 권장 설정
+
+| 환경 | 전략 | chunk_size | chunk_overlap | 비고 |
+|------|------|-----------|--------------|------|
+| **영어 기술 문서** | Recursive | 1000 | 200 | 기본 구분자 |
+| **한국어 기술 문서** | Recursive + 한국어 구분자 | 800 | 100 | 종결어미 구분자 추가 |
+| **Markdown 문서** | MarkdownHeader + Recursive | 800 | 100 | 2단계 분할 |
+| **FAQ 문서** | Fixed-size | 300 | 0 | 짧은 청크, 오버랩 불필요 |
+| **법률/의료 문서** | Semantic | 1200 | 150 | 의미 경계 중요 |
+
+> **성공**
+**핵심 원칙**: 완벽한 청킹 전략은 없습니다. 평가 데이터셋을 만들고, 여러 전략을 비교 실험하여 해당 도메인에 최적인 설정을 찾으세요. MLflow Evaluate로 Recall@K, Faithfulness를 측정하면 객관적인 비교가 가능합니다.
+
+
+## 참고 문서
+
+- [LangChain Text Splitters 문서](https://python.langchain.com/docs/how_to/#text-splitters)
+- [LangChain SemanticChunker](https://python.langchain.com/docs/how_to/semantic-chunker/)
+- [Databricks Vector Search 필터링](https://docs.databricks.com/aws/en/generative-ai/vector-search/query-vector-search-index.html)
+- [Chunking 전략 비교 (LangChain Blog)](https://blog.langchain.dev/evaluating-rag-pipelines-with-ragas-langsmith/)

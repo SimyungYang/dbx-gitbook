@@ -1,0 +1,166 @@
+---
+title: "네트워킹 & 접근 제어 — 기초"
+---
+
+> 이 문서는 **[Databricks Apps](/blog/guides/apps/overview)** 섹션의 일부입니다.
+
+Databricks Apps의 네트워크 아키텍처, IP 접근 제어, 인증 없는 접근 방법, 그리고 보안 설정을 다룹니다.
+
+---
+
+## 네트워크 아키텍처
+
+Databricks Apps는 **Serverless Compute Plane** 에서 실행됩니다. Control Plane은 인증과 라우팅만 처리하고, 실제 앱 트래픽은 Serverless Compute Plane으로 직접 전달됩니다.
+
+| 구성 요소 | 위치 | 설명 |
+|-----------|------|------|
+| **인증 & 라우팅** | Control Plane | OAuth 인증, URL 라우팅, IP Access List 적용 |
+| **앱 컨테이너** | Serverless Compute Plane | 앱 코드가 실행되는 격리된 서버리스 환경 |
+| **SQL Warehouse** | Serverless Compute Plane | 앱이 호출하는 쿼리 엔진 |
+| **Model Serving** | Serverless Compute Plane | AI/ML 모델 추론 엔드포인트 |
+| **Unity Catalog** | Control Plane | 메타데이터 및 거버넌스 |
+
+### 트래픽 흐름
+
+```
+[사용자 브라우저]
+    ↓ HTTPS (인터넷 또는 Private Link)
+[Control Plane] ← OAuth 인증 + IP Access List 적용
+    ↓ 인증 완료 후
+[Serverless Compute Plane — 앱 컨테이너] ← 트래픽 직접 전달
+    ↓ 클라우드 프로바이더 내부 네트워크
+[SQL Warehouse / Model Serving / Unity Catalog]
+```
+
+> **참고**
+**핵심 포인트**: 사용자의 첫 요청은 Control Plane에서 인증 처리 후, 이후 모든 트래픽은 **Serverless Compute Plane으로 직접** 전달됩니다. Control Plane과 Compute Plane 간 통신은 클라우드 프로바이더의 내부 네트워크를 사용하여 퍼블릭 인터넷을 거치지 않습니다. 단, 사용자와 `databricksapps.com` 도메인 간 통신은 Private Link가 없으면 퍼블릭 인터넷을 경유할 수 있습니다.
+
+
+---
+
+## IP 접근 제어 (IP Access Lists)
+
+Databricks Apps에 접근할 수 있는 IP 주소를 제한하여 보안을 강화할 수 있습니다.
+
+### 워크스페이스 IP Access List 연동
+
+Databricks Apps는 **워크스페이스의 IP Access List 설정을 상속** 합니다. 워크스페이스에 IP Access List가 구성되어 있으면, 앱에 대한 접근도 동일한 IP 제한이 적용됩니다.
+
+| 설정 위치 | 적용 범위 | 설명 |
+|-----------|----------|------|
+| **워크스페이스 IP Access List** | 워크스페이스 전체 (앱 포함) | Admin Console > Settings > IP Access Lists |
+| **앱별 개별 IP 제한** | 현재 미지원 | 워크스페이스 레벨에서만 제어 가능 |
+
+### IP Access List 설정 방법
+
+**1. Admin Console에서 설정:**
+
+1. 워크스페이스 Admin Console 접속
+2. **Settings** > **Security** > **IP access lists** 이동
+3. 허용할 IP 범위 추가 (CIDR 형식)
+
+**2. REST API로 설정:**
+
+```bash
+# IP Access List 추가
+curl -X POST \
+  "https://<workspace-url>/api/2.0/ip-access-lists" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "label": "Office Network",
+    "list_type": "ALLOW",
+    "ip_addresses": ["203.0.113.0/24", "198.51.100.0/24"]
+  }'
+```
+
+**3. Databricks CLI로 설정:**
+
+```bash
+databricks ip-access-lists create \
+  --label "Office Network" \
+  --list-type ALLOW \
+  --ip-addresses "203.0.113.0/24,198.51.100.0/24"
+```
+
+> **주의**
+**IP Access List의 영향**: IP Access List를 활성화하면 **워크스페이스의 모든 접근** (UI, API, 앱)이 제한됩니다. 앱 사용자가 허용된 IP에서 접속해야 하므로, VPN 없이 외부에서 접속하는 사용자가 있다면 해당 IP를 반드시 허용 목록에 추가하세요.
+
+
+### 앱별 IP 제한이 필요한 경우
+
+현재 Databricks Apps는 **앱별 개별 IP 제한을 지원하지 않습니다**. 모든 앱에 동일한 워크스페이스 IP Access List가 적용됩니다. 앱별로 다른 IP 정책이 필요하다면 다음 대안을 고려하세요:
+
+| 대안 | 설명 | 복잡도 |
+|------|------|--------|
+| **별도 워크스페이스** | 다른 IP 정책이 필요한 앱을 별도 워크스페이스에 배포 | 높음 |
+| **앱 코드 내 IP 검증** | Flask/FastAPI에서 `request.headers.get('X-Forwarded-For')`로 IP 확인 | 중간 |
+| **사용자 인증 강화** | IP 대신 사용자 권한으로 접근 제어 | 낮음 |
+
+---
+
+## SSO 없이 앱 접근하기
+
+Databricks Apps는 기본적으로 **워크스페이스 SSO 인증이 필수** 입니다. 하지만 특정 시나리오에서는 SSO 없이 앱에 접근해야 할 수 있습니다.
+
+### 기본 동작: SSO 필수
+
+| 접근 방식 | 인증 요구사항 | 지원 여부 |
+|-----------|-------------|----------|
+| **브라우저 접속** | 워크스페이스 SSO 로그인 필수 | 기본 동작 |
+| **API 호출 (PAT)** | Personal Access Token + CAN USE 권한 | 지원 |
+| **API 호출 (OAuth)** | OAuth M2M 토큰 | 지원 |
+| **퍼블릭 익명 접근** | 인증 없음 | **미지원** |
+
+> **주의**
+**핵심 제약**: Databricks Apps의 URL에 접속하면 **반드시 Databricks 워크스페이스 인증** 을 거쳐야 합니다. Databricks 계정이 없는 외부 사용자(고객, 파트너 등)는 앱에 접근할 수 없습니다. 이는 설계 의도이며, 보안과 거버넌스를 위한 것입니다.
+
+**향후 로드맵**: 외부 IdP(Identity Provider) 기반 인증이 **H2 FY27 (DAIS 이후)** 에 예정되어 있습니다. 이 기능이 출시되면 Databricks 워크스페이스 계정 없이도 외부 IdP로 인증한 사용자가 앱에 접근할 수 있게 됩니다.
+
+
+### 대안 0: Identity Federation (현재 가능한 최선)
+
+외부 사용자가 앱에 접근해야 하는 경우, **Identity Federation + SCIM/JIT provisioning** 을 사용하면 외부 사용자를 IdP(Okta, Entra ID 등)를 통해 온보딩할 수 있습니다. 풀 워크스페이스 접근 없이 앱만 사용할 수 있도록 설정합니다.
+
+```
+[외부 사용자] → [회사 IdP (Okta/Entra)] → SCIM/JIT → [Databricks 워크스페이스] → [앱]
+```
+
+
+### 대안 1: API 엔드포인트로 접근 (M2M)
+
+앱이 REST API를 제공하는 경우(FastAPI, Flask), 다른 시스템에서 **서비스 프린시펄 또는 PAT** 으로 앱의 API를 직접 호출할 수 있습니다.
+
+```bash
+# PAT을 사용한 API 호출
+curl -X GET "https://<app-url>/api/data" \
+  -H "Authorization: Bearer <personal-access-token>"
+
+# OAuth M2M 토큰을 사용한 API 호출
+curl -X GET "https://<app-url>/api/data" \
+  -H "Authorization: Bearer <oauth-access-token>"
+```
+
+> **참고**
+이 방식은 **사람이 아닌 시스템 간 통신** 에 적합합니다. 사용자가 브라우저로 앱 UI에 접근하려면 여전히 SSO가 필요합니다.
+
+
+### 대안 2: 프록시 서버 구성
+
+Databricks Apps 앞에 별도의 프록시 서버(Nginx, Cloudflare 등)를 두고, 프록시가 Databricks에 인증한 뒤 결과를 외부에 노출하는 패턴입니다.
+
+```
+[외부 사용자] → [프록시 서버 (인증 처리)] → [Databricks App]
+```
+
+이 패턴은 복잡도가 높으므로, 외부 사용자 접근이 핵심 요구사항이라면 **Cloud Run, ECS/Fargate 등 별도 플랫폼** 에 앱을 배포하고 Databricks SDK로 데이터에 접근하는 것이 더 적합할 수 있습니다.
+
+### 대안 3: Databricks Apps를 API 백엔드로, 외부 프론트엔드 분리
+
+```
+[외부 프론트엔드 (Vercel/Netlify)] → [Databricks App REST API (PAT 인증)] → [Unity Catalog]
+```
+
+프론트엔드는 외부 호스팅에 배포하여 누구나 접근 가능하게 하고, 데이터 접근이 필요한 API 호출만 Databricks App으로 보내는 패턴입니다.
+
+---

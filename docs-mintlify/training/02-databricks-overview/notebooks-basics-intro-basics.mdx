@@ -1,0 +1,74 @@
+---
+title: "Notebook 기본 사용법 — 기초"
+---
+
+> 이 문서는 **[Databricks 플랫폼](/training/02-databricks-overview/what-is-databricks)** 섹션의 일부입니다.
+
+## Notebook이란?
+
+> 💡 **Notebook(노트북)** 은 코드, 텍스트 설명, 시각화 결과를 하나의 문서에 담을 수 있는 **대화형 개발 환경** 입니다. 마치 실험 노트처럼, 코드를 작성하고 바로 실행하여 결과를 확인하면서 작업을 진행할 수 있습니다.
+
+Jupyter Notebook과 유사하지만, Databricks Notebook은 다음과 같은 추가 기능을 제공합니다.
+
+| 기능 | 설명 |
+|------|------|
+| **멀티 언어 지원** | 하나의 노트북 안에서 Python, SQL, Scala, R을 혼합하여 사용할 수 있습니다 |
+| **실시간 협업** | 여러 사용자가 동시에 같은 노트북을 편집할 수 있습니다 (Google Docs처럼) |
+| **클러스터 연결** | 클릭 한 번으로 분산 컴퓨팅 클러스터에 연결됩니다 |
+| **버전 관리** | 노트북의 변경 이력이 자동으로 저장됩니다 |
+| **Git 연동** | 외부 Git 저장소와 직접 연동하여 코드를 관리할 수 있습니다 |
+| **시각화 내장** | 실행 결과를 바로 차트로 변환할 수 있습니다 |
+
+---
+
+## 셀(Cell)의 개념
+
+Notebook은 여러 개의 **셀(Cell)** 로 구성되어 있습니다. 각 셀은 독립적으로 실행할 수 있습니다.
+
+### 셀 유형
+
+| 셀 유형 | 용도 | 표기 방법 |
+|---------|------|-----------|
+| **Code Cell** | 코드를 작성하고 실행합니다 | 기본 셀 (별도 표기 불필요) |
+| **Markdown Cell** | 설명 텍스트를 작성합니다 | 셀 상단에 `%md` 입력 |
+| **SQL Cell** | SQL 쿼리를 실행합니다 | 셀 상단에 `%sql` 입력 |
+| **Shell Cell** | 쉘 명령어를 실행합니다 | 셀 상단에 `%sh` 입력 |
+
+### 언어 전환 (Magic Command)
+
+기본 언어가 Python인 노트북에서도, 셀 첫 줄에 **매직 커맨드** 를 입력하면 다른 언어를 사용할 수 있습니다.
+
+```python
+# 기본 언어가 Python인 노트북에서...
+
+# Python 셀 (기본)
+df = spark.read.table("catalog.schema.my_table")
+df.show()
+```
+
+```sql
+%sql
+-- SQL 셀
+SELECT * FROM catalog.schema.my_table LIMIT 10
+```
+
+```markdown
+%md
+## 분석 결과 요약
+이 셀은 **Markdown** 으로 작성된 설명 텍스트입니다.
+```
+
+```bash
+%sh
+# Shell 명령어 실행
+pip list | grep pandas
+```
+
+```python
+%scala
+// Scala 코드 실행
+val df = spark.read.table("catalog.schema.my_table")
+df.show()
+```
+
+---

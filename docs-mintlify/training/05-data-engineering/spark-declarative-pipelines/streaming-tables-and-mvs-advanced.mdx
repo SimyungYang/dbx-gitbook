@@ -1,0 +1,178 @@
+---
+title: "ST와 MV — 심화"
+---
+
+> 이 문서는 **[데이터 엔지니어링](/training/05-data-engineering/overview)** 섹션의 일부입니다.
+
+## Streaming Table + Materialized View 조합 패턴
+
+실제 파이프라인에서는 두 유형을 **함께 사용** 하여 Medallion 아키텍처를 구현합니다.
+
+### Medallion 아키텍처 적용 예제
+
+**Medallion 아키텍처에서의 Streaming Table과 Materialized View 활용**
+
+| 계층 | 테이블 | 유형 | 설명 |
+|------|--------|------|------|
+| **Bronze (원본 수집)** | bronze_orders | Streaming Table | Auto Loader로 수집 |
+|  | bronze_customers | Streaming Table | CDC로 수집 |
+| **Silver (정제/통합)** | silver_orders | Streaming Table | 필터 + 타입 변환 |
+|  | silver_customers | Streaming Table | APPLY CHANGES 처리 |
+| **Gold (비즈니스 집계)** | gold_daily_revenue | Materialized View | 일별 매출 집계 |
+|  | gold_customer_orders | Materialized View | 고객별 주문 요약 |
+
+### 전체 파이프라인 코드 (SQL)
+
+```sql
+-- ============================================
+-- Bronze: Streaming Table (원본 데이터 수집)
+-- ============================================
+CREATE OR REFRESH STREAMING TABLE bronze_orders
+AS SELECT * FROM STREAM read_files(
+    '/volumes/catalog/schema/landing/orders/',
+    format => 'json'
+);
+
+CREATE OR REFRESH STREAMING TABLE bronze_customers
+AS SELECT * FROM STREAM read_files(
+    '/volumes/catalog/schema/landing/customers/',
+    format => 'json'
+);
+
+-- ============================================
+-- Silver: Streaming Table (데이터 정제)
+-- ============================================
+CREATE OR REFRESH STREAMING TABLE silver_orders (
+    CONSTRAINT valid_order_id EXPECT (order_id IS NOT NULL) ON VIOLATION DROP ROW,
+    CONSTRAINT positive_amount EXPECT (amount > 0) ON VIOLATION DROP ROW
+)
+AS SELECT
+    CAST(order_id AS BIGINT) AS order_id,
+    CAST(customer_id AS BIGINT) AS customer_id,
+    CAST(amount AS DECIMAL(12,2)) AS amount,
+    CAST(order_date AS TIMESTAMP) AS order_date,
+    CAST(status AS STRING) AS status
+FROM STREAM(bronze_orders);
+
+-- Silver: CDC 처리
+CREATE OR REFRESH STREAMING TABLE silver_customers;
+
+APPLY CHANGES INTO silver_customers
+FROM STREAM(bronze_customers)
+KEYS (customer_id)
+SEQUENCE BY updated_at
+STORED AS SCD TYPE 1;
+
+-- ============================================
+-- Gold: Materialized View (비즈니스 집계)
+-- ============================================
+CREATE OR REFRESH MATERIALIZED VIEW gold_daily_revenue
+AS SELECT
+    DATE(o.order_date) AS sale_date,
+    COUNT(*) AS order_count,
+    SUM(o.amount) AS total_revenue,
+    AVG(o.amount) AS avg_order_value
+FROM silver_orders o
+GROUP BY DATE(o.order_date);
+
+CREATE OR REFRESH MATERIALIZED VIEW gold_customer_orders
+AS SELECT
+    c.customer_id,
+    c.name AS customer_name,
+    c.city,
+    COUNT(o.order_id) AS total_orders,
+    SUM(o.amount) AS total_spent,
+    MAX(o.order_date) AS last_order_date
+FROM silver_customers c
+LEFT JOIN silver_orders o ON c.customer_id = o.customer_id
+GROUP BY c.customer_id, c.name, c.city;
+```
+
+---
+
+## 새로고침 전략
+
+파이프라인의 갱신 방식을 상황에 맞게 설정할 수 있습니다.
+
+### 새로고침 모드 비교
+
+| 모드 | 설명 | 적합한 경우 |
+|------|------|-----------|
+| **Triggered**(트리거) | 수동으로 또는 스케줄에 의해 실행합니다. 실행 후 종료됩니다 | 배치 처리, 비용 최적화가 필요한 경우 |
+| **Continuous**(연속) | 파이프라인이 항상 실행 상태를 유지하며, 새 데이터를 즉시 처리합니다 | 실시간/준실시간 처리가 필요한 경우 |
+| **Scheduled**(스케줄) | cron 표현식으로 주기적 실행을 설정합니다 | 정기 배치(시간별, 일별) |
+
+### 전체 새로고침 (Full Refresh)
+
+기존 데이터를 모두 삭제하고 처음부터 다시 처리합니다.
+
+```sql
+-- SQL에서 전체 새로고침 (소스부터 재처리)
+CREATE OR REFRESH STREAMING TABLE silver_orders
+AS SELECT ...
+FROM STREAM(bronze_orders);
+-- Pipeline UI에서 "Full Refresh" 옵션 선택
+```
+
+> ⚠️ **전체 새로고침 주의사항**:
+> - Streaming Table의 전체 새로고침은 체크포인트를 초기화하고, 소스의 모든 데이터를 다시 처리합니다.
+> - 대량의 데이터가 있는 경우 시간과 비용이 크게 증가할 수 있습니다.
+> - Materialized View는 매 실행마다 자동으로 필요한 범위를 재계산하므로 전체 새로고침의 영향이 상대적으로 적습니다.
+
+---
+
+## 성능 특성 비교
+
+| 성능 항목 | Streaming Table | Materialized View |
+|----------|----------------|-------------------|
+| **초기 로드** | 소스 전체 읽기 | 소스 전체 계산 |
+| **증분 갱신** | 매우 빠름 (새 데이터만) | 쿼리 복잡도에 따라 다름 |
+| **스토리지** | 원본 데이터 크기에 비례 | 집계 결과 크기 (보통 원본보다 작음) |
+| **조회 성능** | 원본 데이터 스캔 필요 | 미리 계산된 결과 반환 (빠름) |
+| **동시성** | 높음 | 높음 |
+
+---
+
+## 제한사항 및 주의사항
+
+### Streaming Table 제한사항
+
+| 제한사항 | 설명 |
+|---------|------|
+| Append-Only 기본 | UPDATE/DELETE는 `APPLY CHANGES INTO`를 통해서만 가능합니다 |
+| 소스 순서 의존 | 소스 데이터의 도착 순서가 바뀌면 중복 처리가 발생할 수 있습니다 |
+| 체크포인트 손실 | 체크포인트가 손상되면 전체 새로고침이 필요합니다 |
+| 집계 불가 | `GROUP BY`, `DISTINCT` 등 전체 데이터 연산은 사용할 수 없습니다 |
+
+### Materialized View 제한사항
+
+| 제한사항 | 설명 |
+|---------|------|
+| 재계산 비용 | 소스 데이터가 매우 크면 갱신 시간이 오래 걸릴 수 있습니다 |
+| 스트리밍 소스 미지원 | `STREAM()` 함수를 사용할 수 없습니다. 배치 소스만 가능합니다 |
+| 실시간성 한계 | 소스 변경이 결과에 반영되려면 파이프라인 갱신이 필요합니다 |
+
+### 공통 주의사항
+
+> ⚠️ Streaming Table과 Materialized View 모두 SDP 파이프라인 안에서 정의됩니다. 파이프라인 외부에서 직접 데이터를 수정(INSERT/UPDATE/DELETE)하면 데이터 일관성이 깨질 수 있습니다. 항상 파이프라인을 통해 데이터를 관리하세요.
+
+---
+
+## 정리
+
+| 핵심 포인트 | 설명 |
+|------------|------|
+| **Streaming Table** | 새 데이터만 증분 처리합니다. Append-Only 데이터에 최적화되어 있습니다 |
+| **Materialized View** | 전체 데이터를 대상으로 결과를 계산합니다. 집계, JOIN에 적합합니다 |
+| **선택 기준** | 데이터가 계속 추가만 되면 ST, 집계/변환이 필요하면 MV를 사용합니다 |
+| **조합 패턴** | Bronze/Silver에 ST, Gold에 MV를 사용하는 것이 일반적인 Medallion 패턴입니다 |
+| **새로고침** | Triggered(수동/스케줄), Continuous(실시간), Full Refresh(전체 재처리) |
+
+---
+
+## 참고 링크
+
+- [Databricks: Streaming tables](https://docs.databricks.com/aws/en/sdp/streaming-tables.html)
+- [Databricks: Materialized views](https://docs.databricks.com/aws/en/sdp/materialized-views.html)
+- [Databricks: SDP pipeline settings](https://docs.databricks.com/aws/en/sdp/updates.html)
+- [Databricks Blog: Streaming tables vs materialized views](https://www.databricks.com/blog/delta-live-tables-announces-general-availability)

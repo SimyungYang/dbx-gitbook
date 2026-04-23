@@ -1,0 +1,166 @@
+---
+title: "Spark Structured Streaming — 심화"
+---
+
+> 이 문서는 **[데이터 엔지니어링](/training/05-data-engineering/overview)** 섹션의 일부입니다.
+
+## 체크포인트 관리
+
+체크포인트는 스트리밍 쿼리의 **진행 상태(오프셋, 상태 정보)** 를 저장하여, 장애 발생 시 **마지막 처리 지점부터 재개** 할 수 있게 합니다.
+
+```python
+query = (
+    df_stream.writeStream
+    .format("delta")
+    .option("checkpointLocation", "/mnt/checkpoints/my-pipeline/stream1")
+    .toTable("catalog.schema.output")
+)
+```
+
+| 체크포인트 관리 규칙 | 설명 |
+|-------------------|------|
+| **1 쿼리 = 1 체크포인트** | 각 스트리밍 쿼리는 고유한 체크포인트 경로를 사용해야 합니다 |
+| **체크포인트 삭제 주의** | 삭제하면 처음부터 다시 처리합니다. 의도하지 않은 중복이 발생할 수 있습니다 |
+| **경로 변경 금지** | 같은 쿼리의 체크포인트 경로를 중간에 변경하면 안 됩니다 |
+| **클라우드 스토리지 권장** | DBFS 대신 S3/ADLS/GCS에 저장하여 내구성을 확보합니다 |
+
+---
+
+## 외부 소스 연동
+
+Structured Streaming은 다양한 메시지 브로커와 연동할 수 있습니다.
+
+| 소스 | format | 주요 옵션 |
+|------|--------|----------|
+| **Kafka / Confluent Cloud** | `kafka` | `kafka.bootstrap.servers`, `subscribe`, `startingOffsets` |
+| **Amazon Kinesis** | `kinesis` | `streamName`, `region`, `initialPosition` |
+| **Azure Event Hubs** | `eventhubs` | `eventhubs.connectionString` |
+| **Delta Table** | `delta` | `readChangeFeed` (CDF 활용 시) |
+| **Auto Loader** | `cloudFiles` | `cloudFiles.format`, `cloudFiles.schemaLocation` |
+
+```python
+# Kafka 연동 예시
+df_kafka = (
+    spark.readStream
+    .format("kafka")
+    .option("kafka.bootstrap.servers", "broker1:9092")
+    .option("subscribe", "orders")
+    .option("startingOffsets", "earliest")
+    .load()
+)
+
+# Kafka value를 JSON으로 파싱
+from pyspark.sql.functions import from_json, col
+from pyspark.sql.types import StructType, StringType, DoubleType
+
+schema = StructType() \
+    .add("order_id", StringType()) \
+    .add("amount", DoubleType()) \
+    .add("timestamp", StringType())
+
+df_parsed = df_kafka.select(
+    from_json(col("value").cast("string"), schema).alias("data")
+).select("data.*")
+```
+
+---
+
+## foreachBatch 패턴
+
+`foreachBatch`를 사용하면 **각 마이크로 배치에 대해 임의의 DataFrame 연산** 을 수행할 수 있습니다. MERGE(Upsert), 다중 출력 등 복잡한 로직에 적합합니다.
+
+```python
+def upsert_to_delta(batch_df, batch_id):
+    from delta.tables import DeltaTable
+    target = DeltaTable.forName(spark, "catalog.schema.customers")
+    (target.alias("t")
+        .merge(batch_df.alias("s"), "t.customer_id = s.customer_id")
+        .whenMatchedUpdateAll()
+        .whenNotMatchedInsertAll()
+        .execute())
+
+query = (
+    df_stream.writeStream
+    .foreachBatch(upsert_to_delta)
+    .option("checkpointLocation", "/checkpoints/upsert-stream")
+    .trigger(processingTime="1 minute")
+    .start()
+)
+```
+
+| 패턴 | 설명 |
+|------|------|
+| **MERGE (Upsert)** | 키 기반으로 업데이트 또는 삽입합니다 |
+| **다중 출력** | 하나의 스트림을 여러 테이블에 동시에 씁니다 |
+| **외부 시스템 연동** | REST API 호출, DB 직접 쓰기 등을 수행합니다 |
+| **커스텀 검증** | 배치별 데이터 품질 검사를 실행합니다 |
+
+---
+
+## 모니터링
+
+```python
+# 실행 중인 스트리밍 쿼리 상태 확인
+for q in spark.streams.active:
+    print(f"쿼리: {q.name}, 상태: {q.status}")
+
+# 마지막 마이크로 배치 진행 정보
+query.lastProgress
+```
+
+### 주요 모니터링 메트릭
+
+| 메트릭 | 설명 | 주의 기준 |
+|--------|------|----------|
+| `inputRowsPerSecond` | 초당 입력 행 수 | 급격한 증가/감소 시 확인 |
+| `processedRowsPerSecond` | 초당 처리 행 수 | 입력보다 낮으면 처리 지연 발생 |
+| `numInputRows` | 배치당 입력 행 수 | 0이면 새 데이터 없음 |
+| `batchDuration` | 배치 처리 시간 (ms) | 트리거 간격보다 길면 병목 |
+| `stateOperators.numRowsTotal` | 상태 저장소 크기 | 지속 증가 시 메모리 부족 위험 |
+
+> 💡 `StreamingQueryListener`를 활용하면 커스텀 모니터링(Slack 알림, 메트릭 수집 등)을 구현할 수 있습니다. 자세한 내용은 [Streaming 심화](./streaming-advanced)를 참고하시기 바랍니다.
+
+---
+
+## 모범 사례
+
+| 항목 | 권장 사항 |
+|------|----------|
+| **체크포인트** | 클라우드 스토리지에 저장하고, 쿼리별로 고유 경로를 사용합니다 |
+| **워터마크** | 상태 기반 연산(윈도우 집계, 스트림 조인)에는 반드시 워터마크를 설정합니다 |
+| **트리거 선택** | 실시간이 필요하면 `processingTime`, 스케줄링이면 `availableNow`를 사용합니다 |
+| **스키마 관리** | Kafka JSON 등 스키마 없는 소스는 명시적 스키마를 정의합니다 |
+| **모니터링** | StreamingQueryListener로 처리 지연을 감시합니다 |
+| **Auto Loader 활용** | 파일 기반 스트리밍은 Auto Loader를 우선 사용합니다 |
+| **SDP 연동** | 복잡한 파이프라인은 SDP(Spark Declarative Pipelines)를 고려합니다 |
+
+---
+
+## 더 알아보기
+
+| 주제 | 문서 |
+|------|------|
+| Streaming 심화 | [윈도우 유형, Output Mode, CDF, State Store](./streaming-advanced) |
+
+---
+
+## 정리
+
+| 개념 | 핵심 내용 |
+|------|----------|
+| Structured Streaming | 스트림을 무한 테이블로 모델링하여 DataFrame API로 처리합니다 |
+| readStream / writeStream | 배치 API와 동일한 패턴으로 스트림을 읽고 씁니다 |
+| 트리거 모드 | processingTime(주기적), availableNow(일회성), continuous(실시간) |
+| 워터마크 | 늦은 데이터 허용 범위를 정의하여 상태를 관리합니다 |
+| foreachBatch | 마이크로 배치 단위로 MERGE 등 복잡한 로직을 실행합니다 |
+| 체크포인트 | 장애 복구를 위해 처리 진행 상태를 저장합니다 |
+
+---
+
+## 참고 링크
+
+- [Structured Streaming 공식 문서](https://docs.databricks.com/aws/en/structured-streaming/)
+- [Structured Streaming 프로그래밍 가이드 (Apache Spark)](https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html)
+- [Auto Loader 공식 문서](https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/)
+- [Kafka 연동 가이드](https://docs.databricks.com/aws/en/structured-streaming/kafka.html)
+- [foreachBatch를 활용한 스트리밍 Upsert](https://docs.databricks.com/aws/en/structured-streaming/foreach.html)

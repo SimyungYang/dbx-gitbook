@@ -1,0 +1,166 @@
+---
+title: "Databricks의 AI Agent 전략 — 기초"
+---
+
+> 이 문서는 **[GenAI 개념](/blog/guides/genai-concepts/overview)** 섹션의 일부입니다.
+
+Databricks의 Agent 전략은 다른 벤더와 근본적으로 다릅니다. AWS/Microsoft/Google이 "Agent 인프라/모델을 제공하는" 포지션인 반면, Databricks는 **"데이터와 Agent의 통합 거버넌스"** 를 핵심 가치로 제시합니다.
+
+> **참고**
+**학습 목표**
+- Databricks Agent 전략의 핵심 차별점("데이터 중심 Agent")을 설명할 수 있다
+- Agent Bricks, Supervisor Agent, Mosaic AI Gateway, MLflow 3.0의 역할을 이해한다
+- TAO/ALHF 자동 최적화가 기존 Agent 개발과 어떻게 다른지 설명할 수 있다
+- 멀티클라우드 환경에서 Databricks Agent 아키텍처를 설계할 수 있다
+
+
+> **성공**
+**핵심 메시지**: "Agent의 품질은 데이터의 품질에 의해 결정된다. Databricks는 데이터 준비에서 Agent 배포, 모니터링까지 전체 라이프사이클을 하나의 플랫폼에서 관리한다."
+
+
+---
+
+## 1. 전략 개요 — 데이터 중심 Agent
+
+Databricks의 근본적인 차별화:
+
+| 다른 벤더 | Databricks |
+|----------|-----------|
+| Agent 빌딩 도구 제공 | Agent가 사용하는 **데이터** 까지 통합 관리 |
+| 모델 API만 제공 | 데이터 전처리 → 임베딩 → Agent → 평가 **전체 파이프라인** |
+| 거버넌스는 별도 서비스 | **Unity Catalog 하나로** 데이터 + 모델 + Agent 거버넌스 통합 |
+| Agent 품질은 수동 프롬프트 튜닝 | **TAO/ALHF로 자동 최적화** |
+| 특정 클라우드에 종속 | **AWS, Azure, GCP 멀티클라우드** |
+
+### 전략 스택
+
+| 계층 | 구성 요소 | 역할 |
+|------|----------|------|
+| **인터페이스** | Databricks Apps, Genie Code, Genie Space | 사용자/애플리케이션 접점 |
+| **Agent 빌드 (노코드)** | Agent Bricks (KA, Genie Agent, Supervisor) | 코드 없이 Agent 구축 |
+| **Agent 빌드 (프로코드)** | Agent Framework (ChatAgent, LangGraph 통합) | 코드 기반 Agent 개발 |
+| **모델 관리** | Mosaic AI Gateway (멀티모델 라우팅, Fallback) | 모델 라우팅 및 폴백 |
+| **배포** | Model Serving (서버리스, 자동 스케일링) | Agent 엔드포인트 배포 |
+| **관측** | MLflow 3.0 (Tracing, Evaluate, Monitoring) | 추적, 평가, 모니터링 |
+| **거버넌스** | Unity Catalog (데이터 + 모델 + Agent 거버넌스) | 통합 거버넌스 |
+| **데이터** | Vector Search, Delta Lake, Lakebase | 데이터 저장 및 검색 |
+
+---
+
+## 2. Agent Bricks — 자동 최적화 Agent 빌더
+
+Agent Bricks는 Databricks의 **노코드 Agent 빌더** 로, 2025년 6월 Data+AI Summit에서 GA되었습니다. 가장 혁신적인 기능은 **TAO** 와 **ALHF** 입니다.
+
+### 제품 구성
+
+| 제품 | 설명 | 핵심 기능 |
+|------|------|----------|
+| **Knowledge Assistant** | RAG 기반 Q&A Agent | Unity Catalog의 테이블/문서를 자동 인덱싱, 검색, 답변 |
+| **Genie Agent** | 자연어 → SQL 변환 Agent | Genie Space를 Tool로 호출하여 데이터 분석 |
+| **Supervisor Agent** | 멀티에이전트 오케스트레이터 | 하위 Agent들을 코드 없이 조율 |
+
+### TAO (Tool-Augmented Optimization)
+
+기존 Agent 프레임워크에서 Agent의 Tool 선택 정확도를 높이려면 프롬프트를 수동으로 조정해야 합니다. TAO는 이를 **자동화** 합니다:
+
+1. Agent가 도구를 호출할 때마다 성공/실패를 추적
+2. Tool 선택 패턴을 분석하여 전략을 자동 조정
+3. 도메인 특화 합성 데이터를 자동 생성하여 벤치마크 구축
+
+> **참고**
+**비유**: TAO는 "Agent의 자동 코치"입니다. 매 경기(Tool 호출)를 분석하고, 전략(프롬프트)을 자동 개선합니다. 코치(프롬프트 엔지니어)가 직접 개입할 필요가 없습니다.
+
+
+### ALHF (Automated Learning from Human Feedback)
+
+최종 사용자가 Agent 응답에 "좋아요/싫어요" 피드백을 남기면:
+- **좋아요**: 해당 추론 경로(Tool 선택 → 응답 생성)가 강화
+- **싫어요**: 해당 추론 경로가 약화
+
+> **성공**
+**핵심 가치**: 별도 Fine-tuning 파이프라인 없이, **프로덕션에서 Agent가 자동으로 개선** 됩니다. RLHF의 엔터프라이즈 버전이라고 볼 수 있습니다.
+
+
+---
+
+## 3. Supervisor Agent — 노코드 멀티에이전트
+
+Supervisor Agent는 Agent Bricks 내에서 **코드 없이 멀티에이전트 시스템을 구축** 할 수 있는 기능입니다.
+
+| 구성 요소 | 역할 | 설명 |
+|----------|------|------|
+| **Supervisor Agent** | 오케스트레이터 | 사용자 요청을 분석하고 하위 Agent에 분배 |
+| Knowledge Assistant | 문서 QA | RAG 기반 사내 문서 검색 및 답변 |
+| Genie Agent | 데이터 분석 | 자연어 → SQL 변환, Genie Space 활용 |
+| Custom Agent | API 연동 | 외부 API 호출, 커스텀 로직 실행 |
+| **Unity Catalog** | 통합 거버넌스 | 모든 Agent의 데이터 접근 제어 및 리니지 추적 |
+
+### 설정 과정
+
+1. 하위 Agent(Knowledge Assistant, Genie Agent 등)를 각각 생성
+2. Supervisor Agent 생성 시 하위 Agent를 "도구"로 등록
+3. 라우팅 규칙(자동/수동) 설정
+4. 평가 세트로 전체 시스템 품질 검증
+5. Model Serving Endpoint로 배포
+
+### 연결 가능한 도구 유형
+
+| 도구 유형 | 예시 |
+|----------|------|
+| **Knowledge Assistant** | 사내 문서 Q&A, 규정 검색 |
+| **Genie Agent** | 자연어 데이터 분석, BI 질의 |
+| **Agent Endpoint** | 커스텀 Agent (ChatAgent/LangGraph) |
+| **Unity Catalog Function** | SQL/Python 함수 직접 호출 |
+| **MCP Server** | 외부 시스템 연동 (Slack, GitHub, JIRA 등) |
+
+---
+
+## 4. Mosaic AI Gateway — 멀티모델 관리
+
+Mosaic AI Gateway는 Databricks의 **중앙집중형 AI 모델 관리 계층** 입니다.
+
+| 기능 | 설명 |
+|------|------|
+| **통합 엔드포인트** | OpenAI, Anthropic, AWS Bedrock, Azure OpenAI, 자체 모델을 하나의 API로 통합 |
+| **Rate Limiting** | 사용자/팀별 토큰 할당량 관리 |
+| **Cost Tracking** | 모델별, Agent별, 팀별 비용 추적 |
+| **Fallback** | Primary 모델 장애 시 자동 Fallback (예: GPT-4o → Claude → Llama 4) |
+| **Guardrails** | Unity Catalog 기반 입출력 필터링 |
+| **Audit Log** | 모든 LLM 호출 이력을 Unity Catalog에 자동 기록 |
+
+> **주의**
+**왜 Gateway가 중요한가?**
+
+멀티에이전트 시스템에서 각 Agent가 서로 다른 모델을 사용할 수 있습니다. Gateway 없이는:
+- 비용 추적이 불가능 (어떤 Agent가 얼마나 소비하는지?)
+- 모델 교체가 어려움 (코드 변경 필요)
+- 거버넌스 사각지대 (어떤 데이터가 어떤 모델로 흘러갔는지?)
+
+Gateway는 이 모든 문제를 **인프라 계층에서 해결** 합니다.
+
+
+---
+
+## 5. MLflow 3.0 — GenAI Observability
+
+MLflow 3.0은 기존 ML 실험 추적 도구에서 **GenAI/Agent 전문 관측 도구** 로 진화했습니다.
+
+| 기능 | 설명 |
+|------|------|
+| **Trace** | Agent의 전체 실행 흐름을 시각화. Tool 호출, LLM 추론, 검색 결과를 트리 구조로 표시 |
+| **GenAI Metrics** | 답변 정확도, 관련성, 충실도, 유해성 등 자동 평가 (@scorer 패턴) |
+| **Experiment Tracking** | 프롬프트 버전, 모델 버전, Tool 구성 등을 실험 단위로 관리 |
+| **Prompt Registry** | 프롬프트를 코드처럼 버전 관리, 팀 협업 |
+| **Model Registry** | Agent를 버전 관리하고, 스테이지(Staging → Production)를 전환 |
+| **Production Monitoring** | 배포 후 실시간 품질 드리프트 감지, 알럿 |
+
+> **참고**
+**MLflow 3.0의 Agent 추적 예시**: Agent가 "지난 분기 매출 분석해줘"라는 요청을 처리할 때, Trace에서 다음을 확인할 수 있습니다:
+1. LLM이 요청을 분석한 추론 과정
+2. SQL 도구를 선택한 이유
+3. 실행된 SQL 쿼리와 결과
+4. 최종 응답 생성 과정
+5. 각 단계의 토큰 사용량과 지연시간
+
+
+---

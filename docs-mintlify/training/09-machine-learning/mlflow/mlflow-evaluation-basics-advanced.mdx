@@ -1,0 +1,234 @@
+---
+title: "MLflow Evaluate 기본과 Scorer — 심화"
+---
+
+> 이 문서는 **[머신러닝](/training/09-machine-learning/overview)** 섹션의 일부입니다.
+
+## 내장 Scorer (평가 기준)
+
+### LLM Judge Scorer
+
+LLM을 **심판(Judge)** 으로 사용하여 답변 품질을 자동 평가합니다.
+
+| Scorer | 평가 내용 | 기대 답변 필요 |
+|--------|----------|-------------|
+| **Correctness** | 답변이 기대 답변과 **의미적으로 일치** 하는지 | ✅ 필요 |
+| **Safety** | 답변에 **유해하거나 부적절한 내용** 이 없는지 | ❌ 불필요 |
+| **RetrievalGroundedness** | 답변이 **검색된 문서에 근거** 하는지 (환각 여부) | ❌ 불필요 |
+| **RetrievalRelevance** | 검색된 문서가 **질문과 관련** 있는지 | ❌ 불필요 |
+| **Guidelines** | 사용자 정의 **가이드라인** 을 준수하는지 | ❌ 불필요 |
+
+### 사용 예시
+
+```python
+import mlflow
+
+results = mlflow.genai.evaluate(
+    data=eval_data,
+    predict_fn=my_agent.predict,
+    scorers=[
+        # 정확도: 기대 답변과 비교
+        mlflow.genai.scorers.Correctness(),
+
+        # 안전성: 유해 콘텐츠 검사
+        mlflow.genai.scorers.Safety(),
+
+        # 근거성: 검색 결과에 기반한 답변인지
+        mlflow.genai.scorers.RetrievalGroundedness(),
+
+        # 커스텀 가이드라인
+        mlflow.genai.scorers.Guidelines(
+            guidelines=[
+                "답변은 반드시 한국어로 작성되어야 합니다",
+                "답변에 출처를 명시해야 합니다",
+                "모르는 질문에는 '확인 후 답변드리겠습니다'라고 답변해야 합니다",
+                "경쟁사 제품을 추천하면 안 됩니다"
+            ]
+        )
+    ]
+)
+```
+
+### 커스텀 Scorer
+
+내장 Scorer로 부족한 경우, **직접 Scorer를 작성** 할 수 있습니다.
+
+```python
+from mlflow.genai.scorers import scorer
+
+@scorer
+def korean_check(request, response):
+    """답변이 한국어인지 확인하는 커스텀 Scorer"""
+    import re
+    korean_ratio = len(re.findall('[가-힣]', response.content)) / max(len(response.content), 1)
+    return {
+        "score": 1.0 if korean_ratio > 0.5 else 0.0,
+        "justification": f"한국어 비율: {korean_ratio:.1%}"
+    }
+
+@scorer
+def length_check(request, response):
+    """답변 길이가 적절한지 확인하는 커스텀 Scorer"""
+    length = len(response.content)
+    return {
+        "score": 1.0 if 50 <= length <= 500 else 0.0,
+        "justification": f"답변 길이: {length}자 ({'적절' if 50 <= length <= 500 else '부적절'})"
+    }
+
+# 커스텀 Scorer 사용
+results = mlflow.genai.evaluate(
+    data=eval_data,
+    predict_fn=my_agent.predict,
+    scorers=[korean_check, length_check, mlflow.genai.scorers.Safety()]
+)
+```
+
+---
+
+## 평가 결과 분석
+
+```python
+# 전체 메트릭 요약
+print(results.metrics)
+# {'correctness/mean': 0.85, 'safety/mean': 0.98, 'guidelines/mean': 0.72}
+
+# 개별 평가 결과 테이블
+display(results.tables["eval_results"])
+# 각 질문별로 점수, 판단 근거(justification)가 표시됩니다
+```
+
+---
+
+## 평가 워크플로우
+
+| 단계 | 작업 | 설명 |
+|------|------|------|
+| 1 | 에이전트 구축 | 에이전트를 개발합니다 |
+| 2 | 평가 실행 | 자동 평가를 수행합니다 |
+| 3 | 품질 기준 판단 | 통과 시 배포, 미통과 시 개선으로 이동합니다 |
+| 4a | 배포 | 품질 기준 통과 시 프로덕션에 배포합니다 |
+| 4b | 개선 | 프롬프트, RAG, Tool을 수정하고 다시 평가합니다 |
+| 5 | 프로덕션 모니터링 | 배포 후 성능을 모니터링합니다 |
+| ↩ | 품질 저하 감지 | 모니터링에서 문제 발견 시 개선 단계로 돌아갑니다 |
+
+---
+
+## MLflow 3.0 Scorer 아키텍처 심화
+
+### Scorer 유형 분류
+
+MLflow 3.0에서 Scorer는 크게 세 가지 유형으로 나뉩니다.
+
+| 유형 | 설명 | 예시 |
+|------|------|------|
+| **Built-in LLM Judge** | Databricks가 제공하는 사전 정의된 LLM 기반 평가 | Correctness, Safety, RetrievalGroundedness |
+| **Custom LLM Judge** | 사용자 정의 프롬프트로 LLM 판단을 수행하는 Scorer | Guidelines(커스텀 규칙) |
+| **Programmatic Scorer** | 코드 로직으로 평가하는 Scorer | 정규식 체크, 길이 체크, 응답 시간 체크 |
+
+### Built-in Scorer 동작 원리
+
+각 Built-in Scorer는 내부적으로 **전문화된 프롬프트 템플릿** 과 **판단 기준 루브릭(Rubric)** 을 사용합니다.
+
+#### Correctness (정확도)
+
+| 항목 | 설명 |
+|------|------|
+| **입력** | 질문, 모델 응답, 기대 답변 (expected_response) |
+| **Judge 프롬프트** | "기대 답변과 의미적으로 동일한 내용을 포함하는가?" |
+| **점수** | yes/no (이진 판단) |
+| **판단 근거** | 어떤 부분이 일치/불일치하는지 자연어로 설명 |
+
+```python
+# Correctness Scorer는 의미적 유사성을 평가합니다
+# "30일 이내 무료 반품" vs "한 달 내 반품 가능" → ✅ 의미적으로 일치
+mlflow.genai.scorers.Correctness()
+```
+
+#### RetrievalGroundedness (근거성)
+
+| 항목 | 설명 |
+|------|------|
+| **입력** | 질문, 모델 응답, 검색된 문서(context/retrieved_docs) |
+| **Judge 프롬프트** | "응답의 각 주장이 검색된 문서에 근거하는가?" |
+| **점수** | yes/no |
+| **핵심 목적** | 환각(Hallucination) 감지 — 문서에 없는 내용을 답변에 포함했는지 |
+
+```python
+# RAG 파이프라인에서 환각을 감지합니다
+mlflow.genai.scorers.RetrievalGroundedness()
+# 내부적으로 각 응답 문장을 retrived context와 대조합니다
+```
+
+#### RetrievalRelevance (검색 관련성)
+
+| 항목 | 설명 |
+|------|------|
+| **입력** | 질문, 검색된 문서 |
+| **Judge 프롬프트** | "검색된 문서가 질문에 답하는 데 관련 있는 정보를 포함하는가?" |
+| **점수** | yes/no |
+| **핵심 목적** | 검색 품질 평가 — Vector Search나 Retriever가 적절한 문서를 찾았는지 |
+
+#### Safety (안전성)
+
+| 항목 | 설명 |
+|------|------|
+| **입력** | 질문, 모델 응답 |
+| **평가 범위** | 유해 콘텐츠, 차별적 발언, 개인정보 노출, 폭력적 내용 |
+| **점수** | yes(안전)/no(위험) |
+| **특이사항** | 기대 답변 불필요, 응답 자체만으로 판단 |
+
+#### Guidelines (가이드라인)
+
+| 항목 | 설명 |
+|------|------|
+| **입력** | 질문, 모델 응답, 사용자 정의 규칙 목록 |
+| **Judge 프롬프트** | "응답이 제시된 각 가이드라인을 준수하는가?" |
+| **점수** | yes/no (가이드라인별 개별 판단) |
+| **유연성** | 자연어로 어떤 규칙이든 정의 가능 |
+
+```python
+# 비즈니스 규칙을 자연어로 정의합니다
+mlflow.genai.scorers.Guidelines(
+    guidelines=[
+        "답변은 200자를 초과하지 않아야 합니다",
+        "경쟁사 제품을 비교하거나 추천하면 안 됩니다",
+        "가격 정보를 언급할 때는 반드시 '부가세 별도'를 명시해야 합니다",
+        "모르는 질문에는 추측하지 말고 '확인 후 답변드리겠습니다'라고 해야 합니다"
+    ]
+)
+```
+
+### LLM-as-Judge 동작 원리
+
+LLM Judge Scorer는 내부적으로 다음과 같은 과정으로 동작합니다.
+
+| 단계 | 설명 |
+|------|------|
+| **1. 프롬프트 구성** | System Prompt(Judge 역할 + 루브릭), User Input(질문, 응답, context, expected 등), Output Format(JSON 판단 결과) |
+
+2. LLM 호출
+| **2. Judge LLM 호출** | Databricks Foundation Model (기본: databricks-meta-llama-3-3-70b-instruct) |
+      또는 사용자 지정 모델
+
+3. 결과 파싱
+| **3. 결과 파싱** | score: yes/no 또는 0.0~1.0 |
+| | justification: 판단 근거 (자연어) |
+```
+
+> 💡 **Judge 모델 커스터마이징**: 기본 Judge 모델 대신 GPT-4o나 자체 파인튜닝된 모델을 사용할 수도 있습니다. 평가의 도메인 특화 정확도를 높이려면 Judge 모델 선택이 중요합니다.
+
+```python
+# Judge 모델을 명시적으로 지정
+import mlflow
+
+mlflow.genai.scorers.Correctness(
+    # 기본값: Databricks의 Foundation Model
+    # 필요시 커스텀 엔드포인트를 환경 변수로 설정
+)
+
+# 환경 변수로 Judge 모델 변경
+import os
+os.environ["MLFLOW_DEPLOYMENTS_TARGET"] = "databricks"
+```
+
+---

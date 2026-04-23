@@ -1,0 +1,165 @@
+---
+title: "Lakebase + Apps CRUD 패턴 — 심화 — 기초"
+---
+
+## 3. CRUD 엔드포인트
+
+### main.py
+
+아래 코드는 FastAPI로 상품(Product)의 생성·조회·수정·삭제 엔드포인트를 구현합니다. `db()` 컨텍스트 매니저가 커넥션 대여, 커밋/롤백, 반납을 자동으로 처리합니다.
+
+```python
+from contextlib import contextmanager
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from db import get_conn, put_conn
+
+app = FastAPI(title="Lakebase CRUD Demo")
+
+# ── Pydantic 모델 ──────────────────────────
+class ProductCreate(BaseModel):
+    name: str
+    price: float
+    category: str | None = None
+
+class ProductUpdate(BaseModel):
+    name: str | None = None
+    price: float | None = None
+    category: str | None = None
+
+# ── 커넥션 컨텍스트 매니저 ──────────────────
+@contextmanager
+def db():
+    conn = get_conn()
+    try:
+        yield conn
+        conn.commit()      # 정상 종료 시 커밋
+    except Exception:
+        conn.rollback()    # 예외 발생 시 롤백
+        raise
+    finally:
+        put_conn(conn)     # 커넥션을 풀에 반납
+
+# ── CREATE ──────────────────────────────────
+@app.post("/products", status_code=201)
+def create_product(body: ProductCreate):
+    with db() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            """INSERT INTO products (name, price, category)
+               VALUES (%s, %s, %s) RETURNING id, created_at""",
+            (body.name, body.price, body.category),
+        )
+        row = cur.fetchone()
+    return {"id": row[0], "created_at": str(row[1])}
+
+# ── READ (목록) ─────────────────────────────
+@app.get("/products")
+def list_products(category: str | None = None, limit: int = 50):
+    with db() as conn:
+        cur = conn.cursor()
+        if category:
+            cur.execute(
+                "SELECT id, name, price, category FROM products WHERE category = %s LIMIT %s",
+                (category, limit),
+            )
+        else:
+            cur.execute(
+                "SELECT id, name, price, category FROM products LIMIT %s",
+                (limit,),
+            )
+        rows = cur.fetchall()
+    return [
+        {"id": r[0], "name": r[1], "price": float(r[2]), "category": r[3]}
+        for r in rows
+    ]
+
+# ── READ (단건) ─────────────────────────────
+@app.get("/products/{product_id}")
+def get_product(product_id: int):
+    with db() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT id, name, price, category FROM products WHERE id = %s", (product_id,))
+        row = cur.fetchone()
+    if not row:
+        raise HTTPException(404, "Product not found")
+    return {"id": row[0], "name": row[1], "price": float(row[2]), "category": row[3]}
+
+# ── UPDATE ──────────────────────────────────
+@app.put("/products/{product_id}")
+def update_product(product_id: int, body: ProductUpdate):
+    fields, values = [], []
+    for col in ("name", "price", "category"):
+        v = getattr(body, col)
+        if v is not None:
+            fields.append(f"{col} = %s")
+            values.append(v)
+    if not fields:
+        raise HTTPException(400, "No fields to update")
+    fields.append("updated_at = CURRENT_TIMESTAMP")
+    values.append(product_id)
+
+    with db() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            f"UPDATE products SET {', '.join(fields)} WHERE id = %s RETURNING id",
+            values,
+        )
+        row = cur.fetchone()
+    if not row:
+        raise HTTPException(404, "Product not found")
+    return {"updated": row[0]}
+
+# ── DELETE ──────────────────────────────────
+@app.delete("/products/{product_id}")
+def delete_product(product_id: int):
+    with db() as conn:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM products WHERE id = %s RETURNING id", (product_id,))
+        row = cur.fetchone()
+    if not row:
+        raise HTTPException(404, "Product not found")
+    return {"deleted": row[0]}
+```
+
+---
+
+## 4. 커넥션 풀링 고급 패턴
+
+프로덕션에서는 토큰 만료를 자동 처리해야 합니다. 아래 `PoolRefresher`는 백그라운드 스레드에서 50분(3000초)마다 커넥션 풀을 폐기하고 새로 생성합니다. 토큰 유효기간이 1시간이므로, 50분 간격이면 만료 전에 항상 새 토큰으로 교체됩니다.
+
+```python
+import time, threading
+from db import get_pool
+
+class PoolRefresher:
+    """50분마다 커넥션 풀을 재생성해 토큰 만료를 방지"""
+
+    def __init__(self, interval_sec: int = 3000):
+        self.interval = interval_sec
+        self._stop = threading.Event()
+
+    def start(self):
+        t = threading.Thread(target=self._run, daemon=True)
+        t.start()
+
+    def _run(self):
+        while not self._stop.is_set():
+            time.sleep(self.interval)
+            old = get_pool()
+            old.closeall()          # 기존 풀 닫기
+            _ = get_pool()          # 새 풀 자동 생성
+
+# FastAPI lifespan에서 시작
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app):
+    refresher = PoolRefresher()
+    refresher.start()
+    yield
+
+app = FastAPI(lifespan=lifespan)
+```
+
+---

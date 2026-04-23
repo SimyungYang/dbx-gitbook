@@ -1,0 +1,155 @@
+---
+title: "OAuth M2M (서비스 인증) — 심화 — 기초"
+---
+
+## Account vs Workspace 레벨
+
+OAuth M2M은 **Account 레벨** 과 **Workspace 레벨** 두 가지 엔드포인트를 지원합니다.
+
+| 레벨 | 토큰 엔드포인트 | 용도 |
+|------|----------------|------|
+| **Account** | `https://accounts.cloud.databricks.com/oidc/accounts/{account-id}/v1/token` | 워크스페이스 생성, Account 관리, 멀티 워크스페이스 작업 |
+| **Workspace** | `https://{workspace-host}/oidc/v1/token` | 특정 워크스페이스 내 API 호출 |
+
+**어떤 레벨을 사용해야 하는가**: 대부분의 자동화 작업(Job 실행, 데이터 접근, 모델 배포)은 **Workspace 레벨** 로 충분합니다. Account 레벨은 Terraform으로 워크스페이스를 프로비저닝하거나, 여러 워크스페이스에 걸쳐 작업할 때만 사용합니다.
+
+---
+
+## 코드 예시
+
+### curl로 토큰 발급
+
+```bash
+# Workspace 레벨 토큰 발급
+curl -X POST "https://<workspace-host>/oidc/v1/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=client_credentials" \
+  -d "client_id=<client-id>" \
+  -d "client_secret=<client-secret>" \
+  -d "scope=all-apis"
+
+# 응답 예시
+# {
+#   "access_token": "eyJhbGciOiJSUzI1NiIs...",
+#   "token_type": "Bearer",
+#   "expires_in": 3600
+# }
+```
+
+```bash
+# Account 레벨 토큰 발급
+curl -X POST "https://accounts.cloud.databricks.com/oidc/accounts/<account-id>/v1/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=client_credentials" \
+  -d "client_id=<client-id>" \
+  -d "client_secret=<client-secret>" \
+  -d "scope=all-apis"
+```
+
+### Python SDK
+
+```python
+from databricks.sdk import WorkspaceClient
+
+# 환경변수 사용 (권장)
+# DATABRICKS_HOST, DATABRICKS_CLIENT_ID, DATABRICKS_CLIENT_SECRET 설정 필요
+w = WorkspaceClient()
+
+# 또는 직접 지정
+w = WorkspaceClient(
+    host="https://<workspace-host>",
+    client_id="<client-id>",
+    client_secret="<client-secret>"
+)
+
+# Job 실행
+run = w.jobs.run_now(job_id=12345)
+print(f"Run ID: {run.run_id}")
+```
+
+```python
+from databricks.sdk import AccountClient
+
+# Account 레벨 클라이언트
+a = AccountClient(
+    host="https://accounts.cloud.databricks.com",
+    account_id="<account-id>",
+    client_id="<client-id>",
+    client_secret="<client-secret>"
+)
+
+# 워크스페이스 목록
+for ws in a.workspaces.list():
+    print(f"{ws.workspace_name} ({ws.deployment_name})")
+```
+
+### Java SDK
+
+```java
+import com.databricks.sdk.WorkspaceClient;
+import com.databricks.sdk.core.DatabricksConfig;
+
+DatabricksConfig config = new DatabricksConfig()
+    .setHost("https://<workspace-host>")
+    .setClientId("<client-id>")
+    .setClientSecret("<client-secret>");
+
+WorkspaceClient w = new WorkspaceClient(config);
+
+// 클러스터 목록
+w.clusters().list().forEach(cluster ->
+    System.out.println(cluster.getClusterName() + ": " + cluster.getState())
+);
+```
+
+### Go SDK
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "github.com/databricks/databricks-sdk-go"
+    "github.com/databricks/databricks-sdk-go/service/compute"
+)
+
+func main() {
+    w := databricks.Must(databricks.NewWorkspaceClient(&databricks.Config{
+        Host:         "https://<workspace-host>",
+        ClientID:     "<client-id>",
+        ClientSecret: "<client-secret>",
+    }))
+
+    clusters, err := w.Clusters.ListAll(context.Background(),
+        compute.ListClustersRequest{})
+    if err != nil {
+        panic(err)
+    }
+    for _, c := range clusters {
+        fmt.Printf("%s: %s\n", c.ClusterName, c.State)
+    }
+}
+```
+
+### .databrickscfg 프로파일
+
+```ini
+# ~/.databrickscfg
+
+[CICD]
+host          = https://<workspace-host>
+client_id     = <client-id>
+client_secret = <client-secret>
+```
+
+```bash
+# 프로파일로 CLI 사용
+databricks clusters list --profile CICD
+```
+
+> **주의**
+**보안 주의**: `.databrickscfg`에 `client_secret`을 직접 저장하는 것은 개발 환경에서만 사용하세요. 프로덕션 환경에서는 반드시 **환경변수** 또는 **Secret Manager** (AWS Secrets Manager, Azure Key Vault, HashiCorp Vault)를 사용하세요.
+
+
+---

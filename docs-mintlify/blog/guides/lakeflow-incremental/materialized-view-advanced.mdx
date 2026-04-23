@@ -1,0 +1,180 @@
+---
+title: "Materialized View 증분 처리 — 심화"
+---
+
+> 이 문서는 **[Lakeflow 증분 처리](/blog/guides/lakeflow-incremental/overview)** 섹션의 일부입니다.
+
+## Enzyme Incremental Refresh 기법
+
+Enzyme은 상황에 따라 다른 incremental refresh 기법을 선택합니다. 어떤 기법이 사용되는지 이해하면, 쿼리를 더 효과적으로 최적화할 수 있습니다.
+
+| 기법 | 적용 상황 | 동작 방식 |
+|------|----------|----------|
+| **Row-level Merge** | 소스에서 소수의 행이 변경됨 | 변경된 행만 대상 MV에서 찾아 갱신 |
+| **Partition-level Refresh** | 변경이 특정 파티션에 집중됨 | 해당 파티션만 재계산 |
+| **Aggregation Recompute** | GROUP BY + 집계에서 일부 그룹의 소스가 변경됨 | 변경된 그룹의 집계만 재계산 |
+| **Join Incremental** | JOIN의 한쪽 소스만 변경됨 | 변경된 쪽의 행만 반대쪽과 다시 JOIN |
+
+Enzyme은 이 기법들 중 비용 모델 기준으로 가장 효율적인 것을 자동 선택합니다. 사용자가 직접 기법을 지정할 수는 없지만, 쿼리 구조와 소스 설정을 통해 Enzyme이 더 나은 선택을 하도록 유도할 수 있습니다.
+
+---
+
+## 쿼리 설계 원칙
+
+### 원칙 1: 비결정적 함수를 소스로 이동
+
+앞서 원인 B에서 설명한 대로, `CURRENT_DATE()`, `RAND()`, `UUID()` 같은 비결정적 함수는 MV가 아닌 소스(ST 또는 업스트림 MV)에서 실행합니다.
+
+### 원칙 2: 복잡한 쿼리를 단계별 MV로 분리
+
+하나의 MV에 너무 많은 로직을 넣으면, Enzyme이 incremental refresh를 적용하기 어렵습니다. 복잡한 변환을 여러 단계의 MV로 분리하면, 각 단계에서 Enzyme이 독립적으로 최적화할 수 있습니다.
+
+```sql
+-- BAD: 하나의 MV에 모든 로직
+CREATE OR REFRESH MATERIALIZED VIEW final_report
+AS SELECT
+  o.region,
+  p.category,
+  SUM(o.amount) AS total_sales,
+  COUNT(DISTINCT o.customer_id) AS unique_customers,
+  AVG(r.rating) AS avg_rating
+FROM orders o
+JOIN products p ON o.product_id = p.id
+JOIN reviews r ON o.order_id = r.order_id
+GROUP BY o.region, p.category;
+
+-- GOOD: 단계별 MV 분리
+CREATE OR REFRESH MATERIALIZED VIEW order_product
+AS SELECT
+  o.order_id,
+  o.region,
+  o.amount,
+  o.customer_id,
+  p.category
+FROM orders o
+JOIN products p ON o.product_id = p.id;
+
+CREATE OR REFRESH MATERIALIZED VIEW order_with_review
+AS SELECT
+  op.order_id,
+  op.region,
+  op.amount,
+  op.customer_id,
+  op.category,
+  r.rating
+FROM order_product op
+LEFT JOIN reviews r ON op.order_id = r.order_id;
+
+CREATE OR REFRESH MATERIALIZED VIEW final_report
+AS SELECT
+  region,
+  category,
+  SUM(amount) AS total_sales,
+  COUNT(DISTINCT customer_id) AS unique_customers,
+  AVG(rating) AS avg_rating
+FROM order_with_review
+GROUP BY region, category;
+```
+
+### 원칙 3: JOIN은 2개 이하로 유지
+
+Enzyme은 2개 이하의 소스를 JOIN하는 쿼리에서 가장 효율적으로 incremental refresh를 수행합니다. 3개 이상의 테이블을 JOIN해야 한다면, 중간 MV를 만들어 2-way JOIN의 체인으로 구성하세요.
+
+### 원칙 4: Window 함수 대신 집계 함수 활용
+
+Window 함수(`ROW_NUMBER`, `RANK`, `LAG` 등)는 incremental refresh가 불가능합니다. 가능하다면 `GROUP BY` + 집계 함수로 대체하세요.
+
+```sql
+-- BAD: Window 함수 → Full Recompute
+CREATE OR REFRESH MATERIALIZED VIEW latest_orders
+AS SELECT * FROM (
+  SELECT *, ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date DESC) AS rn
+  FROM orders
+) WHERE rn = 1;
+
+-- GOOD: 집계 함수로 대체 (마지막 주문 날짜 기준)
+CREATE OR REFRESH MATERIALIZED VIEW latest_order_dates
+AS SELECT
+  customer_id,
+  MAX(order_date) AS latest_order_date,
+  MAX_BY(order_id, order_date) AS latest_order_id,
+  MAX_BY(amount, order_date) AS latest_amount
+FROM orders
+GROUP BY customer_id;
+```
+
+---
+
+## REFRESH POLICY (Beta)
+
+기본적으로 Enzyme은 incremental과 full 중 최적의 방법을 자동으로 선택합니다. 하지만 **명시적으로 incremental을 강제** 하고 싶은 경우, `REFRESH POLICY`를 사용할 수 있습니다.
+
+> **주의**
+REFRESH POLICY는 현재 **Beta** 기능입니다. 프로덕션 환경에서 사용 전 충분한 테스트를 권장합니다.
+
+
+### REFRESH POLICY INCREMENTAL
+
+Enzyme에게 "가능하면 incremental로 처리하라"는 힌트를 줍니다. 불가능한 경우에는 여전히 full recompute로 폴백합니다.
+
+```sql
+CREATE OR REFRESH MATERIALIZED VIEW daily_sales
+REFRESH POLICY INCREMENTAL
+AS SELECT
+  sale_date,
+  region,
+  SUM(amount) AS total
+FROM sales
+GROUP BY sale_date, region;
+```
+
+### REFRESH POLICY INCREMENTAL STRICT
+
+"반드시 incremental로만 처리하라"는 강제 설정입니다. Incremental이 불가능한 경우 **업데이트가 실패** 합니다. 비용 통제가 중요한 프로덕션 환경에서 유용합니다.
+
+```sql
+CREATE OR REFRESH MATERIALIZED VIEW daily_sales
+REFRESH POLICY INCREMENTAL STRICT
+AS SELECT
+  sale_date,
+  region,
+  SUM(amount) AS total
+FROM sales
+GROUP BY sale_date, region;
+```
+
+### EXPLAIN MATERIALIZED VIEW FOR
+
+MV가 incremental로 처리될 수 있는지 **사전에 확인** 하는 명령입니다. 문제가 있으면 구체적인 이유를 알려줍니다.
+
+```sql
+EXPLAIN MATERIALIZED VIEW FOR
+SELECT
+  sale_date,
+  region,
+  SUM(amount) AS total,
+  CURRENT_DATE() AS report_date  -- 문제를 미리 발견
+FROM sales
+GROUP BY sale_date, region;
+```
+
+실행 결과 예시:
+
+```
+Cannot incrementally refresh: Non-deterministic function CURRENT_DATE() detected.
+Recommendation: Move CURRENT_DATE() to the source table.
+```
+
+> **참고**
+새로운 MV를 정의하기 전에 `EXPLAIN MATERIALIZED VIEW FOR`로 incremental refresh 가능 여부를 확인하는 것을 습관화하세요. 배포 후 발견하는 것보다 훨씬 비용이 적습니다.
+
+
+---
+
+## 요약: Materialized View 최적화 전략
+
+1. **소스 테이블 준비**: Row Tracking(수동), Deletion Vectors(대부분 자동), CDF(선택적)를 활성화합니다.
+2. **쿼리 설계**: 비결정적 함수 제거, JOIN 2개 이하, Window 함수 대신 집계 함수, 복잡 쿼리는 단계별 MV로 분리합니다.
+3. **사전 검증**: `EXPLAIN MATERIALIZED VIEW FOR`로 incremental refresh 가능 여부를 확인합니다.
+4. **비용 통제**: 중요한 MV에는 `REFRESH POLICY INCREMENTAL STRICT`(Beta)를 적용하여 예상치 못한 full recompute를 방지합니다.
+5. **모니터링**: Pipeline 이벤트 로그에서 각 MV의 refresh 유형(incremental/full)을 주기적으로 확인합니다.

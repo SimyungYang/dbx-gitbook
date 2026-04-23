@@ -1,0 +1,160 @@
+---
+title: "Databricks vs 경쟁사 — 심화"
+---
+
+> 이 문서는 **[Databricks 플랫폼](/training/02-databricks-overview/what-is-databricks)** 섹션의 일부입니다.
+
+## 5. Databricks vs AWS 네이티브 (Glue + Redshift + SageMaker)
+
+AWS 환경에 이미 깊이 투자한 조직에서 "굳이 Databricks를 써야 하나?"라는 질문이 자주 나옵니다.
+
+### AWS 네이티브 스택의 장점
+
+- **AWS 서비스 간 네이티브 통합**: S3, IAM, VPC, CloudWatch 등과 자연스러운 연동
+- **세밀한 제어**: 인스턴스 유형, 네트워크 구성, 스팟 인스턴스 활용 등 유연성
+- **비용 효율**: 적절히 최적화하면 관리형 플랫폼 대비 저렴할 수 있음
+- **SageMaker의 ML 깊이**: 엔드포인트 배포, A/B 테스팅, 파이프라인 등 MLOps 기능 성숙
+
+### AWS 네이티브 스택의 한계
+
+- **조합 복잡도**: Glue(ETL) + Redshift(DW) + SageMaker(ML) + Lake Formation(거버넌스) + Kinesis(스트리밍)을 직접 연결하고 운영해야 함
+- **거버넌스 단절**: 각 서비스 간 데이터 계보(Lineage) 추적이 불완전
+- **개발 경험 비일관성**: 서비스마다 개발 방식이 다름 (Glue Studio vs SageMaker Studio vs Redshift Query Editor)
+- **Spark 버전 지연**: EMR의 Spark 버전 업데이트가 Databricks Runtime보다 느림
+
+### 비교 요약
+
+| 관점 | Databricks on AWS | AWS 네이티브 |
+|------|------------------|-------------|
+| 통합 경험 | 단일 플랫폼, 일관된 UI/API | 서비스별 분리, 다양한 콘솔 |
+| 운영 부담 | 낮음 (완전 관리형) | 높음 (서비스 간 연동 직접 구성) |
+| 비용 | DBU + 클라우드 인프라 | 서비스별 독립 과금 (최적화 가능) |
+| 성능 (Spark) | Photon + 최신 DBR | 표준 Spark (최적화 어려움) |
+| ML/AI 깊이 | MLflow 중심, 좋음 | SageMaker 중심, 업계 최고 수준 |
+| AWS 서비스 연동 | 양호 (API 통합) | 최상 (네이티브 통합) |
+
+---
+
+## 6. Databricks vs Microsoft Fabric
+
+Microsoft Fabric은 2023년 GA 된 Microsoft의 통합 데이터 분석 플랫폼으로, OneLake + Lakehouse + Data Factory + Power BI + Synapse를 하나로 묶었습니다.
+
+### Fabric의 강점
+
+- **Microsoft 생태계 통합**: Azure Active Directory/Entra ID, Teams, Power BI, Office 365와 네이티브 연동
+- **OneLake**: 테넌트당 하나의 논리적 데이터 레이크. Delta/Parquet 기반으로 오픈 포맷 지향
+- **Power BI 직접 통합**: Direct Lake 모드로 Parquet 파일에서 직접 Power BI 쿼리 (Import 불필요)
+- **가격 모델**: F-SKU(용량 기반) 구매로 예측 가능한 비용
+- **Copilot 통합**: Microsoft 365 Copilot과 연계한 자연어 데이터 쿼리
+
+### Fabric의 한계 (2025년 기준)
+
+- **Azure 종속**: 멀티클라우드 전략을 쓰는 조직에는 제약
+- **Spark 성능**: Databricks Runtime + Photon 대비 성능 최적화 수준이 낮음
+- **ML/AI 성숙도**: Azure ML과의 연동은 있으나, MLflow 수준의 통합 경험은 제공하지 않음
+- **스트리밍**: Eventhouse(KQL 기반)와 Lakehouse 스트리밍 간 통합이 아직 성숙 중
+- **엔터프라이즈 도입 사례**: 상대적으로 최신 플랫폼으로 레퍼런스가 적음
+
+### 비교 요약
+
+| 관점 | Databricks | Microsoft Fabric |
+|------|-----------|-----------------|
+| 클라우드 지원 | AWS, Azure, GCP 동일 경험 | Azure 중심 |
+| 데이터 포맷 | Delta Lake (성숙) | OneLake Delta (성장 중) |
+| BI 통합 | Databricks AI/BI (2024 출시) | Power BI (업계 최고) |
+| ML/AI | MLflow + Model Serving (성숙) | Azure ML 연동 (성장 중) |
+| Microsoft 생태계 | 양호 | 최상 |
+| 가격 예측성 | DBU 기반 (변동성 있음) | F-SKU 용량 기반 (예측 쉬움) |
+
+> **주목할 경쟁 상황:** Microsoft는 Fabric에 OpenAI(ChatGPT) 투자 역량을 연계하고 있어, Databricks의 AI/ML 포지셔닝에 직접 도전장을 던지고 있습니다. 반면 Databricks는 모델 독립성과 오픈소스 기반의 유연성으로 차별화를 유지하고 있습니다.
+
+---
+
+## 7. "우리 회사에 Databricks가 필요한가?" 판단 체크리스트
+
+모든 회사에 Databricks가 최선은 아닙니다. 아래 체크리스트로 판단해 보시기 바랍니다.
+
+### Databricks가 적합한 경우
+
+- [ ] 데이터 파이프라인(ETL)과 SQL 분석을 **하나의 플랫폼** 에서 하고 싶다
+- [ ] **머신러닝/AI** 워크로드가 있거나 향후 계획이 있다
+- [ ] 현재 **여러 도구를 조합** 하여 사용하고 있으며, 통합하고 싶다
+- [ ] 데이터 **거버넌스(누가, 어떤 데이터를, 왜 접근했는지)** 가 중요하다
+- [ ] **스트리밍(실시간)** 데이터 처리가 필요하다
+- [ ] **플랫폼 의존도** 을 최소화하고 싶다 (오픈소스 기반)
+- [ ] 데이터 팀이 **5명 이상** 이며, 다양한 역할(엔지니어, 분석가, 과학자)이 협업한다
+- [ ] **멀티클라우드** 전략을 쓰거나 향후 클라우드 이동 가능성이 있다
+- [ ] LLM/생성형 AI 를 데이터 파이프라인에 통합하려 한다
+
+### "이런 상황에서도 Databricks가 좋은가?" — 자주 묻는 반론과 답변
+
+- [ ] **SQL 분석만 필요하다** → Databricks **Serverless SQL Warehouse** 와 **AI/BI 대시보드** 는 SQL 전용 워크로드에도 충분히 강력하며, 향후 ML/AI 확장 시 추가 플랫폼 도입 없이 즉시 확장 가능
+- [ ] **예산이 제한적이다** → Databricks는 **Serverless 컴퓨트** 로 유휴 비용을 제거하고, 오픈소스 기반이므로 플랫폼 의존도 비용이 없음. 오픈소스를 직접 운영하면 초기 비용은 낮아도 **운영 인력 비용** 이 장기적으로 훨씬 큼
+- [ ] **AWS 서비스에 이미 깊이 통합되어 있다** → Databricks on AWS는 S3, IAM, VPC, PrivateLink 등 AWS 네이티브 서비스를 그대로 활용하면서, **Photon 성능 + 통합 거버넌스** 를 더해 줌
+- [ ] **Microsoft 생태계 중심이다** → Databricks on Azure는 ADLS Gen2, Entra ID, Key Vault와 네이티브 통합되며, **Power BI와도 Partner Connect** 로 직접 연결 가능. Microsoft 생태계 안에서도 최고의 데이터 엔지니어링/AI 성능 제공
+- [ ] **데이터 팀이 소규모(1~2명)이다** → 오히려 소규모 팀일수록 **관리형 플랫폼** 의 가치가 큼. Databricks는 인프라 운영 부담을 제거하여 소수 인원이 데이터 작업에 집중할 수 있게 함
+- [ ] **비개발자 중심 조직이다** → Databricks **AI/BI Genie** 는 자연어로 데이터를 질의할 수 있어 SQL을 몰라도 활용 가능하며, **노트북 UI** 와 **대시보드** 도 비개발자 친화적으로 설계됨
+
+---
+
+## 8. 마이그레이션 고려사항
+
+다른 플랫폼에서 Databricks로 전환 시 반드시 검토해야 할 사항들입니다.
+
+### Snowflake → Databricks
+
+| 항목 | 고려사항 |
+|------|---------|
+| 데이터 이동 | COPY INTO로 S3에 내보낸 뒤 Delta 변환. `CONVERT TO DELTA` 명령어 활용 |
+| SQL 호환성 | Snowflake 방언(dialect)과 Spark SQL의 차이 존재 (예: `QUALIFY`, 일부 날짜 함수) |
+| Snowpipe → DLT | 실시간 수집 파이프라인을 DLT(Delta Live Tables)로 재구현 |
+| 저장 프로시저 | Snowflake의 JavaScript 저장 프로시저를 Python/SQL로 전환 필요 |
+| 예상 기간 | 데이터 규모와 복잡도에 따라 3개월~1년 이상 |
+
+### AWS EMR → Databricks
+
+| 항목 | 고려사항 |
+|------|---------|
+| 코드 호환성 | PySpark 코드는 대부분 호환. 단, EMR 전용 설정(예: EMRFS S3 설정)은 제거 필요 |
+| 데이터 포맷 | S3의 Parquet/ORC 파일은 그대로 사용 가능. Delta 변환은 단계적으로 |
+| 클러스터 관리 | 수동 클러스터 구성에서 Databricks 관리형 클러스터로 전환 (운영 부담 감소) |
+| IAM | 기존 EMR IAM Role을 Databricks Instance Profile로 연결 가능 |
+| 예상 기간 | 상대적으로 짧음 (1~3개월), Spark 코드 재사용 가능 |
+
+### Microsoft Fabric / Synapse → Databricks
+
+| 항목 | 고려사항 |
+|------|---------|
+| 데이터 포맷 | OneLake/ADLS의 Delta 파일은 Databricks에서 직접 읽기 가능 |
+| Azure 연동 | Databricks on Azure는 동일한 Azure 자원(ADLS Gen2, Key Vault, AAD) 사용 가능 |
+| Power BI 연결 | Databricks Partner Connect로 Power BI에서 Databricks SQL Warehouse 연결 |
+| Synapse Spark → DBR | 코드 호환성 높음. DBR 전용 기능(Photon, DLT)으로 단계적 전환 |
+
+### 공통 마이그레이션 권장 사항
+
+1. **단계적 접근**: 모든 것을 한 번에 이전하지 말고, 워크로드별로 단계 분리
+2. **Unity Catalog 설계 우선**: 마이그레이션 전 데이터 거버넌스 구조(카탈로그/스키마/테이블 계층) 설계
+3. **병행 운영 기간 확보**: 신/구 시스템을 동시 운영하며 결과 비교 검증
+4. **비용 모델 사전 시뮬레이션**: DBU 소비량을 사전에 추정해 예산 계획 수립
+5. **Databricks Professional Services 또는 파트너 활용**: 복잡한 마이그레이션은 전문가 지원 권장
+
+---
+
+## 참고 링크
+
+**Databricks 공식 문서**
+- [Databricks: What is a Lakehouse?](https://docs.databricks.com/en/lakehouse/index.html)
+- [Databricks: Delta Lake Guide](https://docs.databricks.com/en/delta/index.html)
+- [Databricks: Unity Catalog Overview](https://docs.databricks.com/en/data-governance/unity-catalog/index.html)
+- [Databricks: Photon Runtime](https://docs.databricks.com/en/runtime/photon.html)
+- [Databricks: Delta Live Tables](https://docs.databricks.com/en/delta-live-tables/index.html)
+- [Databricks: UniForm (Universal Format)](https://docs.databricks.com/en/delta/uniform.html)
+
+**기술 비교 자료**
+- [Databricks Blog: Lakehouse vs Data Warehouse](https://www.databricks.com/blog/2021/08/30/frequently-asked-questions-about-the-data-lakehouse.html)
+- [Delta Lake vs Apache Iceberg](https://delta.io/blog/delta-lake-vs-apache-iceberg/)
+- [Snowflake Documentation: Iceberg Tables](https://docs.snowflake.com/en/user-guide/tables-iceberg)
+
+**마이그레이션 가이드**
+- [Databricks Migration Guide](https://docs.databricks.com/en/migration/index.html)
+- [Databricks Partner: 마이그레이션 가속기 프로그램](https://www.databricks.com/partners)

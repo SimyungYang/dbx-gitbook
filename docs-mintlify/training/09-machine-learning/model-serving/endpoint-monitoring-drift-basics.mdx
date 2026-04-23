@@ -1,0 +1,134 @@
+---
+title: "드리프트 감지와 시스템 모니터링 — 기초"
+---
+
+> 이 문서는 **[머신러닝](/training/09-machine-learning/overview)** 섹션의 일부입니다.
+
+## Lakehouse Monitoring 연동
+
+Inference Table의 데이터를 **Lakehouse Monitoring** 과 연동하면, 데이터 드리프트와 모델 품질을 체계적으로 모니터링할 수 있습니다.
+
+### 데이터 드리프트 감지
+
+```python
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.catalog import MonitorInferenceLog, MonitorInferenceLogProblemType
+
+w = WorkspaceClient()
+
+# Inference Table에 Lakehouse Monitor 설정
+w.quality_monitors.create(
+    table_name="ml_prod.monitoring.fraud_model_payload",
+    inference_log=MonitorInferenceLog(
+        problem_type=MonitorInferenceLogProblemType.PROBLEM_TYPE_CLASSIFICATION,
+        prediction_col="prediction",
+        label_col="actual_label",       # Ground Truth (사후 레이블링 필요)
+        timestamp_col="timestamp_ms",
+        model_id_col="model_version",
+        granularities=["1 day", "1 hour"],
+    ),
+    output_schema_name="ml_prod.monitoring",
+)
+```
+
+모니터가 설정되면 자동으로 두 가지 분석 테이블이 생성됩니다.
+
+| 생성 테이블 | 내용 |
+|------------|------|
+| `*_profile_metrics` | 각 컬럼의 통계 요약 (평균, 분산, 분포 등) |
+| `*_drift_metrics` | 기준 기간 대비 드리프트 지표 (PSI, KL Divergence 등) |
+
+> 💡 **PSI(Population Stability Index)**: 두 분포의 차이를 측정하는 지표입니다. PSI가 0.2를 초과하면 유의미한 드리프트로 판단합니다.
+
+**드리프트 지표 해석 기준:**
+
+| 지표 | 범위 | 해석 |
+|------|------|------|
+| **PSI** | \< 0.1 | 안정 (No Change) |
+| **PSI** | 0.1 ~ 0.2 | 소폭 변화 (Minor Shift), 모니터링 강화 |
+| **PSI** | > 0.2 | 유의미한 드리프트 (Major Shift), 재학습 권장 |
+| **KS 통계량** | \< 0.05 | 두 분포 동일 (p-value 기준) |
+| **Jensen-Shannon Divergence** | > 0.1 | 분포 차이 감지 |
+
+### Lakehouse Monitoring 알림 설정
+
+드리프트 감지 시 자동으로 알림을 발송하도록 설정할 수 있습니다.
+
+```python
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.catalog import (
+    MonitorInferenceLog,
+    MonitorInferenceLogProblemType,
+    MonitorNotificationsConfig,
+    MonitorNotificationsSpec,
+)
+
+w = WorkspaceClient()
+
+# 알림이 포함된 모니터 생성
+w.quality_monitors.create(
+    table_name="ml_prod.monitoring.fraud_model_payload",
+    inference_log=MonitorInferenceLog(
+        problem_type=MonitorInferenceLogProblemType.PROBLEM_TYPE_CLASSIFICATION,
+        prediction_col="prediction",
+        label_col="actual_label",
+        timestamp_col="timestamp_ms",
+        model_id_col="model_version",
+        granularities=["1 day"],
+    ),
+    output_schema_name="ml_prod.monitoring",
+    # 드리프트 감지 시 이메일 알림
+    notifications=MonitorNotificationsConfig(
+        on_new_classification_tag_detected=MonitorNotificationsSpec(
+            email_addresses=["ml-team@company.com"]
+        )
+    ),
+    # 모니터 실행 실패 시 알림
+    # on_failure=MonitorNotificationsSpec(email_addresses=["ml-team@company.com"])
+)
+```
+
+```sql
+-- 생성된 드리프트 메트릭 조회 (자동 생성 테이블)
+SELECT
+    window,
+    column_name,
+    drift_type,
+    drift_value,
+    threshold_value,
+    -- 0.2 초과 시 알림 트리거
+    CASE WHEN drift_value > 0.2 THEN 'ALERT' ELSE 'OK' END AS status
+FROM ml_prod.monitoring.fraud_model_payload_drift_metrics
+WHERE window_start >= CURRENT_DATE() - INTERVAL 7 DAYS
+ORDER BY window_start DESC, drift_value DESC;
+```
+
+### 모델 품질 모니터링
+
+Ground Truth 레이블이 확보되면 모델의 실제 성능을 추적할 수 있습니다.
+
+```sql
+-- Ground Truth 레이블을 Inference Table에 조인
+-- (실제 결과가 나중에 확인되는 경우)
+CREATE OR REPLACE TABLE ml_prod.monitoring.fraud_model_labeled AS
+SELECT
+    p.*,
+    g.actual_label
+FROM ml_prod.monitoring.fraud_model_payload p
+LEFT JOIN ml_prod.gold.fraud_labels g
+    ON p.request:customer_id = g.customer_id
+    AND p.date = g.event_date;
+
+-- 일별 모델 정확도 추적
+SELECT
+    date,
+    COUNT(*) AS total_predictions,
+    SUM(CASE WHEN prediction = actual_label THEN 1 ELSE 0 END) AS correct,
+    ROUND(AVG(CASE WHEN prediction = actual_label THEN 1.0 ELSE 0.0 END) * 100, 2) AS accuracy_pct
+FROM ml_prod.monitoring.fraud_model_labeled
+WHERE actual_label IS NOT NULL
+GROUP BY date
+ORDER BY date DESC;
+```
+
+---

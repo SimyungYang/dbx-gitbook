@@ -1,0 +1,144 @@
+---
+title: "Vector Search 설정 — 기초"
+---
+
+> 이 문서는 **[RAG](/blog/guides/rag/overview)** 섹션의 일부입니다.
+
+Databricks Vector Search는 서버리스 벡터 데이터베이스로, 임베딩 벡터의 저장/인덱싱/검색을 통합 제공합니다. HNSW 알고리즘 기반의 고성능 유사도 검색을 지원합니다.
+
+## Vector Search의 핵심 개념
+
+벡터 검색은 **텍스트를 수학적 공간의 점(벡터)으로 변환** 하여, 의미가 유사한 텍스트끼리 가까이 위치하도록 만드는 기술입니다. 전통적인 키워드 검색과 달리, "자동차"와 "차량"이 의미적으로 유사하다는 것을 이해할 수 있습니다.
+
+### HNSW (Hierarchical Navigable Small World) 알고리즘
+
+Databricks Vector Search는 **HNSW** 알고리즘을 사용합니다. 이 알고리즘이 선택된 이유를 이해하면 인덱스 튜닝에 도움이 됩니다.
+
+- **계층적 그래프 구조**: 벡터들을 여러 계층의 그래프로 연결합니다. 상위 계층은 "고속도로"처럼 먼 거리를 빠르게 이동하고, 하위 계층은 "일반 도로"처럼 정밀하게 탐색합니다.
+- **근사 최근접 이웃 (ANN)**: 정확한 최근접 이웃을 찾는 것이 아니라, 매우 높은 확률로 가장 유사한 벡터를 빠르게 찾습니다. 정확도는 99%+ 수준입니다.
+- **시간 복잡도**: O(log N)으로, 벡터 수가 10배 증가해도 검색 시간은 소폭만 증가합니다.
+
+| ANN 알고리즘 | 검색 속도 | 인덱스 빌드 속도 | 메모리 사용 | Databricks 지원 |
+|-------------|----------|----------------|-----------|----------------|
+| **HNSW** | 매우 빠름 | 보통 | 높음 | 기본 사용 |
+| **IVF** | 빠름 | 빠름 | 낮음 | 미지원 |
+| **Annoy** | 보통 | 빠름 | 보통 | 미지원 |
+
+HNSW가 다른 ANN 알고리즘 대비 메모리 사용량이 높은 이유는 각 노드가 여러 계층에 걸쳐 연결 정보를 유지하기 때문입니다. 하지만 검색 속도와 정확도의 균형이 가장 우수하여, 대부분의 상용 벡터 DB(Pinecone, Weaviate, Qdrant 등)에서도 HNSW를 기본 알고리즘으로 채택하고 있습니다.
+
+> **참고**
+Databricks Vector Search는 HNSW 알고리즘의 파라미터를 자동 최적화합니다. 사용자가 `ef_construction`이나 `M` 값을 직접 설정할 필요가 없으므로, 인덱스 유형과 임베딩 모델 선택에 집중하면 됩니다.
+
+
+## 1. Vector Search Endpoint 생성
+
+Vector Search Endpoint는 인덱스를 서빙하는 서버리스 컴퓨팅 리소스입니다.
+
+```python
+from databricks.vector_search.client import VectorSearchClient
+
+client = VectorSearchClient()
+
+# 서버리스 엔드포인트 생성
+client.create_endpoint(
+    name="rag-vs-endpoint",
+    endpoint_type="STANDARD"  # 또는 "STORAGE_OPTIMIZED"
+)
+```
+
+### 엔드포인트 유형 비교
+
+| 항목 | Standard | Storage-Optimized |
+|------|----------|-------------------|
+| **최대 벡터 수** | ~3.2억 (768차원) | 10억+ (768차원) |
+| **인덱싱 속도** | 기본 | 10~20배 빠름 |
+| **쿼리 지연** | 낮음 | ~250ms 추가 |
+| **적합한 케이스** | 일반 RAG | 대규모 문서 컬렉션 |
+
+> **참고**
+대부분의 RAG 사용 사례에서는 **Standard** 엔드포인트로 충분합니다. 워크스페이스당 최대 100개 엔드포인트, 엔드포인트당 최대 50개 인덱스를 생성할 수 있습니다.
+
+
+## 2. Vector Search Index 유형
+
+### Delta Sync Index (자동 동기화, 권장)
+
+소스 Delta Table이 변경되면 인덱스가 **자동으로 동기화** 됩니다. 두 가지 임베딩 관리 방식이 있습니다.
+
+#### Databricks 관리 임베딩 (권장)
+
+Databricks가 임베딩을 자동 계산합니다. 소스 텍스트 컬럼만 지정하면 됩니다.
+
+```python
+index = client.create_delta_sync_index(
+    endpoint_name="rag-vs-endpoint",
+    index_name="catalog.schema.document_chunks_index",
+    source_table_name="catalog.schema.document_chunks",
+    pipeline_type="TRIGGERED",  # "TRIGGERED" 또는 "CONTINUOUS"
+    primary_key="chunk_id",
+    embedding_source_column="content",
+    embedding_model_endpoint_name="databricks-gte-large-en"
+)
+```
+
+#### 자체 관리 임베딩
+
+직접 계산한 임베딩 벡터 컬럼이 소스 테이블에 있는 경우:
+
+```python
+index = client.create_delta_sync_index(
+    endpoint_name="rag-vs-endpoint",
+    index_name="catalog.schema.document_chunks_index",
+    source_table_name="catalog.schema.document_chunks",
+    pipeline_type="TRIGGERED",
+    primary_key="chunk_id",
+    embedding_dimension=1024,
+    embedding_vector_column="embedding"
+)
+```
+
+### Direct Vector Access Index (수동 관리)
+
+Delta Sync Index와 달리, REST API로 직접 벡터를 삽입/업데이트합니다. 소스가 Delta Table이 아닌 경우(예: 외부 API에서 실시간으로 수집되는 데이터, 자체 임베딩 파이프라인이 있는 경우)에 적합합니다. 동기화 파이프라인이 없으므로 벡터의 추가/삭제를 애플리케이션 코드에서 직접 관리해야 합니다.
+
+```python
+index = client.create_direct_access_index(
+    endpoint_name="rag-vs-endpoint",
+    index_name="catalog.schema.direct_index",
+    primary_key="chunk_id", embedding_dimension=1024,
+    embedding_vector_column="embedding",
+    schema={"chunk_id": "string", "content": "string",
+            "embedding": "array<float>", "source": "string"}
+)
+```
+
+> **성공**
+**권장**: Delta Sync Index + Databricks 관리 임베딩 조합. 임베딩 계산과 인덱스 동기화가 자동으로 처리되어 운영 부담이 최소화됩니다.
+
+
+## 3. Embedding 모델 선택
+
+임베딩(embedding) 모델은 텍스트를 고정 길이의 숫자 벡터로 변환하는 모델입니다. 의미가 유사한 텍스트는 벡터 공간에서 가까운 위치에 배치되므로, 벡터 간 거리(코사인 유사도)를 계산하면 의미적 유사도를 측정할 수 있습니다. 모델 선택은 검색 품질에 직접적으로 영향을 미칩니다.
+
+Foundation Model API에서 제공하는 임베딩 모델은 다음과 같습니다.
+
+| 모델 | 차원 | 특징 |
+|------|------|------|
+| `databricks-gte-large-en` | 1024 | 영어 특화, MTEB 벤치마크 상위권, 의미 검색에 최적화 |
+| `databricks-bge-large-en` | 1024 | 영어 특화, 범용적 용도에 적합 |
+
+GTE(General Text Embeddings)와 BGE(BAAI General Embedding)는 모두 트랜스포머 기반 모델이며, 1024차원의 벡터를 생성합니다. **한국어 문서가 포함된 경우** 에는 다국어 임베딩 모델(예: `multilingual-e5-large`, 외부 모델 서빙 필요)이나 한국어 특화 모델을 Model Serving에 직접 배포하여 사용하는 것이 더 나은 검색 품질을 보일 수 있습니다. [한국어 RAG 최적화](korean-nlp) 가이드에서 자세히 다룹니다.
+
+```python
+# Foundation Model API로 임베딩 직접 호출
+import mlflow.deployments
+
+deploy_client = mlflow.deployments.get_deploy_client("databricks")
+
+response = deploy_client.predict(
+    endpoint="databricks-gte-large-en",
+    inputs={"input": ["Databricks Vector Search란 무엇인가요?"]}
+)
+embeddings = response.data[0]["embedding"]
+print(f"임베딩 차원: {len(embeddings)}")  # 1024
+```

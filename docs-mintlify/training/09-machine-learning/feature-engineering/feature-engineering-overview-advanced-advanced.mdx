@@ -1,0 +1,158 @@
+---
+title: "Feature Engineering 개요 — 심화 — 심화"
+---
+
+## Feature Freshness 모니터링
+
+피처가 오래되면(stale), 모델 성능이 저하됩니다. 피처 신선도(Freshness)를 모니터링하는 것이 중요합니다.
+
+### Freshness 모니터링 패턴
+
+```python
+# 피처 테이블의 마지막 업데이트 시간 확인
+last_update = spark.sql("""
+    DESCRIBE HISTORY catalog.ml.customer_features
+    LIMIT 1
+""").select("timestamp").collect()[0][0]
+
+from datetime import datetime, timedelta
+staleness = datetime.now() - last_update
+
+if staleness > timedelta(hours=24):
+    # Alert 발생: 피처가 24시간 이상 업데이트되지 않음
+    print(f"⚠️ Feature staleness alert: {staleness}")
+```
+
+### Databricks Lakehouse Monitoring 연동
+
+```sql
+-- Feature Table에 모니터 설정
+CREATE MONITOR catalog.ml.customer_features
+WITH (
+  SCHEDULE = CRON '0 0 * * *',  -- 매일 체크
+  BASELINE_TABLE = 'catalog.ml.customer_features_baseline'
+);
+
+-- 모니터링 결과 확인: 데이터 드리프트 감지
+SELECT * FROM catalog.ml.customer_features_profile_metrics
+WHERE log_type = 'DATA_DRIFT'
+  AND drift_detected = true;
+```
+
+---
+
+## 대규모 Feature Table 설계 패턴
+
+### Wide vs Narrow 테이블 전략
+
+| 전략 | 구조 | 적합한 경우 |
+|------|------|-----------|
+| **Wide Table** | 하나의 테이블에 모든 피처 (수백 컬럼) | 단일 엔터티(고객, 상품)의 피처가 함께 사용되는 경우 |
+| **Narrow Tables** | 도메인별로 분리된 여러 테이블 | 팀별로 독립적으로 피처를 관리하는 경우 |
+| **Hybrid** | 핵심 피처는 Wide, 전문 피처는 Narrow | 대규모 조직에서 권장 |
+
+### Wide Table 예시
+
+```python
+# 고객의 모든 피처를 하나의 테이블에
+fe.create_table(
+    name="catalog.ml.customer_features_wide",
+    primary_keys=["customer_id"],
+    timestamp_keys=["feature_date"],  # Point-in-Time용
+    df=wide_features_df,  # 200+ 컬럼
+    description="고객 통합 피처 테이블 (행동, 인구통계, 거래, 상호작용 피처 포함)"
+)
+```
+
+### Narrow Tables + 다중 FeatureLookup
+
+```python
+# 여러 도메인별 Feature Table에서 조합
+training_set = fe.create_training_set(
+    df=labels_df,
+    feature_lookups=[
+        FeatureLookup(table_name="catalog.ml.customer_demographics", lookup_key="customer_id"),
+        FeatureLookup(table_name="catalog.ml.customer_transactions", lookup_key="customer_id",
+                      timestamp_lookup_key="event_date"),
+        FeatureLookup(table_name="catalog.ml.customer_interactions", lookup_key="customer_id",
+                      timestamp_lookup_key="event_date"),
+        FeatureLookup(table_name="catalog.ml.product_features", lookup_key="product_id"),
+    ],
+    label="is_churned"
+)
+```
+
+### 대용량 Feature Table 최적화
+
+| 최적화 | 설명 | 효과 |
+|--------|------|------|
+| **Liquid Clustering** | `CLUSTER BY (customer_id)`로 Primary Key 기준 클러스터링 | Lookup 성능 5~10배 향상 |
+| **Z-ORDER** | `OPTIMIZE ... ZORDER BY (customer_id)` | 범위 스캔 최적화 |
+| **파티션 전략** | 일별/월별 feature_date 파티션 | Point-in-Time 쿼리 시 불필요한 스캔 방지 |
+| **Auto Compaction** | Delta Lake 자동 파일 병합 | 소규모 파일 문제 방지 |
+| **Column Pruning** | FeatureLookup에서 `feature_names` 명시 | 필요한 컬럼만 읽어서 I/O 절감 |
+
+```python
+# Liquid Clustering 적용
+spark.sql("""
+    ALTER TABLE catalog.ml.customer_features
+    CLUSTER BY (customer_id)
+""")
+
+# 특정 피처만 선택 (Column Pruning)
+FeatureLookup(
+    table_name="catalog.ml.customer_features",
+    lookup_key="customer_id",
+    feature_names=["total_orders", "lifetime_revenue", "avg_order_value"]  # 필요한 것만
+)
+```
+
+---
+
+## Online Table과 실시간 서빙 심화
+
+### Online Table 동기화 모드
+
+| 모드 | 지연 시간 | 비용 | 적합한 경우 |
+|------|----------|------|-----------|
+| **Snapshot** | 분~시간 (스케줄) | 낮음 | 피처가 자주 변하지 않는 경우 (인구통계 등) |
+| **Triggered** | 분 단위 | 중간 | 피처 업데이트 직후 동기화 필요 시 |
+| **Continuous (CDC)** | 초 단위 | 높음 | 실시간 피처가 필요한 경우 (실시간 거래 등) |
+
+```python
+# Online Table 생성 (Continuous 동기화)
+w.online_tables.create(
+    name="catalog.ml.customer_features_online",
+    spec={
+        "source_table_full_name": "catalog.ml.customer_features",
+        "primary_key_columns": ["customer_id"],
+        "run_continuously": {
+            "triggered": False  # True면 Triggered 모드
+        }
+    }
+)
+```
+
+> ⚠️ **비용 주의**: Continuous 모드의 Online Table은 항상 실행 상태이므로 비용이 지속적으로 발생합니다. 실시간성이 정말 필요한 피처에만 적용하고, 나머지는 Snapshot이나 Triggered 모드를 사용하세요.
+
+---
+
+## 정리
+
+| 핵심 개념 | 설명 |
+|-----------|------|
+| **Feature** | ML 모델의 입력 데이터 속성입니다 |
+| **Feature Table** | Unity Catalog에서 피처를 중앙 관리하는 테이블입니다 |
+| **FeatureLookup** | 학습 데이터에 피처를 자동으로 결합합니다 |
+| **Point-in-Time** | 시간 기준으로 피처를 조회하여 데이터 유출을 방지합니다 |
+| **Training-Serving Skew** | 학습과 서빙의 피처 불일치 문제이며, Feature Table로 방지합니다 |
+| **Feature Governance** | UC 권한, 태그, 리니지로 피처를 거버넌스합니다 |
+| **Feature Freshness** | 피처의 신선도를 모니터링하여 모델 성능 저하를 방지합니다 |
+| **Online Table** | 실시간 서빙에 최적화된 피처 저장소입니다 |
+
+---
+
+## 참고 링크
+
+- [Databricks: Feature Engineering](https://docs.databricks.com/aws/en/machine-learning/feature-store/)
+- [Databricks: Feature tables](https://docs.databricks.com/aws/en/machine-learning/feature-store/feature-tables.html)

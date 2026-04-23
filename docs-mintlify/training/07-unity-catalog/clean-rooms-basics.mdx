@@ -1,0 +1,163 @@
+---
+title: "Clean Rooms — 기초"
+---
+
+> 이 문서는 **[Unity Catalog](/training/07-unity-catalog/overview)** 섹션의 일부입니다.
+
+## 개념
+
+> 💡 **Clean Room(클린 룸)** 은 여러 조직이 **원본 데이터를 서로 노출하지 않으면서** 공동 분석을 수행할 수 있는 안전한 협업 환경입니다. 각 참여자의 데이터는 암호화된 상태로 유지되며, 사전에 합의된 연산만 실행할 수 있습니다.
+
+### 왜 Clean Room이 필요한가요?
+
+기업 간 데이터 협업은 큰 가치를 만들어낼 수 있지만, 현실적으로 여러 장벽이 존재합니다.
+
+| 기존 협업 방법 | 고려사항 |
+|---------------|--------|
+| **데이터 직접 전달** | 개인정보 유출 위험, GDPR/CCPA 위반 가능 |
+| **API로 결과만 공유** | 개발 비용 높음, 유연성 부족 |
+| **공유 데이터베이스** | 원본 데이터 노출, 권한 관리 어려움 |
+| **수기 보고서 교환** | 실시간성 없음, 분석 범위 제한 |
+
+> 💡 **GDPR**(General Data Protection Regulation)은 EU의 개인정보 보호 규정이고, **CCPA**(California Consumer Privacy Act)는 미국 캘리포니아주의 소비자 프라이버시 법입니다. 두 규정 모두 개인정보의 제3자 공유를 엄격히 제한합니다.
+
+Clean Room은 이러한 문제를 해결합니다.
+
+| Clean Room 장점 | 설명 |
+|-----------------|------|
+| **데이터 비노출** | 각 참여자의 원본 데이터는 상대방에게 보이지 않습니다 |
+| **규제 준수** | GDPR, CCPA, HIPAA 등 프라이버시 규정을 충족합니다 |
+| **합의된 연산만 실행** | 사전에 정의된 분석(집계, 매칭 등)만 허용됩니다 |
+| **감사 추적** | 누가 어떤 분석을 실행했는지 모든 기록이 남습니다 |
+| **중립적 환경** | 어느 한쪽의 인프라에 종속되지 않습니다 |
+
+---
+
+## Clean Room 아키텍처
+
+Databricks Clean Room은 **Unity Catalog** 와 **Delta Sharing** 위에 구축된 보안 계층입니다.
+
+### 참여 역할
+
+| 역할 | 설명 |
+|------|------|
+| **생성자 (Creator)** | Clean Room을 만들고, 자신의 데이터를 등록하며, 허용 연산을 정의합니다 |
+| **협업자 (Collaborator)** | Clean Room에 참여하여 자신의 데이터를 등록하고, 합의된 분석을 실행합니다 |
+
+### 동작 원리
+
+| 참여자 | 데이터 | 원본 노출 |
+|--------|--------|---------|
+| **조직 A**(생성자) | 고객 구매 데이터 | 비노출 |
+| **조직 B**(협업자) | 광고 노출 데이터 | 비노출 |
+
+**Databricks Clean Room 규칙**:
+- 사전 합의된 연산만 실행
+- 집계 결과만 반환
+- 원본 데이터 접근 불가
+- 모든 실행 기록 감사
+
+> 최종 결과: **집계 결과만 공유**(개별 레코드 없음)
+
+### 핵심 구성 요소
+
+| 구성 요소 | 설명 |
+|-----------|------|
+| **Clean Room** | 보안이 적용된 협업 공간입니다. Unity Catalog 메타스토어 위에 생성됩니다 |
+| **Shared Table** | 각 참여자가 Clean Room에 등록한 테이블입니다. 상대방은 원본을 볼 수 없습니다 |
+| **Notebook Template** | Clean Room 안에서 실행할 수 있는 사전 승인된 분석 코드입니다 |
+| **Output Table** | 분석 결과가 저장되는 테이블입니다. 참여자가 확인할 수 있습니다 |
+
+---
+
+## Clean Room 생성 및 참여
+
+### 1단계: Clean Room 생성 (생성자)
+
+Databricks 워크스페이스의 **Data** 탭에서 Clean Room을 생성합니다.
+
+```sql
+-- Clean Room은 현재 UI 및 REST API를 통해 생성합니다.
+-- 아래는 Clean Room에 데이터를 등록하는 개념적 흐름입니다.
+
+-- 생성자: 공유할 테이블 준비
+CREATE TABLE IF NOT EXISTS gold.customer_purchases (
+  customer_id STRING,
+  purchase_date DATE,
+  product_category STRING,
+  amount DOUBLE
+);
+```
+
+### 2단계: 협업자 초대
+
+```
+Clean Room 생성 후:
+1. "Add Collaborator" 클릭
+2. 협업자의 Databricks Sharing Identifier 입력
+3. 협업자에게 초대 전송
+```
+
+### 3단계: 데이터 등록
+
+각 참여자는 자신의 테이블을 Clean Room에 등록합니다.
+
+| 역할 | 테이블 | 설명 |
+|------|--------|------|
+| **생성자** | gold.customer_purchases | 고객 구매 기록 |
+| | gold.customer_segments | 고객 세그먼트 |
+| **협업자** | gold.ad_impressions | 광고 노출 기록 |
+| | gold.campaign_metadata | 캠페인 메타데이터 |
+
+### 4단계: 노트북 템플릿 정의 및 실행
+
+```python
+# Clean Room 노트북 템플릿 예시
+# 생성자가 작성하고, 양측이 합의한 분석만 실행 가능
+
+# 두 조직의 데이터를 매칭하여 집계 결과만 반환
+result = spark.sql("""
+    SELECT
+        c.product_category,
+        a.campaign_name,
+        COUNT(DISTINCT c.customer_id) AS matched_customers,
+        SUM(c.amount) AS total_revenue
+    FROM creator.customer_purchases c
+    JOIN collaborator.ad_impressions a
+        ON c.customer_id = a.user_id
+    JOIN collaborator.campaign_metadata cm
+        ON a.campaign_id = cm.campaign_id
+    GROUP BY c.product_category, a.campaign_name
+    HAVING COUNT(DISTINCT c.customer_id) >= 50  -- 최소 집계 단위 보장
+""")
+```
+
+> ⚠️ **중요**: Clean Room에서는 개별 레코드를 반환하는 쿼리는 허용되지 않습니다. 반드시 집계(GROUP BY)를 통해 결과를 생성해야 하며, 최소 집계 단위(k-anonymity)를 설정하여 개인 식별을 방지합니다.
+
+---
+
+## 허용 연산 정의
+
+Clean Room의 핵심은 **어떤 연산을 허용할 것인가** 를 사전에 합의하는 것입니다.
+
+### 연산 유형별 허용 여부
+
+| 연산 유형 | 허용 여부 | 설명 |
+|-----------|-----------|------|
+| **집계 (Aggregation)** | ✅ 허용 | COUNT, SUM, AVG 등 그룹별 통계 |
+| **매칭 (Overlap Analysis)** | ✅ 허용 | 두 데이터셋의 공통 사용자 수 계산 |
+| **세그먼트 분석** | ✅ 허용 | 특정 조건의 그룹 크기와 통계 |
+| **개별 레코드 조회** | ❌ 차단 | SELECT * 같은 원본 데이터 열람 |
+| **데이터 내보내기** | ❌ 차단 | 원본 데이터를 외부로 복사 |
+| **역추론 쿼리** | ❌ 차단 | WHERE 조건으로 개인을 특정하는 시도 |
+
+### 프라이버시 보호 메커니즘
+
+| 프라이버시 보호 계층 | 설명 |
+|-------------------|------|
+| **k-Anonymity** | 최소 k명 이상의 그룹만 결과에 포함 |
+| **집계 강제** | GROUP BY 없는 쿼리 차단 |
+| **컬럼 접근 제한** | 민감 컬럼은 매칭 키로만 사용 가능 |
+| **감사 로그** | 모든 쿼리와 결과를 기록 |
+
+---

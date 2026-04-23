@@ -1,0 +1,123 @@
+---
+title: "운영, 스케일링, 모니터링 — 심화"
+---
+
+> 이 문서는 **[Lakebase](/training/11-lakebase/overview)** 섹션의 일부입니다.
+
+## 8. 장단점과 트레이드오프 (Trade-offs)
+
+### Databricks Apps vs 외부 호스팅 비교
+
+| 항목 | Databricks Apps + Lakebase | 외부 호스팅 (Vercel + RDS / AWS ECS) |
+|------|---------------------------|--------------------------------------|
+| **초기 설정** | 워크스페이스 내 몇 번의 클릭 | VPC, IAM, 보안 그룹 별도 구성 필요 |
+| **인증 통합** | Databricks OAuth 자동 처리 | 별도 인증 서버(Auth0, Cognito) 구성 필요 |
+| **데이터 거버넌스** | Unity Catalog 즉시 적용 | 별도 거버넌스 레이어 구축 필요 |
+| **분석 연계** | Data Sync로 자동 반영 | ETL 파이프라인 별도 구축 필요 |
+| **커스터마이징** | Databricks 지원 프레임워크로 제한 | 자유로운 언어/런타임 선택 가능 |
+| **Cold Start** | 첫 요청 시 약간의 지연 발생 가능 | 상시 실행 인스턴스는 지연 없음 |
+| **비용** | DBU 기반 통합 과금 | 서비스별 분산 과금 (예측 어려울 수 있음) |
+| **글로벌 CDN** | 현재 미지원 | Vercel/CloudFront CDN 활용 가능 |
+
+### 언제 Databricks Apps + Lakebase를 선택해야 하는가
+
+- 데이터 팀이 이미 Databricks를 사용하고 있는 경우
+- 운영 데이터를 실시간으로 분석에 활용해야 하는 경우
+- 내부 도구(Internal Tool) 또는 B2B SaaS 형태의 앱인 경우
+- 단일 거버넌스 정책으로 모든 데이터를 통제해야 하는 경우
+
+### 외부 호스팅이 더 적합한 경우
+
+- 글로벌 CDN이 반드시 필요한 퍼블릭 웹사이트
+- 매우 낮은 Cold Start 레이턴시가 요구되는 고빈도 서비스
+- Databricks가 지원하지 않는 특정 런타임(Go, Rust, Node.js 등)이 필요한 경우
+
+---
+
+## 9. 베스트 프랙티스와 흔한 실수
+
+### 베스트 프랙티스 (Best Practices)
+
+| 항목 | 권장 방법 |
+|------|-----------|
+| **자격증명 관리** | 비밀번호 하드코딩 금지 — Databricks Secrets 또는 자동 주입 토큰 사용 |
+| **연결 풀링** | 프로덕션에서는 반드시 `pool_size`, `max_overflow`, `pool_recycle` 설정 |
+| **SQL 인젝션 방지** | 파라미터 바인딩(`%s`, `?`) 사용 — f-string SQL은 절대 금지 |
+| **트랜잭션 관리** | 커밋/롤백을 명시적으로 처리하고 커넥션을 즉시 반환 |
+| **마이그레이션 관리** | Alembic 등 마이그레이션 도구로 스키마 변경을 버전 관리 |
+| **헬스체크** | `/health` 엔드포인트에서 DB 연결 상태를 항상 노출 |
+| **인덱스 설계** | 자주 조회되는 컬럼에 인덱스 추가, EXPLAIN ANALYZE로 쿼리 계획 확인 |
+
+### 흔한 실수 (Common Mistakes)
+
+```python
+# ❌ 잘못된 예시 1: f-string으로 SQL 작성 (SQL 인젝션 취약점)
+query = f"SELECT * FROM orders WHERE user_id = {user_id}"
+
+# ✅ 올바른 예시: 파라미터 바인딩 사용
+query = "SELECT * FROM orders WHERE user_id = %s"
+cursor.execute(query, (user_id,))
+
+# ❌ 잘못된 예시 2: 앱 시작마다 새 연결 생성 (연결 누수)
+def get_data():
+    conn = psycopg2.connect(...)  # 매 호출마다 새 연결 — 메모리 누수
+    ...
+
+# ✅ 올바른 예시: 연결 풀에서 연결을 빌려 사용 후 반환
+def get_data():
+    with engine.connect() as conn:  # 풀에서 빌려서 자동 반환
+        result = conn.execute(text("SELECT ..."))
+        return result.fetchall()
+
+# ❌ 잘못된 예시 3: 환경 변수 없이 하드코딩
+LAKEBASE_HOST = "my-db.lakebase.databricks.com"  # 코드에 호스트 하드코딩
+
+# ✅ 올바른 예시: 환경 변수에서 읽기
+LAKEBASE_HOST = os.getenv("LAKEBASE_HOST")
+if not LAKEBASE_HOST:
+    raise ValueError("LAKEBASE_HOST 환경 변수가 설정되지 않았습니다.")
+```
+
+### 운영 체크리스트
+
+| 항목 | 확인 사항 |
+|------|-----------|
+| **커넥션 풀** | `pool_size`, `max_overflow`, `pool_recycle` 이 설정되어 있습니다 |
+| **에러 처리** | 모든 DB 작업에 `try/except` 및 롤백 처리가 있습니다 |
+| **SQL 인젝션 방지** | 파라미터 바인딩(`%s`)을 사용하고 f-string SQL이 없습니다 |
+| **타임아웃 설정** | 쿼리 타임아웃과 연결 타임아웃이 명시되어 있습니다 |
+| **로깅** | 에러와 500ms 이상 느린 쿼리가 로깅됩니다 |
+| **헬스체크** | `/health` 엔드포인트에서 DB 연결 상태를 확인합니다 |
+| **SSL 강제** | `sslmode=require`로 암호화 통신이 적용되어 있습니다 |
+| **환경 분리** | dev/staging/prod 각각 독립된 Lakebase 인스턴스를 사용합니다 |
+
+---
+
+## 정리
+
+| 핵심 포인트 | 설명 |
+|-------------|------|
+| **통합 플랫폼** | Databricks Apps + Lakebase로 앱 개발~분석까지 하나의 플랫폼에서 처리합니다 |
+| **다양한 프레임워크** | Streamlit, FastAPI, Dash, Flask 등 Python 프레임워크를 자유롭게 선택합니다 |
+| **OAuth 통합 인증** | 별도의 인증 시스템 없이 Databricks OAuth를 활용합니다 |
+| **커넥션 풀링** | 프로덕션에서는 반드시 커넥션 풀을 설정합니다 |
+| **자동 동기화** | 앱 데이터가 Data Sync로 자동으로 분석 환경에 반영됩니다 |
+| **환경 분리** | dev/staging/prod 별로 독립된 Lakebase 인스턴스를 운영합니다 |
+| **보안** | SQL 인젝션 방지, SSL 필수, 파라미터 바인딩을 준수합니다 |
+| **IaC 배포** | Asset Bundles와 CI/CD로 배포를 코드로 관리합니다 |
+
+---
+
+## 참고 링크
+
+- [Databricks: Databricks Apps 개요](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/)
+- [Databricks: Databricks Apps — app.yaml 설정 레퍼런스](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/app-yaml.html)
+- [Databricks: Lakebase 개요](https://docs.databricks.com/aws/en/lakebase/)
+- [Databricks: Asset Bundles (DAB)](https://docs.databricks.com/aws/en/dev-tools/bundles/)
+- [Databricks: Databricks CLI — apps 명령어](https://docs.databricks.com/aws/en/dev-tools/cli/apps-commands.html)
+- [SQLAlchemy: Connection Pooling](https://docs.sqlalchemy.org/en/20/core/pooling.html)
+- [Alembic: Database Migration](https://alembic.sqlalchemy.org/en/latest/)
+- [Azure Databricks: Databricks Apps](https://learn.microsoft.com/en-us/azure/databricks/dev-tools/databricks-apps/)
+- [Streamlit Documentation](https://docs.streamlit.io/)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [psycopg2 Documentation](https://www.psycopg.org/docs/)

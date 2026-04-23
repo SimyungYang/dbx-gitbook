@@ -1,0 +1,74 @@
+---
+title: "Databricks에서 MCP 활용 — 심화"
+---
+
+> 이 문서는 **[MCP](/blog/guides/mcp/overview)** 섹션의 일부입니다.
+
+## MCP 서버 확인 방법
+
+워크스페이스에서 사용 가능한 MCP 서버를 확인하려면:
+
+1. 워크스페이스의 **Agents** 섹션으로 이동합니다.
+2. **MCP Servers** 탭을 선택합니다.
+3. 등록된 서버 목록과 상태를 확인할 수 있습니다.
+
+---
+
+## 비용 구조
+
+MCP 프로토콜 자체에는 추가 비용이 없습니다. 도구 실행 시 사용되는 컴퓨팅 리소스에 대해서만 비용이 부과됩니다:
+
+| 리소스 | 비용 유형 |
+|--------|----------|
+| Unity Catalog Functions | Serverless General Compute |
+| Genie Spaces | Serverless SQL Compute |
+| Databricks SQL | SQL 전용 가격 |
+| Vector Search Indexes | Vector Search 가격 |
+| Custom MCP Servers (Apps) | Databricks Apps 가격 |
+
+---
+
+## 활용 시나리오
+
+| 시나리오 | 사용할 MCP 서버 | 효과 |
+|---------|---------------|------|
+| 코드 검색 & PR 리뷰 | GitHub MCP (External) | 엔터프라이즈 리포에서 코드 패턴 검색 |
+| 내부 문서 검색 | Glean MCP (External) | Confluence, Slack 등 통합 검색 |
+| 고객 데이터 조회 | UC Functions (Managed) | SQL 함수로 안전하게 데이터 접근 |
+| RAG 검색 | Vector Search (Managed) | 벡터 인덱스 기반 유사도 검색 |
+| 사내 API 연동 | Custom MCP (Apps) | 내부 시스템을 MCP로 래핑 |
+
+---
+
+## Databricks MCP 도입 시 의사결정 가이드
+
+어떤 유형의 MCP 서버를 사용할지 결정하는 흐름입니다:
+
+| 질문 | 답변 | 권장 유형 |
+|------|------|----------|
+| Databricks 내부 데이터/함수에 접근하고 싶은가? | Yes | **Managed MCP** |
+| 외부 SaaS 서비스(Slack, GitHub 등)를 사용하고 싶은가? | Yes | **External MCP**(Unity Catalog Connection) |
+| 사내 전용 API/시스템을 MCP로 노출하고 싶은가? | Yes | **Custom MCP**(Databricks Apps) |
+| Claude Desktop/Code에서 Databricks 데이터에 접근하고 싶은가? | Yes | **Databricks MCP Python 패키지**(로컬) |
+
+### Managed vs External vs Custom 비교
+
+| 측면 | Managed | External | Custom |
+|------|---------|----------|--------|
+| **설정 난이도** | 매우 쉬움 (즉시 사용) | 쉬움 (UI에서 Connection 생성) | 보통 (코드 개발 + 배포 필요) |
+| **유지보수** | Databricks가 관리 | Connection 인증 갱신 정도 | 자체 코드 유지보수 |
+| **유연성** | 사전 정의된 기능만 | 외부 서버가 제공하는 기능 | 완전한 자유도 |
+| **보안** | UC 권한 자동 적용 | Managed Proxy + OAuth | 자체 인증 구현 필요 |
+| **비용** | 기존 컴퓨팅 비용 | 기존 + 외부 서비스 비용 | Apps 호스팅 비용 + 개발 비용 |
+
+> **팁**
+**시작 권장**: Managed MCP(특히 Unity Catalog Functions)로 시작하여 MCP의 동작을 이해한 후, External MCP(Slack, GitHub)를 추가하고, 마지막으로 필요시 Custom MCP를 개발하세요.
+
+
+---
+
+## 다음 단계
+
+- [일반 MCP 설정](setup-general): Claude Desktop, Claude Code 등에서 MCP 설정하기
+- [인기 서버 & 시나리오](popular-servers): 카테고리별 인기 MCP 서버, 실전 조합 전략
+- [베스트 프랙티스](best-practices): 보안, Tool 설계, 디버깅 팁

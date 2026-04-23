@@ -1,0 +1,42 @@
+---
+title: "Delta Sharing — 조직 간 데이터 공유 — 심화 — 기초"
+---
+
+> 이 문서는 **[Unity Catalog](/training/07-unity-catalog/overview)** 섹션의 일부입니다.
+
+## 공유 관리
+
+```sql
+-- Share에 포함된 테이블 확인
+SHOW ALL IN SHARE customer_insights;
+
+-- Share에서 테이블 제거
+ALTER SHARE customer_insights
+REMOVE TABLE gold.customer_summary;
+
+-- 수신자 목록 확인
+SHOW RECIPIENTS;
+
+-- 수신자의 접근 기록 확인
+SHOW GRANTS ON SHARE customer_insights;
+
+-- 수신자 삭제 (접근 권한 즉시 해제)
+DROP RECIPIENT external_partner;
+
+-- Share 삭제
+DROP SHARE customer_insights;
+```
+
+---
+
+## 활용 시나리오
+
+| 시나리오 | 설명 |
+|----------|------|
+| **본사 ↔ 자회사** | 본사의 매출 데이터를 자회사에 공유합니다 |
+| **데이터 제공 사업** | 데이터를 상품으로 외부 고객에게 판매합니다 |
+| **파트너 협업** | 공급망 데이터를 파트너사와 실시간 공유합니다 |
+| **규제 보고** | 규제 기관에 특정 데이터를 안전하게 공유합니다 |
+| **멀티 리전** | 다른 리전/클라우드의 Databricks와 데이터를 공유합니다 |
+
+---

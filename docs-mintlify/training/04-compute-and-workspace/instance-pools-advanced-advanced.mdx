@@ -1,0 +1,144 @@
+---
+title: "Instance Pools — 클러스터 시작 시간 단축 — 심화 — 심화"
+---
+
+> 이 문서는 **[컴퓨트](/training/04-compute-and-workspace/overview)** 섹션의 일부입니다.
+
+## 멀티 Pool 전략 (Dev/Staging/Prod)
+
+엔터프라이즈 환경에서는 용도별로 Pool을 분리하여 비용 추적과 리소스 격리를 확보합니다.
+
+### 환경별 Pool 설계
+
+| Pool | 인스턴스 유형 | Min Idle | Max Capacity | Spot | 용도 |
+|------|------------|---------|-------------|------|------|
+| **dev-general-pool** | m5.xlarge | 2 | 20 | Spot | 개발/탐색 클러스터 |
+| **dev-gpu-pool** | g4dn.xlarge | 0 | 5 | Spot | ML 실험 |
+| **staging-pool** | r5.2xlarge | 1 | 15 | Spot w/ Fallback | 스테이징 ETL Job |
+| **prod-driver-pool** | m5.xlarge | 3 | 10 | On-Demand | 프로덕션 Driver 전용 |
+| **prod-worker-pool** | r5.2xlarge | 5 | 50 | Spot w/ Fallback | 프로덕션 Worker 전용 |
+| **prod-ml-pool** | g5.2xlarge | 0 | 10 | On-Demand | ML 서빙/추론 |
+
+### Pool과 Cluster Policy 연동
+
+Cluster Policy로 특정 Pool 사용을 강제하면 비용 거버넌스가 강화됩니다.
+
+```json
+{
+  "instance_pool_id": {
+    "type": "fixed",
+    "value": "0123-456789-prod-worker-pool"
+  },
+  "driver_instance_pool_id": {
+    "type": "fixed",
+    "value": "0123-456789-prod-driver-pool"
+  },
+  "custom_tags.Environment": {
+    "type": "fixed",
+    "value": "production"
+  },
+  "custom_tags.CostCenter": {
+    "type": "fixed",
+    "value": "data-engineering"
+  }
+}
+```
+
+---
+
+## Pool 모니터링 (시스템 테이블)
+
+### 감사 로그로 Pool 사용 현황 분석
+
+```sql
+-- Pool 사용률 분석: 얼마나 자주 Pool에서 인스턴스를 할당받는지
+SELECT
+  date_trunc('hour', event_time) AS hour,
+  request_params.instance_pool_id,
+  COUNT(*) AS pool_requests,
+  COUNT(CASE WHEN response.status_code = 200 THEN 1 END) AS successful,
+  COUNT(CASE WHEN response.status_code != 200 THEN 1 END) AS failed
+FROM system.access.audit
+WHERE action_name LIKE '%instancePool%'
+  AND event_time > CURRENT_TIMESTAMP() - INTERVAL 7 DAYS
+GROUP BY 1, 2
+ORDER BY 1 DESC;
+```
+
+```sql
+-- 클러스터별 Pool 사용 현황
+SELECT
+  request_params.cluster_name,
+  request_params.instance_pool_id,
+  COUNT(*) AS start_count,
+  AVG(TIMESTAMPDIFF(SECOND, event_time,
+    LEAD(event_time) OVER (PARTITION BY request_params.cluster_id ORDER BY event_time)
+  )) AS avg_runtime_seconds
+FROM system.access.audit
+WHERE action_name = 'create'
+  AND service_name = 'clusters'
+  AND request_params.instance_pool_id IS NOT NULL
+  AND event_time > CURRENT_TIMESTAMP() - INTERVAL 30 DAYS
+GROUP BY 1, 2
+ORDER BY start_count DESC;
+```
+
+### Pool 효율성 핵심 지표
+
+| 지표 | 계산 | 건강 기준 |
+|------|------|----------|
+| **Pool Hit Rate** | Pool에서 할당 / 전체 요청 | > 80% (Pool 용량 충분) |
+| **유휴 비용 비율** | 유휴 비용 / 전체 Pool 비용 | \< 30% (너무 높으면 Min Idle 줄이기) |
+| **평균 시작 시간** | 클러스터 시작 요청 ~ 사용 가능 | \< 2분 (Pool 사용 시) |
+| **Max Capacity 도달 빈도** | 피크 시 Pool 포화 횟수 | 주 1회 미만 (자주 달하면 Max 증가) |
+
+---
+
+## Spot Pool 구성 상세
+
+### Spot Pool 설계 시 고려사항
+
+| 항목 | 권장 | 이유 |
+|------|------|------|
+| **Driver Pool** | On-Demand 전용 Pool | Driver 안정성 확보 |
+| **Worker Pool** | Spot with Fallback | 비용 절감 + 안정성 |
+| **Min Idle + Spot** | Min Idle 인스턴스도 Spot으로 | 유휴 비용 추가 절감 |
+| **Zone** | `auto` | Spot 가용성이 높은 AZ 자동 선택 |
+
+### Spot Pool의 함정: 유휴 인스턴스 Eviction
+
+> ⚠️ **주의**: Pool의 유휴 Spot 인스턴스도 클라우드에 의해 회수될 수 있습니다. 이 경우 Pool의 유휴 인스턴스가 0이 되어 다음 클러스터 시작 시 Pool의 이점이 사라집니다.
+
+| 대응 전략 | 설명 |
+|-----------|------|
+| **Min Idle 여유분** | 예상보다 1~2개 더 높게 설정하여 Spot 회수에 대비 |
+| **Spot + On-Demand 혼합** | Driver Pool은 On-Demand, Worker Pool만 Spot 사용 |
+| **Fallback 설정** | `SPOT_WITH_FALLBACK`으로 Spot 부족 시 자동 On-Demand 전환 |
+| **모니터링** | Pool의 실제 유휴 인스턴스 수를 모니터링하고 알림 설정 |
+
+---
+
+## 정리
+
+| 개념 | 핵심 내용 |
+|------|----------|
+| Instance Pool | 유휴 인스턴스를 미리 확보하여 클러스터 시작 시간을 단축합니다 |
+| Min Idle | 항상 유지할 최소 유휴 인스턴스 수를 설정합니다 |
+| Max Capacity | 풀의 최대 인스턴스 수를 제한하여 비용을 관리합니다 |
+| 유휴 타임아웃 | 사용되지 않는 인스턴스를 자동 종료하여 비용을 절감합니다 |
+| Runtime 사전 로드 | Spark Runtime을 미리 설치하여 추가 시간을 절약합니다 |
+| Spot 조합 | Pool에 Spot 인스턴스를 사용하면 비용을 더 절감합니다 |
+| 사이징 공식 | 동시 클러스터 수 x 평균 Worker 수 x 0.7로 Min Idle를 계산합니다 |
+| 멀티 Pool | Dev/Staging/Prod 환경별로 Pool을 분리하여 거버넌스를 확보합니다 |
+| Pool 모니터링 | Hit Rate, 유휴 비용 비율, 시작 시간을 핵심 지표로 추적합니다 |
+| Spot Pool 주의 | 유휴 Spot 인스턴스도 회수될 수 있으므로 여유분을 설정합니다 |
+
+---
+
+## 참고 링크
+
+- [Instance Pool 공식 문서](https://docs.databricks.com/aws/en/compute/pool-index.html)
+- [Pool 생성 및 관리](https://docs.databricks.com/aws/en/compute/pool-create.html)
+- [클러스터에 Pool 연결](https://docs.databricks.com/aws/en/compute/pool-cluster.html)
+- [Spot 인스턴스 가이드](https://docs.databricks.com/aws/en/compute/spot-instances.html)
+- [Serverless Compute 공식 문서](https://docs.databricks.com/aws/en/compute/serverless.html)

@@ -1,0 +1,133 @@
+---
+title: "학습 로드맵 — 심화"
+---
+
+## Databricks 공식 인증 소개
+
+Databricks는 역할별 공식 인증 시험을 제공합니다. 이 교육 자료를 학습한 후 인증에 도전해 보시기 바랍니다.
+
+### Associate 레벨 (입문~중급)
+
+| 인증명 | 대상 역할 | 관련 섹션 | 시험 개요 |
+|--------|----------|----------|----------|
+| **Databricks Certified Data Engineer Associate** | 데이터 엔지니어 | 03, 04, 05, 07 | Delta Lake, ELT, 파이프라인, 거버넌스 기초 |
+| **Databricks Certified Data Analyst Associate** | 데이터 분석가 | 06, 08 | DBSQL, 대시보드, 쿼리 최적화 |
+| **Databricks Certified Machine Learning Associate** | ML 엔지니어 | 09 | MLflow, Feature Store, Model Serving 기초 |
+| **Databricks Certified Generative AI Engineer Associate** | AI 엔지니어 | 09, 10 | RAG, Agent, LLM 서빙 기초 |
+
+### Professional 레벨 (중급~고급)
+
+| 인증명 | 대상 역할 | 관련 섹션 | 시험 개요 |
+|--------|----------|----------|----------|
+| **Databricks Certified Data Engineer Professional** | 시니어 DE | 03, 04, 05, 07, 12 | 고급 파이프라인, 성능 최적화, 보안 |
+| **Databricks Certified Machine Learning Professional** | 시니어 ML | 09, 10 | 고급 MLOps, 프로덕션 배포, 모니터링 |
+
+> 💡 **인증 준비 팁**: Databricks Academy의 무료 학습 과정을 먼저 수강하고, 이 교육 자료로 개념을 보충한 뒤, 공식 Practice Exam으로 실력을 점검하시는 것을 권장합니다.
+
+---
+
+## 추천 학습 리소스
+
+### 공식 리소스
+
+| 리소스 | URL | 설명 |
+|--------|-----|------|
+| **Databricks Academy** | [academy.databricks.com](https://academy.databricks.com) | 공식 온라인 교육 과정 (무료/유료). 인증 준비에 가장 적합합니다 |
+| **Databricks Documentation** | [docs.databricks.com](https://docs.databricks.com) | 공식 기술 문서. 최신 기능과 API 레퍼런스를 확인할 수 있습니다 |
+| **Databricks Blog** | [databricks.com/blog](https://www.databricks.com/blog) | 신기능 소개, 아키텍처 딥다이브, 고객 사례를 확인할 수 있습니다 |
+| **Release Notes** | [docs.databricks.com/release-notes](https://docs.databricks.com/aws/en/release-notes/) | 최신 기능 업데이트와 변경 사항을 확인합니다 |
+
+### 커뮤니티 & 오픈소스
+
+| 리소스 | URL | 설명 |
+|--------|-----|------|
+| **Databricks Community** | [community.databricks.com](https://community.databricks.com) | 커뮤니티 포럼. 질문과 답변, 모범 사례를 공유합니다 |
+| **Delta Lake Docs** | [docs.delta.io](https://docs.delta.io) | Delta Lake 오픈소스 문서입니다 |
+| **MLflow Docs** | [mlflow.org/docs](https://mlflow.org/docs/latest/) | MLflow 오픈소스 문서입니다 |
+| **Apache Spark Docs** | [spark.apache.org](https://spark.apache.org/docs/latest/) | Apache Spark 공식 문서입니다 |
+| **GitHub - databricks** | [github.com/databricks](https://github.com/databricks) | 공식 예제 노트북, SDK, 도구의 소스 코드입니다 |
+
+### 컨퍼런스 & 영상
+
+| 리소스 | 설명 |
+|--------|------|
+| **Data+AI Summit** | Databricks 연례 컨퍼런스. 최신 기술 발표와 고객 사례를 확인할 수 있습니다. 영상은 YouTube에서 무료 시청 가능합니다 |
+| **Databricks YouTube** | 튜토리얼, 데모, 웨비나 영상이 풍부합니다 |
+
+---
+
+## 실전 프로젝트 아이디어
+
+학습 내용을 실무에 적용해 보는 것이 가장 효과적인 학습 방법입니다. 단계별로 도전해 보시기 바랍니다.
+
+### 입문 프로젝트 (관련 섹션: 01~04)
+
+| 프로젝트 | 설명 | 핵심 기술 |
+|---------|------|----------|
+| **CSV 데이터 Delta 변환** | 공개 CSV 데이터를 Delta 테이블로 변환하고 Time Travel을 체험합니다 | Delta Lake, Notebook |
+| **SQL 분석 대시보드** | 공개 데이터셋으로 DBSQL 대시보드를 만들어 봅니다 | DBSQL, Lakeview |
+
+### 중급 프로젝트 (관련 섹션: 05~08)
+
+| 프로젝트 | 설명 | 핵심 기술 |
+|---------|------|----------|
+| **Medallion 파이프라인** | Bronze → Silver → Gold 3계층 데이터 파이프라인을 구축합니다 | Auto Loader, SDP, Jobs |
+| **거버넌스 설정** | Unity Catalog로 카탈로그/스키마를 설계하고 권한을 설정합니다 | UC, RBAC, 리니지 |
+| **실시간 대시보드** | 스트리밍 데이터를 수집하여 실시간 모니터링 대시보드를 만듭니다 | Streaming Table, Lakeview |
+
+### 고급 프로젝트 (관련 섹션: 09~12)
+
+| 프로젝트 | 설명 | 핵심 기술 |
+|---------|------|----------|
+| **ML 모델 서빙** | 분류 모델을 학습하고 실시간 서빙 엔드포인트로 배포합니다 | MLflow, Model Serving, Feature Store |
+| **RAG 챗봇** | 사내 문서를 기반으로 Q&A 챗봇을 구축합니다 | Vector Search, Agent, RAG |
+| **E2E MLOps** | 데이터 수집 → 피처 엔지니어링 → 학습 → 서빙 → 모니터링 전체 파이프라인을 자동화합니다 | Jobs, MLflow, Inference Table, Lakehouse Monitoring |
+
+---
+
+## FAQ (자주 묻는 질문)
+
+### Q1. 프로그래밍 경험이 없어도 학습할 수 있나요?
+
+**네, 가능합니다.** 데이터 분석가 경로는 SQL 중심으로 구성되어 있어 프로그래밍 경험이 적어도 학습할 수 있습니다. 다만, 데이터 엔지니어나 ML 엔지니어 경로는 Python 기초 지식이 필요합니다.
+
+### Q2. 어떤 클라우드에서 실습하는 것이 좋나요?
+
+이 교육 자료는 **클라우드에 관계없이** 적용 가능합니다. AWS, Azure, GCP 모두 Databricks를 지원합니다. 실습 환경은 [Databricks Community Edition](https://community.cloud.databricks.com/)(무료)이나 회사에서 제공하는 워크스페이스를 활용하시면 됩니다.
+
+### Q3. 학습 완료까지 얼마나 걸리나요?
+
+역할별로 다릅니다.
+
+| 역할 | 핵심 경로 소요시간 | 전체 학습 소요시간 |
+|------|-----------------|-----------------|
+| 데이터 분석가 | 약 15~20시간 | 약 25~30시간 |
+| 데이터 엔지니어 | 약 25~30시간 | 약 40~50시간 |
+| ML 엔지니어 | 약 20~25시간 | 약 40~50시간 |
+| 플랫폼 관리자 | 약 15~20시간 | 약 30~40시간 |
+
+### Q4. 인증 시험은 어디서 응시하나요?
+
+Databricks 인증 시험은 **온라인(Kryterion 플랫폼)** 으로 응시할 수 있습니다. 자택이나 사무실에서 웹캠과 화면 공유를 통해 감독 하에 시험을 치릅니다. 시험 비용은 인증별로 $200 USD 내외입니다.
+
+### Q5. 이 교육 자료와 Databricks Academy의 차이는 무엇인가요?
+
+| 비교 항목 | 이 교육 자료 | Databricks Academy |
+|----------|------------|-------------------|
+| **언어** | 한국어 | 영어 |
+| **대상** | 데이터 초보자 ~ 중급자 | 초급 ~ 고급 |
+| **형태** | 읽기 자료 (Markdown) | 대화형 강의 + 실습 노트북 |
+| **비용** | 무료 | 일부 무료 / 유료 |
+| **업데이트** | 수시 업데이트 | 정기 업데이트 |
+
+두 자료를 **병행하여 학습** 하시면 가장 효과적입니다. 이 자료로 개념을 한국어로 이해하고, Academy에서 실습으로 체득하시기 바랍니다.
+
+---
+
+## 참고 링크
+
+- [Databricks Academy](https://academy.databricks.com)
+- [Databricks Certifications](https://www.databricks.com/learn/certification)
+- [Databricks Community Edition](https://community.cloud.databricks.com/)
+- [Databricks Blog](https://www.databricks.com/blog)
+- [Data+AI Summit 영상](https://www.youtube.com/@Databricks)

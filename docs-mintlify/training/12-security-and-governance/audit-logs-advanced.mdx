@@ -1,0 +1,131 @@
+---
+title: "감사 로그 — 심화"
+---
+
+## 알림 설정
+
+Databricks SQL 알림(Alert)을 설정하여 보안 이벤트를 실시간 감지할 수 있습니다.
+
+### 알림 1: 로그인 실패 급증
+
+```sql
+-- 최근 1시간 내 로그인 실패가 10건 이상이면 알림
+SELECT COUNT(*) AS failed_logins
+FROM system.access.audit
+WHERE action_name IN ('login', 'samlLogin')
+  AND response.status_code != 200
+  AND event_time > CURRENT_TIMESTAMP() - INTERVAL 1 HOUR;
+-- 알림 조건: failed_logins > 10
+```
+
+### 알림 2: 관리자 권한 변경
+
+```sql
+-- Account Admin 또는 Workspace Admin 권한 변경 감지
+SELECT
+  event_time,
+  user_identity.email AS changed_by,
+  request_params
+FROM system.access.audit
+WHERE action_name IN ('setAdmin', 'removeAdmin', 'updatePermissions')
+  AND event_time > CURRENT_TIMESTAMP() - INTERVAL 1 HOUR
+  AND response.status_code = 200;
+-- 알림 조건: 결과가 1건 이상
+```
+
+### 알림 3: 대량 데이터 다운로드
+
+```sql
+-- 단기간 내 다수의 테이블 SELECT 감지
+SELECT
+  user_identity.email,
+  COUNT(DISTINCT request_params.full_name_arg) AS tables_accessed
+FROM system.access.audit
+WHERE service_name = 'unityCatalog'
+  AND action_name = 'getTable'
+  AND event_time > CURRENT_TIMESTAMP() - INTERVAL 1 HOUR
+GROUP BY user_identity.email
+HAVING tables_accessed > 20;
+-- 알림 조건: 결과가 1건 이상
+```
+
+---
+
+## 감사 로그 보존 정책
+
+| 항목 | 설명 |
+|------|------|
+| **기본 보존 기간** | 시스템 테이블은 365일간 데이터를 보존합니다 |
+| **장기 보존** | 규제 요건에 따라 별도 테이블에 복제하여 장기 보존합니다 |
+| **외부 SIEM** | Splunk, Sentinel 등 SIEM 도구로 감사 로그를 전송할 수 있습니다 |
+
+```sql
+-- 장기 보존을 위한 감사 로그 복제
+CREATE TABLE IF NOT EXISTS compliance.audit.long_term_audit AS
+SELECT * FROM system.access.audit WHERE 1=0;
+
+-- 매일 증분 복제 (Job으로 스케줄)
+INSERT INTO compliance.audit.long_term_audit
+SELECT *
+FROM system.access.audit
+WHERE event_date = CURRENT_DATE() - INTERVAL 1 DAY;
+```
+
+---
+
+## 쿼리 성능 최적화
+
+감사 테이블은 대규모 데이터를 포함하므로, 쿼리 성능을 위해 다음 사항을 지켜야 합니다.
+
+| 원칙 | 설명 |
+|------|------|
+| **event_date 필터 필수** | `event_date` 파티션 키를 항상 WHERE 절에 포함합니다 |
+| **service_name 필터** | 특정 서비스만 조회하면 스캔 범위가 줄어듭니다 |
+| **LIMIT 사용** | 탐색적 쿼리에는 LIMIT을 설정합니다 |
+| **집계 우선** | 상세 조회 전 COUNT/GROUP BY로 규모를 파악합니다 |
+
+```sql
+-- ✅ 좋은 예: 파티션 필터 + 서비스 필터
+SELECT * FROM system.access.audit
+WHERE event_date >= '2025-03-01' AND event_date <= '2025-03-31'
+  AND service_name = 'unityCatalog';
+
+-- ❌ 나쁜 예: 파티션 필터 없이 전체 스캔
+SELECT * FROM system.access.audit
+WHERE action_name = 'login';
+```
+
+---
+
+## 모범 사례
+
+| 원칙 | 설명 |
+|------|------|
+| **대시보드 구축** | 핵심 보안 지표를 시각화하는 감사 대시보드를 운영합니다 |
+| **알림 설정** | 로그인 실패, 권한 변경 등 주요 이벤트에 알림을 설정합니다 |
+| **장기 보존** | 규제 요건에 따라 감사 로그를 장기 보존합니다 |
+| **정기 리뷰** | 월간 보안 리뷰에서 감사 로그를 분석합니다 |
+| **SIEM 연동** | 기존 보안 도구(Splunk, Sentinel)와 연동합니다 |
+| **event_date 필터** | 쿼리 시 반드시 날짜 필터를 포함합니다 |
+
+---
+
+## 정리
+
+| 핵심 개념 | 설명 |
+|-----------|------|
+| **system.access.audit** | 모든 감사 이벤트가 저장되는 시스템 테이블입니다 |
+| **service_name** | 이벤트가 발생한 서비스를 식별합니다 |
+| **action_name** | 수행된 작업을 식별합니다 |
+| **user_identity** | 누가 작업을 수행했는지 기록합니다 |
+| **알림** | SQL Alert로 보안 이벤트를 실시간 감지합니다 |
+| **장기 보존** | 규제 요건에 따라 별도 테이블에 복제합니다 |
+
+---
+
+## 참고 링크
+
+- [Databricks: Audit log system table](https://docs.databricks.com/aws/en/admin/system-tables/audit.html)
+- [Databricks: Monitor account activity](https://docs.databricks.com/aws/en/admin/account-settings/audit-logs.html)
+- [Databricks: System tables reference](https://docs.databricks.com/aws/en/admin/system-tables/)
+- [Azure Databricks: Audit logs](https://learn.microsoft.com/en-us/azure/databricks/admin/system-tables/audit)

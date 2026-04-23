@@ -1,0 +1,121 @@
+---
+title: "Databricks의 AI Agent 전략 — 심화"
+---
+
+> 이 문서는 **[GenAI 개념](/blog/guides/genai-concepts/overview)** 섹션의 일부입니다.
+
+## 6. 멀티에이전트 아키텍처
+
+Databricks의 멀티에이전트 전략은 **"데이터 중심 오케스트레이션"** 입니다.
+
+| 계층 | 구성 요소 | 역할 |
+|------|----------|------|
+| **데이터** | Unity Catalog, Delta Lake, Vector Search | Agent가 사용하는 모든 데이터의 단일 소스 |
+| **빌드** | Agent Bricks, Agent Framework, AI Dev Kit | 노코드/프로코드 Agent 개발 |
+| **서빙** | Model Serving, Mosaic AI Gateway | 배포, 라우팅, 폴백 |
+| **관측** | MLflow 3.0, Lakehouse Monitoring | 추적, 평가, 드리프트 감지 |
+| **거버넌스** | Unity Catalog ACL, Audit Log | 권한, 감사, 리니지 |
+
+### 다른 벤더와의 통합 패턴
+
+Databricks는 모델 중립적이므로, 다른 벤더의 모델/서비스와 자연스럽게 결합됩니다:
+
+| 통합 패턴 | 설명 |
+|----------|------|
+| **OpenAI 모델 + Databricks** | GPT-4.1/Claude를 Gateway 경유로 호출, Agent Bricks에서 백엔드 모델로 사용 |
+| **AWS Bedrock + Databricks** | Bedrock 모델을 External Model로 등록, Unity Catalog 거버넌스 적용 |
+| **Llama 4 자체 호스팅** | Model Serving에 Llama 4 배포, 데이터 주권 확보 |
+| **LangGraph + Databricks** | LangGraph로 복잡한 워크플로 구축, Databricks에서 배포/모니터링 |
+| **MCP + Genie Code** | 외부 MCP 서버를 Genie Code에 연결, Unity Catalog Connection 경유 |
+
+---
+
+## 7. 차별점 요약 — 왜 Databricks인가?
+
+| 차별점 | 설명 | 다른 벤더 대비 |
+|--------|------|--------------|
+| **데이터-Agent 통합** | 데이터 준비에서 Agent 배포까지 하나의 플랫폼 | AWS/Azure는 데이터와 Agent 서비스가 분리 |
+| **Unity Catalog 거버넌스** | 데이터, 모델, Agent, Feature를 하나의 카탈로그로 관리 | 타 벤더는 데이터 거버넌스와 AI 거버넌스가 별도 |
+| **TAO/ALHF 자동 최적화** | 프로덕션에서 Agent가 자동으로 개선 | 타 벤더는 수동 프롬프트 튜닝 의존 |
+| **모델 중립** | 어떤 Foundation Model이든 사용 가능 (Gateway 경유) | AWS는 Bedrock 모델 중심, MS는 OpenAI 중심 |
+| **MLflow 3.0** | 오픈소스 기반 GenAI 관측의 사실상 표준 | 타 벤더는 독자 모니터링 도구 |
+| **멀티클라우드** | AWS, Azure, GCP 어디서든 동일한 Agent 경험 | AWS/Azure/GCP 각각 자사 클라우드 종속 |
+
+---
+
+## 8. 고객 시나리오별 권장 아키텍처
+
+| 시나리오 | 권장 구성 | 이유 |
+|---------|----------|------|
+| **사내 문서 Q&A 챗봇** | Knowledge Assistant + Vector Search | 가장 빠른 구현, 노코드, UC 권한 자동 적용 |
+| **데이터 분석 챗봇** | Genie Agent + SQL Warehouse | 자연어 → SQL, 기존 데이터 자산 활용 |
+| **복합 업무 자동화** | Supervisor Agent (KA + Genie + Custom) | 문서 검색 + 데이터 분석 + API 호출 통합 |
+| **코딩 에이전트** | Genie Code + MCP 서버 | GitHub, Slack, JIRA 연동 |
+| **커스텀 Agent** | ChatAgent + LangGraph + MLflow | 최대 유연성, 복잡한 워크플로 |
+| **멀티클라우드 통합** | Gateway + Agent Bricks + MLflow | 클라우드 간 일관된 Agent 경험 |
+
+---
+
+## 9. 고객이 자주 묻는 질문
+
+### Q1: "Agent Bricks vs Agent Framework — 뭘 써야 하나요?"
+
+> **참고**
+- **Agent Bricks**: 노코드, 빠른 구현, RAG/SQL/멀티에이전트의 표준 패턴에 적합. **대부분의 사용 사례는 여기서 해결**.
+- **Agent Framework (ChatAgent)**: 코드 기반, 커스텀 로직이 필요한 경우. LangGraph 통합, 복잡한 조건 분기, 외부 API 연동.
+- **권장**: Agent Bricks로 시작 → 한계가 느껴지면 Agent Framework로 전환.
+
+
+### Q2: "Databricks가 모델도 만드나요? DBRX는?"
+
+> **참고**
+DBRX는 Databricks가 만든 오픈웨이트 모델이지만, Databricks의 Agent 전략은 **모델 중립** 입니다. GPT-4.1, Claude, Gemini, Llama 4 등 어떤 모델이든 Gateway를 통해 사용할 수 있습니다.
+
+Databricks의 핵심 가치는 "최고의 모델을 만드는 것"이 아니라, "어떤 모델을 쓰든 데이터 거버넌스와 Agent 품질을 보장하는 것"입니다.
+
+
+### Q3: "MLflow 3.0은 LangSmith와 뭐가 다른가요?"
+
+> **참고**
+| 비교 | MLflow 3.0 | LangSmith |
+|------|-----------|-----------|
+| 라이선스 | 오픈소스 | 상용 |
+| 프레임워크 | 프레임워크 무관 | LangChain/LangGraph 최적화 |
+| 데이터 거버넌스 | Unity Catalog 통합 | 없음 |
+| 실험 추적 | ML + GenAI 통합 | GenAI 전용 |
+| 모델 레지스트리 | 포함 | 없음 |
+
+LangGraph를 사용하더라도, **Databricks 환경에서는 MLflow 3.0을 권장** 합니다. Unity Catalog와의 통합으로 데이터 리니지까지 추적할 수 있습니다.
+
+
+### Q4: "타 벤더 Agent 플랫폼과 비교했을 때 Databricks를 선택해야 하는 결정적 이유는?"
+
+> **참고**
+**한 문장 요약**: "Agent가 아무리 잘 만들어져도, 사용하는 데이터가 잘못되면 쓸모없다."
+
+Databricks만이 **데이터 준비(ETL) → 임베딩/벡터화 → Agent 개발 → 평가 → 배포 → 모니터링 → 거버넌스** 전체를 하나의 플랫폼에서 관리합니다. 다른 벤더는 각 단계마다 다른 서비스를 조합해야 합니다.
+
+특히 **Unity Catalog 하나로** 데이터 접근 제어, 모델 거버넌스, Agent 감사가 통합되는 것은 규제 환경(금융, 의료, 공공)에서 결정적 장점입니다.
+
+
+---
+
+## 10. 참고 자료
+
+- [Databricks Agent Bricks 문서](https://docs.databricks.com/en/generative-ai/agent-bricks/index.html)
+- [Databricks Supervisor Agent](https://docs.databricks.com/en/generative-ai/agent-bricks/multi-agent-supervisor.html)
+- [Mosaic AI Gateway](https://docs.databricks.com/en/generative-ai/external-models/index.html)
+- [MLflow 3.0 GenAI](https://mlflow.org/docs/latest/genai/index.html)
+- [Unity Catalog](https://docs.databricks.com/en/data-governance/unity-catalog/index.html)
+- [Databricks Agent Framework (ChatAgent)](https://docs.databricks.com/en/generative-ai/agent-framework/index.html)
+- [Agent Bricks TAO/ALHF (InfoQ)](https://www.infoq.com/news/2025/07/databricks-agent-bricks-platform/)
+- [Mosaic AI Announcements at Data+AI Summit 2025](https://www.databricks.com/blog/mosaic-ai-announcements-data-ai-summit-2025)
+
+---
+
+## 다음 단계
+
+- [Agent Bricks 상세 가이드](../../agent-bricks/README): Knowledge Assistant, Genie Agent, Supervisor 구축 가이드
+- [Agent 프레임워크 생태계](../agent-frameworks-detail/README): LangGraph, CrewAI 등과의 비교
+- [Agent UI & 배포](../agent-ui-detail/README): Streamlit, Databricks Apps로 Agent 배포
+- [MCP 활용](../../mcp/databricks-mcp): Databricks 환경에서 MCP 서버 연동

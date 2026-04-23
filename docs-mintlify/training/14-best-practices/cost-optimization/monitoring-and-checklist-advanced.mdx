@@ -1,0 +1,59 @@
+---
+title: "비용 모니터링과 체크리스트 — 심화"
+---
+
+## 6. 실전 절감 사례
+
+### 사례 1: 개발 환경 최적화
+
+| 항목 | Before | After | 절감률 |
+|------|--------|-------|-------|
+| 클러스터 유형 | All-Purpose, 항시 가동 | Serverless + Auto Stop 10분 | - |
+| 일일 가동 시간 | 24시간 | ~4시간 | 83% |
+| 월간 DBU | 7,200 DBU | 1,200 DBU | **83%** |
+
+### 사례 2: ETL 파이프라인 최적화
+
+| 항목 | Before | After | 절감률 |
+|------|--------|-------|-------|
+| 컴퓨트 | All-Purpose Compute | Jobs Compute + Spot 80% | - |
+| 인스턴스 | r5.2xlarge × 10 | i3.xlarge × 8 (스토리지 최적화) | - |
+| 실행 시간 | 2시간 | 1.5시간 (Photon 적용) | 25% |
+| 월간 DBU | 3,000 DBU | 600 DBU | **80%** |
+
+### 사례 3: BI 대시보드 환경 최적화
+
+| 항목 | Before | After | 절감률 |
+|------|--------|-------|-------|
+| Warehouse | Pro, Large, Always On | Serverless, Medium, Auto Stop 5분 | - |
+| 반복 쿼리 | 매번 재계산 | Materialized View 활용 | - |
+| 월간 가동 | 720시간 | ~150시간 | 79% |
+| 월간 DBU | 5,400 DBU | 900 DBU | **83%** |
+
+---
+
+## 7. 비용 최적화 체크리스트
+
+프로젝트 시작 시 아래 항목을 점검하세요.
+
+- [ ] 모든 클러스터에 Auto Stop이 설정되어 있는가?
+- [ ] 프로덕션 워크로드가 Jobs Compute를 사용하는가?
+- [ ] Spot 인스턴스를 최대한 활용하고 있는가?
+- [ ] Custom Tag 체계가 수립되어 있는가?
+- [ ] Predictive Optimization이 활성화되어 있는가?
+- [ ] 불필요한 All-Purpose 클러스터가 방치되어 있지 않은가?
+- [ ] SQL Warehouse에 적절한 Auto Stop이 설정되어 있는가?
+- [ ] 반복 쿼리에 Materialized View를 적용했는가?
+- [ ] 비용 모니터링 대시보드와 알림이 설정되어 있는가?
+- [ ] 월간 비용 리뷰 프로세스가 존재하는가?
+
+---
+
+## 참고 링크
+
+- [Databricks 시스템 테이블 - Billing Usage](https://docs.databricks.com/aws/en/admin/system-tables/billing)
+- [클러스터 구성 모범 사례](https://docs.databricks.com/aws/en/compute/cluster-config-best-practices)
+- [SQL Warehouse 사이징 가이드](https://docs.databricks.com/aws/en/compute/sql-warehouse/warehouse-behavior)
+- [Predictive Optimization](https://docs.databricks.com/aws/en/optimizations/predictive-optimization)
+- [Liquid Clustering](https://docs.databricks.com/aws/en/delta/clustering)
+- [Databricks 가격표 (AWS)](https://www.databricks.com/product/pricing/product-pricing)
