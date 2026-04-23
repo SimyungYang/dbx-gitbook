@@ -30,7 +30,7 @@
                 "pages": [
                   "training/02-databricks-overview/workspace-ui-tour",
                   {
-                    "group": "Notebook 사용법",
+                    "group": "Notebook",
                     "pages": [
                       "training/02-databricks-overview/notebooks-basics",
                       "training/02-databricks-overview/notebooks-basics-intro",
@@ -64,7 +64,7 @@
                   "training/03-lakehouse-architecture/managed-vs-external-tables",
                   "training/03-lakehouse-architecture/time-travel",
                   {
-                    "group": "스키마 진화(Schema Evolution)와 스키마 강제(Schema Enforcement)",
+                    "group": "스키마 진화",
                     "pages": [
                       "training/03-lakehouse-architecture/schema-evolution",
                       "training/03-lakehouse-architecture/schema-evolution-basics",
@@ -143,7 +143,7 @@
                   "training/05-data-engineering/auto-loader/what-is-auto-loader",
                   "training/05-data-engineering/auto-loader/file-notification-vs-directory-listing",
                   {
-                    "group": "Auto Loader 스키마 추론과 진화",
+                    "group": "스키마 추론",
                     "pages": [
                       "training/05-data-engineering/auto-loader/schema-inference",
                       "training/05-data-engineering/auto-loader/schema-inference-basics",
@@ -171,7 +171,7 @@
                 ]
               },
               {
-                "group": "Spark Declarative Pipelines (SDP)",
+                "group": "SDP",
                 "pages": [
                   "training/05-data-engineering/spark-declarative-pipelines/overview",
                   "training/05-data-engineering/spark-declarative-pipelines/what-is-sdp",
@@ -179,7 +179,7 @@
                   "training/05-data-engineering/spark-declarative-pipelines/expectations",
                   "training/05-data-engineering/spark-declarative-pipelines/pipeline-configuration",
                   {
-                    "group": "SDP 이벤트 로그 활용",
+                    "group": "이벤트 로그",
                     "pages": [
                       "training/05-data-engineering/spark-declarative-pipelines/event-log",
                       "training/05-data-engineering/spark-declarative-pipelines/event-log-basics",
@@ -196,7 +196,7 @@
                   "training/05-data-engineering/lakeflow-connect/overview",
                   "training/05-data-engineering/lakeflow-connect/what-is-lakeflow-connect",
                   {
-                    "group": "수집 파이프라인 구성",
+                    "group": "파이프라인 구성",
                     "pages": [
                       "training/05-data-engineering/lakeflow-connect/ingestion-pipeline-setup",
                       "training/05-data-engineering/lakeflow-connect/ingestion-pipeline-setup-basics",
@@ -216,7 +216,7 @@
                     "pages": [
                       "training/05-data-engineering/lakeflow-jobs/job-configuration/overview",
                       {
-                        "group": "태스크 유형과 의존성",
+                        "group": "태스크 설정",
                         "pages": [
                           "training/05-data-engineering/lakeflow-jobs/job-configuration/tasks-and-dependencies",
                           "training/05-data-engineering/lakeflow-jobs/job-configuration/tasks-and-dependencies-core",
@@ -231,7 +231,7 @@
                   "training/05-data-engineering/lakeflow-jobs/task-types",
                   "training/05-data-engineering/lakeflow-jobs/conditional-tasks",
                   {
-                    "group": "스케줄링과 트리거",
+                    "group": "스케줄링",
                     "pages": [
                       "training/05-data-engineering/lakeflow-jobs/scheduling-and-triggers",
                       "training/05-data-engineering/lakeflow-jobs/scheduling-and-triggers-types",
@@ -268,7 +268,7 @@
                 ]
               },
               {
-                "group": "AI 함수 — SQL에서 직접 LLM 호출하기",
+                "group": "AI 함수",
                 "pages": [
                   "training/06-data-warehousing/ai-functions",
                   "training/06-data-warehousing/ai-functions-core",
@@ -293,7 +293,7 @@
               },
               "training/11-lakebase/data-sync",
               {
-                "group": "Lakebase + Apps 연동",
+                "group": "Apps 연동",
                 "pages": [
                   "training/11-lakebase/lakebase-with-apps/overview",
                   "training/11-lakebase/lakebase-with-apps/auth-and-connection",
@@ -416,7 +416,7 @@
                 ]
               },
               {
-                "group": "Databricks AutoML 상세",
+                "group": "AutoML",
                 "pages": [
                   "training/09-machine-learning/automl",
                   "training/09-machine-learning/automl-basics",
@@ -446,7 +446,7 @@
                       "training/09-machine-learning/mlflow/model-registry/overview",
                       "training/09-machine-learning/mlflow/model-registry/basics-and-registration",
                       {
-                        "group": "권한 관리와 Model Serving 연동",
+                        "group": "권한 & Serving",
                         "pages": [
                           "training/09-machine-learning/mlflow/model-registry/permissions-and-serving",
                           "training/09-machine-learning/mlflow/model-registry/permissions-and-serving-automation",
@@ -464,7 +464,7 @@
                       "training/09-machine-learning/mlflow/mlflow-tracing/instrumentation-and-integration",
                       "training/09-machine-learning/mlflow/mlflow-tracing/query-and-monitoring",
                       {
-                        "group": "Trace 분석과 평가 (Analysis & Evaluation)",
+                        "group": "Trace 분석",
                         "pages": [
                           "training/09-machine-learning/mlflow/mlflow-tracing/analysis-and-evaluation",
                           "training/09-machine-learning/mlflow/mlflow-tracing/analysis-and-evaluation-trace",
@@ -488,7 +488,7 @@
                 "pages": [
                   "training/09-machine-learning/model-serving/overview",
                   {
-                    "group": "Model Serving 개요",
+                    "group": "Serving 개요",
                     "pages": [
                       "training/09-machine-learning/model-serving/model-serving-overview",
                       "training/09-machine-learning/model-serving/model-serving-overview-endpoints",
@@ -497,7 +497,7 @@
                   },
                   "training/09-machine-learning/model-serving/foundation-model-api",
                   {
-                    "group": "커스텀 모델 배포 (Custom Model Deployment)",
+                    "group": "커스텀 모델 배포",
                     "pages": [
                       "training/09-machine-learning/model-serving/custom-model-deployment",
                       "training/09-machine-learning/model-serving/custom-model-deployment-basics",
@@ -507,7 +507,7 @@
                   },
                   "training/09-machine-learning/model-serving/ai-gateway",
                   {
-                    "group": "엔드포인트 모니터링 (Endpoint Monitoring)",
+                    "group": "엔드포인트 모니터링",
                     "pages": [
                       "training/09-machine-learning/model-serving/endpoint-monitoring",
                       "training/09-machine-learning/model-serving/endpoint-monitoring-drift",
@@ -534,7 +534,7 @@
               },
               "training/10-agent-development/agent-bricks",
               {
-                "group": "Vector Search — 벡터 유사도 검색",
+                "group": "Vector Search",
                 "pages": [
                   "training/10-agent-development/vector-search",
                   "training/10-agent-development/vector-search-basics",
@@ -561,7 +561,7 @@
                   "training/10-agent-development/agent-deployment/logging-and-registration",
                   "training/10-agent-development/agent-deployment/endpoint-and-review",
                   {
-                    "group": "버전 관리와 모니터링 (Versioning & Monitoring)",
+                    "group": "버전 관리",
                     "pages": [
                       "training/10-agent-development/agent-deployment/versioning-and-monitoring",
                       "training/10-agent-development/agent-deployment/versioning-and-monitoring-observability",
@@ -633,7 +633,7 @@
                   "training/14-best-practices/performance-tuning/delta-lake-optimization",
                   "training/14-best-practices/performance-tuning/sql-warehouse-and-pipeline",
                   {
-                    "group": "ML/AI 최적화와 성능 진단",
+                    "group": "ML 성능 진단",
                     "pages": [
                       "training/14-best-practices/performance-tuning/ml-and-diagnostics",
                       "training/14-best-practices/performance-tuning/ml-and-diagnostics-optimization",
@@ -662,7 +662,7 @@
               "training/13-appendix/rest-api",
               "training/13-appendix/databricks-connect",
               {
-                "group": "Declarative Automation Bundles (DABs)",
+                "group": "Asset Bundles (DABs)",
                 "pages": [
                   "training/13-appendix/databricks-asset-bundles",
                   "training/13-appendix/databricks-asset-bundles-basics",
@@ -689,7 +689,7 @@
               "training/00-prerequisites/schema-design-patterns",
               "training/00-prerequisites/bigdata-history",
               {
-                "group": "빅데이터 생태계 — 주요 솔루션과 빅 플레이어",
+                "group": "빅데이터 생태계",
                 "pages": [
                   "training/00-prerequisites/bigdata-ecosystem",
                   "training/00-prerequisites/bigdata-ecosystem-foundations",
@@ -853,7 +853,7 @@
                   "blog/guides/agent-bricks/knowledge-assistant",
                   "blog/guides/agent-bricks/genie-agent",
                   {
-                    "group": "Supervisor Agent (Multi-Agent)",
+                    "group": "Supervisor Agent",
                     "pages": [
                       "blog/guides/agent-bricks/supervisor",
                       "blog/guides/agent-bricks/supervisor-basics",
@@ -919,7 +919,7 @@
               "blog/guides/apps/updating",
               "blog/guides/apps/networking",
               {
-                "group": "고급 기능 (Scale to Zero, Lakebase, DABs, AppKit)",
+                "group": "고급 기능",
                 "pages": [
                   "blog/guides/apps/advanced",
                   "blog/guides/apps/advanced-scaling",
@@ -999,7 +999,7 @@
                   "blog/guides/genai-concepts/prompt-engineering/advanced",
                   "blog/guides/genai-concepts/prompt-engineering/korean",
                   {
-                    "group": "Prompt Injection 방어",
+                    "group": "Prompt Injection",
                     "pages": [
                       "blog/guides/genai-concepts/prompt-engineering/security",
                       "blog/guides/genai-concepts/prompt-engineering/security-basics",
@@ -1016,7 +1016,7 @@
                   "blog/guides/genai-concepts/agent-architecture/react-planning",
                   "blog/guides/genai-concepts/agent-architecture/tool-use",
                   {
-                    "group": "Agent Memory 시스템",
+                    "group": "Agent 메모리",
                     "pages": [
                       "blog/guides/genai-concepts/agent-architecture/memory",
                       "blog/guides/genai-concepts/agent-architecture/memory-foundations",
@@ -1052,7 +1052,7 @@
                 "pages": [
                   "blog/guides/genai-concepts/agent-landscape/overview",
                   {
-                    "group": "OpenAI의 AI Agent 전략",
+                    "group": "OpenAI",
                     "pages": [
                       "blog/guides/genai-concepts/agent-landscape/openai",
                       "blog/guides/genai-concepts/agent-landscape/openai-sdk-api",
@@ -1060,7 +1060,7 @@
                     ]
                   },
                   {
-                    "group": "Anthropic의 AI Agent 전략",
+                    "group": "Anthropic",
                     "pages": [
                       "blog/guides/genai-concepts/agent-landscape/anthropic",
                       "blog/guides/genai-concepts/agent-landscape/anthropic-strategy-mcp",
@@ -1069,7 +1069,7 @@
                     ]
                   },
                   {
-                    "group": "Google의 AI Agent 전략",
+                    "group": "Google",
                     "pages": [
                       "blog/guides/genai-concepts/agent-landscape/google",
                       "blog/guides/genai-concepts/agent-landscape/google-strategy-a2a",
@@ -1077,7 +1077,7 @@
                     ]
                   },
                   {
-                    "group": "AWS, Microsoft & Meta의 AI Agent 전략",
+                    "group": "AWS & Microsoft & Meta",
                     "pages": [
                       "blog/guides/genai-concepts/agent-landscape/aws-others",
                       "blog/guides/genai-concepts/agent-landscape/aws-others-basics",
@@ -1088,7 +1088,7 @@
                   },
                   "blog/guides/genai-concepts/agent-landscape/databricks",
                   {
-                    "group": "멀티에이전트 & Agentic AI 트렌드 (2025)",
+                    "group": "멀티에이전트 트렌드",
                     "pages": [
                       "blog/guides/genai-concepts/agent-landscape/multi-agent-trends",
                       "blog/guides/genai-concepts/agent-landscape/multi-agent-trends-basics",
@@ -1105,7 +1105,7 @@
                   "blog/guides/genai-concepts/agent-ui-detail/chainlit-dash",
                   "blog/guides/genai-concepts/agent-ui-detail/fastapi-backend",
                   {
-                    "group": "Databricks Apps & 종합 가이드",
+                    "group": "Databricks Apps",
                     "pages": [
                       "blog/guides/genai-concepts/agent-ui-detail/databricks-apps",
                       "blog/guides/genai-concepts/agent-ui-detail/databricks-apps-basics",
@@ -1168,7 +1168,7 @@
                 ]
               },
               {
-                "group": "한국어 RAG 최적화",
+                "group": "한국어 RAG",
                 "pages": [
                   "blog/guides/rag/korean-nlp",
                   "blog/guides/rag/korean-nlp-basics",
@@ -1188,7 +1188,7 @@
             "pages": [
               "blog/guides/ml-fundamentals/overview",
               {
-                "group": "Databricks ML/AI 기능 전체 가이드",
+                "group": "Databricks ML 기능",
                 "pages": [
                   "blog/guides/ml-fundamentals/databricks-ml-features",
                   "blog/guides/ml-fundamentals/databricks-ml-features-foundations",
@@ -1202,7 +1202,7 @@
                 ]
               },
               {
-                "group": "ML 트렌드 & 최신 기법",
+                "group": "ML 트렌드",
                 "pages": [
                   "blog/guides/ml-fundamentals/ml-trends",
                   "blog/guides/ml-fundamentals/ml-trends-basics",
@@ -1212,7 +1212,7 @@
                 ]
               },
               {
-                "group": "재학습 전략 (Retraining Strategies)",
+                "group": "재학습 전략",
                 "pages": [
                   "blog/guides/ml-fundamentals/retraining-strategies",
                   "blog/guides/ml-fundamentals/retraining-strategies-basics",
@@ -1227,7 +1227,7 @@
               "blog/guides/mcp/overview",
               "blog/guides/mcp/setup-general",
               {
-                "group": "인기 MCP 서버 & 실전 활용 시나리오",
+                "group": "인기 MCP 서버",
                 "pages": [
                   "blog/guides/mcp/popular-servers",
                   "blog/guides/mcp/popular-servers-basics",
@@ -1461,7 +1461,7 @@
             ]
           },
           {
-            "group": "Section 5: 가전 IoT (공기청정기 + 에어컨) E2E",
+            "group": "Section 5: 가전 IoT E2E",
             "pages": [
               "workshop/section-5-appliance-handson/01-setup",
               "workshop/section-5-appliance-handson/02-air-purifier-data",
