@@ -153,9 +153,9 @@ Delta Sharing과 Unity Catalog를 활용하면 도메인 간 안전한 데이터
 **델타 셰어링** — 클라우드·플랫폼에 무관하게 조직 간 데이터를 안전하게 공유하는 오픈 프로토콜입니다.
 수신자는 Databricks가 없어도 Python, Spark, pandas, Power BI 등 다양한 클라이언트로 공유 데이터에 접근할 수 있습니다. 데이터 복사 없이 공유하므로 항상 최신 데이터를 제공합니다.
 
-### Deletion Vector (삭제 벡터)
-**삭제 벡터** — Delta Lake에서 Delete·Update 작업 시 기존 Parquet 파일을 재작성하지 않고, 삭제·변경된 행의 위치를 비트맵으로 별도 파일에 기록하는 최적화 기법입니다.
-소량 변경 시 전체 파일 재작성을 피하여 쓰기 성능을 크게 향상시킵니다. 읽기 시 삭제 벡터를 적용하여 삭제된 행을 필터링합니다.
+### Deletion Vector (Deletion Vector)
+**Deletion Vector** — Delta Lake에서 Delete·Update 작업 시 기존 Parquet 파일을 재작성하지 않고, 삭제·변경된 행의 위치를 비트맵으로 별도 파일에 기록하는 최적화 기법입니다.
+소량 변경 시 전체 파일 재작성을 피하여 쓰기 성능을 크게 향상시킵니다. 읽기 시 Deletion Vector를 적용하여 삭제된 행을 필터링합니다.
 
 ### Driver (드라이버)
 **드라이버** — Spark 애플리케이션의 메인 프로세스입니다. 실행 계획(DAG)을 생성하고 Executor에게 태스크를 분배합니다.

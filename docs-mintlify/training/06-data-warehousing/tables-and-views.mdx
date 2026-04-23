@@ -20,7 +20,7 @@ title: "테이블과 뷰"
 |  | 스트리밍 테이블 (Streaming Table) | 스트리밍 데이터를 수집합니다 |
 | **뷰 (View)** | 일반 뷰 (View) | SQL 쿼리를 저장하며, 실행 시 계산됩니다 |
 |  | 임시 뷰 (Temporary View) | 세션 내에서만 유효한 뷰입니다 |
-|  | 구체화된 뷰 (Materialized View) | 결과를 미리 계산하여 저장하는 뷰입니다 |
+|  | Materialized View (Materialized View) | 결과를 미리 계산하여 저장하는 뷰입니다 |
 
 ---
 
@@ -145,9 +145,9 @@ SELECT COUNT(*) FROM temp_high_value_orders;
 -- 세션 종료 시 자동 삭제됩니다
 ```
 
-### 구체화된 뷰(Materialized View)
+### Materialized View(Materialized View)
 
-구체화된 뷰는 쿼리 결과를 **물리적으로 미리 계산하여 저장** 합니다. 원본 데이터가 변경되면 **증분 방식으로 자동 갱신** 됩니다.
+Materialized View는 쿼리 결과를 **물리적으로 미리 계산하여 저장** 합니다. 원본 데이터가 변경되면 **증분 방식으로 자동 갱신** 됩니다.
 
 ```sql
 -- 일별 매출 집계를 미리 계산하여 저장
@@ -160,14 +160,14 @@ SELECT
 FROM catalog.schema.orders
 GROUP BY DATE(order_date);
 
--- 구체화된 뷰를 조회하면 미리 계산된 결과를 즉시 반환합니다
+-- Materialized View를 조회하면 미리 계산된 결과를 즉시 반환합니다
 SELECT * FROM catalog.schema.mv_daily_revenue WHERE day >= '2025-01-01';
 
 -- 수동으로 새로고침
 REFRESH MATERIALIZED VIEW catalog.schema.mv_daily_revenue;
 ```
 
-> ⚠️ **구체화된 뷰는 SDP(선언적 파이프라인) 또는 SQL Warehouse에서만 생성** 할 수 있습니다. All-Purpose Cluster에서는 생성할 수 없습니다.
+> ⚠️ **Materialized View는 SDP(선언적 파이프라인) 또는 SQL Warehouse에서만 생성** 할 수 있습니다. All-Purpose Cluster에서는 생성할 수 없습니다.
 
 ---
 
@@ -299,7 +299,7 @@ SHOW TBLPROPERTIES catalog.schema.audit_logs;
 | `delta.logRetentionDuration` | 트랜잭션 로그 보존 기간입니다 | `30 days` |
 | `delta.deletedFileRetentionDuration` | 삭제된 파일 보존 기간(타임 트래블 범위)입니다 | `7 days` |
 | `delta.columnMapping.mode` | 컬럼 이름 변경/삭제를 지원합니다 | `none` |
-| `delta.enableDeletionVectors` | 삭제 벡터를 활성화하여 DELETE/UPDATE 성능을 향상시킵니다 | `true` |
+| `delta.enableDeletionVectors` | Deletion Vector를 활성화하여 DELETE/UPDATE 성능을 향상시킵니다 | `true` |
 
 ---
 
@@ -355,7 +355,7 @@ DROP TABLE IF EXISTS catalog.schema.products;
 | 복잡한 쿼리를 이름으로 저장 | **일반 뷰** | 스토리지 비용 없이 쿼리를 재사용할 수 있습니다 |
 | 보안 목적으로 컬럼 제한 | **일반 뷰** | 민감한 컬럼을 숨기고 필요한 데이터만 노출합니다 |
 | Notebook 내 임시 중간 결과 | **임시 뷰** | 세션 종료 시 자동 정리되어 깔끔합니다 |
-| 자주 조회되는 집계/요약 | **구체화된 뷰** | 미리 계산된 결과로 쿼리 성능이 비약적으로 향상됩니다 |
+| 자주 조회되는 집계/요약 | **Materialized View** | 미리 계산된 결과로 쿼리 성능이 비약적으로 향상됩니다 |
 | 실시간 이벤트/로그 수집 | **스트리밍 테이블** | 증분 처리로 효율적이며 지연 시간이 짧습니다 |
 
 ---
@@ -368,7 +368,7 @@ DROP TABLE IF EXISTS catalog.schema.products;
 | **외부 테이블** | 데이터는 사용자 지정 경로에, 메타데이터만 Unity Catalog가 관리합니다 |
 | **Delta 테이블 구조** | Parquet 파일 + 트랜잭션 로그(_delta_log)로 ACID, 타임 트래블을 지원합니다 |
 | **일반 뷰** | SQL 쿼리의 별칭으로, 매번 실행 시 재계산됩니다 |
-| **구체화된 뷰** | 쿼리 결과를 물리적으로 저장하고 증분 갱신합니다 |
+| **Materialized View** | 쿼리 결과를 물리적으로 저장하고 증분 갱신합니다 |
 | **스트리밍 테이블** | 새 데이터만 증분으로 처리하는 Append-only 테이블입니다 |
 | **Liquid Clustering** | 파티셔닝과 Z-Order를 대체하는 차세대 데이터 레이아웃 최적화 기능입니다 |
 | **TBLPROPERTIES** | 테이블의 동작(자동 최적화, 보존 기간 등)을 세밀하게 제어합니다 |

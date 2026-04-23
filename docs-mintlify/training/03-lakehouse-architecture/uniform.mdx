@@ -299,7 +299,7 @@ iceberg.rest-catalog.oauth2.token=<pat-token>
 | **자동 (Credential Vending)** | IRC 요청 시 Unity Catalog가 **임시 자격 증명(STS Token)을 자동 발급** 합니다. 외부 엔진이 S3/ADLS에 직접 접근할 수 있는 단기 토큰을 받습니다 |
 | **수동** | 외부 엔진에 S3/ADLS 접근 권한을 직접 설정합니다 (IAM Role, Managed Identity) |
 
-> 💡 **Credential Vending의 장점**: 외부 엔진에 영구 스토리지 자격 증명을 부여하지 않아도 됩니다. Unity Catalog가 요청마다 **최소 권한의 임시 토큰** 을 발급하므로 보안이 강화됩니다.
+> 💡 **Credential Vending의 장점**: 외부 엔진에 영구 Storage Credential을 부여하지 않아도 됩니다. Unity Catalog가 요청마다 **최소 권한의 임시 토큰** 을 발급하므로 보안이 강화됩니다.
 
 ### UniForm 운영 시 주의사항
 

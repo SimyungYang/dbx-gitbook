@@ -1,19 +1,19 @@
 ---
-title: "구체화된 뷰"
+title: "Materialized View"
 ---
 
 
-## 구체화된 뷰란?
+## Materialized View란?
 
-**구체화된 뷰(Materialized View, MV)** 는 SQL 쿼리의 결과를 **미리 계산하여 물리적으로 저장** 하는 데이터베이스 객체입니다. 일반 뷰는 매번 쿼리 시 재계산하지만, 구체화된 뷰는 저장된 결과를 즉시 반환하므로 **쿼리 성능이 비약적으로 향상** 됩니다.
+**Materialized View(Materialized View, MV)** 는 SQL 쿼리의 결과를 **미리 계산하여 물리적으로 저장** 하는 데이터베이스 객체입니다. 일반 뷰는 매번 쿼리 시 재계산하지만, Materialized View는 저장된 결과를 즉시 반환하므로 **쿼리 성능이 비약적으로 향상** 됩니다.
 
-> 💡 **비유**: 일반 뷰는 "레시피(쿼리)"만 저장해 두고 매번 요리하는 것이고, 구체화된 뷰는 "완성된 요리"를 냉장고에 보관해 두고 바로 내놓는 것입니다.
+> 💡 **비유**: 일반 뷰는 "레시피(쿼리)"만 저장해 두고 매번 요리하는 것이고, Materialized View는 "완성된 요리"를 냉장고에 보관해 두고 바로 내놓는 것입니다.
 
 ---
 
-## 일반 뷰와 구체화된 뷰 비교
+## 일반 뷰와 Materialized View 비교
 
-| 비교 항목 | 일반 뷰 (View) | 구체화된 뷰 (MV) |
+| 비교 항목 | 일반 뷰 (View) | Materialized View (MV) |
 |-----------|--------------|----------------|
 | **데이터 저장** | 저장하지 않습니다 (쿼리만 저장) | 결과를 물리적으로 저장합니다 |
 | **쿼리 성능** | 매번 재계산하므로 느릴 수 있습니다 | 사전 계산된 결과로 빠릅니다 |
@@ -29,7 +29,7 @@ title: "구체화된 뷰"
 ### 기본 생성
 
 ```sql
--- 일별 매출 집계를 구체화된 뷰로 생성
+-- 일별 매출 집계를 Materialized View로 생성
 CREATE MATERIALIZED VIEW catalog.schema.mv_daily_revenue
 AS
 SELECT
@@ -79,18 +79,18 @@ GROUP BY 1, 2;
 
 ## 새로고침 (Refresh)
 
-구체화된 뷰의 데이터를 최신 상태로 업데이트하는 과정을 **새로고침(Refresh)** 이라고 합니다.
+Materialized View의 데이터를 최신 상태로 업데이트하는 과정을 **새로고침(Refresh)** 이라고 합니다.
 
 ### 수동 새로고침
 
 ```sql
--- 특정 구체화된 뷰를 수동으로 새로고침
+-- 특정 Materialized View를 수동으로 새로고침
 REFRESH MATERIALIZED VIEW catalog.schema.mv_daily_revenue;
 ```
 
 ### 스케줄 새로고침
 
-SQL Warehouse에서 생성한 구체화된 뷰는 스케줄을 설정하여 주기적으로 새로고침할 수 있습니다.
+SQL Warehouse에서 생성한 Materialized View는 스케줄을 설정하여 주기적으로 새로고침할 수 있습니다.
 
 ```sql
 -- 매일 새벽 2시에 자동 새로고침 (CRON 표현식)
@@ -107,7 +107,7 @@ DROP SCHEDULE;
 
 ### SDP 파이프라인에서의 새로고침
 
-SDP 파이프라인 내에서 구체화된 뷰를 정의하면, 파이프라인 실행 시 **자동으로 새로고침** 됩니다.
+SDP 파이프라인 내에서 Materialized View를 정의하면, 파이프라인 실행 시 **자동으로 새로고침** 됩니다.
 
 ```sql
 -- SDP 파이프라인 노트북 내
@@ -149,9 +149,9 @@ Databricks는 가능한 경우 **증분 갱신(Incremental Refresh)** 을 수행
 
 ## Streaming Table과의 비교
 
-구체화된 뷰와 스트리밍 테이블은 모두 데이터를 물리적으로 저장하지만, 사용 목적이 다릅니다.
+Materialized View와 스트리밍 테이블은 모두 데이터를 물리적으로 저장하지만, 사용 목적이 다릅니다.
 
-| 비교 항목 | 구체화된 뷰 (MV) | 스트리밍 테이블 (ST) |
+| 비교 항목 | Materialized View (MV) | 스트리밍 테이블 (ST) |
 |-----------|----------------|-------------------|
 | **데이터 처리** | 배치 기반 (전체/증분 재계산) | 증분 기반 (새 데이터만 추가) |
 | **UPDATE/DELETE** | 소스의 변경사항을 반영합니다 | INSERT만 처리합니다 (Append-only) |
@@ -190,13 +190,13 @@ Databricks는 가능한 경우 **증분 갱신(Incremental Refresh)** 을 수행
 ## 관리 명령
 
 ```sql
--- 구체화된 뷰 정보 조회
+-- Materialized View 정보 조회
 DESCRIBE MATERIALIZED VIEW catalog.schema.mv_daily_revenue;
 
 -- 새로고침 이력 확인
 DESCRIBE HISTORY catalog.schema.mv_daily_revenue;
 
--- 구체화된 뷰 삭제
+-- Materialized View 삭제
 DROP MATERIALIZED VIEW IF EXISTS catalog.schema.mv_daily_revenue;
 
 -- 스케줄 설정
@@ -412,7 +412,7 @@ MV 새로고침 중에도 **기존 데이터에 대한 읽기는 계속 가능**
 
 | 핵심 개념 | 설명 |
 |-----------|------|
-| **구체화된 뷰** | 쿼리 결과를 물리적으로 저장하여 빠른 조회를 제공하는 객체입니다 |
+| **Materialized View** | 쿼리 결과를 물리적으로 저장하여 빠른 조회를 제공하는 객체입니다 |
 | **새로고침** | 수동, 스케줄, 또는 SDP 파이프라인을 통해 데이터를 최신화합니다 |
 | **증분 갱신** | 가능한 경우 변경분만 계산하여 효율적으로 새로고침합니다 |
 | **증분 갱신 불가** | OUTER JOIN, Window 함수, Non-deterministic 함수 등은 전체 재계산 |

@@ -148,7 +148,7 @@ WHERE order_date >= :date_start AND order_date <= :date_end;
 
 #### Materialized View 활용
 
-복잡한 집계 쿼리를 매번 실행하는 대신, **Materialized View(구체화된 뷰)** 로 사전 계산된 결과를 활용하면 대시보드 로딩 시간을 획기적으로 줄일 수 있습니다.
+복잡한 집계 쿼리를 매번 실행하는 대신, **Materialized View(Materialized View)** 로 사전 계산된 결과를 활용하면 대시보드 로딩 시간을 획기적으로 줄일 수 있습니다.
 
 ```sql
 -- Materialized View 생성 (SDP/DLT에서)
