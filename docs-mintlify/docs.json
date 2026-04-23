@@ -1756,7 +1756,7 @@
         ]
       },
       {
-        "tab": "Genie Code 워크샵",
+        "tab": "핸즈온",
         "groups": [
           {
             "group": "워크샵 개요",
@@ -1828,12 +1828,7 @@
               "workshop/section-5-appliance-handson/05-dashboard-genie",
               "workshop/section-5-appliance-handson/06-agent-development"
             ]
-          }
-        ]
-      },
-      {
-        "tab": "MLOps 핸즈온",
-        "groups": [
+          },
           {
             "group": "MLOps 핸즈온: 예지보전",
             "pages": [
