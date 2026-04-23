@@ -25,11 +25,16 @@
               "training/02-databricks-overview/what-is-databricks",
               "training/02-databricks-overview/databricks-architecture",
               "training/02-databricks-overview/getting-started-trial",
-              "training/02-databricks-overview/workspace-ui-tour",
-              "training/02-databricks-overview/notebooks-basics",
-              "training/02-databricks-overview/notebooks-basics-advanced",
-              "training/02-databricks-overview/notebooks-basics-intro",
-              "training/02-databricks-overview/notebooks-advanced",
+              {
+                "group": "Workspace & Notebook",
+                "pages": [
+                  "training/02-databricks-overview/workspace-ui-tour",
+                  "training/02-databricks-overview/notebooks-basics",
+                  "training/02-databricks-overview/notebooks-basics-intro",
+                  "training/02-databricks-overview/notebooks-basics-advanced",
+                  "training/02-databricks-overview/notebooks-advanced"
+                ]
+              },
               "training/02-databricks-overview/databricks-pricing",
               "training/02-databricks-overview/databricks-competitive"
             ]
