@@ -364,6 +364,7 @@
                   "training/07-unity-catalog/tags"
                 ]
               },
+              "training/07-unity-catalog/pii-column-tracking",
               {
                 "group": "데이터 리니지",
                 "pages": [
@@ -731,7 +732,8 @@
                   "blog/guides/apps/examples/lakebase",
                   "blog/guides/apps/examples/troubleshooting"
                 ]
-              }
+              },
+              "blog/guides/apps/obo-user-tracking"
             ]
           },
           {
@@ -895,7 +897,7 @@
         ]
       },
       {
-        "tab": "환경 구성",
+        "tab": "실전 팁",
         "groups": [
           {
             "group": "Platform Setup",
@@ -1287,60 +1289,95 @@
         "tab": "공식 블로그 내용",
         "groups": [
           {
-            "group": "Databricks 블로그 번역",
+            "group": "전체 목록",
             "pages": [
-              "translations/overview",
+              "translations/overview"
+            ]
+          },
+          {
+            "group": "AI & Agent",
+            "pages": [
               "translations/2026-04-06-multi-agent-audience-intelligence",
               "translations/2026-04-03-aichemy-drug-discovery",
-              "translations/2026-04-02-unity-catalog-business-semantics-ga",
-              "translations/2026-04-02-lakeflow-connect-free-tier",
               "translations/2026-04-02-agentic-analytics-governance",
-              "translations/2026-03-27-lakebase-zero-downtime-patching",
-              "translations/2026-03-27-default-warehouse",
-              "translations/2026-03-24-stop-hand-coding-cdc",
               "translations/2026-03-24-lakewatch-agentic-siem",
-              "translations/2026-03-20-introducing-databricks-apps",
               "translations/2026-03-20-dasf-v3-agentic-ai-security",
-              "translations/2026-03-18-real-time-analytics-no-etl",
-              "translations/2026-03-18-lakebase-announcement",
               "translations/2026-03-18-genie-conversations-evaluation",
               "translations/2026-03-17-mosaic-ai-agent-trust-safety",
               "translations/2026-03-17-mcp-at-scale-lessons",
-              "translations/2026-03-17-lakebase-technical-design",
-              "translations/2026-03-17-introducing-lakewatch-siem",
               "translations/2026-03-17-introducing-genie-code",
               "translations/2026-03-17-introducing-genie-agent",
-              "translations/2026-03-17-evolving-lakehouse",
               "translations/2026-03-17-databricks-mcp-server",
               "translations/2026-03-17-ai-dev-kit",
               "translations/2026-03-17-agent-bricks-announcement",
-              "translations/2026-03-14-lakehouse-monitoring-march",
-              "translations/2026-03-11-uc-metastore-migration",
+              "translations/2026-03-09-understanding-mcp",
+              "translations/2026-03-05-agentic-etl-lakeflow",
+              "translations/2026-03-04-mlflow-openai-agents"
+            ]
+          },
+          {
+            "group": "Data Engineering",
+            "pages": [
+              "translations/2026-04-02-lakeflow-connect-free-tier",
+              "translations/2026-03-24-stop-hand-coding-cdc",
+              "translations/2026-03-18-real-time-analytics-no-etl",
               "translations/2026-03-11-delta-lake-4",
               "translations/2026-03-10-dlt-streaming-pipelines",
               "translations/2026-03-10-delta-uniform",
-              "translations/2026-03-09-understanding-mcp",
-              "translations/2026-03-07-model-evaluation-compound-ai",
-              "translations/2026-03-05-unified-ai-governance",
-              "translations/2026-03-05-agentic-etl-lakeflow",
-              "translations/2026-03-04-uc-business-semantics",
-              "translations/2026-03-04-mlflow-openai-agents",
-              "translations/2026-02-27-uc-volumes-deep-dive",
-              "translations/2026-02-21-mlflow-3-release",
-              "translations/2026-02-18-databricksiq",
               "translations/2026-02-06-delta-sharing",
-              "translations/2026-02-04-mosaic-ai-platform",
               "translations/2026-01-31-apache-spark-4",
-              "translations/2026-01-30-intelligent-monitoring",
-              "translations/2026-01-27-feature-engineering",
-              "translations/2026-01-16-uc-best-practices",
-              "translations/2026-01-15-lakehouse-federation",
-              "translations/2026-01-14-mosaic-ai-training",
               "translations/2026-01-09-dlt-declarative-etl",
-              "translations/2025-12-19-q3-2025-launch-summary",
-              "translations/2025-12-15-mlflow-tracing",
-              "translations/2025-05-21-identity-security",
               "translations/2025-10-01-introducing-lakeflow"
+            ]
+          },
+          {
+            "group": "Unity Catalog & 거버넌스",
+            "pages": [
+              "translations/2026-04-02-unity-catalog-business-semantics-ga",
+              "translations/2026-03-11-uc-metastore-migration",
+              "translations/2026-03-05-unified-ai-governance",
+              "translations/2026-03-04-uc-business-semantics",
+              "translations/2026-02-27-uc-volumes-deep-dive",
+              "translations/2026-01-16-uc-best-practices"
+            ]
+          },
+          {
+            "group": "Lakebase & Apps",
+            "pages": [
+              "translations/2026-03-27-lakebase-zero-downtime-patching",
+              "translations/2026-03-20-introducing-databricks-apps",
+              "translations/2026-03-18-lakebase-announcement",
+              "translations/2026-03-17-lakebase-technical-design"
+            ]
+          },
+          {
+            "group": "ML & MLflow",
+            "pages": [
+              "translations/2026-03-07-model-evaluation-compound-ai",
+              "translations/2026-02-21-mlflow-3-release",
+              "translations/2026-02-04-mosaic-ai-platform",
+              "translations/2026-01-27-feature-engineering",
+              "translations/2026-01-14-mosaic-ai-training",
+              "translations/2025-12-15-mlflow-tracing"
+            ]
+          },
+          {
+            "group": "보안 & 모니터링",
+            "pages": [
+              "translations/2026-03-17-introducing-lakewatch-siem",
+              "translations/2026-03-14-lakehouse-monitoring-march",
+              "translations/2026-01-30-intelligent-monitoring",
+              "translations/2025-05-21-identity-security"
+            ]
+          },
+          {
+            "group": "플랫폼 & 기타",
+            "pages": [
+              "translations/2026-03-27-default-warehouse",
+              "translations/2026-03-17-evolving-lakehouse",
+              "translations/2026-02-18-databricksiq",
+              "translations/2026-01-15-lakehouse-federation",
+              "translations/2025-12-19-q3-2025-launch-summary"
             ]
           }
         ]
