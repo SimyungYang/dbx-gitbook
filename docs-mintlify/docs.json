@@ -16,7 +16,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "기능 가이드",
+        "tab": "Databricks 소개",
         "groups": [
           {
             "group": "시작하기",
@@ -899,6 +899,12 @@
       {
         "tab": "실전 팁",
         "groups": [
+          {
+            "group": "개요",
+            "pages": [
+              "blog/guides/practical-tips-overview"
+            ]
+          },
           {
             "group": "Platform Setup",
             "pages": [

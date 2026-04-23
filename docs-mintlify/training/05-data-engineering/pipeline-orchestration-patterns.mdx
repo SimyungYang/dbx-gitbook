@@ -1,11 +1,35 @@
 ---
-title: "실전 파이프라인 오케스트레이션 패턴"
+title: "파이프라인 오케스트레이션 패턴"
 ---
 
 
-## 패턴 1: Lakeflow Jobs로 End-to-End 파이프라인 오케스트레이션
+이 페이지는 Databricks에서 **데이터 파이프라인을 설계하고 운영하는 실전 패턴** 3가지를 다룹니다.
 
-Lakeflow Jobs는 **여러 종류의 태스크를 DAG(방향성 비순환 그래프)로 조합** 하여 전체 파이프라인을 하나의 워크플로로 관리합니다. 수집 → 변환 → 품질 검증 → 서빙까지 하나의 Job으로 구성할 수 있습니다.
+> **사전 지식이 필요합니다**
+- [Medallion 아키텍처](/training/03-lakehouse-architecture/medallion-architecture) — Bronze(원본) → Silver(정제) → Gold(집계) 데이터 계층
+- [SDP(Spark Declarative Pipelines)](/training/05-data-engineering/spark-declarative-pipelines/overview) — 선언적 파이프라인 프레임워크
+- [Lakeflow Jobs](/training/05-data-engineering/lakeflow-jobs/overview) — 워크플로우 오케스트레이션 도구
+- [Lakeflow Connect](/training/05-data-engineering/lakeflow-connect/overview) — 외부 DB 데이터 수집
+
+---
+
+## 주요 용어 정리
+
+| 용어 | 설명 |
+|------|------|
+| **DAG** | Directed Acyclic Graph(방향성 비순환 그래프). 태스크 간 의존관계를 표현하는 구조 — "A가 끝나면 B를 실행" |
+| **CDC** | Change Data Capture. 외부 DB에서 변경된 데이터만 캡처하여 수집 ([상세](/training/05-data-engineering/lakeflow-connect/overview)) |
+| **CDF** | Change Data Feed. Delta 테이블의 변경 내역을 다운스트림에 전파하는 Delta Lake 기능 |
+| **SCD** | Slowly Changing Dimension. 마스터 데이터(고객, 상품)의 변경을 처리하는 전략 (Type 1: 덮어쓰기, Type 2: 이력 보존) |
+| **멱등성** | 같은 작업을 여러 번 실행해도 결과가 동일한 속성 — 파이프라인 재시도 시 데이터 중복을 방지 |
+| **Materialized View** | 쿼리 결과를 물리적으로 저장하는 뷰. 소스 변경 시 자동으로 증분 갱신 ([상세](/training/06-data-warehousing/materialized-views)) |
+| **Online Table** | Delta 테이블의 데이터를 실시간 서빙용 저지연 스토리지에 동기화하는 기능 |
+
+---
+
+## 패턴 1: Lakeflow Jobs로 E2E 오케스트레이션
+
+[Lakeflow Jobs](/training/05-data-engineering/lakeflow-jobs/overview)는 여러 종류의 태스크를 **DAG로 조합**하여 전체 파이프라인을 하나의 워크플로로 관리합니다. 수집 → 변환 → 품질 검증 → 서빙까지 하나의 Job으로 구성할 수 있습니다.
 
 **Job: daily-data-pipeline**
 
@@ -236,9 +260,19 @@ def push_to_crm(batch_df, batch_id):
 
 ---
 
-## 참고 링크
+## 관련 가이드
 
-- [Databricks: Data Engineering](https://docs.databricks.com/aws/en/data-engineering)
+**이 가이드의 기초 문서:**
+- [Medallion 아키텍처](/training/03-lakehouse-architecture/medallion-architecture) — Bronze/Silver/Gold 설계 패턴
+- [SDP 개요](/training/05-data-engineering/spark-declarative-pipelines/overview) — 선언적 파이프라인
+- [SDP CDC와 SCD](/training/05-data-engineering/spark-declarative-pipelines/cdc-and-scd) — CDC 처리 상세
+- [Lakeflow Jobs](/training/05-data-engineering/lakeflow-jobs/overview) — 워크플로우 오케스트레이션
+- [Lakeflow Connect](/training/05-data-engineering/lakeflow-connect/overview) — 외부 DB 수집
+
+**심화 문서:**
+- [Structured Streaming](/training/05-data-engineering/structured-streaming) — `foreachBatch`, 체크포인트 상세
+- [Lakeflow 증분 처리](/blog/guides/lakeflow-incremental/overview) — Full Refresh 방지 전략
+
+**공식 문서:**
 - [Databricks: Lakeflow Jobs](https://docs.databricks.com/aws/en/jobs/)
-- [Databricks: SDP CDC and SCD](https://docs.databricks.com/aws/en/delta-live-tables/cdc.html)
-- [Databricks Blog: Introducing Lakeflow](https://www.databricks.com/blog/introducing-databricks-lakeflow)
+- [Databricks: SDP CDC](https://docs.databricks.com/aws/en/delta-live-tables/cdc.html)
