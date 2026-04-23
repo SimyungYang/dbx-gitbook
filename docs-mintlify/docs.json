@@ -54,8 +54,8 @@
                   "training/03-lakehouse-architecture/managed-vs-external-tables",
                   "training/03-lakehouse-architecture/time-travel",
                   "training/03-lakehouse-architecture/schema-evolution",
-                  "training/03-lakehouse-architecture/schema-evolution-advanced",
                   "training/03-lakehouse-architecture/schema-evolution-basics",
+                  "training/03-lakehouse-architecture/schema-evolution-advanced",
                   "training/03-lakehouse-architecture/delta-lake-operations",
                   "training/03-lakehouse-architecture/liquid-clustering",
                   "training/03-lakehouse-architecture/vacuum-and-optimize",
@@ -100,8 +100,8 @@
               },
               "training/04-compute-and-workspace/sql-warehouse",
               "training/04-compute-and-workspace/serverless-compute",
-              "training/04-compute-and-workspace/serverless-compute-cost",
-              "training/04-compute-and-workspace/serverless-compute-overview"
+              "training/04-compute-and-workspace/serverless-compute-overview",
+              "training/04-compute-and-workspace/serverless-compute-cost"
             ]
           },
           {
@@ -161,8 +161,8 @@
                   "training/05-data-engineering/lakeflow-connect/overview",
                   "training/05-data-engineering/lakeflow-connect/what-is-lakeflow-connect",
                   "training/05-data-engineering/lakeflow-connect/ingestion-pipeline-setup",
-                  "training/05-data-engineering/lakeflow-connect/ingestion-pipeline-setup-advanced",
                   "training/05-data-engineering/lakeflow-connect/ingestion-pipeline-setup-basics",
+                  "training/05-data-engineering/lakeflow-connect/ingestion-pipeline-setup-advanced",
                   "training/05-data-engineering/lakeflow-connect/lakeflow-connect-hands-on"
                 ]
               },
@@ -176,8 +176,8 @@
                     "pages": [
                       "training/05-data-engineering/lakeflow-jobs/job-configuration/overview",
                       "training/05-data-engineering/lakeflow-jobs/job-configuration/tasks-and-dependencies",
-                      "training/05-data-engineering/lakeflow-jobs/job-configuration/tasks-and-dependencies-advanced",
                       "training/05-data-engineering/lakeflow-jobs/job-configuration/tasks-and-dependencies-core",
+                      "training/05-data-engineering/lakeflow-jobs/job-configuration/tasks-and-dependencies-advanced",
                       "training/05-data-engineering/lakeflow-jobs/job-configuration/retry-and-alerts",
                       "training/05-data-engineering/lakeflow-jobs/job-configuration/cluster-and-parameters",
                       "training/05-data-engineering/lakeflow-jobs/job-configuration/hands-on-and-optimization"
@@ -186,8 +186,8 @@
                   "training/05-data-engineering/lakeflow-jobs/task-types",
                   "training/05-data-engineering/lakeflow-jobs/conditional-tasks",
                   "training/05-data-engineering/lakeflow-jobs/scheduling-and-triggers",
-                  "training/05-data-engineering/lakeflow-jobs/scheduling-and-triggers-operations",
                   "training/05-data-engineering/lakeflow-jobs/scheduling-and-triggers-types",
+                  "training/05-data-engineering/lakeflow-jobs/scheduling-and-triggers-operations",
                   "training/05-data-engineering/lakeflow-jobs/monitoring-and-alerting"
                 ]
               }
@@ -218,8 +218,8 @@
                 ]
               },
               "training/06-data-warehousing/ai-functions",
-              "training/06-data-warehousing/ai-functions-advanced",
               "training/06-data-warehousing/ai-functions-core",
+              "training/06-data-warehousing/ai-functions-advanced",
               "training/06-data-warehousing/query-optimization"
             ]
           },
@@ -236,8 +236,8 @@
               "training/11-lakebase/lakebase-with-apps/auth-and-connection",
               "training/11-lakebase/lakebase-with-apps/framework-examples",
               "training/11-lakebase/lakebase-with-apps/optimization-and-crud",
-              "training/11-lakebase/lakebase-with-apps/optimization-and-crud-advanced",
               "training/11-lakebase/lakebase-with-apps/optimization-and-crud-basics",
+              "training/11-lakebase/lakebase-with-apps/optimization-and-crud-advanced",
               "training/11-lakebase/lakebase-with-apps/deployment",
               "training/11-lakebase/lakebase-with-apps/deployment-architecture",
               "training/11-lakebase/lakebase-with-apps/deployment-operations"
@@ -248,8 +248,8 @@
             "pages": [
               "training/07-unity-catalog/overview",
               "training/07-unity-catalog/what-is-unity-catalog",
-              "training/07-unity-catalog/what-is-unity-catalog-multiregion",
               "training/07-unity-catalog/what-is-unity-catalog-overview",
+              "training/07-unity-catalog/what-is-unity-catalog-multiregion",
               "training/07-unity-catalog/namespace-and-objects",
               {
                 "group": "Volumes",
@@ -305,15 +305,11 @@
               "training/08-ai-bi/aibi-overview",
               "training/08-ai-bi/aibi-overview-concepts",
               "training/08-ai-bi/aibi-overview-details",
-              "training/08-ai-bi/aibi-overview-concepts",
-              "training/08-ai-bi/aibi-overview-details",
               "training/08-ai-bi/aibi-architecture",
               "training/08-ai-bi/lakeview-dashboards",
               "training/08-ai-bi/genie",
               "training/08-ai-bi/alerts-and-scheduling",
               "training/08-ai-bi/metric-views",
-              "training/08-ai-bi/metric-views-advanced",
-              "training/08-ai-bi/metric-views-basics",
               "training/08-ai-bi/metric-views-basics",
               "training/08-ai-bi/metric-views-advanced",
               "training/08-ai-bi/hybrid-bi-strategy"
@@ -360,10 +356,8 @@
                       "training/09-machine-learning/mlflow/model-registry/overview",
                       "training/09-machine-learning/mlflow/model-registry/basics-and-registration",
                       "training/09-machine-learning/mlflow/model-registry/permissions-and-serving",
-                      "training/09-machine-learning/mlflow/model-registry/permissions-and-serving-access",
                       "training/09-machine-learning/mlflow/model-registry/permissions-and-serving-automation",
                       "training/09-machine-learning/mlflow/model-registry/permissions-and-serving-access",
-                      "training/09-machine-learning/mlflow/model-registry/permissions-and-serving-automation",
                       "training/09-machine-learning/mlflow/model-registry/cicd-and-governance"
                     ]
                   },
@@ -375,15 +369,13 @@
                       "training/09-machine-learning/mlflow/mlflow-tracing/instrumentation-and-integration",
                       "training/09-machine-learning/mlflow/mlflow-tracing/query-and-monitoring",
                       "training/09-machine-learning/mlflow/mlflow-tracing/analysis-and-evaluation",
-                      "training/09-machine-learning/mlflow/mlflow-tracing/analysis-and-evaluation-scoring",
-                      "training/09-machine-learning/mlflow/mlflow-tracing/analysis-and-evaluation-trace",
                       "training/09-machine-learning/mlflow/mlflow-tracing/analysis-and-evaluation-trace",
                       "training/09-machine-learning/mlflow/mlflow-tracing/analysis-and-evaluation-scoring"
                     ]
                   },
                   "training/09-machine-learning/mlflow/mlflow-evaluation",
-                  "training/09-machine-learning/mlflow/mlflow-evaluation-advanced",
-                  "training/09-machine-learning/mlflow/mlflow-evaluation-basics"
+                  "training/09-machine-learning/mlflow/mlflow-evaluation-basics",
+                  "training/09-machine-learning/mlflow/mlflow-evaluation-advanced"
                 ]
               },
               {
@@ -396,18 +388,12 @@
                   "training/09-machine-learning/model-serving/foundation-model-api",
                   "training/09-machine-learning/model-serving/custom-model-deployment",
                   "training/09-machine-learning/model-serving/custom-model-deployment-basics",
-                  "training/09-machine-learning/model-serving/custom-model-deployment-operations",
-                  "training/09-machine-learning/model-serving/custom-model-deployment-patterns",
-                  "training/09-machine-learning/model-serving/custom-model-deployment-basics",
                   "training/09-machine-learning/model-serving/custom-model-deployment-patterns",
                   "training/09-machine-learning/model-serving/custom-model-deployment-operations",
                   "training/09-machine-learning/model-serving/ai-gateway",
                   "training/09-machine-learning/model-serving/endpoint-monitoring",
-                  "training/09-machine-learning/model-serving/endpoint-monitoring-alerting",
                   "training/09-machine-learning/model-serving/endpoint-monitoring-drift",
                   "training/09-machine-learning/model-serving/endpoint-monitoring-metrics",
-                  "training/09-machine-learning/model-serving/endpoint-monitoring-metrics",
-                  "training/09-machine-learning/model-serving/endpoint-monitoring-drift",
                   "training/09-machine-learning/model-serving/endpoint-monitoring-alerting"
                 ]
               },
@@ -423,12 +409,12 @@
               "training/10-agent-development/what-is-ai-agent-operations",
               "training/10-agent-development/agent-bricks",
               "training/10-agent-development/vector-search",
-              "training/10-agent-development/vector-search-advanced",
               "training/10-agent-development/vector-search-basics",
+              "training/10-agent-development/vector-search-advanced",
               "training/10-agent-development/rag-pipeline",
               "training/10-agent-development/building-agents",
-              "training/10-agent-development/building-agents-fundamentals",
               "training/10-agent-development/building-agents-patterns",
+              "training/10-agent-development/building-agents-fundamentals",
               "training/10-agent-development/tools-and-functions",
               "training/10-agent-development/agent-evaluation",
               "training/10-agent-development/review-app",
@@ -457,8 +443,8 @@
                 "pages": [
                   "training/12-security-and-governance/identity-and-access",
                   "training/12-security-and-governance/sso-setup",
-                  "training/12-security-and-governance/sso-setup-advanced",
                   "training/12-security-and-governance/sso-setup-guide",
+                  "training/12-security-and-governance/sso-setup-advanced",
                   "training/12-security-and-governance/scim-provisioning",
                   "training/12-security-and-governance/service-principals"
                 ]
@@ -474,11 +460,6 @@
                   "training/12-security-and-governance/system-tables/overview-and-tables-advanced",
                   "training/12-security-and-governance/system-tables/overview-and-tables-intro",
                   "training/12-security-and-governance/system-tables/overview-and-tables",
-                  "training/12-security-and-governance/system-tables/overview-and-tables",
-                  "training/12-security-and-governance/system-tables/overview-and-tables-advanced",
-                  "training/12-security-and-governance/system-tables/overview-and-tables-intro",
-                  "training/12-security-and-governance/system-tables/overview-and-tables-intro",
-                  "training/12-security-and-governance/system-tables/overview-and-tables-advanced",
                   "training/12-security-and-governance/system-tables/practical-queries",
                   "training/12-security-and-governance/system-tables/dashboard-and-setup"
                 ]
@@ -508,9 +489,7 @@
                   "training/14-best-practices/performance-tuning/sql-warehouse-and-pipeline",
                   "training/14-best-practices/performance-tuning/ml-and-diagnostics",
                   "training/14-best-practices/performance-tuning/ml-and-diagnostics-debugging",
-                  "training/14-best-practices/performance-tuning/ml-and-diagnostics-optimization",
-                  "training/14-best-practices/performance-tuning/ml-and-diagnostics-optimization",
-                  "training/14-best-practices/performance-tuning/ml-and-diagnostics-debugging"
+                  "training/14-best-practices/performance-tuning/ml-and-diagnostics-optimization"
                 ]
               },
               {
@@ -535,11 +514,9 @@
               "training/13-appendix/databricks-asset-bundles",
               "training/13-appendix/databricks-asset-bundles-basics",
               "training/13-appendix/databricks-asset-bundles-deployment",
-              "training/13-appendix/databricks-asset-bundles-basics",
-              "training/13-appendix/databricks-asset-bundles-deployment",
               "training/13-appendix/databricks-apps",
-              "training/13-appendix/databricks-apps-handson",
               "training/13-appendix/databricks-apps-overview",
+              "training/13-appendix/databricks-apps-handson",
               "training/13-appendix/genie-code",
               "training/13-appendix/ai-dev-kit"
             ]
@@ -552,9 +529,6 @@
               "training/00-prerequisites/schema-design-patterns",
               "training/00-prerequisites/bigdata-history",
               "training/00-prerequisites/bigdata-ecosystem",
-              "training/00-prerequisites/bigdata-ecosystem-architecture",
-              "training/00-prerequisites/bigdata-ecosystem-foundations",
-              "training/00-prerequisites/bigdata-ecosystem-landscape",
               "training/00-prerequisites/bigdata-ecosystem-foundations",
               "training/00-prerequisites/bigdata-ecosystem-architecture",
               "training/00-prerequisites/bigdata-ecosystem-landscape",
@@ -711,14 +685,14 @@
                   "blog/guides/agent-bricks/knowledge-assistant",
                   "blog/guides/agent-bricks/genie-agent",
                   "blog/guides/agent-bricks/supervisor",
-                  "blog/guides/agent-bricks/supervisor-advanced",
                   "blog/guides/agent-bricks/supervisor-basics",
                   "blog/guides/agent-bricks/supervisor-deep-dive",
+                  "blog/guides/agent-bricks/supervisor-advanced",
                   "blog/guides/agent-bricks/evaluation",
-                  "blog/guides/agent-bricks/evaluation-advanced",
                   "blog/guides/agent-bricks/evaluation-basics",
                   "blog/guides/agent-bricks/evaluation-datasets",
                   "blog/guides/agent-bricks/evaluation-mlflow",
+                  "blog/guides/agent-bricks/evaluation-advanced",
                   "blog/guides/agent-bricks/best-practices"
                 ]
               },
@@ -847,8 +821,8 @@
                   "blog/guides/genai-concepts/prompt-engineering/advanced",
                   "blog/guides/genai-concepts/prompt-engineering/korean",
                   "blog/guides/genai-concepts/prompt-engineering/security",
-                  "blog/guides/genai-concepts/prompt-engineering/security-advanced",
                   "blog/guides/genai-concepts/prompt-engineering/security-basics",
+                  "blog/guides/genai-concepts/prompt-engineering/security-advanced",
                   "blog/guides/genai-concepts/prompt-engineering/practical"
                 ]
               },
@@ -859,10 +833,10 @@
                   "blog/guides/genai-concepts/agent-architecture/react-planning",
                   "blog/guides/genai-concepts/agent-architecture/tool-use",
                   "blog/guides/genai-concepts/agent-architecture/memory",
-                  "blog/guides/genai-concepts/agent-architecture/memory-advanced",
-                  "blog/guides/genai-concepts/agent-architecture/memory-details",
-                  "blog/guides/genai-concepts/agent-architecture/memory-foundations",
                   "blog/guides/genai-concepts/agent-architecture/memory-overview",
+                  "blog/guides/genai-concepts/agent-architecture/memory-foundations",
+                  "blog/guides/genai-concepts/agent-architecture/memory-details",
+                  "blog/guides/genai-concepts/agent-architecture/memory-advanced",
                   "blog/guides/genai-concepts/agent-architecture/multi-agent",
                   "blog/guides/genai-concepts/agent-architecture/production"
                 ]
@@ -893,25 +867,18 @@
                   "blog/guides/genai-concepts/agent-landscape/openai",
                   "blog/guides/genai-concepts/agent-landscape/openai-sdk-api",
                   "blog/guides/genai-concepts/agent-landscape/openai-models-databricks",
-                  "blog/guides/genai-concepts/agent-landscape/openai-models-databricks",
-                  "blog/guides/genai-concepts/agent-landscape/openai-sdk-api",
                   "blog/guides/genai-concepts/agent-landscape/anthropic",
                   "blog/guides/genai-concepts/agent-landscape/anthropic-strategy-mcp",
                   "blog/guides/genai-concepts/agent-landscape/anthropic-products",
                   "blog/guides/genai-concepts/agent-landscape/anthropic-patterns-databricks",
-                  "blog/guides/genai-concepts/agent-landscape/anthropic-patterns-databricks",
-                  "blog/guides/genai-concepts/agent-landscape/anthropic-products",
-                  "blog/guides/genai-concepts/agent-landscape/anthropic-strategy-mcp",
                   "blog/guides/genai-concepts/agent-landscape/google",
                   "blog/guides/genai-concepts/agent-landscape/google-strategy-a2a",
                   "blog/guides/genai-concepts/agent-landscape/google-adk-products",
-                  "blog/guides/genai-concepts/agent-landscape/google-adk-products",
-                  "blog/guides/genai-concepts/agent-landscape/google-strategy-a2a",
                   "blog/guides/genai-concepts/agent-landscape/aws-others",
-                  "blog/guides/genai-concepts/agent-landscape/aws-others-advanced",
-                  "blog/guides/genai-concepts/agent-landscape/aws-others-aws-microsoft",
                   "blog/guides/genai-concepts/agent-landscape/aws-others-basics",
+                  "blog/guides/genai-concepts/agent-landscape/aws-others-aws-microsoft",
                   "blog/guides/genai-concepts/agent-landscape/aws-others-meta-comparison",
+                  "blog/guides/genai-concepts/agent-landscape/aws-others-advanced",
                   "blog/guides/genai-concepts/agent-landscape/databricks",
                   "blog/guides/genai-concepts/agent-landscape/multi-agent-trends",
                   "blog/guides/genai-concepts/agent-landscape/multi-agent-trends-basics",
@@ -926,8 +893,8 @@
                   "blog/guides/genai-concepts/agent-ui-detail/chainlit-dash",
                   "blog/guides/genai-concepts/agent-ui-detail/fastapi-backend",
                   "blog/guides/genai-concepts/agent-ui-detail/databricks-apps",
-                  "blog/guides/genai-concepts/agent-ui-detail/databricks-apps-advanced",
-                  "blog/guides/genai-concepts/agent-ui-detail/databricks-apps-basics"
+                  "blog/guides/genai-concepts/agent-ui-detail/databricks-apps-basics",
+                  "blog/guides/genai-concepts/agent-ui-detail/databricks-apps-advanced"
                 ]
               },
               {
@@ -984,11 +951,11 @@
                 ]
               },
               "blog/guides/rag/korean-nlp",
-              "blog/guides/rag/korean-nlp-advanced",
               "blog/guides/rag/korean-nlp-basics",
-              "blog/guides/rag/korean-nlp-embedding",
               "blog/guides/rag/korean-nlp-fundamentals",
+              "blog/guides/rag/korean-nlp-embedding",
               "blog/guides/rag/korean-nlp-morphology",
+              "blog/guides/rag/korean-nlp-advanced",
               "blog/guides/rag/chain-building",
               "blog/guides/rag/evaluation",
               "blog/guides/rag/deployment"
@@ -999,22 +966,22 @@
             "pages": [
               "blog/guides/ml-fundamentals/overview",
               "blog/guides/ml-fundamentals/databricks-ml-features",
-              "blog/guides/ml-fundamentals/databricks-ml-features-advanced",
-              "blog/guides/ml-fundamentals/databricks-ml-features-details",
               "blog/guides/ml-fundamentals/databricks-ml-features-foundations",
+              "blog/guides/ml-fundamentals/databricks-ml-features-details",
               "blog/guides/ml-fundamentals/databricks-ml-features-mlops-and-reference",
               "blog/guides/ml-fundamentals/databricks-ml-features-monitoring-and-genai",
               "blog/guides/ml-fundamentals/databricks-ml-features-platform-and-features",
               "blog/guides/ml-fundamentals/databricks-ml-features-serving",
               "blog/guides/ml-fundamentals/databricks-ml-features-training-and-registry",
+              "blog/guides/ml-fundamentals/databricks-ml-features-advanced",
               "blog/guides/ml-fundamentals/ml-trends",
-              "blog/guides/ml-fundamentals/ml-trends-advanced",
+              "blog/guides/ml-fundamentals/ml-trends-basics",
               "blog/guides/ml-fundamentals/ml-trends-algorithms",
               "blog/guides/ml-fundamentals/ml-trends-automl-ops",
-              "blog/guides/ml-fundamentals/ml-trends-basics",
+              "blog/guides/ml-fundamentals/ml-trends-advanced",
               "blog/guides/ml-fundamentals/retraining-strategies",
-              "blog/guides/ml-fundamentals/retraining-strategies-advanced",
-              "blog/guides/ml-fundamentals/retraining-strategies-basics"
+              "blog/guides/ml-fundamentals/retraining-strategies-basics",
+              "blog/guides/ml-fundamentals/retraining-strategies-advanced"
             ]
           },
           {
@@ -1023,12 +990,12 @@
               "blog/guides/mcp/overview",
               "blog/guides/mcp/setup-general",
               "blog/guides/mcp/popular-servers",
-              "blog/guides/mcp/popular-servers-advanced",
               "blog/guides/mcp/popular-servers-basics",
+              "blog/guides/mcp/popular-servers-setup",
               "blog/guides/mcp/popular-servers-catalog",
               "blog/guides/mcp/popular-servers-directory",
               "blog/guides/mcp/popular-servers-scenarios",
-              "blog/guides/mcp/popular-servers-setup",
+              "blog/guides/mcp/popular-servers-advanced",
               "blog/guides/mcp/databricks-mcp",
               "blog/guides/mcp/best-practices"
             ]
@@ -1057,9 +1024,9 @@
             "group": "기업별 동향 분석",
             "pages": [
               "ai-trends/anthropic-trends-2026",
-              "ai-trends/anthropic-trends-2026-advanced",
-              "ai-trends/anthropic-trends-2026-details",
               "ai-trends/anthropic-trends-2026-foundations",
+              "ai-trends/anthropic-trends-2026-details",
+              "ai-trends/anthropic-trends-2026-advanced",
               "ai-trends/openai",
               "ai-trends/google",
               "ai-trends/meta",
@@ -1179,7 +1146,7 @@
         ]
       },
       {
-        "tab": "워크샵",
+        "tab": "Genie Code 워크샵",
         "groups": [
           {
             "group": "워크샵 개요",
@@ -1251,7 +1218,12 @@
               "workshop/section-5-appliance-handson/05-dashboard-genie",
               "workshop/section-5-appliance-handson/06-agent-development"
             ]
-          },
+          }
+        ]
+      },
+      {
+        "tab": "MLOps 핸즈온",
+        "groups": [
           {
             "group": "MLOps 핸즈온: 예지보전",
             "pages": [
