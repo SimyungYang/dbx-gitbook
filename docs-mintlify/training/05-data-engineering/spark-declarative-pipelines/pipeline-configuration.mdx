@@ -154,7 +154,7 @@ SDP의 **Enhanced Autoscaling** 은 일반 클러스터의 Autoscaling과 다릅
 | **과잉 프로비저닝** | 빈번함 | 최소화 |
 | **실전 비용 절감** | 10~20% | **30~50%** |
 
-> 💡 **현업 팁**: Enhanced Autoscaling의 효과가 가장 극적인 경우는 "** Bronze에서 대량 수집 → Silver에서 소량 변환 → Gold에서 집계**" 패턴입니다. Bronze 단계에서 10개 노드가 필요해도, Gold 단계에서는 2개면 충분합니다. Enhanced Autoscaling은 이 차이를 자동으로 감지하여 노드를 줄입니다.
+> 💡 **현업 팁**: Enhanced Autoscaling의 효과가 가장 극적인 경우는 **"Bronze에서 대량 수집 → Silver에서 소량 변환 → Gold에서 집계"** 패턴입니다. Bronze 단계에서 10개 노드가 필요해도, Gold 단계에서는 2개면 충분합니다. Enhanced Autoscaling은 이 차이를 자동으로 감지하여 노드를 줄입니다.
 
 ```
 [Bronze 수집]     ████████████████████  10 nodes
