@@ -1,0 +1,109 @@
+---
+title: "Databricks의 차세대 ID 보안 소개"
+---
+
+
+> **원문**: [Introducing next-level identity security at Databricks](https://www.databricks.com/blog/introducing-next-level-identity-security-databricks) (2025-05-21)
+
+---
+
+## 요약
+
+Databricks는 인증 강화, ID 프로비저닝 자동화, 안전한 프로그래밍 접근을 위한 새로운 기능들을 발표했습니다. 이 블로그는 엔터프라이즈 환경에서 **Service Principal 관리, OAuth Token Federation, ID 거버넌스**를 현대적이고 확장 가능하게 구현하는 방법을 다룹니다.
+
+---
+
+## 핵심 발표 내용
+
+### 1. OAuth Token Federation
+
+기존에는 Service Principal마다 장기 시크릿(long-lived secret)을 생성하고 주기적으로 로테이션해야 했습니다. **OAuth Token Federation**은 이를 근본적으로 개선합니다.
+
+| 항목 | 기존 방식 | Token Federation |
+|------|----------|-----------------|
+| **인증 방식** | SP 시크릿 (long-lived) | 외부 IdP 토큰 교환 (short-lived) |
+| **시크릿 관리** | 수동 생성/로테이션 필요 | 시크릿 불필요 |
+| **보안 위험** | 시크릿 유출 시 장기 접근 가능 | 토큰 만료로 자동 보호 |
+| **적용 범위** | 개별 SP 단위 | 계정 전체 또는 개별 SP 단위 |
+
+**실전 시나리오**: GitHub Actions에서 100개 이상의 SP를 사용하는 경우, Token Federation으로 마이그레이션하면 100개 이상의 시크릿 저장/로테이션을 완전히 제거할 수 있습니다.
+
+### 2. Workload Identity Federation
+
+개별 Service Principal 수준에서 **Workload Identity Federation**을 설정할 수 있습니다. 이는 특정 애플리케이션에 대한 세밀한 인증 제어를 가능하게 합니다.
+
+```
+[외부 워크로드] → 외부 IdP 토큰 발급
+    → Databricks Token Federation 엔드포인트로 교환
+    → 단기 Databricks 토큰 수신
+    → Databricks API 호출
+```
+
+### 3. 강화된 ID 프로비저닝
+
+| 기능 | 설명 |
+|------|------|
+| **SCIM 자동화** | Azure AD, Okta 등에서 사용자/그룹을 자동 동기화 |
+| **계정 수준 ID** | 모든 Principal(사용자, 그룹, SP)은 계정 수준에서 관리 |
+| **SP 역할 관리** | Service Principal에 대한 역할 기반 접근 제어 (누가 SP를 관리할 수 있는지) |
+
+### 4. 보안 모범 사례
+
+블로그에서 권장하는 핵심 보안 원칙:
+
+1. **장기 시크릿 제거** — Token Federation으로 전환하여 시크릿 유출 위험 제거
+2. **최소 권한 원칙** — SP에 필요한 최소한의 권한만 부여
+3. **ID 중앙 관리** — 계정 수준에서 모든 ID를 통합 관리
+4. **감사 로그 활용** — `system.access.audit`로 모든 인증 이벤트 추적
+
+---
+
+## 고객 FAQ: SP 1개로 사용자 식별하기
+
+이 블로그의 내용과 관련하여, 외부 포털에서 단일 SP로 Databricks를 호출할 때 개별 사용자를 식별하는 방법을 정리합니다.
+
+### 방법 1: On-Behalf-Of (OBO) 사용자 인증
+
+Databricks Apps의 **사용자 인증(User Authorization)** 모드를 사용하면, 앱이 사용자의 OAuth 토큰을 받아 Databricks API를 호출합니다. 감사 로그에 **실제 사용자 ID**가 기록됩니다.
+
+```
+[기존] 포털 → SP 토큰 → Databricks (감사 로그: SP만 기록)
+[OBO]  포털 → 사용자 SSO → OBO 토큰 → Databricks (감사 로그: 사용자 기록)
+```
+
+OBO가 적합한 경우:
+- Unity Catalog 테이블/볼륨 접근 시 사용자별 권한 적용이 필요한 경우
+- SQL Warehouse, 클러스터 등 컴퓨트 리소스 접근 추적이 필요한 경우
+- 규정 준수(컴플라이언스)를 위해 개인별 감사 추적이 필수인 경우
+
+### 방법 2: 쿼리 태그로 사용자 추적
+
+OBO가 불가한 경우, SP를 유지하면서 **쿼리 태그**로 사용자를 식별할 수 있습니다.
+
+```sql
+SET spark.databricks.queryTag = '{"user": "hong@company.com", "source": "IC360"}';
+SELECT * FROM gold.customer_360;
+```
+
+이 태그는 `system.query.history`에 기록되어 추후 추적 가능합니다.
+
+---
+
+## 관련 가이드
+
+- [인증과 접근 제어](/training/12-security-and-governance/identity-and-access) — ID 관리 전체 가이드
+- [감사 로그](/training/12-security-and-governance/audit-logs) — system.access.audit 활용
+- [Databricks Apps 인증](/blog/guides/apps/authentication) — SP vs 사용자 인증
+- [OAuth M2M](/blog/guides/platform-setup/authentication/oauth-m2m) — Machine-to-Machine 인증
+- [태그와 ABAC](/training/07-unity-catalog/tags) — 컬럼 수준 PII 태깅
+- [Column Masking](/training/07-unity-catalog/column-masks) — 민감 컬럼 동적 마스킹
+- [데이터 리니지](/training/07-unity-catalog/data-lineage/overview) — 컬럼 레벨 리니지 추적
+
+---
+
+## 참고 자료
+
+- [원문 블로그](https://www.databricks.com/blog/introducing-next-level-identity-security-databricks)
+- [Identity Best Practices](https://docs.databricks.com/aws/en/admin/users-groups/best-practices)
+- [Service Principals 공식 문서](https://docs.databricks.com/aws/en/admin/users-groups/service-principals)
+- [OBO 인증 구현 가이드](https://community.databricks.com/t5/technical-blog/implement-fine-grained-permissions-for-databricks-apps-with-on/ba-p/116884)
