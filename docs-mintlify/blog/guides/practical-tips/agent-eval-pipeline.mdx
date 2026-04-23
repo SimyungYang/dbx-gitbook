@@ -1,0 +1,336 @@
+---
+title: "Agent Bricks 평가 파이프라인"
+description: "MLflow GenAI 평가로 Knowledge Assistant 품질을 자동 측정하고, Lakeflow Job으로 자동화하는 방법"
+---
+
+Agent Bricks로 배포한 Knowledge Assistant(KA)가 실제로 정확한 답변을 하는지 **정량적으로** 측정해야 합니다.
+MLflow 3의 `mlflow.genai.evaluate()`와 내장 스코어러를 사용해 평가 파이프라인을 구축하는 방법을 다룹니다.
+
+---
+
+## 1. 전체 흐름
+
+```
+평가 데이터셋 작성
+  → mlflow.genai.evaluate() 실행
+    → 내장 스코어러 (Correctness, Faithfulness, Relevance)
+      → MLflow UI에서 결과 확인
+        → Lakeflow Job으로 주기적 자동화
+```
+
+---
+
+## 2. 평가 데이터셋 준비
+
+### 방법 A: Python dict로 직접 작성
+
+```python
+eval_dataset = [
+    {
+        "inputs": {"query": "Unity Catalog에서 테이블 권한을 부여하는 SQL은?"},
+        "expectations": {
+            "expected_response": "GRANT SELECT ON TABLE catalog.schema.table TO `user@company.com` 형태의 SQL을 사용합니다."
+        },
+    },
+    {
+        "inputs": {"query": "Databricks Apps에서 환경변수를 설정하는 방법은?"},
+        "expectations": {
+            "expected_response": "app.yaml의 env 섹션에 name/value 쌍으로 선언하거나, Databricks Secret을 valueFrom으로 참조합니다."
+        },
+    },
+    {
+        "inputs": {"query": "Delta Lake VACUUM의 기본 보존 기간은?"},
+        "expectations": {
+            "expected_response": "기본값은 7일(168시간)이며, delta.deletedFileRetentionDuration 속성으로 변경할 수 있습니다."
+        },
+    },
+]
+```
+
+### 방법 B: Delta 테이블에서 로드
+
+```python
+import pandas as pd
+
+df = spark.table("my_catalog.eval.ka_eval_dataset").toPandas()
+
+eval_dataset = [
+    {
+        "inputs": {"query": row["question"]},
+        "expectations": {"expected_response": row["expected_answer"]},
+    }
+    for _, row in df.iterrows()
+]
+```
+
+<Tip>
+평가 데이터셋은 **최소 20~30건**을 권장합니다.
+실제 고객 질문 로그에서 추출하면 현실적인 평가가 됩니다.
+</Tip>
+
+---
+
+## 3. 에이전트 호출 함수 정의
+
+`mlflow.genai.evaluate()`에 전달할 **predict 함수**를 정의합니다.
+
+### Serving Endpoint 호출 방식
+
+```python
+import mlflow
+from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+
+def predict_fn(inputs: dict) -> str:
+    """Knowledge Assistant Serving Endpoint 호출"""
+    response = w.serving_endpoints.query(
+        name="my-ka-endpoint",
+        messages=[{"role": "user", "content": inputs["query"]}],
+    )
+    return response.choices[0].message.content
+```
+
+### Agent 직접 호출 방식 (개발 중 테스트)
+
+```python
+from my_agent import KnowledgeAssistant
+
+agent = KnowledgeAssistant()
+
+def predict_fn(inputs: dict) -> str:
+    result = agent.invoke(inputs["query"])
+    return result["output"]
+```
+
+---
+
+## 4. 평가 실행
+
+### 기본 실행 (내장 스코어러 3종)
+
+```python
+import mlflow
+
+results = mlflow.genai.evaluate(
+    data=eval_dataset,
+    predict_fn=predict_fn,
+    scorers=[
+        mlflow.genai.scorers.Correctness(),
+        mlflow.genai.scorers.Relevance(),
+        mlflow.genai.scorers.Safety(),
+    ],
+)
+
+# 요약 메트릭 출력
+print(results.metrics)
+# {'correctness/mean': 0.82, 'relevance/mean': 0.91, 'safety/mean': 1.0, ...}
+```
+
+### 결과 테이블 확인
+
+```python
+results_df = results.tables["eval_results"]
+results_df[["inputs", "outputs", "correctness/score", "relevance/score"]].head(10)
+```
+
+---
+
+## 5. 내장 스코어러 상세
+
+| 스코어러 | 측정 대상 | 점수 범위 | 설명 |
+|----------|----------|----------|------|
+| `Correctness()` | 정답 일치도 | 1~5 | expected_response 대비 정확성 |
+| `Relevance()` | 질문 관련성 | 1~5 | 답변이 질문에 적절한지 |
+| `Safety()` | 안전성 | 0 또는 1 | 유해 콘텐츠 여부 |
+| `Faithfulness()` | 근거 충실도 | 1~5 | retrieved_context 대비 환각 여부 |
+| `Guidelines()` | 커스텀 기준 | 1~5 | 사용자 정의 가이드라인 준수 |
+
+### Faithfulness 사용 (RAG 평가)
+
+retrieved_context가 있어야 동작합니다.
+
+```python
+def predict_fn_with_context(inputs: dict) -> mlflow.genai.EvaluationResult:
+    """RAG 파이프라인: 검색 + 생성"""
+    # 1) 검색
+    docs = retriever.search(inputs["query"], top_k=3)
+    context = "\n".join([d.page_content for d in docs])
+
+    # 2) 생성
+    answer = llm.invoke(f"Context: {context}\nQuestion: {inputs['query']}")
+
+    return mlflow.genai.EvaluationResult(
+        response=answer,
+        retrieved_context=[{"content": d.page_content} for d in docs],
+    )
+
+results = mlflow.genai.evaluate(
+    data=eval_dataset,
+    predict_fn=predict_fn_with_context,
+    scorers=[
+        mlflow.genai.scorers.Faithfulness(),
+        mlflow.genai.scorers.Correctness(),
+        mlflow.genai.scorers.Relevance(),
+    ],
+)
+```
+
+### 커스텀 Guidelines 스코어러
+
+```python
+custom_scorer = mlflow.genai.scorers.Guidelines(
+    guidelines=[
+        "답변은 반드시 한국어로 작성해야 한다.",
+        "SQL 예시를 포함해야 한다.",
+        "Databricks 공식 문서 링크를 인용해야 한다.",
+    ],
+    name="custom_format_check",
+)
+
+results = mlflow.genai.evaluate(
+    data=eval_dataset,
+    predict_fn=predict_fn,
+    scorers=[custom_scorer],
+)
+```
+
+---
+
+## 6. 커스텀 스코어러 작성
+
+내장 스코어러로 부족할 때 직접 만들 수 있습니다.
+
+```python
+from mlflow.genai.scorers import scorer
+
+@scorer
+def response_length_check(inputs, outputs):
+    """답변 길이가 50자 이상인지 확인"""
+    text = outputs or ""
+    is_long_enough = len(text) >= 50
+    return {
+        "score": 1 if is_long_enough else 0,
+        "justification": f"응답 길이: {len(text)}자",
+    }
+
+@scorer
+def contains_sql_check(inputs, outputs):
+    """SQL 키워드가 포함되어 있는지 확인"""
+    sql_keywords = ["SELECT", "CREATE", "INSERT", "UPDATE", "DELETE", "GRANT"]
+    text = (outputs or "").upper()
+    found = any(kw in text for kw in sql_keywords)
+    return {
+        "score": 1 if found else 0,
+        "justification": f"SQL 키워드 포함: {found}",
+    }
+
+results = mlflow.genai.evaluate(
+    data=eval_dataset,
+    predict_fn=predict_fn,
+    scorers=[
+        mlflow.genai.scorers.Correctness(),
+        response_length_check,
+        contains_sql_check,
+    ],
+)
+```
+
+---
+
+## 7. Lakeflow Job으로 자동화
+
+평가를 주기적으로 실행하려면 노트북을 만들어 Lakeflow Job에 등록합니다.
+
+### 평가 노트북 (eval_notebook.py)
+
+```python
+# Databricks notebook source
+import mlflow
+from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+
+# 1) 데이터셋 로드
+df = spark.table("my_catalog.eval.ka_eval_dataset").toPandas()
+eval_dataset = [
+    {
+        "inputs": {"query": row["question"]},
+        "expectations": {"expected_response": row["expected_answer"]},
+    }
+    for _, row in df.iterrows()
+]
+
+# 2) predict 함수
+def predict_fn(inputs: dict) -> str:
+    response = w.serving_endpoints.query(
+        name="my-ka-endpoint",
+        messages=[{"role": "user", "content": inputs["query"]}],
+    )
+    return response.choices[0].message.content
+
+# 3) 평가 실행
+with mlflow.start_run(run_name="scheduled-ka-eval"):
+    results = mlflow.genai.evaluate(
+        data=eval_dataset,
+        predict_fn=predict_fn,
+        scorers=[
+            mlflow.genai.scorers.Correctness(),
+            mlflow.genai.scorers.Relevance(),
+            mlflow.genai.scorers.Safety(),
+        ],
+    )
+
+    # 4) 핵심 메트릭을 Delta 테이블에 기록
+    import pandas as pd
+    from datetime import datetime
+
+    metrics_row = {
+        "eval_time": datetime.now().isoformat(),
+        "correctness_mean": results.metrics.get("correctness/mean"),
+        "relevance_mean": results.metrics.get("relevance/mean"),
+        "safety_mean": results.metrics.get("safety/mean"),
+        "num_examples": len(eval_dataset),
+    }
+    spark.createDataFrame(
+        pd.DataFrame([metrics_row])
+    ).write.mode("append").saveAsTable("my_catalog.eval.ka_eval_history")
+
+    print(f"평가 완료: {metrics_row}")
+```
+
+### Job 등록 (Databricks CLI)
+
+```bash
+# Lakeflow Job 생성 — 매일 오전 9시 평가 실행
+databricks jobs create --json '{
+  "name": "KA-Daily-Eval",
+  "tasks": [{
+    "task_key": "run_eval",
+    "notebook_task": {
+      "notebook_path": "/Workspace/Users/me/eval_notebook"
+    },
+    "new_cluster": {
+      "spark_version": "16.2.x-scala2.12",
+      "num_workers": 0,
+      "node_type_id": "i3.xlarge"
+    }
+  }],
+  "schedule": {
+    "quartz_cron_expression": "0 0 9 * * ?",
+    "timezone_id": "Asia/Seoul"
+  }
+}'
+```
+
+---
+
+## 평가 품질 개선 팁
+
+| 팁 | 설명 |
+|----|------|
+| 평가 셋 다양성 | 쉬운 질문·어려운 질문·엣지 케이스를 골고루 포함 |
+| 정기 업데이트 | 새 문서가 추가되면 평가 셋도 함께 갱신 |
+| A/B 비교 | 프롬프트 변경 전후로 동일 데이터셋에 평가 실행 |
+| 임계값 알림 | correctness_mean < 0.7이면 Slack 알림 전송 |
+| Trace 분석 | 낮은 점수 건은 MLflow Trace에서 검색→생성 과정 추적 |

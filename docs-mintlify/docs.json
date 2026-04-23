@@ -961,6 +961,50 @@
               "blog/guides/lakeflow-incremental/materialized-view",
               "blog/guides/lakeflow-incremental/cdc-checklist"
             ]
+          },
+          {
+            "group": "한국어 RAG & Vector Search",
+            "pages": [
+              "blog/guides/rag/korean-nlp",
+              "blog/guides/rag/korean-nlp-basics",
+              "blog/guides/rag/korean-nlp-fundamentals",
+              "blog/guides/rag/korean-nlp-morphology",
+              "blog/guides/rag/korean-nlp-embedding",
+              "blog/guides/rag/korean-nlp-advanced",
+              "blog/guides/rag/chunking-strategies",
+              {
+                "group": "고급 검색 전략",
+                "pages": [
+                  "blog/guides/rag/advanced-retrieval/overview",
+                  "blog/guides/rag/advanced-retrieval/hybrid-search",
+                  "blog/guides/rag/advanced-retrieval/preprocessing",
+                  "blog/guides/rag/advanced-retrieval/reranking",
+                  "blog/guides/rag/advanced-retrieval/postprocessing",
+                  "blog/guides/rag/advanced-retrieval/chunking-advanced",
+                  "blog/guides/rag/advanced-retrieval/implementation"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Apps & Lakebase",
+            "pages": [
+              "blog/guides/practical-tips/lakebase-crud-patterns",
+              "blog/guides/apps/obo-user-tracking"
+            ]
+          },
+          {
+            "group": "AI Agent 평가",
+            "pages": [
+              "blog/guides/practical-tips/agent-eval-pipeline",
+              "training/07-unity-catalog/pii-column-tracking"
+            ]
+          },
+          {
+            "group": "Delta Lake 성능",
+            "pages": [
+              "blog/guides/practical-tips/delta-performance-checklist"
+            ]
           }
         ]
       },

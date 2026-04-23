@@ -1,0 +1,326 @@
+---
+title: "Lakebase + Apps CRUD 패턴"
+description: "Lakebase (PostgreSQL) + Databricks Apps(FastAPI)로 CRUD 앱을 만드는 실전 패턴"
+---
+
+Lakebase는 Databricks가 관리하는 PostgreSQL 호환 데이터베이스입니다.
+Databricks Apps(FastAPI) 위에서 OLTP 워크로드를 처리하고, Data Sync로 Delta Lake에 자동 동기화하는 패턴을 다룹니다.
+
+---
+
+## 1. 사전 준비
+
+### Lakebase 데이터베이스 생성
+
+```sql
+-- Unity Catalog에서 Lakebase DB 생성
+CREATE DATABASE my_catalog.my_app_db
+MANAGED LAKEBASE;
+```
+
+### 테이블 생성
+
+```sql
+CREATE TABLE my_catalog.my_app_db.products (
+  id         SERIAL PRIMARY KEY,
+  name       VARCHAR(200) NOT NULL,
+  price      NUMERIC(10,2) NOT NULL DEFAULT 0,
+  category   VARCHAR(50),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_products_category ON my_catalog.my_app_db.products (category);
+```
+
+---
+
+## 2. FastAPI + psycopg2 연결 설정
+
+### app.yaml (리소스 선언)
+
+```yaml
+command:
+  - uvicorn
+  - main:app
+  - --host=0.0.0.0
+  - --port=8000
+env:
+  - name: LAKEBASE_CATALOG
+    value: my_catalog
+  - name: LAKEBASE_SCHEMA
+    value: my_app_db
+resources:
+  - name: lakebase-db
+    lakebase_database:
+      catalog: my_catalog
+      schema: my_app_db
+      permission: READ_WRITE
+```
+
+### requirements.txt
+
+```text
+fastapi>=0.115
+uvicorn>=0.30
+psycopg2-binary>=2.9
+databricks-sdk>=0.40
+```
+
+### 연결 헬퍼 (db.py)
+
+```python
+import os
+import psycopg2
+from psycopg2 import pool
+from databricks.sdk import WorkspaceClient
+
+_pool = None
+
+def get_pool() -> pool.ThreadedConnectionPool:
+    """Lakebase 커넥션 풀 (싱글턴)"""
+    global _pool
+    if _pool is None or _pool.closed:
+        w = WorkspaceClient()
+        cred = w.lakebase.generate_credential(
+            catalog=os.environ["LAKEBASE_CATALOG"],
+            schema=os.environ["LAKEBASE_SCHEMA"],
+        )
+        _pool = pool.ThreadedConnectionPool(
+            minconn=2,
+            maxconn=10,
+            host=cred.host,
+            port=cred.port,
+            dbname=cred.database,
+            user=cred.username,
+            password=cred.password,
+            sslmode="require",
+        )
+    return _pool
+
+def get_conn():
+    """풀에서 커넥션 1개 대여"""
+    return get_pool().getconn()
+
+def put_conn(conn):
+    """커넥션 반납"""
+    get_pool().putconn(conn)
+```
+
+<Warning>
+`generate_credential()`이 반환하는 토큰은 **1시간** 유효합니다.
+프로덕션에서는 만료 전에 풀을 재생성하는 로직을 추가하세요.
+</Warning>
+
+---
+
+## 3. CRUD 엔드포인트
+
+### main.py
+
+```python
+from contextlib import contextmanager
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from db import get_conn, put_conn
+
+app = FastAPI(title="Lakebase CRUD Demo")
+
+# ── Pydantic 모델 ──────────────────────────
+class ProductCreate(BaseModel):
+    name: str
+    price: float
+    category: str | None = None
+
+class ProductUpdate(BaseModel):
+    name: str | None = None
+    price: float | None = None
+    category: str | None = None
+
+# ── 커넥션 컨텍스트 매니저 ──────────────────
+@contextmanager
+def db():
+    conn = get_conn()
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        put_conn(conn)
+
+# ── CREATE ──────────────────────────────────
+@app.post("/products", status_code=201)
+def create_product(body: ProductCreate):
+    with db() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            """INSERT INTO products (name, price, category)
+               VALUES (%s, %s, %s) RETURNING id, created_at""",
+            (body.name, body.price, body.category),
+        )
+        row = cur.fetchone()
+    return {"id": row[0], "created_at": str(row[1])}
+
+# ── READ (목록) ─────────────────────────────
+@app.get("/products")
+def list_products(category: str | None = None, limit: int = 50):
+    with db() as conn:
+        cur = conn.cursor()
+        if category:
+            cur.execute(
+                "SELECT id, name, price, category FROM products WHERE category = %s LIMIT %s",
+                (category, limit),
+            )
+        else:
+            cur.execute(
+                "SELECT id, name, price, category FROM products LIMIT %s",
+                (limit,),
+            )
+        rows = cur.fetchall()
+    return [
+        {"id": r[0], "name": r[1], "price": float(r[2]), "category": r[3]}
+        for r in rows
+    ]
+
+# ── READ (단건) ─────────────────────────────
+@app.get("/products/{product_id}")
+def get_product(product_id: int):
+    with db() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT id, name, price, category FROM products WHERE id = %s", (product_id,))
+        row = cur.fetchone()
+    if not row:
+        raise HTTPException(404, "Product not found")
+    return {"id": row[0], "name": row[1], "price": float(row[2]), "category": row[3]}
+
+# ── UPDATE ──────────────────────────────────
+@app.put("/products/{product_id}")
+def update_product(product_id: int, body: ProductUpdate):
+    fields, values = [], []
+    for col in ("name", "price", "category"):
+        v = getattr(body, col)
+        if v is not None:
+            fields.append(f"{col} = %s")
+            values.append(v)
+    if not fields:
+        raise HTTPException(400, "No fields to update")
+    fields.append("updated_at = CURRENT_TIMESTAMP")
+    values.append(product_id)
+
+    with db() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            f"UPDATE products SET {', '.join(fields)} WHERE id = %s RETURNING id",
+            values,
+        )
+        row = cur.fetchone()
+    if not row:
+        raise HTTPException(404, "Product not found")
+    return {"updated": row[0]}
+
+# ── DELETE ──────────────────────────────────
+@app.delete("/products/{product_id}")
+def delete_product(product_id: int):
+    with db() as conn:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM products WHERE id = %s RETURNING id", (product_id,))
+        row = cur.fetchone()
+    if not row:
+        raise HTTPException(404, "Product not found")
+    return {"deleted": row[0]}
+```
+
+---
+
+## 4. 커넥션 풀링 고급 패턴
+
+프로덕션에서는 토큰 만료를 자동 처리해야 합니다.
+
+```python
+import time, threading
+from db import get_pool
+
+class PoolRefresher:
+    """50분마다 커넥션 풀을 재생성해 토큰 만료를 방지"""
+
+    def __init__(self, interval_sec: int = 3000):
+        self.interval = interval_sec
+        self._stop = threading.Event()
+
+    def start(self):
+        t = threading.Thread(target=self._run, daemon=True)
+        t.start()
+
+    def _run(self):
+        while not self._stop.is_set():
+            time.sleep(self.interval)
+            old = get_pool()
+            old.closeall()          # 기존 풀 닫기
+            _ = get_pool()          # 새 풀 자동 생성
+
+# FastAPI lifespan에서 시작
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app):
+    refresher = PoolRefresher()
+    refresher.start()
+    yield
+
+app = FastAPI(lifespan=lifespan)
+```
+
+---
+
+## 5. Data Sync로 Delta Lake 동기화
+
+Lakebase 테이블 변경분을 Delta Lake로 자동 동기화하려면 **Data Sync**를 설정합니다.
+
+```sql
+-- Delta Lake 타깃 테이블 확인 (자동 생성됨)
+-- Lakebase 테이블과 동일 카탈로그·스키마 아래 _delta 접미사
+CREATE SYNC my_catalog.my_app_db.products_sync
+FROM my_catalog.my_app_db.products
+SCHEDULE EVERY 5 MINUTES;
+```
+
+### Python SDK로 Data Sync 생성
+
+```python
+from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+w.lakebase.create_sync(
+    source_catalog="my_catalog",
+    source_schema="my_app_db",
+    source_table="products",
+    target_catalog="my_catalog",
+    target_schema="analytics",
+    target_table="products_delta",
+    schedule="EVERY 5 MINUTES",
+)
+```
+
+동기화된 Delta 테이블에서 분석 쿼리를 실행할 수 있습니다.
+
+```sql
+-- Delta Lake 쪽에서 분석
+SELECT category, COUNT(*) AS cnt, AVG(price) AS avg_price
+FROM my_catalog.analytics.products_delta
+GROUP BY category
+ORDER BY cnt DESC;
+```
+
+---
+
+## 체크리스트
+
+| 항목 | 확인 |
+|------|------|
+| Lakebase DB가 Unity Catalog에 생성되었는가 | [ ] |
+| app.yaml에 `lakebase_database` 리소스를 선언했는가 | [ ] |
+| SP에 READ_WRITE 권한이 부여되었는가 | [ ] |
+| 커넥션 풀 재생성 로직이 있는가 (토큰 만료 대비) | [ ] |
+| Data Sync 스케줄이 분석 요구사항에 맞는가 | [ ] |
