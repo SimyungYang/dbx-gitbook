@@ -1009,7 +1009,7 @@
         ]
       },
       {
-        "tab": "AI/ML 개념",
+        "tab": "AI/ML & 동향",
         "groups": [
           {
             "group": "GenAI 핵심 개념",
@@ -1292,12 +1292,7 @@
               "blog/guides/mcp/databricks-mcp",
               "blog/guides/mcp/best-practices"
             ]
-          }
-        ]
-      },
-      {
-        "tab": "AI 동향",
-        "groups": [
+          },
           {
             "group": "개요",
             "pages": [
