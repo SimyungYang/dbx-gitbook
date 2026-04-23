@@ -118,6 +118,8 @@
                   "training/04-compute-and-workspace/cluster-types",
                   "training/04-compute-and-workspace/cluster-configuration",
                   "training/04-compute-and-workspace/instance-pools",
+                  "training/04-compute-and-workspace/instance-pools-basics",
+                  "training/04-compute-and-workspace/instance-pools-advanced",
                   "training/04-compute-and-workspace/photon-engine",
                   "training/04-compute-and-workspace/spot-instances"
                 ]
@@ -188,6 +190,8 @@
                 "pages": [
                   "training/05-data-engineering/spark-declarative-pipelines/overview",
                   "training/05-data-engineering/spark-declarative-pipelines/what-is-sdp",
+                  "training/05-data-engineering/spark-declarative-pipelines/what-is-sdp-basics",
+                  "training/05-data-engineering/spark-declarative-pipelines/what-is-sdp-advanced",
                   "training/05-data-engineering/spark-declarative-pipelines/streaming-tables-and-mvs",
                   "training/05-data-engineering/spark-declarative-pipelines/expectations",
                   "training/05-data-engineering/spark-declarative-pipelines/pipeline-configuration",
@@ -200,6 +204,8 @@
                     ]
                   },
                   "training/05-data-engineering/spark-declarative-pipelines/cdc-and-scd",
+                  "training/05-data-engineering/spark-declarative-pipelines/cdc-and-scd-basics",
+                  "training/05-data-engineering/spark-declarative-pipelines/cdc-and-scd-advanced",
                   "training/05-data-engineering/spark-declarative-pipelines/sdp-hands-on"
                 ]
               },
@@ -216,7 +222,9 @@
                       "training/05-data-engineering/lakeflow-connect/ingestion-pipeline-setup-advanced"
                     ]
                   },
-                  "training/05-data-engineering/lakeflow-connect/lakeflow-connect-hands-on"
+                  "training/05-data-engineering/lakeflow-connect/lakeflow-connect-hands-on",
+                  "training/05-data-engineering/lakeflow-connect/lakeflow-connect-hands-on-basics",
+                  "training/05-data-engineering/lakeflow-connect/lakeflow-connect-hands-on-advanced"
                 ]
               },
               {
@@ -271,6 +279,8 @@
                 ]
               },
               "training/06-data-warehousing/materialized-views",
+              "training/06-data-warehousing/materialized-views-basics",
+              "training/06-data-warehousing/materialized-views-advanced",
               {
                 "group": "Pivot & Unpivot",
                 "pages": [
@@ -447,6 +457,8 @@
                 "pages": [
                   "training/09-machine-learning/feature-engineering/overview",
                   "training/09-machine-learning/feature-engineering/feature-engineering-overview",
+                  "training/09-machine-learning/feature-engineering/feature-engineering-overview-basics",
+                  "training/09-machine-learning/feature-engineering/feature-engineering-overview-advanced",
                   "training/09-machine-learning/feature-engineering/feature-table-management",
                   "training/09-machine-learning/feature-engineering/online-serving"
                 ]
@@ -617,6 +629,8 @@
                 "pages": [
                   "blog/guides/genie-code/overview",
                   "blog/guides/genie-code/usage",
+                  "blog/guides/genie-code/usage-basics",
+                  "blog/guides/genie-code/usage-advanced",
                   "blog/guides/genie-code/scenarios",
                   {
                     "group": "Genie Code 프롬프트 쿡북",
@@ -644,7 +658,9 @@
                       "blog/guides/genie-code/settings-agent-tips"
                     ]
                   },
-                  "blog/guides/genie-code/ai-dev-kit-skills"
+                  "blog/guides/genie-code/ai-dev-kit-skills",
+                  "blog/guides/genie-code/ai-dev-kit-skills-basics",
+                  "blog/guides/genie-code/ai-dev-kit-skills-advanced"
                 ]
               },
               {
@@ -762,6 +778,8 @@
                     ]
                   },
                   "training/12-security-and-governance/scim-provisioning",
+                  "training/12-security-and-governance/scim-provisioning-basics",
+                  "training/12-security-and-governance/scim-provisioning-advanced",
                   "training/12-security-and-governance/service-principals"
                 ]
               },
@@ -801,6 +819,8 @@
                 "pages": [
                   "training/14-best-practices/performance-tuning/overview",
                   "training/14-best-practices/performance-tuning/spark-query-tuning",
+                  "training/14-best-practices/performance-tuning/spark-query-tuning-basics",
+                  "training/14-best-practices/performance-tuning/spark-query-tuning-advanced",
                   "training/14-best-practices/performance-tuning/delta-lake-optimization",
                   "training/14-best-practices/performance-tuning/sql-warehouse-and-pipeline",
                   {
@@ -829,8 +849,12 @@
             "group": "개발 도구",
             "pages": [
               "training/13-appendix/databricks-cli",
+              "training/13-appendix/databricks-cli-basics",
+              "training/13-appendix/databricks-cli-advanced",
               "training/13-appendix/databricks-sdk",
               "training/13-appendix/rest-api",
+              "training/13-appendix/rest-api-basics",
+              "training/13-appendix/rest-api-advanced",
               "training/13-appendix/databricks-connect",
               {
                 "group": "Databricks Bundles (DABs)",
