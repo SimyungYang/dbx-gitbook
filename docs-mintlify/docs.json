@@ -1137,6 +1137,7 @@
           {
             "group": "변경 이력",
             "pages": [
+              "changelog/2027-07-28",
               "changelog/2027-07-21",
               "changelog/2027-07-14",
               "changelog/2027-07-07",
