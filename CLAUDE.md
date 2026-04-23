@@ -2,25 +2,23 @@
 
 ## 프로젝트 구조
 
-이 레포는 여러 독립 git repo를 모아놓은 상위 프로젝트. 각 하위 폴더는 원래 별도 git repo로 관리됨.
+모든 콘텐츠를 하나의 git repo에서 통합 관리 (2026-04-15부터).
 
-### 독립 git repo (`.gitignore`에 포함, 메인 repo에서 추적하지 않음)
+### 원본 콘텐츠 (.md 형식)
 - `00-databricks-blog/` - 블로그 가이드 원본
 - `01-databricks-training/` - 교육자료 원본
 - `02-blog-translations/` - 블로그 번역 원본
 - `03-ai-trends/` - AI 동향 원본
-- `20-handson-genie-code-lge-smarttv/` - LGE Smart TV 핸즈온 원본
+- `20-handson-genie-code-lge-smarttv/` - Smart TV 핸즈온 원본
 
-### Mintlify 배포용 (메인 repo에 포함)
-- `docs-mintlify/` - 위 독립 repo들의 콘텐츠를 Mintlify용 .mdx로 변환한 통합 사이트
+### Mintlify 배포용 (.mdx 형식)
+- `docs-mintlify/` - 위 원본들을 Mintlify용 .mdx로 변환한 통합 사이트
   - `docs.json` - Mintlify 네비게이션/설정 파일
   - `blog/` - 블로그 가이드 & 핸즈온
   - `training/` - 교육자료
   - `translations/` - Databricks 공식 블로그 번역
   - `ai-trends/` - AI 동향
   - `workshop/` - 워크샵
-
-> **주의**: `docs-mintlify/`도 원래 독립 git repo였으나, Mintlify가 main 브랜치에서 직접 읽어야 하므로 `.git` 제거 후 메인 repo에 포함시킴 (2026-04-15)
 
 ### 레거시
 - `mint.json` - 이전 Mintlify 설정 (사용하지 않음, `docs-mintlify/docs.json`이 실제 설정)
@@ -52,6 +50,34 @@
 ### 네비게이션 순서 (docs.json)
 - `translations/` 블로그 번역 목록은 **최신순(내림차순)** 정렬
 - `overview` 페이지는 그룹 맨 위에 배치
+
+### 페이지 분할 규칙 (필수)
+페이지를 분할할 때 **반드시 서브그룹으로 계층화**해야 합니다. 절대 flat으로 나열하지 마세요.
+
+**올바른 예 (서브그룹):**
+```json
+{
+  "group": "DBU와 가격",
+  "pages": [
+    "training/.../databricks-pricing",
+    "training/.../databricks-pricing-basics",
+    "training/.../databricks-pricing-advanced"
+  ]
+}
+```
+
+**잘못된 예 (flat 나열) — 절대 금지:**
+```json
+"training/.../databricks-pricing",
+"training/.../databricks-pricing-basics",
+"training/.../databricks-pricing-advanced"
+```
+
+분할 후 반드시:
+1. **docs.json에서 부모+자식을 서브그룹으로 묶을 것**
+2. **깨진 링크 전수 검사** (분할로 경로가 바뀜)
+3. **전체 문서에서 구 탭명/구 페이지명 참조 확인**
+4. **한 페이지 목표: 2-3분 (약 200줄 이하)**
 
 ## 변경 이력
 
