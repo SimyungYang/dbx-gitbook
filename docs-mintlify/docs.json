@@ -536,24 +536,6 @@
             ]
           },
           {
-            "group": "Genie Space 운영",
-            "pages": [
-              {
-                "group": "AI/BI 대시보드",
-                "pages": []
-              },
-              {
-                "group": "Metric Views",
-                "pages": [
-                  {
-                    "group": "Metric Views — 비즈니스 시맨틱 레이어",
-                    "pages": []
-                  }
-                ]
-              }
-            ]
-          },
-          {
             "group": "머신러닝",
             "pages": [
               "intro/ml/overview",
@@ -877,50 +859,6 @@
             ]
           },
           {
-            "group": "Databricks Apps",
-            "pages": [
-              "practices/apps/overview",
-              "practices/apps/create-app",
-              "practices/apps/app-yaml",
-              "practices/apps/authentication",
-              "practices/apps/service-principals",
-              "practices/apps/resources",
-              {
-                "group": "배포 워크플로우",
-                "pages": [
-                  "practices/apps/deployment",
-                  "practices/apps/deployment-dev-deploy",
-                  "practices/apps/deployment-operations"
-                ]
-              },
-              "practices/apps/updating",
-              "practices/apps/networking",
-              {
-                "group": "고급 기능",
-                "pages": [
-                  "practices/apps/advanced",
-                  "practices/apps/advanced-scaling",
-                  "practices/apps/advanced-lakebase",
-                  "practices/apps/advanced-dabs",
-                  "practices/apps/advanced-appkit"
-                ]
-              },
-              {
-                "group": "예제",
-                "pages": [
-                  "practices/apps/examples/streamlit",
-                  "practices/apps/examples/fastapi",
-                  "practices/apps/examples/agent-ui",
-                  "practices/apps/examples/gradio",
-                  "practices/apps/examples/appkit",
-                  "practices/apps/examples/lakebase",
-                  "practices/apps/examples/troubleshooting"
-                ]
-              },
-              "practices/apps/obo-user-tracking"
-            ]
-          },
-          {
             "group": "보안과 거버넌스",
             "pages": [
               "intro/security/overview",
@@ -972,63 +910,6 @@
                 ]
               },
               "intro/security/workspace-admin"
-            ]
-          },
-          {
-            "group": "개발 도구",
-            "pages": [
-              {
-                "group": "Databricks CLI",
-                "pages": [
-                  "intro/dev-tools/databricks-cli",
-                  "intro/dev-tools/databricks-cli-basics",
-                  "intro/dev-tools/databricks-cli-advanced"
-                ]
-              },
-              "intro/dev-tools/databricks-sdk",
-              {
-                "group": "Databricks REST API 활용",
-                "pages": [
-                  "intro/dev-tools/rest-api"
-                ]
-              },
-              "intro/dev-tools/databricks-connect",
-              {
-                "group": "Databricks Bundles (DABs)",
-                "pages": [
-                  {
-                    "group": "Databricks Bundles (DABs)",
-                    "pages": [
-                      "intro/dev-tools/databricks-asset-bundles",
-                      "intro/dev-tools/databricks-asset-bundles-basics"
-                    ]
-                  },
-                  "intro/dev-tools/databricks-asset-bundles-deployment"
-                ]
-              },
-              {
-                "group": "Databricks Apps",
-                "pages": [
-                  "intro/dev-tools/databricks-apps",
-                  "intro/dev-tools/databricks-apps-overview",
-                  "intro/dev-tools/databricks-apps-handson"
-                ]
-              },
-              "intro/dev-tools/genie-code",
-              "intro/dev-tools/ai-dev-kit"
-            ]
-          },
-          {
-            "group": "플랫폼 비교",
-            "pages": [
-              "practices/platform-comparison/overview",
-              "practices/platform-comparison/architecture",
-              "practices/platform-comparison/compute",
-              "practices/platform-comparison/data-engineering",
-              "practices/platform-comparison/sql-analytics",
-              "practices/platform-comparison/ml-ai",
-              "practices/platform-comparison/governance",
-              "practices/platform-comparison/pricing"
             ]
           },
           {
@@ -1251,6 +1132,125 @@
                   "intro/best-practices/enterprise-governance/data-quality-cicd"
                 ]
               }
+            ]
+          },
+          {
+            "group": "Genie Space 운영",
+            "pages": [
+              {
+                "group": "AI/BI 대시보드",
+                "pages": []
+              },
+              {
+                "group": "Metric Views",
+                "pages": [
+                  {
+                    "group": "Metric Views — 비즈니스 시맨틱 레이어",
+                    "pages": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Databricks Apps",
+            "pages": [
+              "practices/apps/overview",
+              "practices/apps/create-app",
+              "practices/apps/app-yaml",
+              "practices/apps/authentication",
+              "practices/apps/service-principals",
+              "practices/apps/resources",
+              {
+                "group": "배포 워크플로우",
+                "pages": [
+                  "practices/apps/deployment",
+                  "practices/apps/deployment-dev-deploy",
+                  "practices/apps/deployment-operations"
+                ]
+              },
+              "practices/apps/updating",
+              "practices/apps/networking",
+              {
+                "group": "고급 기능",
+                "pages": [
+                  "practices/apps/advanced",
+                  "practices/apps/advanced-scaling",
+                  "practices/apps/advanced-lakebase",
+                  "practices/apps/advanced-dabs",
+                  "practices/apps/advanced-appkit"
+                ]
+              },
+              {
+                "group": "예제",
+                "pages": [
+                  "practices/apps/examples/streamlit",
+                  "practices/apps/examples/fastapi",
+                  "practices/apps/examples/agent-ui",
+                  "practices/apps/examples/gradio",
+                  "practices/apps/examples/appkit",
+                  "practices/apps/examples/lakebase",
+                  "practices/apps/examples/troubleshooting"
+                ]
+              },
+              "practices/apps/obo-user-tracking"
+            ]
+          },
+          {
+            "group": "개발 도구",
+            "pages": [
+              {
+                "group": "Databricks CLI",
+                "pages": [
+                  "intro/dev-tools/databricks-cli",
+                  "intro/dev-tools/databricks-cli-basics",
+                  "intro/dev-tools/databricks-cli-advanced"
+                ]
+              },
+              "intro/dev-tools/databricks-sdk",
+              {
+                "group": "Databricks REST API 활용",
+                "pages": [
+                  "intro/dev-tools/rest-api"
+                ]
+              },
+              "intro/dev-tools/databricks-connect",
+              {
+                "group": "Databricks Bundles (DABs)",
+                "pages": [
+                  {
+                    "group": "Databricks Bundles (DABs)",
+                    "pages": [
+                      "intro/dev-tools/databricks-asset-bundles",
+                      "intro/dev-tools/databricks-asset-bundles-basics"
+                    ]
+                  },
+                  "intro/dev-tools/databricks-asset-bundles-deployment"
+                ]
+              },
+              {
+                "group": "Databricks Apps",
+                "pages": [
+                  "intro/dev-tools/databricks-apps",
+                  "intro/dev-tools/databricks-apps-overview",
+                  "intro/dev-tools/databricks-apps-handson"
+                ]
+              },
+              "intro/dev-tools/genie-code",
+              "intro/dev-tools/ai-dev-kit"
+            ]
+          },
+          {
+            "group": "플랫폼 비교",
+            "pages": [
+              "practices/platform-comparison/overview",
+              "practices/platform-comparison/architecture",
+              "practices/platform-comparison/compute",
+              "practices/platform-comparison/data-engineering",
+              "practices/platform-comparison/sql-analytics",
+              "practices/platform-comparison/ml-ai",
+              "practices/platform-comparison/governance",
+              "practices/platform-comparison/pricing"
             ]
           }
         ]
