@@ -1,0 +1,150 @@
+---
+title: "Databricks Apps 운영 — 모니터링, 비용, 롤백"
+description: "Databricks Apps 배포 후 운영에 필요한 모니터링, 스케일링, 비용 관리, 롤백, 의존성 관리 방법을 다룹니다."
+---
+
+> 이 페이지는 [배포 워크플로우](/blog/guides/apps/deployment) 의 후속 내용입니다. 개발/테스트/배포/환경/CI/CD 내용은 해당 페이지를 참고하세요.
+
+---
+
+## 6. 모니터링과 로깅
+
+배포 후 앱의 상태를 지속적으로 모니터링하는 것은 안정적인 운영의 핵심입니다.
+
+### 앱 로그 확인
+
+```bash
+# CLI로 로그 확인
+databricks apps logs <app-name>
+```
+
+앱 로그에는 Python의 `print()` 출력, 프레임워크의 액세스 로그, 에러 트레이스백이 포함됩니다. UI에서는 Overview > Logs 탭에서도 확인할 수 있습니다.
+
+### 오류 디버깅 패턴
+
+| 증상 | 확인할 곳 | 일반적인 원인 |
+|------|----------|-------------|
+| 앱 Crashed | Logs 탭에서 에러 트레이스백 확인 | `ImportError`, `SyntaxError`, OOM |
+| 502 Bad Gateway | `app.yaml`의 `command` 포트 설정 확인 | 앱이 `DATABRICKS_APP_PORT`에 바인딩하지 않음 |
+| Permission denied | Logs 탭에서 권한 에러 메시지 확인 | SP에 UC 테이블/Warehouse 권한 미부여 |
+| 느린 응답 | 앱 코드의 쿼리 성능 확인 | 무거운 쿼리, Warehouse 콜드 스타트 |
+| 간헐적 타임아웃 | Warehouse 상태 확인 | Classic Warehouse 자동 중지 후 재시작 지연 |
+
+> **참고**
+**효과적인 로깅 패턴**: 앱 코드에서 Python의 `logging` 모듈을 사용하면 로그 레벨을 제어할 수 있습니다. `print()`보다 `logging.info()`, `logging.error()`를 사용하고, 로그 레벨을 `app.yaml`의 `env`로 제어하세요 (`LOG_LEVEL=INFO`). 이렇게 하면 프로덕션에서는 중요 로그만, 디버깅 시에는 상세 로그를 볼 수 있습니다.
+
+
+---
+
+## 7. 스케일링
+
+Databricks Apps는 현재 **수평적 자동 스케일링을 지원하지 않습니다**. 하나의 앱은 하나의 컨테이너(Medium 또는 Large)에서 실행됩니다.
+
+| 스케일링 방식 | 지원 여부 | 대안 |
+|--------------|----------|------|
+| **수직 스케일링**(더 큰 컨테이너) | Medium에서 Large로 변경 가능 | 사이즈 변경 후 재배포 |
+| **수평 스케일링**(컨테이너 복제) | 지원하지 않음 | 앱 내부에서 다중 워커 사용 (Gunicorn `-w`) |
+| **트래픽 기반 자동 스케일링** | 지원하지 않음 | SQL Warehouse의 Serverless 스케일링 활용 |
+| **Scale to Zero** | Private Preview (App Spaces) | 유휴 30분 후 자동 중지, 요청 시 자동 재시작 |
+| **Horizontal Scaling** | Private Preview | 최대 5 인스턴스, 세션 친화성, 무중단 배포 |
+
+> **참고**
+**Scale to Zero** (App Spaces)는 현재 Private Preview입니다. GA 전까지는 Databricks Jobs로 업무 시간 외에 앱을 자동 중지하는 스크립트를 구성하세요. **Horizontal Scaling** 은 Private Preview로, 최대 5개 인스턴스까지 수평 확장이 가능합니다. 자세한 내용은 [고급 기능](/blog/guides/apps/advanced) 페이지를 참고하세요.
+
+**스케일링 팁**: 앱 자체의 스케일링보다 **백엔드 리소스의 스케일링** 에 집중하세요. Databricks Apps는 주로 프록시 역할(사용자 요청을 SQL Warehouse나 Model Serving에 전달)을 하므로, 병목은 대부분 백엔드에서 발생합니다. Serverless SQL Warehouse와 Model Serving Endpoint는 자동으로 스케일링되므로, 앱 컨테이너 자체가 병목이 되는 경우는 드뭅니다.
+
+
+---
+
+## 8. 비용 구조
+
+Databricks Apps의 비용을 정확히 이해하면 예상치 못한 청구를 방지할 수 있습니다.
+
+| 과금 항목 | 과금 조건 | DBU 단가 |
+|-----------|----------|----------|
+| **앱 컨테이너** | `Running` 또는 `Deploying` 상태일 때 | Medium: 0.5/hr, Large: 1.0/hr |
+| **SQL Warehouse** | 쿼리 실행 시 | Serverless Warehouse 단가 적용 |
+| **Model Serving** | 추론 요청 시 | Endpoint 설정에 따름 |
+
+> **주의**
+**비용 주의사항**: 앱 컨테이너는 `Running` 상태에서 **트래픽이 없어도 과금** 됩니다. 이는 앱이 항상 대기 상태로 유지되기 때문입니다. 개발/테스트 앱은 사용하지 않을 때 반드시 `Stop`하세요.
+
+
+> **참고**
+**비용 최적화 체크리스트**:
+1. 개발/테스트 앱은 퇴근 시 `Stop` (CLI 스크립트 또는 cron 활용)
+2. Medium 사이즈로 시작, 필요할 때만 Large 업그레이드
+3. SQL Warehouse는 Serverless 사용 (유휴 시 비과금)
+4. 불필요한 앱은 삭제 (SP도 함께 정리됨)
+
+
+---
+
+## 9. 롤백 방법
+
+Databricks Apps는 이전 배포 버전으로 롤백하는 내장 기능이 제한적입니다. 다음 전략을 사용하세요.
+
+### Git 기반 롤백 (권장)
+
+Git으로 소스 코드를 관리하면 **어떤 시점으로든 즉시 롤백** 할 수 있습니다. 이것이 앱 코드를 반드시 Git으로 관리해야 하는 가장 큰 이유입니다.
+
+```bash
+# 이전 커밋으로 소스 코드 되돌리기
+git checkout <previous-commit-hash> -- my-app/
+
+# 이전 버전으로 재배포
+databricks apps deploy my-app --source-code-path ./my-app
+```
+
+첫 번째 명령은 Git의 이전 커밋에서 앱 디렉토리를 복원합니다. 두 번째 명령으로 해당 버전을 재배포합니다. 전체 롤백 소요 시간은 배포 시간(2~5분)과 동일합니다.
+
+### 블루-그린 배포
+
+블루-그린 배포는 **무중단 롤백** 이 필요할 때 사용합니다.
+
+1. 새 버전을 별도 앱으로 배포 (`my-app-v2`)
+2. 테스트 후 문제 없으면 기존 앱 중지, 새 앱으로 트래픽 전환
+3. 문제 발생 시 기존 앱 재시작
+
+> **참고**
+**블루-그린의 한계**: 앱 URL이 이름에 포함되므로(`my-app-v1.xxx.databricksapps.com` vs `my-app-v2.xxx.databricksapps.com`), 사용자에게 URL 변경을 안내해야 합니다. 현재 Databricks Apps에서는 커스텀 도메인을 직접 지원하지 않습니다.
+
+
+---
+
+## 10. 의존성 관리
+
+의존성 관리는 "어제 되던 앱이 오늘 안 되는" 문제를 방지하는 핵심입니다.
+
+| 언어 | 파일 | 권장사항 |
+|------|------|----------|
+| Python (pip) | `requirements.txt` | 버전 명시: `streamlit==1.32.0` |
+| Python (uv) | `pyproject.toml` | `[project.dependencies]` 섹션에 명시 |
+| Node.js | `package.json` | `npm ci`로 lock 파일 기반 설치 |
+
+### requirements.txt 모범 예시
+
+```text
+# 프레임워크
+streamlit==1.32.0
+
+# Databricks SDK
+databricks-sdk==0.20.0
+
+# 데이터 처리
+pandas==2.2.0
+plotly==5.18.0
+```
+
+각 패키지에 버전을 명시하는 이유는 **재현 가능한 빌드를 보장** 하기 위해서입니다. 버전을 지정하지 않으면 배포할 때마다 최신 버전이 설치되어, 호환성 문제로 앱이 깨질 수 있습니다.
+
+> **주의**
+**파일 크기 제한**: 앱 파일은 개별 10 MB를 초과할 수 없습니다. 초과 시 배포가 실패합니다. 대용량 파일(모델 가중치, 데이터 파일 등)은 Unity Catalog Volume에 저장하고 런타임에 다운로드하세요.
+
+
+> **참고**
+**의존성 버전을 반드시 명시하세요.** 버전을 지정하지 않으면 배포할 때마다 최신 버전이 설치되어, 어제 작동하던 앱이 오늘 갑자기 깨질 수 있습니다.
+
+
+> **주의**
+**의존성 충돌 디버깅**: `ModuleNotFoundError`나 `ImportError`가 발생하면, 로컬에서 `pip install -r requirements.txt`를 깨끗한 가상환경에서 실행하여 재현하세요. 로컬에서는 작동하지만 배포 후 실패하는 경우, 로컬에 이미 설치된 패키지가 `requirements.txt`에 누락되었을 가능성이 높습니다.

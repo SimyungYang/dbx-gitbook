@@ -1,0 +1,167 @@
+---
+title: "Databricks Apps 실습과 운영"
+description: "Streamlit 매출 대시보드 실습, 리소스 제한 및 비용, 모범 사례, 트러블슈팅을 다룹니다."
+---
+
+> [Databricks Apps](databricks-apps) 페이지에서 이어지는 내용입니다.
+
+---
+
+## 실습: Streamlit 매출 대시보드 생성 및 배포
+
+### Step 1: 프로젝트 생성
+
+```bash
+mkdir sales-dashboard && cd sales-dashboard
+```
+
+### Step 2: app.py 작성
+
+```python
+# app.py
+import streamlit as st
+from databricks import sql
+import os
+import pandas as pd
+
+st.set_page_config(page_title="매출 대시보드", layout="wide")
+st.title("📊 일별 매출 대시보드")
+
+# SQL Warehouse 연결
+@st.cache_resource
+def get_connection():
+    return sql.connect(
+        server_hostname=os.environ["DATABRICKS_HOST"],
+        http_path=os.environ["DATABRICKS_SQL_WAREHOUSE_HTTP_PATH"],
+        credentials_provider=lambda: {
+            "Authorization": f"Bearer {os.environ['DATABRICKS_TOKEN']}"
+        }
+    )
+
+conn = get_connection()
+
+# 데이터 조회
+@st.cache_data(ttl=300)  # 5분 캐시
+def load_data():
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT sale_date, total_revenue, total_orders, unique_customers
+        FROM main.ecommerce.gold_daily_kpi
+        ORDER BY sale_date DESC
+        LIMIT 90
+    """)
+    return cursor.fetchall_arrow().to_pandas()
+
+df = load_data()
+
+# KPI 카드
+col1, col2, col3 = st.columns(3)
+col1.metric("총 매출", f"₩{df['total_revenue'].sum():,.0f}")
+col2.metric("총 주문", f"{df['total_orders'].sum():,}건")
+col3.metric("고유 고객", f"{df['unique_customers'].sum():,}명")
+
+# 차트
+st.line_chart(df.set_index("sale_date")["total_revenue"])
+st.dataframe(df, use_container_width=True)
+```
+
+### Step 3: app.yaml 작성
+
+```yaml
+command:
+  - "streamlit"
+  - "run"
+  - "app.py"
+  - "--server.port"
+  - "8000"
+
+resources:
+  - name: "sql-warehouse"
+    sql_warehouse:
+      id: "${DATABRICKS_WAREHOUSE_ID}"
+      permission: "CAN_USE"
+```
+
+### Step 4: requirements.txt 작성
+
+```
+streamlit
+databricks-sql-connector
+pandas
+pyarrow
+```
+
+### Step 5: 배포
+
+```bash
+# 앱 생성 및 배포
+databricks apps create sales-dashboard --description "일별 매출 대시보드"
+databricks apps deploy sales-dashboard --source-code-path .
+
+# 배포 상태 확인
+databricks apps get sales-dashboard
+```
+
+### Step 6: 접속 및 테스트
+
+배포가 완료되면 `https://<workspace-url>/apps/sales-dashboard`에서 앱에 접근할 수 있습니다. 같은 워크스페이스의 사용자는 Databricks OAuth로 자동 인증됩니다.
+
+---
+
+## 리소스 제한 및 비용
+
+| 항목 | 제한 |
+|------|------|
+| **앱당 최대 소스 코드** | 500 MB |
+| **앱당 최대 메모리** | 크기에 따라 2~12 GB |
+| **워크스페이스당 앱 수** | 계정 등급에 따라 다름 |
+| **자동 유휴 중지** | 비활성 앱은 자동으로 중지됩니다 |
+| **과금** | 앱이 실행 중인 시간 기준 DBU 과금 |
+
+---
+
+## 모범 사례
+
+| 영역 | 권장 사항 |
+|------|----------|
+| **인증** | 민감 데이터는 사용자 대리 인증을 사용합니다 |
+| **성능** | `st.cache_data`/`st.cache_resource`로 데이터 캐싱을 적용합니다 |
+| **비밀 관리** | API 키 등은 `env.valueFrom`으로 Secret에서 로드합니다. 코드에 하드코딩하지 않습니다 |
+| **컴퓨트 크기** | 워크로드에 맞는 최소 크기를 선택하여 비용을 절감합니다 |
+| **배포** | 프로덕션 앱은 DABs로 관리하여 버전 관리 및 CI/CD를 적용합니다 |
+| **모니터링** | `databricks apps get-logs`로 앱 로그를 정기적으로 확인합니다 |
+| **리소스 바인딩** | 필요한 리소스만 최소 권한으로 바인딩합니다 |
+
+---
+
+## 트러블슈팅
+
+| 증상 | 원인 | 해결 방법 |
+|------|------|----------|
+| 앱이 시작되지 않음 | 포트가 8000이 아님 | `--server.port 8000` 확인 |
+| `Permission denied` | Service Principal 권한 부족 | 앱의 SP에 리소스 접근 권한 부여 |
+| 패키지 설치 실패 | `requirements.txt` 누락 | 필요한 패키지를 `requirements.txt`에 명시 |
+| 데이터 조회 실패 | SQL Warehouse 미바인딩 | `app.yaml`에 `sql_warehouse` 리소스 추가 |
+| 앱이 자주 중지됨 | 유휴 자동 중지 | 트래픽이 없으면 정상 동작. 재접속 시 자동 재시작 |
+
+---
+
+## 정리
+
+| 핵심 개념 | 설명 |
+|-----------|------|
+| **Databricks Apps** | Databricks 위에서 웹 앱을 호스팅하는 관리형 서비스입니다 |
+| **app.yaml** | 앱의 실행 명령, 환경 변수, 리소스 바인딩을 선언하는 설정 파일입니다 |
+| **리소스 바인딩** | SQL Warehouse, Model Serving, Secret 등에 안전하게 접근합니다 |
+| **인증 모델** | 앱 SP 인증(기본)과 사용자 대리 인증(개인화) 중 선택합니다 |
+| **컴퓨트 사이징** | Small/Medium/Large로 앱 워크로드에 맞는 리소스를 할당합니다 |
+| **배포** | CLI, UI, DABs 중 선택하여 배포할 수 있습니다 |
+
+---
+
+## 참고 링크
+
+- [Databricks: Databricks Apps 개요](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/)
+- [Databricks: App 설정 (app.yaml)](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/configuration.html)
+- [Databricks: Databricks Apps 튜토리얼](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/tutorials.html)
+- [Azure Databricks: Databricks Apps](https://learn.microsoft.com/en-us/azure/databricks/dev-tools/databricks-apps/)

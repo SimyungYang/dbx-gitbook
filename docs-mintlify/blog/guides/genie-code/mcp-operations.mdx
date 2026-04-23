@@ -1,0 +1,86 @@
+---
+title: "MCP 비용 구조와 운영 베스트 프랙티스"
+description: "MCP 서버의 비용 구조, 에이전트 개발 베스트 프랙티스, 활용 성숙도 모델, 그리고 상세 가이드 링크를 다룹니다."
+---
+
+> 이 페이지는 [MCP 연동](mcp) 가이드의 이어지는 내용입니다. MCP 개요, 설정, Genie Code 활용법은 이전 페이지를 참고하세요.
+
+## MCP 비용 구조
+
+MCP 서버 사용 시 각 리소스 유형에 따라 컴퓨팅 비용이 발생합니다:
+
+| 리소스 | 비용 유형 |
+|--------|----------|
+| Unity Catalog Functions | Serverless General Compute |
+| Genie Spaces | Serverless SQL Compute |
+| Databricks SQL | SQL 전용 가격 |
+| Vector Search Indexes | Vector Search 가격 |
+| Custom MCP Servers | Databricks Apps 가격 |
+
+> **참고**
+MCP 프로토콜 자체에 대한 추가 비용은 없습니다. 실제 도구를 실행할 때 사용되는 컴퓨팅 리소스에 대해서만 비용이 부과됩니다.
+
+
+**비용 최적화 팁**: MCP 도구 호출 자체는 무료이지만, 도구가 많을수록 LLM 프롬프트에 포함되는 도구 정의 토큰이 증가합니다. 20개 도구가 모두 등록되면 매 요청마다 수천 토큰이 도구 정의에 소비됩니다. 실제로 사용하는 도구만 활성화하면 AI 추론 비용을 절약할 수 있습니다.
+
+---
+
+## MCP 에이전트 개발 베스트 프랙티스
+
+MCP를 활용한 에이전트를 개발할 때 다음 권장 사항을 따르세요:
+
+1. **도구 이름 하드코딩 금지**: MCP 서버의 도구 목록은 변경될 수 있으므로, 에이전트가 런타임에 `tools/list`를 호출하여 **동적으로 도구를 탐색** 하도록 구현합니다.
+2. **출력 파싱 금지**: 도구 출력 형식은 안정적이지 않으므로, 결과 해석은 **LLM에 위임** 합니다.
+3. **LLM 기반 도구 선택**: 어떤 도구를 호출할지는 LLM이 사용자 요청에 따라 자동으로 결정하도록 합니다.
+
+**프로그래밍 방식으로 MCP 서버 연결하기 (로컬 개발):**
+
+```bash
+# 1. OAuth 인증
+databricks auth login --host https://<workspace-hostname>
+
+# 2. 의존성 설치
+pip install -U "mcp>=1.9" "databricks-sdk[openai]" "mlflow>=3.1.0" \
+    "databricks-agents>=1.0.0" "databricks-mcp"
+```
+
+```python
+# 3. DatabricksMCPClient를 사용한 연결
+from databricks_mcp import DatabricksMCPClient
+
+client = DatabricksMCPClient(
+    server_url="https://<hostname>/api/2.0/mcp/functions/{catalog}/{schema}/{func}",
+    databricks_cli_profile="DEFAULT"
+)
+```
+
+---
+
+## MCP 활용 성숙도 모델
+
+MCP를 단계적으로 도입하여 점진적으로 가치를 높이는 로드맵입니다:
+
+| 단계 | 수준 | 사용 패턴 | 기대 효과 |
+|------|------|----------|----------|
+| **Level 1** | 기본 | Genie Code Agent 모드만 사용 (MCP 없이) | 코딩 생산성 2-3배 향상 |
+| **Level 2** | 연결 | Managed MCP 1-2개 추가 (UC Functions, Genie Space) | Databricks 내부 자산 통합 활용 |
+| **Level 3** | 확장 | External MCP 2-3개 추가 (Slack, GitHub, JIRA) | 외부 도구와 연결된 자동화 워크플로 |
+| **Level 4** | 맞춤 | Custom MCP 개발 (사내 시스템 래핑) | 조직 전용 AI 에이전트 완성 |
+
+> **팁**
+대부분의 팀은 Level 1에서 시작하여 2-3개월에 걸쳐 Level 3까지 도달합니다. Level 4(Custom MCP)는 사내에 MCP로 래핑할 가치가 있는 API가 있을 때만 진행하세요. 무리하게 Custom MCP를 개발하기보다, 기존 External MCP 서버를 최대한 활용하는 것이 비용 대비 효과가 높습니다.
+
+
+---
+
+## MCP 관련 상세 가이드
+
+MCP에 대한 더 깊은 내용은 별도의 MCP 가이드에서 다룹니다:
+
+| 가이드 | 내용 |
+|--------|------|
+| [MCP 개요](../mcp/README) | MCP 프로토콜의 전략적 의미, 아키텍처, 표준화 동향 |
+| [일반 MCP 설정](../mcp/setup-general) | Claude Desktop, Claude Code, Cursor 등에서 MCP 설정 |
+| [Databricks MCP 활용](../mcp/databricks-mcp) | Managed/External/Custom MCP의 아키텍처와 보안 |
+| [인기 서버 & 시나리오](../mcp/popular-servers) | 카테고리별 인기 MCP 서버, 실전 조합 전략 |
+| [베스트 프랙티스](../mcp/best-practices) | Tool 설계, 비용 최적화, 프로덕션 운영 가이드 |

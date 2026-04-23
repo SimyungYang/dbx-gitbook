@@ -203,6 +203,7 @@
                 "group": "Serverless 컴퓨트",
                 "pages": [
                   "training/04-compute-and-workspace/serverless-compute",
+                  "training/04-compute-and-workspace/serverless-compute-operations",
                   "training/04-compute-and-workspace/serverless-compute-overview",
                   "training/04-compute-and-workspace/serverless-compute-cost"
                 ]
@@ -351,6 +352,7 @@
                     "group": "스케줄링",
                     "pages": [
                       "training/05-data-engineering/lakeflow-jobs/scheduling-and-triggers",
+                      "training/05-data-engineering/lakeflow-jobs/scheduling-sla-and-hands-on",
                       "training/05-data-engineering/lakeflow-jobs/scheduling-and-triggers-types",
                       "training/05-data-engineering/lakeflow-jobs/scheduling-and-triggers-operations"
                     ]
@@ -456,6 +458,7 @@
                 "group": "Unity Catalog란?",
                 "pages": [
                   "training/07-unity-catalog/what-is-unity-catalog",
+                  "training/07-unity-catalog/what-is-unity-catalog-hands-on",
                   "training/07-unity-catalog/what-is-unity-catalog-overview",
                   "training/07-unity-catalog/what-is-unity-catalog-multiregion"
                 ]
@@ -686,6 +689,7 @@
                     "group": "Serving 개요",
                     "pages": [
                       "training/09-machine-learning/model-serving/model-serving-overview",
+                      "training/09-machine-learning/model-serving/model-serving-production",
                       "training/09-machine-learning/model-serving/model-serving-overview-endpoints",
                       "training/09-machine-learning/model-serving/model-serving-overview-production"
                     ]
@@ -733,6 +737,7 @@
                 "group": "AI 에이전트란?",
                 "pages": [
                   "training/10-agent-development/what-is-ai-agent",
+                  "training/10-agent-development/what-is-ai-agent-production",
                   "training/10-agent-development/what-is-ai-agent-concepts",
                   "training/10-agent-development/what-is-ai-agent-operations"
                 ]
@@ -756,6 +761,7 @@
                 "group": "에이전트 구축",
                 "pages": [
                   "training/10-agent-development/building-agents",
+                  "training/10-agent-development/building-agents-advanced",
                   "training/10-agent-development/building-agents-fundamentals",
                   "training/10-agent-development/building-agents-patterns"
                 ]
@@ -781,6 +787,7 @@
                     "group": "버전 관리",
                     "pages": [
                       "training/10-agent-development/agent-deployment/versioning-and-monitoring",
+                      "training/10-agent-development/agent-deployment/versioning-inference-and-alerting",
                       "training/10-agent-development/agent-deployment/versioning-and-monitoring-observability",
                       "training/10-agent-development/agent-deployment/versioning-and-monitoring-versioning"
                     ]
@@ -803,6 +810,7 @@
                     "group": "Genie Code 프롬프트 쿡북",
                     "pages": [
                       "blog/guides/genie-code/prompt-cookbook",
+                      "blog/guides/genie-code/prompt-cookbook-advanced",
                       "blog/guides/genie-code/prompt-cookbook-data",
                       "blog/guides/genie-code/prompt-cookbook-ml",
                       "blog/guides/genie-code/prompt-cookbook-ops"
@@ -812,6 +820,7 @@
                     "group": "MCP 연동",
                     "pages": [
                       "blog/guides/genie-code/mcp",
+                      "blog/guides/genie-code/mcp-operations",
                       "blog/guides/genie-code/mcp-architecture",
                       "blog/guides/genie-code/mcp-usage"
                     ]
@@ -820,6 +829,7 @@
                     "group": "설정 & 모범사례",
                     "pages": [
                       "blog/guides/genie-code/settings-best-practices",
+                      "blog/guides/genie-code/settings-mcp-agent",
                       "blog/guides/genie-code/settings-instructions",
                       "blog/guides/genie-code/settings-skills",
                       "blog/guides/genie-code/settings-agent-tips"
@@ -907,6 +917,7 @@
                 "group": "배포 워크플로우",
                 "pages": [
                   "blog/guides/apps/deployment",
+                  "blog/guides/apps/deployment-monitoring",
                   "blog/guides/apps/deployment-dev-deploy",
                   "blog/guides/apps/deployment-operations"
                 ]
@@ -917,6 +928,7 @@
                 "group": "고급 기능",
                 "pages": [
                   "blog/guides/apps/advanced",
+                  "blog/guides/apps/advanced-frameworks",
                   "blog/guides/apps/advanced-scaling",
                   "blog/guides/apps/advanced-lakebase",
                   "blog/guides/apps/advanced-dabs",
@@ -1028,6 +1040,7 @@
                 "group": "Databricks Apps",
                 "pages": [
                   "training/13-appendix/databricks-apps",
+                  "training/13-appendix/databricks-apps-hands-on",
                   "training/13-appendix/databricks-apps-overview",
                   "training/13-appendix/databricks-apps-handson"
                 ]
@@ -1396,6 +1409,7 @@
                     "group": "Anthropic",
                     "pages": [
                       "blog/guides/genai-concepts/agent-landscape/anthropic",
+                      "blog/guides/genai-concepts/agent-landscape/anthropic-ecosystem",
                       "blog/guides/genai-concepts/agent-landscape/anthropic-strategy-mcp",
                       "blog/guides/genai-concepts/agent-landscape/anthropic-products",
                       "blog/guides/genai-concepts/agent-landscape/anthropic-patterns-databricks"
