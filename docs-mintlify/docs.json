@@ -28,8 +28,16 @@
             "group": "Databricks 플랫폼",
             "pages": [
               "training/02-databricks-overview/what-is-databricks",
-              "training/02-databricks-overview/databricks-architecture",
               "training/02-databricks-overview/getting-started-trial",
+              {
+                "group": "아키텍처",
+                "pages": [
+                  "training/02-databricks-overview/databricks-architecture",
+                  "training/02-databricks-overview/databricks-architecture-basics",
+                  "training/02-databricks-overview/databricks-architecture-internals",
+                  "training/02-databricks-overview/databricks-architecture-network"
+                ]
+              },
               {
                 "group": "Workspace & Notebook",
                 "pages": [
