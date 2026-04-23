@@ -62,7 +62,13 @@
                   "training/02-databricks-overview/databricks-architecture-network"
                 ]
               },
-              "training/02-databricks-overview/workspace-ui-tour",
+              {
+                "group": "Workspace UI",
+                "pages": [
+                  "training/02-databricks-overview/workspace-ui-tour",
+                  "training/02-databricks-overview/workspace-ui-tour-tips"
+                ]
+              },
               {
                 "group": "Notebook",
                 "pages": [
@@ -85,7 +91,13 @@
             "group": "레이크하우스 아키텍처",
             "pages": [
               "training/03-lakehouse-architecture/overview",
-              "training/03-lakehouse-architecture/what-is-lakehouse",
+              {
+                "group": "레이크하우스란?",
+                "pages": [
+                  "training/03-lakehouse-architecture/what-is-lakehouse",
+                  "training/03-lakehouse-architecture/what-is-lakehouse-real-world"
+                ]
+              },
               "training/03-lakehouse-architecture/medallion-architecture",
               {
                 "group": "Delta Lake",
