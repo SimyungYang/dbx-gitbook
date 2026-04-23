@@ -1,0 +1,57 @@
+---
+title: "왜 체계적인 평가가 필요한가요?과 MLflow Evaluate 개요"
+---
+
+> 이 문서는 **[머신러닝](/training/09-machine-learning/overview)** 섹션의 일부입니다.
+
+## 왜 체계적인 평가가 필요한가요?
+
+AI 에이전트와 LLM 애플리케이션은 **비결정적**(같은 입력에도 매번 다른 출력)이므로, "잘 동작하는 것 같다"라는 주관적 판단만으로는 품질을 보장할 수 없습니다. MLflow Evaluate는 **자동화된 체계적 평가** 를 제공합니다.
+
+---
+
+## MLflow Evaluate 개요
+
+```python
+import mlflow
+
+results = mlflow.genai.evaluate(
+    data=eval_dataset,              # 평가 데이터셋
+    predict_fn=my_agent.predict,    # 평가 대상 (에이전트/모델)
+    scorers=[...]                   # 평가 기준 (Scorer)
+)
+```
+
+---
+
+## 평가 데이터셋
+
+평가 데이터셋은 **질문(입력)** 과 **기대 답변(선택)** 으로 구성됩니다.
+
+```python
+eval_data = [
+    {
+        "inputs": {"question": "반품 정책이 뭔가요?"},
+        "expectations": {"expected_response": "구매 후 30일 이내 무료 반품 가능합니다."}
+    },
+    {
+        "inputs": {"question": "배송 기간은 얼마나 걸리나요?"},
+        "expectations": {"expected_response": "일반 배송 2~3 영업일, 특급 배송 당일~익일입니다."}
+    },
+    {
+        "inputs": {"question": "회원 등급 기준이 어떻게 되나요?"},
+        "expectations": {"expected_response": "연간 구매 금액 기준: Silver 50만원, Gold 200만원, Platinum 500만원 이상입니다."}
+    }
+]
+```
+
+### 데이터셋 소스
+
+| 소스 | 설명 |
+|------|------|
+| **수동 작성** | 핵심 질문-답변 쌍을 전문가가 직접 작성합니다 |
+| **프로덕션 트레이스** | MLflow Tracing에서 실제 사용자 질문을 추출합니다 |
+| **Review App 피드백** | 팀원들의 평가 결과에서 생성합니다 |
+| **Delta 테이블** | 기존 Q&A 데이터를 테이블에서 로드합니다 |
+
+---

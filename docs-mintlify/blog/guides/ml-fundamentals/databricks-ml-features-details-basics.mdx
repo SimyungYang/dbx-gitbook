@@ -1,0 +1,89 @@
+---
+title: "학습과 레지스트리 — 실험 관리 & 모델 레지스트리"
+---
+
+> 이 문서는 **[ML 핵심 개념](/blog/guides/ml-fundamentals/overview)** 섹션의 일부입니다.
+
+## 4. 실험 관리 & 모델 레지스트리
+
+### MLflow Tracking
+
+**왜 필요한가**: ML 프로젝트에서는 수십~수백 번의 실험을 수행합니다. 어떤 하이퍼파라미터 조합이 최적이었는지, 어떤 전처리를 적용했는지를 체계적으로 기록하지 않으면 재현이 불가능합니다.
+
+Databricks에는 **Managed MLflow** 가 내장되어 있어 별도 서버 구축 없이 바로 사용할 수 있습니다.
+
+| MLflow 구성 요소 | 역할 |
+|------------------|------|
+| **Experiment** | 관련 실험(Run)의 논리적 그룹. 프로젝트나 문제 단위로 생성 |
+| **Run** | 하나의 학습 실행. 파라미터, 메트릭, 아티팩트, 소스 코드를 기록 |
+| **Parameter** | 하이퍼파라미터 (learning_rate, n_estimators 등) |
+| **Metric** | 평가 지표 (accuracy, f1, rmse 등). 스텝별 기록 가능 |
+| **Artifact** | 모델 파일, 그래프, 데이터 샘플 등 모든 바이너리 |
+| **Tag** | 실행에 대한 메타데이터 (팀, 버전, 환경 등) |
+
+```python
+import mlflow
+
+with mlflow.start_run(run_name="xgboost-v2"):
+    mlflow.log_param("max_depth", 6)
+    mlflow.log_param("learning_rate", 0.1)
+
+    model = train_model(...)
+
+    mlflow.log_metric("f1_score", 0.92)
+    mlflow.log_metric("auc", 0.95)
+
+    # 모델 + 피처 정보 함께 저장
+    mlflow.sklearn.log_model(model, "model")
+```
+
+Databricks MLflow는 오픈소스 MLflow와 호환되면서도, **자동 로깅(Autolog)** 기능이 강화되어 있습니다. `mlflow.autolog()`를 호출하면 scikit-learn, XGBoost, PyTorch, TensorFlow 등의 학습을 자동으로 추적합니다.
+
+### Unity Catalog 모델 레지스트리
+
+**왜 등장했는가**: 기존 Workspace 레벨 모델 레지스트리는 워크스페이스 간 모델 공유가 어렵고, 데이터 거버넌스와 분리되어 있었습니다. Unity Catalog 모델 레지스트리는 모델을 **데이터와 동일한 거버넌스 체계** 로 관리합니다.
+
+| 기능 | Workspace 레지스트리 (Legacy) | Unity Catalog 레지스트리 |
+|------|------------------------------|-------------------------|
+| **네임스페이스** | 워크스페이스 내 | `catalog.schema.model_name` (3-level) |
+| **접근 제어** | 워크스페이스 단위 | Unity Catalog 권한 (GRANT/REVOKE) |
+| **크로스 워크스페이스** | 불가 | 동일 메타스토어 내 모든 워크스페이스에서 접근 |
+| **Lineage** | 제한적 | 데이터 테이블 → 피처 → 모델 → 엔드포인트 전체 추적 |
+| **스테이지 관리** | Staging/Production/Archived | Alias (Champion, Challenger 등 자유 지정) |
+
+Unity Catalog 모델 레지스트리의 핵심 개념인 **Alias** 는 기존의 고정된 스테이지(Staging, Production) 대신 유연한 태그 시스템을 제공합니다. 기존 스테이지 방식은 Staging → Production → Archived라는 고정 경로만 허용했으나, Alias는 **임의의 이름** 을 자유롭게 부여할 수 있어 다양한 배포 전략을 지원합니다.
+
+예를 들어, `Champion`(현재 프로덕션 모델)과 `Challenger`(검증 중인 후보 모델) Alias를 지정하여 A/B 테스트를 구성하거나, `region-kr`, `region-us`처럼 지역별 모델을 관리할 수도 있습니다. Model Serving Endpoint가 Alias를 참조하므로, Alias를 다른 버전으로 이동시키면 **엔드포인트가 자동으로 새 모델 버전을 로드** 합니다 -- 제로 다운타임 배포가 가능합니다.
+
+```python
+import mlflow
+
+# Unity Catalog에 모델 등록
+mlflow.set_registry_uri("databricks-uc")
+model_uri = "runs:/abc123/model"
+mlflow.register_model(model_uri, "catalog.schema.fraud_detection")
+
+# Alias 지정
+from mlflow import MlflowClient
+client = MlflowClient()
+client.set_registered_model_alias(
+    name="catalog.schema.fraud_detection",
+    alias="Champion",
+    version=3
+)
+```
+
+### 모델 버전 관리 워크플로
+
+아래 표는 일반적인 모델 라이프사이클에서 각 단계별 Databricks 기능 매핑을 보여줍니다.
+
+| 라이프사이클 단계 | 활동 | Databricks 기능 |
+|------------------|------|----------------|
+| **실험** | 여러 알고리즘/파라미터 시도 | MLflow Experiment + Autolog |
+| **등록** | 최적 모델을 레지스트리에 등록 | `mlflow.register_model()` |
+| **검증** | Challenger 모델과 Champion 비교 | Alias + 평가 노트북 |
+| **승격** | 검증 통과 시 Champion으로 변경 | `client.set_registered_model_alias()` |
+| **배포** | 서빙 엔드포인트에 반영 | Model Serving (Alias 기반 자동 업데이트) |
+| **폐기** | 더 이상 사용하지 않는 버전 정리 | `client.delete_registered_model_alias()` |
+
+---

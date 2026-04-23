@@ -1,0 +1,116 @@
+---
+title: "방향 2: Databricks Serverle과 정리: 방향별 구성 요약"
+---
+
+> **최종 업데이트**: 2026-04-08
+
+## 방향 2: Databricks Serverless → 외부 서비스 VPC (NCC 경유)
+
+### 언제 필요한가?
+
+일반적인 BI 연결(외부 서비스가 Databricks에 쿼리를 보내고 결과를 받는 구조)에서는 **방향 1만으로 충분** 합니다.
+
+방향 2는 다음과 같은 경우에만 필요합니다:
+
+| 사용 사례 | 설명 |
+|----------|------|
+| **외부 DB 연동** | Databricks Serverless에서 외부 VPC의 RDS/Aurora 등에 접근 |
+| **역방향 데이터 푸시** | Databricks에서 외부 VPC의 API/서비스에 데이터 전송 |
+| **온프레미스 연동** | Databricks Serverless에서 VPN/DX로 연결된 온프레미스 리소스에 접근 |
+
+### NCC(Network Connectivity Configuration) 개요
+
+Serverless Compute는 Databricks 관리 VPC에서 실행되므로, 외부 VPC 리소스에 접근하려면 **NCC** 를 통해 프라이빗 터널을 구성해야 합니다.
+
+구조는 다음과 같습니다:
+
+| 구성 | 접속 경로 |
+|------|----------|
+| **NCC 적용** | Databricks Serverless → **NCC VPC Endpoint → AWS PrivateLink** → 외부 VPC의 NLB → 대상 리소스 |
+
+### 구성 절차
+
+#### Step 1: 외부 서비스 VPC 측 준비
+
+1. **NLB(Network Load Balancer) 생성**
+   - 대상 리소스(DB, API 서버 등)를 Target Group에 등록
+   - Listener: 대상 서비스 포트 (예: 3306, 5432, 443 등)
+
+2. **VPC Endpoint Service 생성**
+   - AWS Console → VPC → Endpoint Services → Create
+   - NLB를 연결
+   - **Require acceptance**: 활성화 (수동 승인)
+
+3. **Allow Principals 추가**
+   - Databricks 계정이 Endpoint에 접근할 수 있도록 허용
+   - Principal: Databricks 서비스 계정 ARN
+
+#### Step 2: Databricks NCC 구성
+
+1. Account Console → **Security** → **Networking** → **Network connectivity configurations**
+2. NCC 선택 (또는 신규 생성)
+3. **Private endpoint rules** 탭 → **Add private endpoint rule**
+4. 입력:
+   - **Type**: VPC Resource
+   - **Endpoint Service name**: Step 1에서 생성한 VPC Endpoint Service name
+5. **Add** 클릭
+
+Databricks가 자동으로 VPC Endpoint를 생성합니다.
+
+#### Step 3: 연결 승인
+
+외부 서비스 VPC 측에서:
+
+1. AWS Console → VPC → Endpoint Services → 해당 서비스 선택
+2. **Endpoint connections** 탭에서 Databricks가 생성한 연결을 확인
+3. 상태가 **Pending Acceptance** → **Accept** 클릭
+
+승인 후 수 분 내에 NCC의 상태가 **ESTABLISHED** 로 변경됩니다.
+
+> **참고**
+NCC 구성에 대한 상세 가이드는 [Serverless NCC 가이드](serverless-ncc) 페이지를 참고하세요.
+
+
+---
+
+## 정리: 방향별 구성 요약
+
+| 방향 | 용도 | 필요 여부 | 구성 주체 | 구성 요약 |
+|------|------|----------|----------|----------|
+| **외부 → Databricks** (Frontend PrivateLink) | 외부 서비스가 SQL Warehouse에 JDBC/ODBC로 쿼리 실행 | **필수** (프라이빗 연결 시) | 외부 서비스 VPC + Databricks 관리자 | VPC Endpoint 생성 → Databricks 등록 → DNS 구성 |
+| **Databricks → 외부** (NCC) | Databricks Serverless에서 외부 VPC 리소스 접근 | BI 연결에서는 불필요 | 외부 VPC (NLB+Endpoint Service) + Databricks NCC | NLB 구성 → NCC에서 연결 → 승인 |
+
+> **팁**
+대부분의 BI 도구 연결은 **방향 1(Frontend PrivateLink)만 구성하면 됩니다.** 외부 서비스가 Databricks에 쿼리를 보내고 결과를 받는 일반적인 패턴에서는 Databricks → 외부 방향의 연결이 필요 없습니다.
+
+
+---
+
+## FAQ
+
+| 질문 | 답변 |
+|------|------|
+| **SQL Warehouse가 Serverless여도 Frontend PrivateLink가 동작하나요?** | 네. Serverless SQL Warehouse도 동일한 workspace 엔드포인트를 사용하므로 Frontend PrivateLink 구성이 동일합니다. |
+| **외부 서비스 VPC에서 VPC Endpoint Service를 별도로 만들어야 하나요?** | 아니요. Databricks가 이미 Endpoint Service를 제공합니다. 외부 VPC에서 Interface VPC Endpoint만 생성하면 됩니다. |
+| **여러 외부 서비스가 동일 Databricks workspace에 접속하려면?** | 각 외부 서비스 VPC에 각각 VPC Endpoint를 생성하고, 각각을 Databricks Account Console에 등록하면 됩니다. |
+| **기존 Backend PrivateLink와 충돌하지 않나요?** | 충돌하지 않습니다. Backend PrivateLink(Compute → Control Plane)와 Frontend PrivateLink(외부 → Workspace)는 독립적입니다. |
+| **Cross-account에서도 VPC Endpoint를 만들 수 있나요?** | 네. Databricks Endpoint Service는 cross-account 접근이 가능합니다. 외부 서비스가 다른 AWS 계정에 있어도 VPC Endpoint를 생성할 수 있습니다. |
+
+---
+
+## 참고 자료
+
+### 외부 서비스 연결
+* [Connect to MicroStrategy](https://docs.databricks.com/aws/en/partners/bi/microstrategy)
+* [Connect to Tableau](https://docs.databricks.com/aws/en/partners/bi/tableau)
+* [Connect to Power BI](https://docs.databricks.com/aws/en/partners/bi/power-bi)
+* [JDBC 드라이버 설정](https://docs.databricks.com/aws/en/integrations/jdbc/configure)
+
+### Frontend PrivateLink (외부 → Databricks)
+* [Enable AWS PrivateLink connections](https://docs.databricks.com/aws/en/security/network/classic/privatelink)
+* [Configure private connectivity from your VPC (Frontend)](https://docs.databricks.com/aws/en/security/network/front-end/front-end-private-connect)
+* [리전별 VPC Endpoint Service 목록](https://docs.databricks.com/aws/en/resources/ip-domain-region)
+
+### NCC / Serverless Private Connectivity (Databricks → 외부)
+* [Configure serverless private connectivity (NCC)](https://docs.databricks.com/aws/en/security/network/serverless-network-security/serverless-private-connectivity)
+* [Serverless NCC 가이드 (본 블로그)](serverless-ncc)

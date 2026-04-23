@@ -1,0 +1,144 @@
+---
+title: "AI 가드레일 — Rate Limiting (속도 제한)"
+---
+
+> 이 문서는 **[AI 에이전트](/training/10-agent-development/overview)** 섹션의 일부입니다.
+
+## Rate Limiting (속도 제한)
+
+에이전트의 남용을 방지하기 위해 요청 수를 제한합니다.
+
+```python
+from databricks.sdk.service.serving import AiGatewayRateLimit
+
+w.serving_endpoints.put_ai_gateway(
+    name="customer-support-agent",
+    guardrails=AiGatewayGuardrails(
+        input=AiGatewayGuardrailParameters(safety=True),
+        output=AiGatewayGuardrailParameters(safety=True, pii={"behavior": "BLOCK"})
+    ),
+    rate_limits=[
+        # 사용자별 분당 20회 제한
+        AiGatewayRateLimit(
+            calls=20,
+            renewal_period="minute",
+            key="user"
+        ),
+        # 전체 분당 1000회 제한
+        AiGatewayRateLimit(
+            calls=1000,
+            renewal_period="minute",
+            key="endpoint"
+        )
+    ]
+)
+```
+
+### Rate Limit 설정 옵션
+
+| 설정 | 설명 |
+|------|------|
+| `calls` | 허용되는 최대 요청 수입니다 |
+| `renewal_period` | 제한 기간입니다 (`minute`, `hour`, `day`) |
+| `key` | 제한 단위입니다 (`user`: 사용자별, `endpoint`: 전체) |
+
+---
+
+## 전체 설정 예제
+
+```python
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.serving import (
+    AiGatewayConfig,
+    AiGatewayGuardrails,
+    AiGatewayGuardrailParameters,
+    AiGatewayRateLimit,
+    AiGatewayUsageTrackingConfig
+)
+
+w = WorkspaceClient()
+
+# 종합 가드레일 설정
+w.serving_endpoints.put_ai_gateway(
+    name="customer-support-agent",
+
+    # 가드레일 설정
+    guardrails=AiGatewayGuardrails(
+        # 입력 필터
+        input=AiGatewayGuardrailParameters(
+            safety=True,
+            valid_topics=["customer support", "order inquiry", "product info"],
+            invalid_topics=["politics", "religion", "medical advice"]
+        ),
+        # 출력 필터
+        output=AiGatewayGuardrailParameters(
+            safety=True,
+            pii={"behavior": "BLOCK"},
+            invalid_keywords=["경쟁사A", "경쟁사B"]
+        )
+    ),
+
+    # 속도 제한
+    rate_limits=[
+        AiGatewayRateLimit(calls=30, renewal_period="minute", key="user"),
+        AiGatewayRateLimit(calls=2000, renewal_period="minute", key="endpoint")
+    ],
+
+    # 사용량 추적
+    usage_tracking_config=AiGatewayUsageTrackingConfig(enabled=True)
+)
+```
+
+---
+
+## 가드레일 차단 시 동작
+
+가드레일에 의해 요청이 차단되면, 사용자에게 안전한 기본 응답이 반환됩니다.
+
+| 차단 유형 | 반환 응답 예시 |
+|----------|-------------|
+| **Safety 차단** | "죄송합니다, 해당 요청은 처리할 수 없습니다." |
+| **Topic 차단** | "죄송합니다, 해당 주제에 대해서는 답변을 드리기 어렵습니다." |
+| **PII 차단** | "응답에 민감한 개인정보가 포함되어 전달할 수 없습니다." |
+| **Rate Limit** | HTTP 429 (Too Many Requests) |
+
+---
+
+## 모니터링
+
+가드레일의 활동은 Inference Tables에 자동으로 기록됩니다.
+
+```sql
+-- 가드레일 차단 이벤트 분석
+SELECT
+    DATE(timestamp) AS date,
+    COUNT(*) AS total_requests,
+    COUNT(CASE WHEN guardrail_action = 'BLOCKED' THEN 1 END) AS blocked_count,
+    ROUND(
+        COUNT(CASE WHEN guardrail_action = 'BLOCKED' THEN 1 END) * 100.0 / COUNT(*), 2
+    ) AS block_rate_pct
+FROM catalog.schema.agent_logs_payload
+GROUP BY DATE(timestamp)
+ORDER BY date DESC;
+```
+
+---
+
+## 정리
+
+| 핵심 개념 | 설명 |
+|-----------|------|
+| **AI Gateway** | Model Serving 앞에 위치하여 요청/응답을 필터링하는 프록시입니다 |
+| **Safety Filter** | 유해하고 부적절한 콘텐츠를 자동으로 감지하고 차단합니다 |
+| **Topic Filter** | 허용/금지 주제를 설정하여 에이전트의 응답 범위를 제한합니다 |
+| **PII Filter** | 개인정보를 감지하여 차단(BLOCK) 또는 마스킹(MASK)합니다 |
+| **Rate Limiting** | 사용자별/엔드포인트별 요청 수를 제한하여 남용을 방지합니다 |
+
+---
+
+## 참고 링크
+
+- [Databricks: AI Gateway guardrails](https://docs.databricks.com/aws/en/ai-gateway/guardrails.html)
+- [Databricks: AI Gateway configuration](https://docs.databricks.com/aws/en/ai-gateway/)
+- [Databricks: Rate limiting](https://docs.databricks.com/aws/en/ai-gateway/rate-limits.html)
+- [Azure Databricks: AI Gateway](https://learn.microsoft.com/en-us/azure/databricks/ai-gateway/guardrails)

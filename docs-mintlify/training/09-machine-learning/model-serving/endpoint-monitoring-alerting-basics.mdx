@@ -1,0 +1,166 @@
+---
+title: "Serving UI 메트릭과 알림 설정 (Alerting)"
+---
+
+> 이 문서는 **[머신러닝](/training/09-machine-learning/overview)** 섹션의 일부입니다.
+
+## Serving UI 메트릭
+
+Model Serving 엔드포인트 페이지에서 다음 메트릭을 실시간으로 확인할 수 있습니다.
+
+| 메트릭 | 설명 |
+|--------|------|
+| **QPS (Queries Per Second)** | 초당 처리 요청 수 |
+| **Latency (P50, P99)** | 응답 시간 분포 |
+| **Error Rate** | 실패한 요청 비율 |
+| **GPU Utilization** | GPU 엔드포인트의 리소스 활용도 |
+| **Provisioned Concurrency** | 동시 처리 가능한 요청 수 |
+| **Scale-to-Zero Events** | 0으로 축소/복원된 횟수 |
+| **Token Throughput** | LLM 엔드포인트의 초당 토큰 처리량 |
+
+> 🆕 **Endpoint Telemetry (Beta)**: OpenTelemetry 기반의 관찰 가능성 기능이 추가되었습니다. OTLP(OpenTelemetry Protocol)로 외부 모니터링 시스템(Datadog, Grafana 등)과 연동할 수 있습니다.
+
+---
+
+## 알림 설정 (Alerting)
+
+모니터링 메트릭에 기반한 알림을 설정하여, 문제가 발생하면 즉시 대응할 수 있습니다.
+
+### Databricks SQL Alert 활용
+
+```sql
+-- 에러율이 5%를 초과하면 알림 트리거
+-- (이 쿼리를 Databricks SQL Alert로 등록합니다)
+SELECT
+    endpoint_name,
+    COUNT(*) AS total_requests,
+    SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) AS errors,
+    ROUND(
+        SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2
+    ) AS error_rate_pct
+FROM system.serving.served_model_requests
+WHERE request_time >= CURRENT_TIMESTAMP() - INTERVAL 1 HOUR
+GROUP BY endpoint_name
+HAVING error_rate_pct > 5.0;
+```
+
+### 알림 채널 설정
+
+| 채널 | 설정 방법 | 적합한 용도 |
+|------|----------|-----------|
+| **Email** | SQL Alert에서 직접 지정 | 일일 리포트, 비긴급 알림 |
+| **Slack** | Webhook URL 연동 | 팀 채널 실시간 알림 |
+| **PagerDuty** | Webhook URL 연동 | 긴급 장애 대응 (On-call 연동) |
+| **Microsoft Teams** | Webhook URL 연동 | 팀 채널 실시간 알림 |
+
+```python
+# Slack Webhook을 통한 알림 예시 (Lakeflow Jobs의 Task로 실행)
+import requests
+import json
+
+slack_webhook_url = "https://hooks.slack.com/services/T.../B.../..."
+
+def send_alert(endpoint_name, error_rate, p99_latency):
+    payload = {
+        "text": f":rotating_light: *서빙 엔드포인트 알림*\n"
+                f"- 엔드포인트: `{endpoint_name}`\n"
+                f"- 에러율: {error_rate}%\n"
+                f"- P99 지연시간: {p99_latency}ms"
+    }
+    requests.post(slack_webhook_url, json=payload)
+```
+
+---
+
+## 대시보드 구축 (System 테이블 기반)
+
+### 종합 모니터링 대시보드 쿼리
+
+아래 쿼리들을 Databricks SQL 대시보드에 위젯으로 추가하면, 종합 모니터링 대시보드를 구축할 수 있습니다.
+
+```sql
+-- 1. 일별 요청량 및 Percentile 지연 시간 (시계열 차트)
+SELECT
+    DATE(timestamp_ms / 1000) AS day,
+    COUNT(*) AS total_requests,
+    ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY execution_time_ms), 1) AS p50_ms,
+    ROUND(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY execution_time_ms), 1) AS p95_ms,
+    ROUND(PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY execution_time_ms), 1) AS p99_ms,
+    SUM(CASE WHEN status_code != 200 THEN 1 ELSE 0 END) AS error_count,
+    ROUND(SUM(CASE WHEN status_code != 200 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS error_rate_pct
+FROM ml_prod.monitoring.fraud_model_payload
+WHERE date >= CURRENT_DATE() - INTERVAL 30 DAYS
+GROUP BY DATE(timestamp_ms / 1000)
+ORDER BY day DESC;
+
+-- 2. LLM 엔드포인트: 토큰 사용량 추적 (시계열 차트)
+SELECT
+    DATE(timestamp_ms / 1000) AS day,
+    SUM(request:usage.prompt_tokens) AS total_input_tokens,
+    SUM(request:usage.completion_tokens) AS total_output_tokens,
+    SUM(request:usage.total_tokens) AS total_tokens,
+    ROUND(AVG(execution_time_ms), 0) AS avg_latency
+FROM ml_prod.monitoring.agent_payload
+WHERE date >= CURRENT_DATE() - INTERVAL 30 DAYS
+GROUP BY DATE(timestamp_ms / 1000)
+ORDER BY day DESC;
+
+-- 3. 에러 분석 (테이블 위젯)
+SELECT
+    status_code,
+    COUNT(*) AS count,
+    FIRST(response) AS sample_error
+FROM ml_prod.monitoring.fraud_model_payload
+WHERE status_code != 200
+    AND date = CURRENT_DATE()
+GROUP BY status_code;
+
+-- 4. 시간대별 트래픽 패턴 (히트맵)
+SELECT
+    DAYOFWEEK(timestamp_ms / 1000) AS day_of_week,
+    HOUR(timestamp_ms / 1000) AS hour_of_day,
+    COUNT(*) AS request_count
+FROM ml_prod.monitoring.fraud_model_payload
+WHERE date >= CURRENT_DATE() - INTERVAL 7 DAYS
+GROUP BY day_of_week, hour_of_day;
+```
+
+### 멀티 엔드포인트 비교 대시보드
+
+여러 엔드포인트를 동시에 비교하는 운영 대시보드용 쿼리입니다.
+
+```sql
+-- 5. 엔드포인트별 SLA 준수율 비교 (가로 막대 차트)
+-- SLA 기준: P99 < 1000ms, 에러율 < 1%
+SELECT
+    endpoint_name,
+    DATE(request_time) AS day,
+    COUNT(*) AS total_requests,
+    ROUND(PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY execution_time_ms), 0) AS p99_ms,
+    ROUND(SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS error_rate_pct,
+    -- SLA 준수 여부
+    CASE
+        WHEN PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY execution_time_ms) <= 1000
+             AND SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) * 100.0 / COUNT(*) <= 1.0
+        THEN 'SLA 준수'
+        ELSE 'SLA 위반'
+    END AS sla_status
+FROM system.serving.served_model_requests
+WHERE DATE(request_time) >= CURRENT_DATE() - INTERVAL 7 DAYS
+GROUP BY endpoint_name, DATE(request_time)
+ORDER BY day DESC, endpoint_name;
+
+-- 6. 비용 추이 (일별, 엔드포인트별)
+SELECT
+    usage_date,
+    usage_metadata.endpoint_name,
+    SUM(usage_quantity) AS total_dbus,
+    ROUND(SUM(usage_quantity * list_price), 2) AS daily_cost_usd
+FROM system.billing.usage
+WHERE sku_name LIKE '%SERVING%'
+    AND usage_date >= CURRENT_DATE() - INTERVAL 30 DAYS
+GROUP BY usage_date, usage_metadata.endpoint_name
+ORDER BY usage_date DESC;
+```
+
+---

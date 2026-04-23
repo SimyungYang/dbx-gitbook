@@ -1,0 +1,106 @@
+---
+title: "숨겨진 비용 (Hidden Costs)과 비용 최적화 핵심 전략"
+---
+
+## 4. 숨겨진 비용 (Hidden Costs)
+
+많은 조직이 예상치 못하게 만나는 숨겨진 비용 항목들입니다.
+
+### Unity Catalog 서버리스 컴퓨트
+
+Unity Catalog의 일부 기능(Data Lineage, Automated Data Quality 등)은 내부적으로 서버리스 컴퓨트를 사용합니다. 이 비용은 `system.billing.usage` 테이블에서 `sku_name`이 `ENTERPRISE_ALL_PURPOSE_COMPUTE_SERVERLESS`로 기록됩니다.
+
+### Photon 추가 DBU
+
+Photon 엔진을 활성화하면 동일 인스턴스에서 더 많은 DBU가 소모됩니다. Photon은 벡터화 실행 엔진으로 쿼리 속도를 높이지만, **DBU 소모량도 함께 증가** 합니다. 따라서 Photon의 이점(처리 속도 향상 → 실행 시간 단축)이 DBU 단가 증가를 상쇄하는지 워크로드별로 검증해야 합니다.
+
+### 실패한 Job 재시도 비용
+
+Job이 실패하더라도 클러스터가 기동되고 일부 코드가 실행된 시간만큼 DBU가 과금됩니다. `max_retries`가 높게 설정된 경우 실패한 Job이 반복 재시도되면서 비용이 누적됩니다.
+
+```json
+// Job 설정 예시 - 재시도 횟수 제한
+{
+  "max_retries": 1,
+  "min_retry_interval_millis": 60000
+}
+```
+
+### DBFS 루트 스토리지
+
+DBFS(Databricks File System) 루트 스토리지는 워크스페이스가 프로비저닝될 때 자동으로 생성되는 S3 버킷입니다. 여기에 저장된 데이터(오래된 체크포인트, 임시 파일, 실험 결과 등)는 명시적으로 삭제하지 않으면 계속 스토리지 비용이 발생합니다. Unity Catalog 도입 후에는 DBFS 루트 사용을 최소화하고 External Location으로 마이그레이션하는 것을 권장합니다.
+
+### Delta Live Tables (DLT) 오버헤드
+
+DLT 파이프라인은 내부적으로 추가 오케스트레이션 컴퓨트를 사용합니다. 소규모 파이프라인에서는 오케스트레이션 오버헤드 비율이 높아질 수 있으므로, DLT가 적합한 워크로드인지 사전에 검토가 필요합니다.
+
+---
+
+## 5. 비용 최적화 핵심 전략
+
+### Jobs Compute vs All-Purpose Compute
+
+가장 즉각적인 비용 절감 효과를 낼 수 있는 전략입니다.
+
+| 항목 | All-Purpose | Jobs Compute |
+|------|------------|-------------|
+| 주요 용도 | 인터랙티브 개발, 노트북 | 스케줄된 파이프라인 |
+| DBU 단가 비율 | 1.0 (기준) | ~0.4~0.5 |
+| 클러스터 재사용 | 가능 | 작업당 새 클러스터 |
+| Multi-task 지원 | 제한적 | 완전 지원 |
+| **권장 사용처** | 개발/디버깅 전용 | 프로덕션 전용 |
+
+### Spot Instance (스팟 인스턴스) 활용
+
+AWS Spot Instance를 Worker 노드에 적용하면 On-Demand 대비 **60~90% EC2 비용 절감** 이 가능합니다.
+
+```python
+# 클러스터 설정에서 Spot Instance 활성화
+{
+  "aws_attributes": {
+    "availability": "SPOT_WITH_FALLBACK",  # Spot 불가 시 On-Demand로 자동 전환
+    "spot_bid_price_percent": 100           # On-Demand 가격의 100%까지 입찰
+  }
+}
+```
+
+> ⚠️ **주의**: Driver 노드는 On-Demand로 유지하세요. Spot 중단 시 전체 작업이 실패합니다.
+
+### Auto-termination 설정
+
+All-Purpose 클러스터는 반드시 Auto-termination을 설정해야 합니다.
+
+```python
+# 권장: 10~30분 유휴 시 자동 종료
+{
+  "autotermination_minutes": 20
+}
+```
+
+| 클러스터 유형 | 권장 Auto-termination |
+|-------------|----------------------|
+| 개인 개발 클러스터 | 10~20분 |
+| 공유 개발 클러스터 | 30~60분 |
+| 프로덕션 Jobs | 해당 없음 (작업 완료 후 자동 종료) |
+
+### Serverless 활용 전략
+
+서버리스 컴퓨트는 유휴 비용이 없으므로, **간헐적 워크로드** 에 특히 효과적입니다.
+
+- **SQL Warehouse Serverless**: BI 대시보드, 임시 쿼리 — 비사용 시 자동 중지
+- **Jobs Serverless**: 일별/주별 배치 — 클러스터 시작 시간(~2분) 절약
+- **All-Purpose Serverless**: 개발자 노트북 — 유휴 시간 비용 제거
+
+### Photon 활용 판단 기준
+
+Photon은 모든 워크로드에 적합하지 않습니다.
+
+| 워크로드 유형 | Photon 권장 여부 | 이유 |
+|-------------|----------------|------|
+| 대용량 집계/조인 쿼리 | 강력 권장 | 벡터화 실행으로 10x 속도 향상 가능 |
+| SQL 분석 워크로드 | 권장 | SQL Warehouse에 기본 포함 |
+| Python UDF 중심 워크로드 | 비권장 | Photon은 Python UDF 미지원 |
+| 소규모 데이터셋 | 비권장 | 오버헤드 대비 이점 미미 |
+| ML 학습(GPU) | 비권장 | GPU 워크로드와 무관 |
+
+---

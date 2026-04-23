@@ -1,0 +1,248 @@
+---
+title: "모델 서빙에서 Online Table 활용과 실습: Online Tabl"
+---
+
+> 이 문서는 **[머신러닝](/training/09-machine-learning/overview)** 섹션의 일부입니다.
+
+## 모델 서빙에서 Online Table 활용
+
+### FeatureFunction으로 자동 피처 조회
+
+Online Table의 가장 큰 장점은 Model Serving 엔드포인트에서 **피처를 자동으로 조회** 하는 것입니다. 클라이언트는 Primary Key만 전송하면 됩니다.
+
+```python
+from databricks.feature_engineering import FeatureEngineeringClient, FeatureLookup
+
+fe = FeatureEngineeringClient()
+
+# 피처 조회 정의
+feature_lookups = [
+    FeatureLookup(
+        table_name="ml_prod.features.customer_features",
+        lookup_key=["customer_id"],
+        feature_names=["avg_transaction_amount", "transaction_count_30d", "account_age_days"]
+    ),
+    FeatureLookup(
+        table_name="ml_prod.features.merchant_features",
+        lookup_key=["merchant_id"],
+        feature_names=["avg_fraud_rate", "category"]
+    ),
+]
+
+# 피처 조회가 포함된 학습 데이터셋 생성
+training_set = fe.create_training_set(
+    df=raw_transactions_df,
+    feature_lookups=feature_lookups,
+    label="is_fraud",
+)
+
+# 모델 학습 후 로깅 (피처 조회 메타데이터가 함께 저장됩니다)
+fe.log_model(
+    model=trained_model,
+    artifact_path="fraud_model",
+    flavor=mlflow.sklearn,
+    training_set=training_set,
+    registered_model_name="ml_prod.models.fraud_detector",
+)
+```
+
+> 💡 **핵심 포인트**: `fe.log_model()`로 로깅된 모델은 어떤 Feature Table에서 어떤 피처를 조회해야 하는지 **메타데이터에 자동 기록** 됩니다. 이 모델을 서빙 엔드포인트에 배포하면, Online Table에서 피처를 자동으로 조회합니다.
+
+### 엔드포인트에서의 실시간 조회
+
+```python
+# 클라이언트 코드: Primary Key만 전송하면 됩니다
+import requests
+
+response = requests.post(
+    f"https://{workspace_url}/serving-endpoints/fraud-detector/invocations",
+    json={
+        "dataframe_records": [
+            {
+                "customer_id": 12345,
+                "merchant_id": "M-9876",
+                "transaction_amount": 450.00,
+                # ↑ 이 값들만 전송하면 됩니다
+                # avg_transaction_amount, transaction_count_30d 등은
+                # Online Table에서 자동으로 조회됩니다
+            }
+        ]
+    },
+    headers={"Authorization": f"Bearer {token}"}
+)
+
+print(response.json())
+# {"predictions": [{"is_fraud": 0.87}]}
+```
+
+| 단계 | 발신 | 수신 | 내용 |
+|------|------|------|------|
+| 1 | 클라이언트 | 서빙 엔드포인트 | customer_id, merchant_id, amount 전송 |
+| 2 | 서빙 엔드포인트 | Online Table (고객 피처) | customer_id로 조회 |
+| 3 | Online Table (고객 피처) | 서빙 엔드포인트 | avg_amount, count_30d, age 반환 |
+| 4 | 서빙 엔드포인트 | Online Table (가맹점 피처) | merchant_id로 조회 |
+| 5 | Online Table (가맹점 피처) | 서빙 엔드포인트 | fraud_rate, category 반환 |
+| 6 | 서빙 엔드포인트 | ML 모델 | 전체 피처 조합 전달 |
+| 7 | ML 모델 | 서빙 엔드포인트 | prediction: 0.87 |
+| 8 | 서빙 엔드포인트 | 클라이언트 | `{"is_fraud": 0.87}` |
+
+---
+
+## 실습: Online Table 생성부터 모델 서빙까지
+
+### Step 1: Feature Table 준비
+
+```sql
+-- Feature Table 생성
+CREATE TABLE IF NOT EXISTS ml_prod.features.customer_features (
+    customer_id BIGINT,
+    avg_transaction_amount DOUBLE,
+    transaction_count_30d INT,
+    account_age_days INT,
+    preferred_category STRING,
+    update_timestamp TIMESTAMP
+)
+TBLPROPERTIES (
+    'delta.enableChangeDataFeed' = 'true'  -- CDF 활성화
+);
+
+-- 피처 데이터 적재
+INSERT INTO ml_prod.features.customer_features
+SELECT
+    customer_id,
+    AVG(amount) AS avg_transaction_amount,
+    COUNT(*) AS transaction_count_30d,
+    DATEDIFF(CURRENT_DATE(), MIN(signup_date)) AS account_age_days,
+    MODE(category) AS preferred_category,
+    CURRENT_TIMESTAMP() AS update_timestamp
+FROM ml_prod.gold.transactions
+WHERE transaction_date >= CURRENT_DATE() - INTERVAL 30 DAYS
+GROUP BY customer_id;
+```
+
+### Step 2: Online Table 생성
+
+```sql
+CREATE ONLINE TABLE ml_prod.features.customer_features_online
+FROM ml_prod.features.customer_features;
+```
+
+### Step 3: 모델 학습 및 로깅 (피처 조회 포함)
+
+```python
+from databricks.feature_engineering import FeatureEngineeringClient, FeatureLookup
+import mlflow.sklearn
+from sklearn.ensemble import GradientBoostingClassifier
+
+fe = FeatureEngineeringClient()
+
+feature_lookups = [
+    FeatureLookup(
+        table_name="ml_prod.features.customer_features",
+        lookup_key=["customer_id"],
+    ),
+]
+
+training_set = fe.create_training_set(
+    df=labeled_transactions_df,   # customer_id + is_fraud 레이블
+    feature_lookups=feature_lookups,
+    label="is_fraud",
+)
+
+training_df = training_set.load_df().toPandas()
+X = training_df.drop(columns=["is_fraud", "customer_id"])
+y = training_df["is_fraud"]
+
+model = GradientBoostingClassifier(n_estimators=100)
+model.fit(X, y)
+
+fe.log_model(
+    model=model,
+    artifact_path="fraud_model",
+    flavor=mlflow.sklearn,
+    training_set=training_set,
+    registered_model_name="ml_prod.models.fraud_detector",
+)
+```
+
+### Step 4: 서빙 엔드포인트 배포
+
+엔드포인트를 생성하면, 모델 메타데이터에 기록된 Feature Table에 대응하는 Online Table에서 피처를 자동 조회합니다.
+
+---
+
+## 성능 최적화
+
+### Primary Key 설계
+
+| 원칙 | 설명 |
+|------|------|
+| **복합 키 최소화** | PK 컬럼 수가 적을수록 조회 성능이 좋습니다 |
+| **정수형 키 선호** | 문자열보다 정수형 키가 조회가 빠릅니다 |
+| **핫 키 분산** | 특정 키에 트래픽이 집중되지 않도록 설계합니다 |
+
+### 테이블 크기 관리
+
+```sql
+-- 필요한 피처만 포함하여 Online Table 크기를 최소화합니다
+CREATE ONLINE TABLE ml_prod.features.customer_features_slim_online
+FROM (
+    SELECT customer_id, avg_transaction_amount, transaction_count_30d
+    FROM ml_prod.features.customer_features
+);
+```
+
+### 캐싱 전략
+
+- Model Serving 엔드포인트는 자주 조회되는 키에 대해 **자동 캐싱** 을 수행합니다
+- CONTINUOUS 모드에서는 캐시가 변경 사항에 따라 자동 무효화됩니다
+- 캐시 적중률이 높을수록 P50 지연시간이 개선됩니다
+
+---
+
+## 모범 사례 및 제한사항
+
+### 모범 사례
+
+| 항목 | 권장 사항 |
+|------|---------|
+| **동기화 모드 선택** | 피처 갱신 빈도에 맞는 모드를 선택합니다. 대부분 TRIGGERED로 충분합니다 |
+| **피처 수 최적화** | 서빙에 필요한 피처만 Online Table에 포함합니다 |
+| **모니터링** | 동기화 상태와 조회 지연시간을 정기적으로 확인합니다 |
+| **CDF 활성화** | TRIGGERED/CONTINUOUS 모드를 위해 반드시 CDF를 활성화합니다 |
+| **테스트** | 배포 전 Online Table의 데이터 정합성을 검증합니다 |
+
+### 제한사항
+
+| 제한 사항 | 내용 |
+|----------|------|
+| **테이블 크기** | 최대 수백 GB (정확한 한도는 CU 크기에 따라 다름) |
+| **컬럼 수** | 최대 200개 컬럼 |
+| **Primary Key** | 복합 키 포함 최대 10개 컬럼 |
+| **지원 데이터 타입** | 기본 타입 지원, 복잡한 중첩 구조는 제한적 |
+| **Unity Catalog 필수** | Online Table은 Unity Catalog에 등록된 테이블에서만 생성 가능합니다 |
+| **리전 제한** | 일부 클라우드 리전에서는 사용 불가능할 수 있습니다 |
+
+> ⚠️ **비용 고려**: Online Table은 프로비저닝된 용량(CU) 단위로 과금됩니다. 테이블 크기와 조회 트래픽에 맞는 적절한 CU를 선택하시기 바랍니다.
+
+---
+
+## 정리
+
+| 핵심 개념 | 설명 |
+|-----------|------|
+| **Online Table** | 실시간 단건 조회에 최적화된 피처 저장소입니다 |
+| **자동 동기화** | Delta Feature Table의 변경이 CDF를 통해 자동 반영됩니다 |
+| **밀리초 응답** | 1~5ms 수준의 초저지연 피처 조회를 지원합니다 |
+| **자동 피처 조회** | 클라이언트는 PK만 전송하면, 피처는 엔드포인트가 자동으로 조회합니다 |
+| **학습-서빙 일관성** | 오프라인/온라인 동일 피처를 사용하여 Skew를 방지합니다 |
+
+---
+
+## 참고 링크
+
+- [Databricks: Online tables](https://docs.databricks.com/aws/en/machine-learning/feature-store/online-tables.html)
+- [Databricks: Feature Serving](https://docs.databricks.com/aws/en/machine-learning/feature-store/feature-function-serving.html)
+- [Databricks: Feature Engineering client](https://docs.databricks.com/aws/en/machine-learning/feature-store/feature-engineering-client.html)
+- [Databricks: Online tables pricing](https://www.databricks.com/product/pricing)
+- [Databricks Blog: Real-time ML with Feature Store](https://www.databricks.com/blog/feature-engineering-unity-catalog)

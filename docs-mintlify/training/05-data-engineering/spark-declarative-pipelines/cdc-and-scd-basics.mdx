@@ -1,0 +1,145 @@
+---
+title: "CDC 처리 — APPLY CHANGES — 왜 CDC가 필요한가?"
+---
+
+> 이 문서는 **[데이터 엔지니어링](/training/05-data-engineering/overview)** 섹션의 일부입니다.
+
+## 왜 CDC가 필요한가?
+
+운영 데이터베이스(OLTP)에서는 데이터가 끊임없이 INSERT, UPDATE, DELETE됩니다. 이러한 변경사항을 분석 시스템(데이터 레이크하우스)에 반영해야 하는데, 매번 전체 테이블을 복사하는 것은 비용이 높은입니다.
+
+> 💡 **CDC(Change Data Capture)** 는 소스 데이터베이스에서 발생하는 변경사항만 감지하여 타겟 시스템에 반영하는 기술입니다. 전체 데이터를 매번 복사하는 대신, **변경된 부분만** 캡처하므로 네트워크 대역폭, 처리 시간, 비용을 크게 절감할 수 있습니다.
+
+### 전체 복사 vs CDC 비교
+
+| 비교 항목 | 전체 복사 (Full Load) | CDC (변경분만) |
+|----------|---------------------|---------------|
+| **데이터 전송량** | 전체 테이블 크기 | 변경분만 (전체의 1~5% 수준) |
+| **처리 시간** | 테이블 크기에 비례 | 변경량에 비례 |
+| **소스 부하** | 높음 (전체 스캔) | 낮음 (로그 기반) |
+| **실시간성** | 낮음 (배치 주기에 의존) | 높음 (실시간/준실시간 가능) |
+| **이력 추적** | 불가능 (최신 스냅샷만) | 가능 (변경 이력 보존) |
+
+---
+
+## CDC 데이터 흐름
+
+| 단계 | 구성 요소 | 설명 |
+|------|-----------|------|
+| 1 | 운영 DB (MySQL, PostgreSQL 등) | 변경 로그(Binlog, WAL)를 생성합니다 |
+| 2 | CDC 도구 (Debezium, Lakeflow Connect) | CDC 이벤트(JSON/Avro)를 전달합니다 |
+| 3 | Bronze (원본 CDC 레코드) | 원본 CDC 레코드를 저장합니다 |
+| 4 | Silver (최신 상태 또는 이력) | `APPLY CHANGES INTO`로 최신 상태 또는 이력을 관리합니다 |
+| 5 | Gold (비즈니스 뷰) | 비즈니스 요구에 맞는 뷰를 생성합니다 |
+
+---
+
+## SCD(Slowly Changing Dimension) 유형
+
+CDC로 캡처한 변경사항을 타겟 테이블에 **어떻게 반영** 할지 결정하는 전략을 SCD라고 합니다.
+
+> 💡 **SCD(Slowly Changing Dimension)** 는 데이터 웨어하우스에서 "서서히 변하는 데이터"(예: 고객 주소, 직원 부서)를 어떻게 관리할지 정의하는 설계 패턴입니다. Ralph Kimball이 제시한 개념으로, Type 0부터 Type 4까지 다양한 유형이 있습니다.
+
+### SCD 유형 비교
+
+| 유형 | 전략 | 이력 보존 | 설명 | 예시 |
+|------|------|----------|------|------|
+| **Type 0** | 변경 금지 | 해당 없음 | 최초 값을 유지하며, 절대 변경하지 않습니다 | 고객 최초 가입일 |
+| **Type 1** | 최신값 덮어쓰기 | ❌ | 기존 값을 새 값으로 교체합니다. 이전 값은 사라집니다 | 고객 현재 주소 |
+| **Type 2** | 이력 추적 | ✅ | 변경 시 새 행을 추가하고, 기존 행을 만료 처리합니다 | 고객 주소 변경 이력 |
+| **Type 3** | 이전/현재 컬럼 | 부분적 | 이전 값과 현재 값을 별도 컬럼에 저장합니다 | 이전 부서 + 현재 부서 |
+| **Type 4** | 별도 이력 테이블 | ✅ | 현재 테이블과 이력 테이블을 분리합니다 | 현재 테이블 + 이력 테이블 |
+
+> 💡 SDP에서는 가장 많이 사용되는 **Type 1** 과 **Type 2** 를 `APPLY CHANGES INTO` 구문으로 직접 지원합니다.
+
+---
+
+## APPLY CHANGES INTO 구문 상세
+
+### 기본 구조
+
+```sql
+APPLY CHANGES INTO target_table
+FROM source
+KEYS (key_columns)           -- 레코드를 식별하는 기본 키
+SEQUENCE BY sequence_column  -- 변경 순서를 결정하는 컬럼
+[COLUMNS ...]                -- 포함/제외할 컬럼
+[WHERE ...]                  -- 필터 조건
+[APPLY AS DELETE WHEN ...]   -- 삭제 조건
+[APPLY AS TRUNCATE WHEN ...] -- 전체 삭제 조건
+STORED AS SCD TYPE {1|2}     -- SCD 유형
+[TRACK HISTORY ON ...]       -- (Type 2) 이력 추적 대상 컬럼
+```
+
+### 주요 절(Clause) 설명
+
+| 절 | 필수 여부 | 설명 |
+|----|----------|------|
+| `KEYS` | ✅ 필수 | 소스와 타겟에서 레코드를 매칭하는 키 컬럼입니다. 복합 키 가능합니다 |
+| `SEQUENCE BY` | ✅ 필수 | 동일 키에 대한 여러 변경 이벤트의 순서를 결정합니다. 타임스탬프 또는 시퀀스 번호를 사용합니다 |
+| `COLUMNS` | 선택 | `COLUMNS *`(전체), `COLUMNS * EXCEPT (...)`, `COLUMNS (a, b, c)` 형태로 지정합니다 |
+| `WHERE` | 선택 | 소스 데이터에서 특정 조건의 레코드만 처리합니다 |
+| `APPLY AS DELETE WHEN` | 선택 | 조건이 참인 레코드를 삭제로 처리합니다 |
+| `APPLY AS TRUNCATE WHEN` | 선택 | 조건이 참이면 타겟 테이블 전체를 삭제합니다 |
+| `STORED AS SCD TYPE` | ✅ 필수 | `1` (최신값 덮어쓰기) 또는 `2` (이력 추적)를 지정합니다 |
+| `TRACK HISTORY ON` | 선택 | (Type 2 전용) 특정 컬럼이 변경될 때만 새 이력 행을 생성합니다 |
+
+---
+
+## SCD Type 1 구현: 최신값 덮어쓰기
+
+SCD Type 1은 변경이 발생하면 기존 값을 **최신 값으로 교체** 합니다. 이력을 보존하지 않으며, 항상 **현재 상태** 만 유지합니다.
+
+### SQL 예제
+
+```sql
+-- 1단계: 타겟 Streaming Table 생성
+CREATE OR REFRESH STREAMING TABLE silver_customers;
+
+-- 2단계: CDC 적용 (SCD Type 1)
+APPLY CHANGES INTO silver_customers
+FROM STREAM(bronze_customer_cdc)
+KEYS (customer_id)
+SEQUENCE BY updated_at
+COLUMNS * EXCEPT (_rescued_data, _metadata)
+STORED AS SCD TYPE 1;
+```
+
+### Python 예제
+
+```python
+import dlt
+
+dlt.create_streaming_table("silver_customers")
+
+@dlt.apply_changes(
+    target="silver_customers",
+    source="bronze_customer_cdc",
+    keys=["customer_id"],
+    sequence_by=col("updated_at"),
+    except_column_list=["_rescued_data", "_metadata"],
+    stored_as_scd_type=1
+)
+def apply_customer_changes():
+    pass
+```
+
+### 동작 예시
+
+소스 CDC 레코드:
+
+| customer_id | name | city | updated_at | operation |
+|-------------|------|------|-----------|-----------|
+| 101 | 김철수 | 서울 | 2024-01-01 | INSERT |
+| 101 | 김철수 | 부산 | 2024-03-15 | UPDATE |
+| 101 | 김철수 | 대구 | 2024-06-20 | UPDATE |
+
+SCD Type 1 결과 (silver_customers):
+
+| customer_id | name | city | updated_at |
+|-------------|------|------|-----------|
+| 101 | 김철수 | **대구** | 2024-06-20 |
+
+> 항상 최신 상태만 유지됩니다. "김철수가 서울에 살았다"는 이력은 사라집니다.
+
+---

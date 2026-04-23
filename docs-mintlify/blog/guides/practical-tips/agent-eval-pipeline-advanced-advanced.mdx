@@ -1,0 +1,193 @@
+---
+title: "커스텀 스코어러 작성과 Lakeflow Job으로 자동화"
+---
+
+## 6. 커스텀 스코어러 작성
+
+내장 스코어러로 부족할 때 직접 만들 수 있습니다.
+
+#### `@scorer` 데코레이터 동작 원리
+
+`@scorer` 데코레이터를 붙인 함수는 MLflow 평가 프레임워크가 자동으로 호출합니다. 함수의 파라미터 이름에 따라 자동으로 값이 주입됩니다:
+- `inputs`: 평가 데이터셋의 입력 값 (`eval_dataset[i]["inputs"]`)
+- `outputs`: `predict_fn`이 반환한 에이전트 응답 문자열
+- `expectations`: 평가 데이터셋의 기대 값 (`eval_dataset[i]["expectations"]`)
+
+반환값은 `{"score": 숫자, "justification": "이유 문자열"}` 형식의 dict입니다.
+
+```python
+from mlflow.genai.scorers import scorer
+
+@scorer
+def response_length_check(inputs, outputs):
+    """답변 길이가 50자 이상인지 확인"""
+    text = outputs or ""
+    is_long_enough = len(text) >= 50
+    return {
+        "score": 1 if is_long_enough else 0,        # 1=통과, 0=실패
+        "justification": f"응답 길이: {len(text)}자",  # 채점 근거
+    }
+
+@scorer
+def contains_sql_check(inputs, outputs):
+    """SQL 키워드가 포함되어 있는지 확인"""
+    sql_keywords = ["SELECT", "CREATE", "INSERT", "UPDATE", "DELETE", "GRANT"]
+    text = (outputs or "").upper()
+    found = any(kw in text for kw in sql_keywords)
+    return {
+        "score": 1 if found else 0,
+        "justification": f"SQL 키워드 포함: {found}",
+    }
+
+results = mlflow.genai.evaluate(
+    data=eval_dataset,
+    predict_fn=predict_fn,
+    scorers=[
+        mlflow.genai.scorers.Correctness(),  # 내장 스코어러
+        response_length_check,                # 커스텀 스코어러 1
+        contains_sql_check,                   # 커스텀 스코어러 2
+    ],
+)
+```
+
+---
+
+## 7. Lakeflow Job으로 자동화
+
+평가를 주기적으로 실행하려면 노트북을 만들어 Lakeflow Job에 등록합니다. 이렇게 하면 모델 변경이나 데이터 업데이트 후에도 품질을 지속적으로 모니터링할 수 있습니다.
+
+### 평가 노트북 (eval_notebook.py)
+
+아래 노트북은 평가 데이터셋 로드 -> 에이전트 호출 -> 평가 실행 -> 결과를 Delta 테이블에 기록하는 전 과정을 자동화합니다.
+
+```python
+# Databricks notebook source
+import mlflow
+from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+
+# 1) 데이터셋 로드
+df = spark.table("my_catalog.eval.ka_eval_dataset").toPandas()
+eval_dataset = [
+    {
+        "inputs": {"query": row["question"]},
+        "expectations": {"expected_response": row["expected_answer"]},
+    }
+    for _, row in df.iterrows()
+]
+
+# 2) predict 함수
+def predict_fn(inputs: dict) -> str:
+    response = w.serving_endpoints.query(
+        name="my-ka-endpoint",
+        messages=[{"role": "user", "content": inputs["query"]}],
+    )
+    return response.choices[0].message.content
+
+# 3) 평가 실행
+with mlflow.start_run(run_name="scheduled-ka-eval"):
+    results = mlflow.genai.evaluate(
+        data=eval_dataset,
+        predict_fn=predict_fn,
+        scorers=[
+            mlflow.genai.scorers.Correctness(),
+            mlflow.genai.scorers.Relevance(),
+            mlflow.genai.scorers.Safety(),
+        ],
+    )
+
+    # 4) 핵심 메트릭을 Delta 테이블에 기록 (추이 분석용)
+    import pandas as pd
+    from datetime import datetime
+
+    metrics_row = {
+        "eval_time": datetime.now().isoformat(),
+        "correctness_mean": results.metrics.get("correctness/mean"),
+        "relevance_mean": results.metrics.get("relevance/mean"),
+        "safety_mean": results.metrics.get("safety/mean"),
+        "num_examples": len(eval_dataset),
+    }
+    spark.createDataFrame(
+        pd.DataFrame([metrics_row])
+    ).write.mode("append").saveAsTable("my_catalog.eval.ka_eval_history")
+
+    print(f"평가 완료: {metrics_row}")
+```
+
+### Job 등록 (Databricks CLI)
+
+아래 명령은 매일 오전 9시(한국 시간)에 평가 노트북을 자동 실행하는 Lakeflow Job을 생성합니다.
+
+#### Cron 표현식 해석: `0 0 9 * * ?`
+
+| 필드 | 값 | 의미 |
+|------|---|------|
+| 초 | `0` | 0초 |
+| 분 | `0` | 0분 |
+| 시 | `9` | 오전 9시 |
+| 일 | `*` | 매일 |
+| 월 | `*` | 매월 |
+| 요일 | `?` | 요일 무관 |
+
+즉, **매일 오전 9시 0분 0초 (Asia/Seoul 시간대)**에 실행됩니다.
+
+```bash
+# Lakeflow Job 생성 — 매일 오전 9시 평가 실행
+databricks jobs create --json '{
+  "name": "KA-Daily-Eval",
+  "tasks": [{
+    "task_key": "run_eval",
+    "notebook_task": {
+      "notebook_path": "/Workspace/Users/me/eval_notebook"
+    },
+    "new_cluster": {
+      "spark_version": "16.2.x-scala2.12",
+      "num_workers": 0,
+      "node_type_id": "i3.xlarge"
+    }
+  }],
+  "schedule": {
+    "quartz_cron_expression": "0 0 9 * * ?",
+    "timezone_id": "Asia/Seoul"
+  }
+}'
+```
+
+---
+
+## 트러블슈팅
+
+### 인증 실패: `PERMISSION_DENIED` 또는 `401 Unauthorized`
+
+| 증상 | 원인 | 해결 방법 |
+|------|------|----------|
+| `PERMISSION_DENIED` on endpoint query | Serving Endpoint에 대한 호출 권한 없음 | Endpoint 설정 > Permissions에서 사용자/SP에 `CAN_QUERY` 부여 |
+| `401 Unauthorized` | `WorkspaceClient()` 인증 실패 | 노트북에서는 자동 인증. 로컬에서는 `databricks configure --profile` 실행 후 `DATABRICKS_CONFIG_PROFILE` 환경변수 설정 |
+| `mlflow.genai` 모듈 없음 | MLflow 2.x 사용 중 | `pip install --upgrade mlflow>=3.0` |
+
+### 타임아웃: `TimeoutError` 또는 응답이 매우 느림
+
+| 증상 | 원인 | 해결 방법 |
+|------|------|----------|
+| 평가 실행이 30분 이상 소요 | 평가 건수가 너무 많거나 Endpoint가 느림 | 데이터셋을 50건 이하로 줄이고 테스트. Endpoint 스케일 아웃 확인 |
+| 개별 호출에서 `TimeoutError` | Endpoint cold start 또는 모델 로딩 지연 | 평가 전에 warm-up 호출 1~2건 실행. Endpoint의 `min_provisioned_throughput` 설정 확인 |
+| `Rate limit exceeded` | 단시간에 너무 많은 요청 | `predict_fn`에 `time.sleep(0.5)` 추가하여 호출 간격 조절 |
+
+### 점수가 비정상적으로 낮을 때
+
+`correctness/mean`이 0.3 이하로 나온다면 에이전트 문제가 아니라 **평가 데이터셋** 문제일 수 있습니다:
+- `expected_response`가 너무 구체적이면 의미는 맞지만 표현이 다른 답변에 낮은 점수를 줌
+- 핵심 키워드 중심으로 기대 답변을 작성하고, 세부 표현은 유연하게 허용하세요
+
+---
+
+## 평가 품질 개선 팁
+
+| 팁 | 설명 |
+|----|------|
+| 평가 셋 다양성 | 쉬운 질문·어려운 질문·엣지 케이스를 골고루 포함 |
+| 정기 업데이트 | 새 문서가 추가되면 평가 셋도 함께 갱신 |
+| A/B 비교 | 프롬프트 변경 전후로 동일 데이터셋에 평가 실행 |
+| 임계값 알림 | correctness_mean < 0.7이면 Slack 알림 전송 |
+| Trace 분석 | 낮은 점수 건은 MLflow Trace에서 검색→생성 과정 추적 |

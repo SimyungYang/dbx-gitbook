@@ -1,0 +1,112 @@
+---
+title: "Clean Rooms — 활용 사례과 Delta Sharing과의 비교"
+---
+
+> 이 문서는 **[Unity Catalog](/training/07-unity-catalog/overview)** 섹션의 일부입니다.
+
+## 활용 사례
+
+### 사례 1: 광고 성과 분석
+
+소매업체와 광고 플랫폼이 개인정보를 공유하지 않고 광고 효과를 측정합니다.
+
+```python
+# 소매업체(생성자): 구매 데이터 보유
+# 광고 플랫폼(협업자): 광고 노출 데이터 보유
+
+# Clean Room에서 실행하는 분석
+overlap_analysis = spark.sql("""
+    SELECT
+        ad.campaign_name,
+        COUNT(DISTINCT purchase.customer_id) AS converters,
+        AVG(purchase.amount) AS avg_order_value,
+        SUM(purchase.amount) AS total_attributed_revenue
+    FROM creator.purchases purchase
+    JOIN collaborator.ad_exposures ad
+        ON purchase.hashed_email = ad.hashed_email
+    WHERE purchase.purchase_date BETWEEN ad.exposure_date
+        AND DATEADD(DAY, 14, ad.exposure_date)
+    GROUP BY ad.campaign_name
+    HAVING COUNT(DISTINCT purchase.customer_id) >= 100
+""")
+```
+
+### 사례 2: 의료 데이터 공동 연구
+
+병원과 제약사가 환자 데이터를 노출하지 않고 임상 연구를 수행합니다.
+
+```python
+# 병원(생성자): 진료 기록 보유
+# 제약사(협업자): 약물 투여 기록 보유
+
+clinical_study = spark.sql("""
+    SELECT
+        pharma.drug_name,
+        hospital.age_group,
+        COUNT(*) AS patient_count,
+        AVG(hospital.recovery_days) AS avg_recovery_days,
+        STDDEV(hospital.recovery_days) AS stddev_recovery_days
+    FROM creator.patient_outcomes hospital
+    JOIN collaborator.drug_administration pharma
+        ON hospital.anonymized_patient_id = pharma.anonymized_patient_id
+    GROUP BY pharma.drug_name, hospital.age_group
+    HAVING COUNT(*) >= 30  -- 통계적 유의성 및 프라이버시 보장
+""")
+```
+
+### 사례 3: 금융 사기 탐지
+
+여러 금융 기관이 거래 패턴을 공유하지 않고 사기 의심 계정을 탐지합니다.
+
+| 참여자 | 제공 데이터 | 목적 |
+|--------|-------------|------|
+| **은행 A** | 이상 거래 패턴 | 교차 검증 |
+| **은행 B** | 이상 거래 패턴 | 교차 검증 |
+| **분석 결과** | 공통 의심 계정 수 (집계) | 사기 탐지 강화 |
+
+---
+
+## Delta Sharing과의 비교
+
+| 항목 | Delta Sharing | Clean Room |
+|------|--------------|------------|
+| **데이터 가시성** | 수신자가 원본 데이터를 볼 수 있음 | 원본 데이터를 볼 수 없음 |
+| **연산 제어** | 수신자가 자유롭게 분석 | 사전 합의된 연산만 가능 |
+| **방향** | 단방향 (제공자 → 수신자) | 양방향 (양측 데이터 결합) |
+| **프라이버시** | 데이터 공유 기반 | 데이터 비공유 기반 |
+| **적합한 상황** | 파트너에게 데이터 제공 | 민감 데이터 공동 분석 |
+
+---
+
+## 주의사항 및 제한
+
+| 항목 | 내용 |
+|------|------|
+| **Unity Catalog 필수** | Clean Room은 Unity Catalog가 활성화된 워크스페이스에서만 사용 가능합니다 |
+| **Databricks 간 전용** | 현재 양측 모두 Databricks를 사용해야 합니다 |
+| **노트북 승인** | 노트북 템플릿은 양측이 합의해야 실행할 수 있습니다 |
+| **컴퓨팅 비용** | Clean Room 실행 시 생성자의 컴퓨팅 리소스가 사용됩니다 |
+| **리전 제한** | 동일 클라우드 리전 내에서의 협업이 가장 효율적입니다 |
+
+> 🆕 **[2025 업데이트]** Clean Room은 지속적으로 기능이 확장되고 있습니다. 최신 지원 범위와 제한사항은 공식 문서를 확인하세요.
+
+---
+
+## 정리
+
+| 핵심 개념 | 요약 |
+|-----------|------|
+| **Clean Room** | 데이터를 공유하지 않고 공동 분석하는 보안 환경 |
+| **생성자/협업자** | Clean Room을 만드는 쪽과 참여하는 쪽 |
+| **노트북 템플릿** | 양측이 합의한 분석 코드만 실행 가능 |
+| **프라이버시 보장** | 집계 결과만 반환, 개별 레코드 접근 불가 |
+| **활용 분야** | 광고 성과, 의료 연구, 금융 사기 탐지 등 |
+
+---
+
+## 참고 링크
+
+- [Databricks Clean Rooms 공식 문서](https://docs.databricks.com/aws/en/clean-rooms/)
+- [Unity Catalog 개요](https://docs.databricks.com/aws/en/data-governance/unity-catalog/)
+- [Delta Sharing 문서](https://docs.databricks.com/aws/en/delta-sharing/)
+- [Databricks Blog: Clean Rooms](https://www.databricks.com/blog/announcing-databricks-clean-rooms)

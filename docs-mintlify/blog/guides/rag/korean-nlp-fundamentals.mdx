@@ -1,0 +1,140 @@
+---
+title: "한국어 RAG 최적화 — 형태소 분석 & 검색"
+---
+
+> 이 문서는 **[RAG](/blog/guides/rag/overview)** 섹션의 일부입니다.
+
+
+
+한국어 RAG의 구조적 어려움, Kiwi 형태소 분석기, Kiwi 기반 BM25 Retriever, 한국어 청킹 전략을 다룹니다.
+
+## 1. 한국어 RAG의 과제
+
+한국어는 영어와 매우 다른 언어 구조를 가지고 있어, RAG 파이프라인의 각 단계에서 특별한 고려가 필요합니다.
+
+**1. 교착어 특성**: 어근에 조사, 어미, 접사가 결합하여 동일한 의미의 단어가 수십 가지 형태로 변화합니다.
+
+**2. 띄어쓰기 불규칙성**: 실제 문서에서 띄어쓰기 오류가 빈번하여 공백 기반 토큰화의 품질이 저하됩니다.
+
+**3. 한영 혼용 텍스트**: 한국어 기술 문서에 영어 용어가 빈번하게 혼재합니다.
+
+**4. 상대적으로 적은 학습 데이터**: 대부분의 모델에서 한국어 데이터 비중은 1~3%에 불과합니다.
+
+### 실제 영향
+
+- **BM25 키워드 검색 실패**: 조사가 붙은 채로 토큰화
+- **토큰 비용 급증**: 영어 대비 2~3배 많은 토큰 소비
+- **임베딩 품질 저하**: 한국어 학습 데이터 부족
+
+> **주의**
+가장 흔한 실수는 영어 기준 파이프라인을 그대로 적용하는 것입니다. BM25 기반 키워드 검색은 형태소 분석 없이는 한국어에서 제대로 작동하지 않습니다.
+
+
+## 2. Kiwi 한국어 형태소 분석기
+
+### 형태소 분석이란?
+
+형태소 분석은 어절을 의미 단위로 분해하는 작업입니다. 핵심 아이디어: **의미를 담당하는 형태소만 추출하고 문법 기능만 하는 형태소는 버리는 것**.
+
+```
+형태소 분석 + 의미 형태소 추출:
+  "데이터브릭스에서" → "데이터브릭스" ✓
+  "데이터브릭스를"   → "데이터브릭스" ✓
+  → 조사가 달라도 동일한 검색 토큰으로 통일!
+```
+
+### Kiwi란?
+
+**Kiwi** 는 C++ 기반의 고속 한국어 형태소 분석기입니다. `pip install kiwipiepy` 한 줄로 설치됩니다.
+
+| 형태소 분석기 | 속도 | 정확도 | 설치 편의성 |
+|-------------|------|--------|-----------|
+| **Kiwi** | 매우 빠름 (C++) | 높음 | `pip install` 한 줄 |
+| Mecab (KoNLPy) | 빠름 | 높음 | 시스템 의존성 복잡 |
+| Komoran (KoNLPy) | 보통 (Java) | 보통 | JVM 필요 |
+
+### 기본 사용법
+
+```python
+from kiwipiepy import Kiwi
+kiwi = Kiwi()
+result = kiwi.tokenize("Databricks에서 RAG 파이프라인을 구축합니다")
+for token in result:
+    print(f"{token.form}\t{token.tag}")
+```
+
+### 주요 품사 태그
+
+| 태그 | 의미 | 예시 |
+|------|------|------|
+| **NNG** | 일반명사 | 파이프라인, 구축 |
+| **NNP** | 고유명사 | Databricks |
+| **VV** | 동사 | 구축하다 |
+| **SL** | 외국어 | RAG, LLM |
+| **JK*** | 조사 | 에서, 을, 의 |
+
+## 3. Kiwi 기반 BM25 Retriever
+
+```python
+from kiwipiepy import Kiwi
+from langchain_community.retrievers import BM25Retriever
+
+kiwi = Kiwi()
+
+def kiwi_tokenize(text: str) -> list[str]:
+    tokens = kiwi.tokenize(text)
+    return [t.form for t in tokens if t.tag in ('NNG', 'NNP', 'VV', 'VA', 'SL')]
+
+bm25_retriever = BM25Retriever.from_documents(
+    documents, preprocess_func=kiwi_tokenize, k=5
+)
+```
+
+### Kiwi + Ensemble Retriever
+
+```python
+from langchain.retrievers import EnsembleRetriever
+from langchain_databricks import DatabricksVectorSearch
+
+bm25_retriever = BM25Retriever.from_documents(
+    documents, preprocess_func=kiwi_tokenize, k=5
+)
+
+vs_retriever = DatabricksVectorSearch(
+    endpoint="vs-endpoint",
+    index_name="catalog.schema.ko_docs_index",
+    columns=["content", "source"]
+).as_retriever(search_kwargs={"k": 5})
+
+ensemble = EnsembleRetriever(
+    retrievers=[bm25_retriever, vs_retriever],
+    weights=[0.4, 0.6]
+)
+```
+
+> **팁**
+전문 용어가 많은 도메인(법률, 의료)에서는 BM25 가중치를 `0.5~0.6`으로 높이세요.
+
+
+## 4. 한국어 청킹 전략
+
+| 전략 | 장점 | 단점 |
+|------|------|------|
+| **문장 기반 (KSS)** | 자연스러운 분절 | 문장이 짧으면 청크가 작음 |
+| **형태소 기반** | 정확한 의미 보존 | 구현 복잡 |
+| **Semantic 청킹** | 의미 전환점 자동 감지 | 연산 비용 높음 |
+| **Recursive + 한국어 구분자** | 범용적, 구현 간단 | 구분자 설계 필요 |
+
+### RecursiveCharacterTextSplitter + 한국어 구분자
+
+```python
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+korean_splitter = RecursiveCharacterTextSplitter(
+    separators=["\n\n", "\n", "다. ", "요. ", "까? ", ". ", " "],
+    chunk_size=500, chunk_overlap=50
+)
+```
+
+> **참고**
+한국어에서 종결어미(`다. `, `요. `)를 구분자에 추가하면 문장 중간에서 잘리는 것을 방지할 수 있습니다.

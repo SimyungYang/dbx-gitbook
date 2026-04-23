@@ -1,0 +1,124 @@
+---
+title: "인증 — Databricks Apps 인증이 특별한 이"
+---
+
+> 이 문서는 **[Databricks Apps](/blog/guides/apps/overview)** 섹션의 일부입니다.
+
+Databricks Apps는 OAuth 2.0 기반으로 두 가지 인증 모델을 제공합니다.
+
+---
+
+## Databricks Apps 인증이 특별한 이유
+
+일반적인 웹 앱을 배포할 때 인증(Authentication)은 가장 복잡하고 실수하기 쉬운 영역입니다. 전통적인 웹 앱에서는 다음을 직접 구현해야 합니다:
+
+- **사용자 인증 시스템**: 로그인/로그아웃, 세션 관리, 비밀번호 해싱, OAuth 플로우
+- **API 인증**: Databricks에 접근하기 위한 PAT 관리, 토큰 로테이션, Secret Manager 연동
+- **권한 관리**: 사용자별 접근 제어, 역할 기반 권한(RBAC) 구현
+
+Databricks Apps는 이 모든 것을 **플랫폼 레벨에서 자동으로 처리** 합니다. 앱에 접근하는 사용자는 Databricks 워크스페이스 로그인을 통해 자동으로 인증되고, 앱 자체는 서비스 프린시펄을 통해 Databricks 리소스에 접근합니다. 개발자는 인증 코드를 한 줄도 작성하지 않아도 됩니다.
+
+> **참고**
+**핵심 개념**: Databricks Apps의 인증은 두 가지 레이어로 구성됩니다. 첫째, **사용자가 앱에 접근하는 인증**(워크스페이스 SSO가 자동 처리). 둘째, **앱이 Databricks 리소스에 접근하는 인증**(서비스 프린시펄 또는 사용자 토큰). 이 두 레이어를 구분하지 못하면 인증 설계에서 혼란이 발생합니다.
+
+
+---
+
+## 1. 앱 인증 (App Authorization)
+
+앱의 **서비스 프린시펄** 아이덴티티로 Databricks 리소스에 접근합니다.
+
+### 서비스 프린시펄(SP) 심층 이해
+
+서비스 프린시펄은 앱의 **기계 아이덴티티** 입니다. 사람이 아닌 프로그램이 Databricks에 접근할 때 사용하는 전용 계정이라고 이해하면 됩니다.
+
+**SP의 생명주기를 단계별로 살펴보면:**
+
+| 단계 | 시점 | 무슨 일이 일어나는가 |
+|------|------|-------------------|
+| **생성** | 앱 생성 시 | Databricks가 앱 전용 SP를 자동 생성. `DATABRICKS_CLIENT_ID`와 `DATABRICKS_CLIENT_SECRET` 발급 |
+| **인증 주입** | 앱 실행 시 | 위 두 자격 증명이 환경변수로 컨테이너에 자동 주입됨 |
+| **권한 부여** | 앱 설정 시 (관리자가 수동) | SP에 필요한 UC 테이블, Warehouse, Endpoint 접근 권한 부여 |
+| **API 호출** | 앱 런타임 | SP가 OAuth 토큰을 발급받아 Databricks API에 접근 |
+| **삭제** | 앱 삭제 시 | SP와 모든 관련 토큰이 자동 삭제됨 |
+
+**SP를 통한 API 호출 흐름:**
+
+| 순서 | 주체 | 동작 | 설명 |
+|------|------|------|------|
+| 1 | 앱 코드 | `Config()` 초기화 | `DATABRICKS_CLIENT_ID`, `DATABRICKS_CLIENT_SECRET`, `DATABRICKS_HOST` 환경변수를 읽음 |
+| 2 | Databricks SDK | OAuth 토큰 요청 | SP 자격 증명으로 Databricks OAuth 서버에 토큰 요청 |
+| 3 | OAuth 서버 | 토큰 발급 | 단기 유효 액세스 토큰 발급 (자동 갱신) |
+| 4 | Databricks SDK | API 호출 | 발급받은 토큰으로 SQL Warehouse, UC, Serving Endpoint 등에 접근 |
+| 5 | Databricks | 권한 확인 | SP에 부여된 권한 범위 내에서만 접근 허용 |
+
+이 전체 흐름이 `Config()` 한 줄로 자동 처리됩니다. 개발자가 토큰 발급이나 갱신을 직접 구현할 필요가 없습니다.
+
+### 특징
+
+- 앱 생성 시 자동으로 서비스 프린시펄이 생성됨
+- `DATABRICKS_CLIENT_ID`와 `DATABRICKS_CLIENT_SECRET`가 자동 주입됨
+- 모든 사용자가 동일한 권한으로 접근 (사용자별 접근 제어 불가)
+- 배포 간에 아이덴티티가 유지됨
+
+> **주의**
+**"모든 사용자가 동일한 권한"의 의미**: 앱 인증을 사용하면 앱에 접속하는 모든 사용자가 SP의 권한으로 데이터에 접근합니다. 즉, SP에 `sales` 테이블에 대한 `SELECT` 권한이 있다면 모든 앱 사용자가 해당 테이블의 모든 행을 볼 수 있습니다. Unity Catalog의 Row-Level Security나 Column Masking을 사용자별로 적용하려면 **사용자 인증** 을 사용해야 합니다.
+
+
+### 사용 시나리오
+
+- 백그라운드 작업 실행
+- 공유 설정/메타데이터 관리
+- 로깅 및 사용 메트릭
+- 외부 서비스 호출
+
+### 코드 예시 (Python)
+
+아래 코드는 서비스 프린시펄 인증으로 SQL Warehouse에 쿼리를 실행하는 가장 기본적인 패턴입니다. `Config()` 한 줄이 전체 인증 과정을 처리합니다.
+
+```python
+from databricks import sql
+from databricks.sdk.core import Config
+
+# 서비스 프린시펄 인증 자동 사용
+cfg = Config()
+
+conn = sql.connect(
+    server_hostname=cfg.host,
+    http_path="/sql/1.0/warehouses/<warehouse-id>",
+    credentials_provider=lambda: cfg.authenticate,
+)
+
+query = "SELECT * FROM catalog.schema.my_table LIMIT 1000"
+with conn.cursor() as cursor:
+    cursor.execute(query)
+    df = cursor.fetchall_arrow().to_pandas()
+```
+
+`Config()`는 환경변수에서 `DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID`, `DATABRICKS_CLIENT_SECRET`를 자동으로 읽습니다. 이 세 환경변수는 Databricks Apps가 컨테이너 시작 시 자동으로 주입하므로 개발자가 별도로 설정할 필요가 없습니다. `credentials_provider=lambda: cfg.authenticate`는 SDK가 OAuth 토큰을 자동으로 발급/갱신하도록 위임합니다.
+
+### 코드 예시 (JavaScript)
+
+```javascript
+import { DBSQLClient } from '@databricks/sql';
+
+const client = new DBSQLClient();
+const connection = await client.connect({
+    authType: 'databricks-oauth',
+    host: process.env.DATABRICKS_SERVER_HOSTNAME,
+    path: process.env.DATABRICKS_HTTP_PATH,
+    oauthClientId: process.env.DATABRICKS_CLIENT_ID,
+    oauthClientSecret: process.env.DATABRICKS_CLIENT_SECRET,
+});
+
+const query = 'SELECT * FROM catalog.schema.my_table LIMIT 1000';
+const cursor = await connection.cursor(query);
+const rows = [];
+for await (const row of cursor) {
+    rows.push(row);
+}
+```
+
+JavaScript SDK에서는 Python과 달리 환경변수를 명시적으로 전달해야 합니다. `authType: 'databricks-oauth'`를 지정하면 SDK가 OAuth 2.0 Client Credentials 플로우를 사용하여 토큰을 발급받습니다.
+
+---

@@ -1,0 +1,111 @@
+---
+title: "SQL 스크립팅 — SQL 스크립팅이란?과 DECLARE 변수 선언"
+---
+
+> 이 문서는 **[데이터 웨어하우징](/training/06-data-warehousing/overview)** 섹션의 일부입니다.
+
+## SQL 스크립팅이란?
+
+**SQL 스크립팅(SQL Scripting)** 은 Databricks SQL에서 **변수, 조건문, 반복문, 예외 처리** 를 포함한 절차적 프로그래밍을 가능하게 하는 기능입니다. 기존에는 Python이나 Scala로 작성해야 했던 복잡한 데이터 처리 로직을 **SQL만으로 구현** 할 수 있습니다.
+
+> 💡 **비유**: 일반 SQL이 "단일 명령"이라면, SQL 스크립팅은 "여러 명령을 순서대로 실행하는 프로그램"입니다. 마치 저장 프로시저(Stored Procedure)를 작성하는 것과 비슷합니다.
+
+---
+
+## DECLARE 변수 선언
+
+### 기본 변수 선언
+
+```sql
+-- 타입과 기본값을 지정한 변수 선언
+DECLARE target_date DATE DEFAULT CURRENT_DATE() - INTERVAL 1 DAY;
+DECLARE batch_size INT DEFAULT 1000;
+DECLARE status_msg STRING DEFAULT '';
+DECLARE total_amount DECIMAL(12,2);
+
+-- 변수에 값 할당
+SET total_amount = 0.00;
+```
+
+### 쿼리 결과로 변수 할당
+
+```sql
+DECLARE row_count INT;
+DECLARE max_date DATE;
+
+-- 단일 값 쿼리 결과를 변수에 할당
+SET row_count = (SELECT COUNT(*) FROM silver.orders WHERE order_date = target_date);
+SET max_date = (SELECT MAX(order_date) FROM silver.orders);
+```
+
+### 변수 타입
+
+| 타입 | 예시 | 설명 |
+|------|------|------|
+| `INT` / `BIGINT` | `DECLARE count INT DEFAULT 0` | 정수형 |
+| `DECIMAL(p,s)` | `DECLARE amount DECIMAL(12,2)` | 고정 소수점 |
+| `DOUBLE` | `DECLARE ratio DOUBLE` | 부동 소수점 |
+| `STRING` | `DECLARE name STRING DEFAULT ''` | 문자열 |
+| `DATE` | `DECLARE d DATE DEFAULT CURRENT_DATE()` | 날짜 |
+| `TIMESTAMP` | `DECLARE ts TIMESTAMP` | 타임스탬프 |
+| `BOOLEAN` | `DECLARE flag BOOLEAN DEFAULT TRUE` | 불리언 |
+
+---
+
+## SET 문
+
+변수에 값을 할당하거나 Spark 설정을 변경합니다.
+
+```sql
+-- 변수 값 할당
+SET row_count = 100;
+SET status_msg = '처리 완료';
+
+-- 표현식으로 할당
+SET batch_id = CONCAT('batch_', DATE_FORMAT(CURRENT_TIMESTAMP(), 'yyyyMMdd_HHmmss'));
+
+-- 쿼리 결과로 할당
+SET total_revenue = (
+    SELECT SUM(amount) FROM gold.daily_revenue
+    WHERE sale_date = target_date
+);
+```
+
+---
+
+## IF / ELSEIF / ELSE
+
+### 기본 조건문
+
+```sql
+DECLARE row_count INT;
+DECLARE status STRING;
+
+SET row_count = (SELECT COUNT(*) FROM silver.orders WHERE order_date = CURRENT_DATE() - INTERVAL 1 DAY);
+
+IF row_count = 0 THEN
+    SET status = 'NO_DATA';
+    INSERT INTO audit.alerts (message, severity, created_at)
+    VALUES ('어제 주문 데이터가 없습니다', 'CRITICAL', CURRENT_TIMESTAMP());
+
+ELSEIF row_count < 100 THEN
+    SET status = 'LOW_VOLUME';
+    INSERT INTO audit.alerts (message, severity, created_at)
+    VALUES ('어제 주문이 예상보다 적습니다: ' || CAST(row_count AS STRING), 'WARNING', CURRENT_TIMESTAMP());
+
+ELSE
+    SET status = 'NORMAL';
+    -- 정상: Gold 테이블 갱신
+    INSERT OVERWRITE gold.daily_summary
+    SELECT
+        CURRENT_DATE() - INTERVAL 1 DAY AS summary_date,
+        COUNT(*) AS order_count,
+        SUM(amount) AS total_revenue
+    FROM silver.orders
+    WHERE order_date = CURRENT_DATE() - INTERVAL 1 DAY;
+END IF;
+
+SELECT status AS processing_result, row_count AS processed_rows;
+```
+
+---

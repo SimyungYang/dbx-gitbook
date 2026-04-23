@@ -1,0 +1,67 @@
+---
+title: "AI Gateway — AI Gateway 도입 체크리스트과 정리"
+---
+
+> 이 문서는 **[머신러닝](/training/09-machine-learning/overview)** 섹션의 일부입니다.
+
+## AI Gateway 도입 체크리스트
+
+| # | 항목 | 설명 |
+|---|------|------|
+| 1 | **External Model 엔드포인트 생성** | 외부 모델(OpenAI, Anthropic) 사용 시 API 키를 Secret Scope에 저장 |
+| 2 | **가드레일 설정** | Safety, PII, Topic, Keyword 필터 중 필요한 것 활성화 |
+| 3 | **Rate Limiting 설정** | 사용자별/엔드포인트별 요청 수 제한 |
+| 4 | **추론 테이블 활성화** | 모든 요청/응답을 자동 기록하여 모니터링 |
+| 5 | **Unity Catalog 권한 설정** | 엔드포인트에 대한 CAN_QUERY 권한을 필요한 그룹에만 부여 |
+| 6 | **비용 모니터링 대시보드** | 시스템 테이블로 일별/팀별 비용 추적 |
+| 7 | **Fallback 모델 구성** | 주 모델 장애 시 대체 모델 설정 (선택) |
+
+---
+
+## 정리
+
+| 핵심 개념 | 설명 |
+|-----------|------|
+| **AI Gateway** | LLM 엔드포인트 앞의 관리형 프록시로, 트래픽 관리·가드레일·비용 제어를 중앙 처리합니다 |
+| **클라이언트 측 vs 서버 측** | LiteLLM 등 클라이언트 측 구현은 키 분산·거버넌스 부재·우회 가능 등의 위험이 있습니다. AI Gateway는 서버 측에서 동작하여 이를 방지합니다 |
+| **가드레일** | Safety, PII, Topic, Keyword 4가지 필터로 입출력을 실시간 검사합니다 |
+| **Rate Limiting** | 사용자별/엔드포인트별 요청 수를 제한하여 비용 폭주를 방지합니다 |
+| **추론 테이블** | 모든 요청/응답을 자동 기록하여 모니터링·감사·평가에 활용합니다 |
+| **모델 라우팅** | 트래픽 분할(A/B 테스트)과 Fallback을 지원합니다 |
+
+---
+
+## 부록: 클라이언트 측 LLM 관리의 한계
+
+LiteLLM, LangChain Router 등 클라이언트 측 라이브러리로 LLM 호출을 관리하는 팀이 있습니다. 소규모 프로토타입에서는 유용하지만, 프로덕션 환경에서는 다음과 같은 한계가 있습니다.
+
+| 문제 | 설명 |
+|------|------|
+| **API 키 분산** | 각 앱이 OpenAI/Anthropic API 키를 직접 보유합니다. 유출 시 무제한 과금 위험이 있습니다 |
+| **거버넌스 부재** | 누가, 언제, 어떤 모델을 호출했는지 중앙 추적이 불가합니다 |
+| **비용 통제 불가** | 팀별 사용량 제한이 없어, 한 앱의 폭주가 전체 예산을 소진할 수 있습니다 |
+| **가드레일 우회** | 클라이언트 측 필터는 코드 수정으로 쉽게 우회할 수 있습니다 |
+| **버전 파편화** | 각 팀이 다른 버전의 라이브러리를 사용하여 동작이 일관되지 않습니다 |
+| **모니터링 사각지대** | 로깅이 분산되어 전체 사용 패턴을 파악할 수 없습니다 |
+
+### AI Gateway vs 클라이언트 측 비교
+
+| 항목 | 클라이언트 측 (LiteLLM 등) | Databricks AI Gateway |
+|------|--------------------------|----------------------|
+| **API 키 관리** | 각 앱이 직접 보유 (분산) | Databricks가 중앙 관리 |
+| **가드레일** | 코드 레벨 (우회 가능) | 플랫폼 레벨 (우회 불가) |
+| **비용 제어** | 자체 구현 필요 | Rate Limiting 내장 |
+| **모니터링** | 자체 로깅 구축 | 추론 테이블 자동 기록 |
+| **모델 전환** | 코드 수정 + 재배포 | 설정 변경만으로 전환 |
+| **Unity Catalog** | ❌ | ✅ 권한, 감사, 리니지 |
+| **운영 부담** | 높음 | 없음 (관리형) |
+
+---
+
+## 참고 링크
+
+- [Databricks: AI Gateway](https://docs.databricks.com/aws/en/ai-gateway/)
+- [Databricks: AI Gateway Guardrails](https://docs.databricks.com/aws/en/ai-gateway/guardrails.html)
+- [Databricks: AI Gateway Rate Limits](https://docs.databricks.com/aws/en/ai-gateway/rate-limits.html)
+- [Databricks: External Models](https://docs.databricks.com/aws/en/generative-ai/external-models/)
+- [Databricks: Inference Tables](https://docs.databricks.com/aws/en/machine-learning/model-serving/inference-tables.html)

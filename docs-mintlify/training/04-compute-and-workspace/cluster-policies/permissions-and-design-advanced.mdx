@@ -1,0 +1,87 @@
+---
+title: "장단점과 트레이드오프과 베스트 프랙티스(Best Practices)"
+---
+
+> 이 문서는 **[컴퓨트](/training/04-compute-and-workspace/overview)** 섹션의 일부입니다.
+
+## 장단점과 트레이드오프
+
+### 엄격한 정책(Restrictive Policy)
+
+| 항목 | 내용 |
+|------|------|
+| **장점** | 비용 예측 가능성 향상, 보안 컴플라이언스 보장, 일관된 환경 |
+| **단점** | 사용자 민원 증가, 특수 워크로드 대응 지연, 정책 예외 처리 부담 |
+| **적합한 상황** | 규제 산업, 비용 한도가 명확한 팀, 신규 사용자 온보딩 초기 |
+
+### 느슨한 정책(Permissive Policy)
+
+| 항목 | 내용 |
+|------|------|
+| **장점** | 사용자 자율성 보장, 빠른 실험(Experimentation) 가능 |
+| **단점** | 비용 폭주 위험, 보안 설정 누락 가능성, 비용 추적 어려움 |
+| **적합한 상황** | 소수의 신뢰할 수 있는 고급 사용자, 격리된 샌드박스 환경 |
+
+### 정책 관리 오버헤드
+
+정책 수가 늘어날수록 관리 부담이 증가합니다. 팀이 10개를 초과하면 정책도 비례해서 늘어나는 경향이 있습니다. 이를 방지하려면 **역할 기반 정책(Role-Based Policy)** 을 기준으로 설계하고, 팀별 커스터마이징은 태그(Custom Tags)로 처리하는 방식을 권장합니다.
+
+---
+
+## 베스트 프랙티스(Best Practices)
+
+### 정책 명명 규칙(Naming Convention)
+
+일관된 명명 규칙을 통해 정책 목록이 늘어나도 파악이 쉬워집니다.
+
+```
+{역할}-{용도}-{환경}
+예시:
+  de-etl-prod          # 데이터 엔지니어, ETL, 프로덕션
+  ds-ml-training       # 데이터 사이언티스트, ML 학습
+  da-adhoc-dev         # 데이터 분석가, Ad-hoc, 개발
+  job-batch-prod       # 배치 Job, 프로덕션
+```
+
+### 점진적 제한(Progressive Restriction)
+
+정책을 처음부터 매우 엄격하게 설정하면 사용자 불만과 예외 요청이 폭주합니다. 다음 순서로 단계적으로 제한을 강화합니다.
+
+1. **1단계**— 자동 종료(Auto Termination)만 강제 (빠른 비용 절감 효과)
+2. **2단계**— 태그 필수화 (비용 추적 기반 마련)
+3. **3단계**— 인스턴스 타입 제한 (과도한 리소스 선택 차단)
+4. **4단계**— Spot 비율 및 런타임 버전 제한 (최적화 완성)
+
+### 태그 필수화(Mandatory Tagging)
+
+`custom_tags` 의 `isOptional: false` 설정으로 팀/프로젝트/비용 센터 태그를 필수화합니다. 이를 통해 클라우드 비용 청구서를 팀별, 프로젝트별로 분류할 수 있습니다.
+
+### 감사(Audit) 방법
+
+- **시스템 테이블(System Tables)** 의 `system.compute.clusters` 뷰를 쿼리하여 정책 미적용 클러스터, 태그 누락 클러스터를 주기적으로 감사합니다.
+- Databricks Audit Logs를 SIEM 또는 S3에 수집하여 `clusters/create` 이벤트를 모니터링합니다.
+- 정책 변경(`policies/create`, `policies/edit`) 이벤트를 알림(Alert)으로 설정하여 무단 변경을 탐지합니다.
+
+---
+
+## 흔한 실수(Common Mistakes)
+
+**정책 없이 운영**— "나중에 정책을 적용하면 된다"는 접근은 위험합니다. 기존 클러스터는 정책 적용 후에도 소급 적용되지 않으므로, 운영 초기부터 최소한의 Default Policy라도 설정해야 합니다.
+
+**All-Purpose 클러스터에 무제한 허용**— All-Purpose 클러스터는 대화형(Interactive) 작업용이므로, Job 워크로드와 분리된 정책을 별도로 운영해야 합니다. All-Purpose 에서 대규모 배치 Job을 실행하는 것은 비용 낭비입니다.
+
+**Spot 비율 무시**— `SPOT_WITH_FALLBACK` 만 설정하고 `spot_bid_price_percent` 를 관리하지 않으면, On-Demand 인스턴스로 항상 폴백(Fallback)되어 Spot 절감 효과가 없는 경우가 생깁니다.
+
+**정책 JSON 검증 생략**— 정책을 저장할 때 Databricks가 기본 문법 오류는 잡아주지만, 논리 오류(예: `minValue > maxValue`)는 잡지 못합니다. 정책 적용 전 반드시 테스트 사용자로 클러스터 생성을 검증해야 합니다.
+
+**CAN_MANAGE 과도 부여**— 정책 수정 권한은 관리자 그룹에만 부여하고, 일반 사용자에게는 `CAN_USE` 만 부여합니다. `CAN_MANAGE` 를 팀 리드에게 위임하면 정책 일관성이 깨질 수 있습니다.
+
+---
+
+## 참고 링크
+
+- [Databricks Docs — Cluster Policies](https://docs.databricks.com/en/administration-guide/clusters/policies.html)
+- [Databricks Docs — Policy Definition Reference](https://docs.databricks.com/en/administration-guide/clusters/policy-definition.html)
+- [Databricks Docs — Cluster Access Control](https://docs.databricks.com/en/security/auth/access-control/cluster-acl.html)
+- [Databricks Docs — System Tables: Compute](https://docs.databricks.com/en/admin/system-tables/compute.html)
+- [Terraform Registry — databricks_cluster_policy](https://registry.terraform.io/providers/databricks/databricks/latest/docs/resources/cluster_policy)

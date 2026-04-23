@@ -1,0 +1,171 @@
+---
+title: "서버리스 SQL Warehouse 상세과 서버리스 Notebooks 상세"
+---
+
+## 서버리스 SQL Warehouse 상세
+
+서버리스 SQL Warehouse는 가장 먼저 도입되고, 가장 널리 사용되는 서버리스 워크로드입니다.
+
+| 특징 | 설명 |
+|------|------|
+| **즉시 시작** | 수 초 내에 쿼리 실행이 가능합니다 |
+| **자동 스케일링** | 동시 쿼리 부하에 따라 자동으로 확장/축소됩니다 |
+| **Photon 기본** | C++ 벡터화 엔진이 기본으로 활성화되어 있습니다 |
+| **자동 중지** | 유휴 상태에서 자동으로 리소스를 해제합니다 |
+| **관리 불필요** | 사이즈만 선택하면 나머지는 Databricks가 관리합니다 |
+
+```sql
+-- 서버리스 SQL Warehouse에서 쿼리 실행 (일반 SQL과 동일)
+SELECT
+    region,
+    COUNT(*) AS order_count,
+    SUM(revenue) AS total_revenue
+FROM production.ecommerce.orders
+WHERE order_date >= '2025-01-01'
+GROUP BY region
+ORDER BY total_revenue DESC;
+```
+
+---
+
+## 서버리스 Notebooks 상세
+
+서버리스 Notebooks는 대화형 개발에서 클러스터 시작 대기 시간을 제거합니다.
+
+### 사용 방법
+
+1. 노트북 상단의 클러스터 선택 드롭다운을 클릭합니다
+2. **Serverless** 를 선택합니다
+3. 코드를 실행하면 수 초 내에 결과를 확인할 수 있습니다
+
+### 환경 설정 (Environment)
+
+서버리스 Notebooks에서는 **Environment** 를 통해 Python 라이브러리를 관리합니다.
+
+```python
+# 노트북 상단에서 %pip로 라이브러리 설치 가능
+%pip install scikit-learn==1.4.0 xgboost==2.0.0
+
+# 설치 후 바로 사용
+import sklearn
+import xgboost
+```
+
+> 💡 **Environment vs Init Script**: 서버리스에서는 Init Script 대신 **Environment** 설정을 사용합니다. 노트북 또는 Job에서 필요한 Python 라이브러리를 `requirements.txt` 형식으로 지정할 수 있습니다.
+
+---
+
+## 서버리스 Jobs 상세
+
+서버리스 Jobs는 스케줄된 배치 작업을 인프라 관리 없이 실행합니다.
+
+### Databricks Asset Bundle에서 설정
+
+```yaml
+# databricks.yml - 서버리스 Job 설정
+resources:
+  jobs:
+    daily_etl:
+      name: "Daily ETL Pipeline"
+      tasks:
+        - task_key: "extract"
+          notebook_task:
+            notebook_path: "/Workspace/etl/extract"
+          # environment_key를 지정하면 Serverless로 실행됩니다
+          environment_key: "default"
+
+        - task_key: "transform"
+          depends_on:
+            - task_key: "extract"
+          notebook_task:
+            notebook_path: "/Workspace/etl/transform"
+          environment_key: "default"
+
+        - task_key: "load"
+          depends_on:
+            - task_key: "transform"
+          notebook_task:
+            notebook_path: "/Workspace/etl/load"
+          environment_key: "default"
+
+      environments:
+        - environment_key: "default"
+          spec:
+            client: "1"
+            dependencies:
+              - "pandas>=2.0"
+              - "requests"
+              - "great-expectations"
+
+      schedule:
+        quartz_cron_expression: "0 0 6 * * ?"  # 매일 오전 6시
+        timezone_id: "Asia/Seoul"
+```
+
+### UI에서 서버리스 Job 설정
+
+1. **Workflows** 메뉴에서 **Create Job** 클릭합니다
+2. 태스크 설정에서 **Compute** 옵션을 **Serverless** 로 선택합니다
+3. 필요한 라이브러리를 **Environment** 탭에서 추가합니다
+4. 스케줄을 설정합니다
+
+---
+
+## 서버리스 파이프라인 (SDP)
+
+선언적 데이터 파이프라인(SDP, 구 DLT)도 서버리스로 실행할 수 있습니다.
+
+```python
+# SDP 파이프라인 노트북
+import dlt
+
+@dlt.table(comment="원본 주문 데이터")
+def bronze_orders():
+    return spark.readStream.format("cloudFiles") \
+        .option("cloudFiles.format", "json") \
+        .load("/Volumes/production/raw/orders/")
+
+@dlt.table(comment="정제된 주문 데이터")
+@dlt.expect_or_drop("valid_amount", "total_amount > 0")
+def silver_orders():
+    return dlt.read_stream("bronze_orders") \
+        .filter("status IS NOT NULL")
+```
+
+파이프라인 설정에서 **Serverless** 를 선택하면, 파이프라인 실행 시 자동으로 서버리스 컴퓨트가 할당됩니다.
+
+---
+
+## 보안 고려사항
+
+서버리스는 Databricks 관리 환경에서 실행되므로, 보안에 대한 이해가 중요합니다.
+
+| 보안 항목 | 설명 |
+|-----------|------|
+| **네트워크 격리** | 각 고객의 워크로드는 별도의 VM에서 격리 실행됩니다 |
+| **데이터 전송** | 고객 스토리지와의 통신은 암호화된 채널을 사용합니다 |
+| **CMK (Customer-Managed Key)** | 서버리스에서도 고객 관리 암호화 키를 사용할 수 있습니다 |
+| **데이터 상주** | 서버리스 VM은 고객의 클라우드 리전 내에서 실행됩니다 |
+| **서버리스 네트워크 연결(SNC)** | 고객 VPC의 프라이빗 엔드포인트에 접근할 수 있습니다 |
+| **VM 재사용 금지** | VM은 사용 후 폐기되며, 다른 고객과 공유되지 않습니다 |
+
+> ⚠️ **서버리스 네트워크 연결(Serverless Network Connectivity)**: 서버리스 컴퓨트에서 고객 VPC 내부의 리소스(예: 온프레미스 데이터베이스, Private Link 엔드포인트)에 접근하려면 **서버리스 네트워크 연결(SNC)** 설정이 필요합니다. Account Console에서 네트워크 연결 구성을 설정할 수 있습니다.
+
+| 항목 | 서버리스 컴퓨트 | 고객 환경 |
+|------|----------------|----------|
+| Serverless Compute | Databricks 관리 환경 | - |
+| VPC/VNet Peering | - | 고객 VPC에서 데이터 소스 접근 |
+| 클라우드 스토리지 | - | 고객 계정의 S3/ADLS/GCS |
+
+서버리스 컴퓨트는 Network Connectivity Config(NCC)를 통해 고객 환경과 안전하게 연결됩니다.
+
+---
+
+## 참고 링크
+
+- [Databricks: Serverless compute](https://docs.databricks.com/aws/en/serverless-compute/)
+- [Databricks: Serverless Networking](https://docs.databricks.com/aws/en/serverless-compute/serverless-connectivity.html)
+- [Databricks: Serverless Environment](https://docs.databricks.com/aws/en/serverless-compute/serverless-environment.html)
+- [Azure Databricks: Serverless compute](https://learn.microsoft.com/en-us/azure/databricks/serverless-compute/)
+- [Databricks: Pricing](https://www.databricks.com/pricing)
+- [Databricks Blog: Serverless Compute](https://www.databricks.com/blog/serverless-compute)

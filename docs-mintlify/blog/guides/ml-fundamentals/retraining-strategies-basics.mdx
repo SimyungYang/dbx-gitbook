@@ -1,0 +1,206 @@
+---
+title: "재학습 전략 기초"
+---
+
+> 이 문서는 **[ML 핵심 개념](/blog/guides/ml-fundamentals/overview)** 섹션의 일부입니다.
+
+
+
+> **전체 노트북 코드**: [03d\_retraining\_strategies.py](https://github.com/SimyungYang/databricks-enablement-blog/blob/main/hands-on/predictive-maintenance/notebooks/03d_retraining_strategies.py)
+
+**목적**: ML 모델의 지속적 성능 유지를 위한 재학습 전략을 기초부터 최신 기법까지 체계적으로 다룹니다. 드리프트 탐지, Full Retraining, Incremental/Continual/Online Learning, 강화학습 기반 전략 자동 선택, Active Learning까지 **13개 Part** 로 구성됩니다.
+
+**사용 Databricks 기능**: `MLflow Experiment Tracking`, `Unity Catalog Model Registry`, `Delta Lake Time Travel`, `Databricks Workflow`, `Data Quality Monitoring`, `Structured Streaming`
+
+---
+
+
+## Part 1: 재학습이 필요한 이유
+
+ML 모델은 **학습 시점의 데이터 패턴** 을 기반으로 예측합니다. 하지만 제조 현장은 끊임없이 변하며, 이 변화를 **"드리프트(Drift)"**라고 부릅니다. 구글의 연구(2015, "Hidden Technical Debt in ML Systems")에 따르면, ML 시스템 운영 비용의 **90% 이상이 모델 배포 후 유지보수** 에 소요됩니다.
+
+### 1.1 Data Drift (데이터 드리프트)
+
+모델에 입력되는 데이터의 **통계적 분포 P(X)** 가 학습 시점과 달라지는 현상입니다.
+
+- **계절 변화**: 공장 내부 온도/습도가 외기 온도에 영향받음
+- **원자재 변경**: 새 공급사의 기판, 렌즈 등의 물리적 특성이 다름
+- **설비 노후화**: 센서 교정 주기에 따라 측정값 범위가 점진적으로 이동(Sensor Drift)
+- **생산 물량 변동**: 풀 가동 vs 부분 가동에 따라 설비 열적 특성이 달라짐
+
+### 1.2 Concept Drift (개념 드리프트)
+
+입력(X)과 출력(Y) 간의 **관계 자체 P(Y|X)** 가 변하는 현상으로, Data Drift보다 **더 심각** 합니다.
+
+- **공정 레시피 업데이트**: DOE 결과를 반영하여 공정 조건 최적화 → 이전 고장 패턴 무효화
+- **설비 부품 교체**: 핵심 부품(모터, 베어링, 히터) 교체 후 고장 메커니즘 자체가 변화
+- **품질 기준 변경**: 고객 요구사항 강화로 이전에 정상이었던 것이 불량으로 재분류
+
+> **주의**
+Data Drift는 입력 데이터 모니터링으로 감지할 수 있지만, Concept Drift는 **데이터 분포는 같아 보이는데 모델 예측이 틀리기 시작** 하는 현상이므로 성능 모니터링(F1, AUC 추적)이 필수입니다.
+
+
+### 1.3 드리프트 시뮬레이션 실습
+
+노트북에서는 테스트 데이터에 점진적 온도 오프셋을 추가하여 Data Drift에 따른 성능 저하를 실측합니다.
+
+```python
+drift_levels = [0, 0.5, 1.0, 2.0, 3.0, 5.0]
+
+for drift in drift_levels:
+    X_drifted = X_test.copy()
+    X_drifted["air_temperature_k"] += drift
+    X_drifted["process_temperature_k"] += drift * 0.8
+    X_drifted["temp_diff"] = X_drifted["process_temperature_k"] - X_drifted["air_temperature_k"]
+
+    dtest = xgb.DMatrix(X_drifted)
+    pred = (model_original.predict(dtest) > 0.5).astype(int)
+    f1 = f1_score(Y_test, pred)
+```
+
+> **참고**
+제조 현장에서 ML 모델의 평균 유효 수명은 **1~3개월** 입니다. 공정 변경이 빈번한 라인에서는 **매주 재학습** 이 권장됩니다.
+
+
+---
+
+
+## Part 2: 재학습 트리거 전략
+
+"언제 재학습을 해야 하는가?"는 MLOps에서 가장 어려운 질문입니다. 너무 자주 하면 불필요한 비용이, 너무 드물게 하면 성능 저하를 방치하게 됩니다.
+
+### 전략 1: 스케줄 기반 (Time-based)
+
+매주 월요일 새벽 2시에 재학습 (Databricks Workflow 스케줄 트리거). 구현이 가장 쉽고 운영 예측이 가능합니다. MLOps 초기 도입 단계에서 **가장 좋은 시작점** 입니다.
+
+### 전략 2: 성능 기반 (Performance-based)
+
+모델의 F1 Score가 0.7 아래로 떨어지면 재학습합니다. 진짜 필요할 때만 재학습하므로 비용 효율적이지만, **실제 레이블(정답)이 필요** 합니다.
+
+### 전략 3: 드리프트 기반 (Drift-based)
+
+입력 데이터의 PSI(Population Stability Index)가 0.2를 넘으면 재학습합니다. **레이블 없이도** 센서 데이터만으로 탐지 가능하지만, Concept Drift는 감지하지 못합니다.
+
+### 전략 4: 하이브리드 (권장)
+
+여러 조건을 조합하여 우선순위별로 판단합니다.
+
+```
+IF (PSI > 0.2)           → 즉시 재학습 (긴급) — 데이터 분포 급변
+ELIF (F1 < 0.7)          → 즉시 재학습 (긴급) — 성능 임계치 이탈
+ELIF (마지막 학습 > 7일)  → 정기 재학습 (일반) — 안전망
+ELIF (새 데이터 > 5000건) → 추가 학습 고려 (낮음) — Incremental Learning
+ELSE                      → 현재 모델 유지
+```
+
+> **참고**
+MLOps 초기에는 **전략 1(스케줄 기반, 주 1회)** 로 시작하고, Data Quality Monitoring 구축 후 **전략 4(하이브리드)** 로 고도화하는 단계적 접근을 권장합니다.
+
+
+### PSI (Population Stability Index) — 드리프트 정량 탐지
+
+PSI는 금융업계에서 개발되어 ML 전반으로 확산된 데이터 분포 변화 수치화 지표입니다. Databricks Data Quality Monitoring에서도 핵심 드리프트 지표로 사용됩니다.
+
+| PSI 범위 | 해석 | 조치 |
+|----------|------|------|
+| \< 0.1 | 변화 없음 (안정) | 재학습 불필요 |
+| 0.1 ~ 0.2 | 약간의 변화 (주의) | 모니터링 빈도 증가, 원인 조사 |
+| 0.2 ~ 0.5 | 유의미한 변화 (경고) | 재학습 권장 |
+| > 0.5 | 심각한 변화 (위험) | 즉시 재학습 + 모델 예측 중단 검토 |
+
+```python
+def calculate_psi(expected, actual, bins=10):
+    breakpoints = np.linspace(
+        min(expected.min(), actual.min()),
+        max(expected.max(), actual.max()),
+        bins + 1
+    )
+    expected_counts = np.histogram(expected, bins=breakpoints)[0] / len(expected)
+    actual_counts = np.histogram(actual, bins=breakpoints)[0] / len(actual)
+    expected_counts = np.maximum(expected_counts, 0.001)
+    actual_counts = np.maximum(actual_counts, 0.001)
+    psi = np.sum((actual_counts - expected_counts) * np.log(actual_counts / expected_counts))
+    return psi
+```
+
+---
+
+
+## Part 3: Full Retraining 실전 구현
+
+Full Retraining은 가장 기본적이면서 **가장 확실한** 재학습 방법입니다. 전체 데이터로 모델을 **처음부터 다시 학습** 합니다. Databricks Workflow의 하나의 Task로 등록하여 스케줄 또는 이벤트 트리거로 자동 실행합니다.
+
+### 재학습 파이프라인 전체 흐름
+
+| Step | 내용 | 상세 |
+|------|------|------|
+| **Step 1** | 학습 데이터 준비 | Delta Lake에서 최신 데이터 로드, Sliding Window로 기간 선택 |
+| **Step 2** | 새 모델 학습 | 기존과 동일한 알고리즘 + 하이퍼파라미터, MLflow에 실험 기록 |
+| **Step 3** | Champion 비교 검증 | 기존 Champion 모델과 성능 비교 |
+| **Step 4** | 배포 결정 | 새 모델 > 기존 모델이면 Champion 교체, 아니면 기존 유지 |
+
+```python
+def full_retrain_pipeline(reason="scheduled"):
+    # Step 1: 학습 데이터 준비 (Sliding Window)
+    train_data = spark.table("lgit_pm_training").filter("split='train'") \
+                      .select(*feature_columns, label_col).toPandas()
+
+    # Step 2: MLflow 실험에 기록하면서 모델 학습
+    with mlflow.start_run(run_name=f"retrain_{reason}_{datetime.now().strftime('%Y%m%d')}") as run:
+        mlflow.log_param("retrain_reason", reason)
+        mlflow.log_param("training_data_size", len(X_tr))
+
+        new_model = xgb.train(retrain_params, dtrain, num_boost_round=200)
+
+        # 성능 평가
+        new_f1 = f1_score(Y_te, pred)
+        new_auc = roc_auc_score(Y_te, proba)
+        mlflow.log_metrics({"test_f1_score": new_f1, "test_auc": new_auc})
+        mlflow.xgboost.log_model(new_model, "xgboost_model", signature=signature)
+
+    # Step 3: Champion 비교
+    champion_info = client.get_model_version_by_alias(model_name, "Champion")
+    champion_f1 = mlflow.get_run(champion_info.run_id).data.metrics.get("test_f1_score", 0)
+
+    # Step 4: 배포 결정
+    if new_f1 >= champion_f1:
+        model_details = mlflow.register_model(
+            f"runs:/{run.info.run_id}/xgboost_model", model_name
+        )
+        client.set_registered_model_alias(
+            name=model_name, alias="Champion", version=model_details.version
+        )
+```
+
+---
+
+
+## Part 4: Delta Lake 기반 학습 데이터 관리
+
+재학습의 성패는 **어떤 데이터를 사용하느냐** 에 달려 있습니다. Delta Lake의 고유 기능(Time Travel, 버전 관리)을 활용하면 학습 데이터를 체계적이고 재현 가능하게 관리할 수 있습니다.
+
+### 4.1 Sliding Window (슬라이딩 윈도우)
+
+**최근 N일의 데이터만** 사용하여 학습합니다. 오래된 데이터는 현재 패턴과 다를 수 있으므로 자연스럽게 제외합니다.
+
+### 4.2 Delta Lake Time Travel
+
+특정 시점/버전의 데이터를 정확히 조회하여 **학습 재현성과 감사(Audit) 추적** 을 보장합니다.
+
+```sql
+-- 특정 버전의 데이터 조회
+SELECT * FROM lgit_pm_training VERSION AS OF 5
+
+-- 특정 시점의 데이터 조회
+SELECT * FROM lgit_pm_training TIMESTAMP AS OF '2024-01-01'
+
+-- 최근 30일 데이터만 조회 (Sliding Window)
+SELECT * FROM lgit_pm_inference_results
+WHERE inference_timestamp >= current_date() - INTERVAL 30 DAYS
+```
+
+> **참고**
+다른 데이터 플랫폼에서는 DVC 같은 별도 도구가 필요한 데이터 버전 관리를 Delta Lake에서는 **네이티브 기능** 으로 제공합니다. 최적 윈도우 크기는 **최근 60~90일** 로 시작하여 성능을 보며 조정하는 것을 권장합니다.
+
+
+---

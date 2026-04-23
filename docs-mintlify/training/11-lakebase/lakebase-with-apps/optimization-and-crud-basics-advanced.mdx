@@ -1,0 +1,194 @@
+---
+title: "인덱스 전략과 연결 관리 (Connection Managem"
+---
+
+> 이 문서는 **[Lakebase](/training/11-lakebase/overview)** 섹션의 일부입니다.
+
+## 3. 인덱스 전략
+
+### PostgreSQL 인덱스 유형
+
+| 인덱스 유형 | 적합한 사용처 | 예시 |
+|-------------|---------------|------|
+| **B-tree** | 등호/범위 조건, 정렬 | `WHERE id = ?`, `ORDER BY created_at` |
+| **Hash** | 등호 조건만 (범위 불가) | `WHERE email = ?` (등호 전용) |
+| **GIN** | 배열, JSONB, 전문 검색 | `WHERE tags @> '{python}'`, `LIKE` with trigram |
+| **GiST** | 지리 정보, 범위 타입 | PostGIS 좌표, `tsrange` 겹침 검사 |
+
+```sql
+-- B-tree: 복합 인덱스 — 자주 함께 쓰이는 컬럼은 함께 묶기
+-- (컬럼 순서가 중요: 카디널리티 높은 것을 앞에)
+CREATE INDEX idx_orders_customer_date
+    ON orders (customer_id, created_at DESC);
+
+-- Hash: 등호 조건만 있는 고빈도 조회 컬럼
+CREATE INDEX idx_sessions_token
+    ON user_sessions USING hash (session_token);
+
+-- GIN + trigram: ILIKE 기반 텍스트 검색 가속
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX idx_products_name_trgm
+    ON products USING gin (name gin_trgm_ops);
+
+-- GIN: JSONB 컬럼 내 키 검색
+CREATE INDEX idx_events_payload
+    ON events USING gin (payload jsonb_path_ops);
+
+-- 부분 인덱스 (partial index): 조건에 해당하는 행만 인덱싱 → 크기 절감
+CREATE INDEX idx_orders_pending
+    ON orders (created_at)
+    WHERE status = 'pending';
+```
+
+### 인덱스 설계 가이드
+
+```sql
+-- 인덱스 사용 현황 조회: 사용 안 되는 인덱스는 DROP 검토
+SELECT
+    schemaname,
+    tablename,
+    indexname,
+    idx_scan        AS times_used,
+    idx_tup_read    AS tuples_read,
+    pg_size_pretty(pg_relation_size(indexrelid)) AS index_size
+FROM pg_stat_user_indexes
+ORDER BY idx_scan ASC;  -- 사용 횟수 낮은 인덱스 식별
+
+-- 테이블 크기 vs 인덱스 크기 비율 확인
+SELECT
+    relname AS table_name,
+    pg_size_pretty(pg_total_relation_size(oid)) AS total_size,
+    pg_size_pretty(pg_indexes_size(oid))        AS indexes_size
+FROM pg_class
+WHERE relkind = 'r'
+ORDER BY pg_total_relation_size(oid) DESC;
+```
+
+> 인덱스가 많을수록 INSERT/UPDATE/DELETE 속도가 저하됩니다. 쿼리 패턴을 먼저 분석하고 필요한 인덱스만 생성하십시오.
+
+---
+
+## 4. 연결 관리 (Connection Management)
+
+### Connection Pooling의 필요성
+
+PostgreSQL은 연결(connection)마다 별도 프로세스를 생성합니다. Databricks Apps처럼 다수의 요청이 동시에 들어오는 환경에서는 **커넥션 풀링 (connection pooling)** 이 필수입니다.
+
+```python
+# SQLAlchemy Connection Pool 설정 예시
+from sqlalchemy import create_engine
+
+engine = create_engine(
+    "postgresql+psycopg2://user:password@host:5432/dbname",
+    pool_size=5,          # 유지할 기본 연결 수
+    max_overflow=10,      # pool_size 초과 시 최대 추가 연결 수
+    pool_timeout=30,      # 연결 대기 타임아웃 (초)
+    pool_recycle=1800,    # 30분마다 연결 재생성 (stale connection 방지)
+    pool_pre_ping=True,   # 사용 전 연결 유효성 확인
+    connect_args={"sslmode": "require"}
+)
+```
+
+```python
+# psycopg2 ThreadedConnectionPool 사용 예시 (멀티스레드 환경)
+from psycopg2 import pool as pg_pool
+import streamlit as st
+
+@st.cache_resource
+def get_pool():
+    return pg_pool.ThreadedConnectionPool(
+        minconn=2,
+        maxconn=10,
+        host=st.secrets["lakebase"]["host"],
+        port=5432,
+        dbname=st.secrets["lakebase"]["dbname"],
+        user=st.secrets["lakebase"]["user"],
+        password=st.secrets["lakebase"]["password"],
+        sslmode="require"
+    )
+
+def execute_query(sql, params=None):
+    pool = get_pool()
+    conn = pool.getconn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, params)
+            conn.commit()
+            return cur.fetchall()
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        pool.putconn(conn)  # 반드시 반환
+```
+
+### Databricks Apps에서의 연결 패턴
+
+Databricks Apps는 기본적으로 단일 프로세스 내에서 실행됩니다. 아래 원칙을 따르십시오.
+
+- `@st.cache_resource` 로 연결 풀을 **앱 수명 동안 한 번만** 생성
+- 요청마다 연결을 생성/소멸하지 않음 (오버헤드 발생)
+- **Lakebase 연결 수 상한** 은 인스턴스 크기에 따라 다르며, 기본적으로 수백 개 수준
+- 연결이 오래 유휴 상태로 남으면 서버 측에서 끊길 수 있으므로 `pool_pre_ping=True` 권장
+
+> 참고: [PostgreSQL Connection Pooling Best Practices](https://www.postgresql.org/docs/current/runtime-config-connection.html)
+
+---
+
+## 5. 데이터 동기화 — Delta ↔ Lakebase (Synced Tables)
+
+### Synced Tables 개요
+
+**Synced Tables** 는 Delta 테이블의 데이터를 Lakebase PostgreSQL 테이블로 자동 동기화하는 기능입니다.
+분석용 데이터(Delta)를 OLTP 앱(Lakebase)에서 빠르게 조회할 수 있도록 연결해 줍니다.
+
+```
+Delta Table (Unity Catalog)
+        │
+        │  Synced Table (자동 동기화)
+        ▼
+Lakebase PostgreSQL Table
+        │
+        │  SQL 조회
+        ▼
+Databricks App (Streamlit 등)
+```
+
+### Synced Tables 생성
+
+```sql
+-- Lakebase 내에서 Synced Table 생성
+-- Unity Catalog의 Delta 테이블을 PostgreSQL 테이블로 동기화
+CREATE SYNCED TABLE product_catalog
+FROM catalog.schema.products_delta
+WITH (sync_mode = 'INCREMENTAL');  -- FULL 또는 INCREMENTAL
+```
+
+```python
+# Python SDK로 Synced Table 관리
+from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+
+# Synced Table 생성
+w.lakebase.create_sync(
+    database_name="mydb",
+    source_table="catalog.schema.products",
+    target_table="product_catalog",
+    sync_mode="INCREMENTAL"
+)
+
+# 동기화 상태 확인
+status = w.lakebase.get_sync(database_name="mydb", sync_name="product_catalog")
+print(status.state)  # RUNNING, COMPLETED, FAILED
+```
+
+### 실시간 vs 배치 동기화 비교
+
+| 방식 | 동기화 주기 | 사용 사례 | 비고 |
+|------|-------------|-----------|------|
+| **Incremental Sync** | 변경분만 자동 감지 | 제품 카탈로그, 사용자 프로필 | 권장 기본값 |
+| **Full Sync** | 전체 재적재 | 소규모 참조 테이블 | 데이터 양 적을 때만 |
+| **수동 트리거** | 필요 시 호출 | 배치 작업 후 즉시 반영 | Job에서 SDK 호출 |
+
+> 참고: [Databricks Synced Tables 문서](https://docs.databricks.com/en/database/synced-tables.html)

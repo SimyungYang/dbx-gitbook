@@ -1,0 +1,209 @@
+---
+title: "베스트 프랙티스와 흔한 실수과 전체 CRUD 앱 예제: 고객 관리 시스템"
+---
+
+> 이 문서는 **[Lakebase](/training/11-lakebase/overview)** 섹션의 일부입니다.
+
+## 8. 베스트 프랙티스와 흔한 실수
+
+### 베스트 프랙티스
+
+```python
+# 1. 항상 컨텍스트 매니저(with)로 트랜잭션 관리
+with conn:  # 예외 발생 시 자동 rollback, 정상 시 commit
+    with conn.cursor() as cur:
+        cur.execute("INSERT INTO orders (...) VALUES (...)", data)
+
+# 2. 파라미터 바인딩 — f-string 직접 삽입 금지
+# ❌ SQL Injection 취약
+cur.execute(f"SELECT * FROM users WHERE name = '{name}'")
+
+# ✅ 파라미터 바인딩
+cur.execute("SELECT * FROM users WHERE name = %s", (name,))
+
+# 3. 쿼리 캐싱: 자주 바뀌지 않는 데이터는 앱 레벨에서 캐싱
+@st.cache_data(ttl=300)  # 5분 캐시
+def get_product_categories():
+    with engine.connect() as conn:
+        return pd.read_sql("SELECT DISTINCT category FROM products ORDER BY 1", conn)
+
+# 4. 커서 기반 페이지네이션
+@st.cache_data(ttl=30)
+def get_recent_orders(last_id=None, page_size=50):
+    query = "SELECT * FROM orders"
+    params = []
+    if last_id:
+        query += " WHERE id < %s"
+        params.append(last_id)
+    query += " ORDER BY id DESC LIMIT %s"
+    params.append(page_size)
+    with engine.connect() as conn:
+        return pd.read_sql(query, conn, params=params)
+```
+
+### 흔한 실수
+
+| 실수 | 고려사항 | 올바른 방법 |
+|------|--------|-------------|
+| `SELECT *` 남용 | 불필요한 컬럼 전송, 인덱스 무력화 | 필요한 컬럼만 명시 |
+| 루프 내 단건 INSERT | N번 네트워크 왕복 | `execute_values`로 배치 처리 |
+| 연결 매번 생성/소멸 | 연결 오버헤드 누적 | Connection Pool 사용 |
+| `OFFSET` 기반 페이지네이션 | 뒤로 갈수록 Full Scan | Keyset Pagination 사용 |
+| 인덱스 없는 컬럼으로 필터 | Sequential Scan | 쿼리 패턴에 맞는 인덱스 생성 |
+| 트랜잭션 미처리 | 중간 실패 시 데이터 불일치 | `with conn` 컨텍스트 매니저 사용 |
+| `conn.rollback()` 누락 | 오류 후 커넥션이 비정상 상태 유지 | `try/except/finally` 패턴 준수 |
+
+---
+
+## 전체 CRUD 앱 예제: 고객 관리 시스템
+
+아래는 위 모든 원칙을 적용한 완전한 Streamlit CRUD 앱입니다.
+
+```python
+# customer_app.py — 고객 관리 CRUD 앱 (최적화 적용)
+import streamlit as st
+import psycopg2
+import psycopg2.extras
+import psycopg2.pool
+import pandas as pd
+
+st.set_page_config(page_title="고객 관리", page_icon="👥", layout="wide")
+
+@st.cache_resource
+def get_pool():
+    """앱 수명 동안 커넥션 풀을 한 번만 생성합니다."""
+    return psycopg2.pool.ThreadedConnectionPool(
+        minconn=2, maxconn=10,
+        host=st.secrets["lakebase"]["host"],
+        port=5432,
+        dbname=st.secrets["lakebase"]["dbname"],
+        user=st.secrets["lakebase"]["user"],
+        password=st.secrets["lakebase"]["password"],
+        sslmode="require"
+    )
+
+def get_conn():
+    return get_pool().getconn()
+
+def release_conn(conn):
+    get_pool().putconn(conn)
+
+@st.cache_data(ttl=300)
+def get_tier_list():
+    """등급 목록 — 5분 캐시."""
+    conn = get_conn()
+    try:
+        return pd.read_sql("SELECT DISTINCT tier FROM customers ORDER BY 1", conn)["tier"].tolist()
+    finally:
+        release_conn(conn)
+
+st.title("👥 고객 관리 시스템")
+tab_list, tab_create, tab_edit = st.tabs(["📋 고객 목록", "➕ 신규 등록", "✏️ 정보 수정"])
+
+# --- 조회 (Read) ---
+with tab_list:
+    search = st.text_input("🔍 고객 검색 (이름 또는 이메일)")
+    conn = get_conn()
+    try:
+        if search:
+            df = pd.read_sql(
+                "SELECT id, name, email, tier, created_at FROM customers "
+                "WHERE name ILIKE %s OR email ILIKE %s ORDER BY created_at DESC",
+                conn, params=(f"%{search}%", f"%{search}%")
+            )
+        else:
+            df = pd.read_sql(
+                "SELECT id, name, email, tier, created_at FROM customers "
+                "ORDER BY created_at DESC LIMIT 100",
+                conn
+            )
+    finally:
+        release_conn(conn)
+    st.dataframe(df, use_container_width=True)
+    st.caption(f"총 {len(df)}명 표시 중")
+
+# --- 생성 (Create) ---
+with tab_create:
+    with st.form("create_customer"):
+        name  = st.text_input("이름")
+        email = st.text_input("이메일")
+        tier  = st.selectbox("등급", get_tier_list())
+        if st.form_submit_button("등록", type="primary"):
+            conn = get_conn()
+            try:
+                with conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "INSERT INTO customers (name, email, tier) VALUES (%s, %s, %s)",
+                            (name, email, tier)
+                        )
+                st.success(f"✅ {name}님이 등록되었습니다!")
+            except psycopg2.errors.UniqueViolation:
+                st.error("❌ 이미 등록된 이메일입니다.")
+            finally:
+                release_conn(conn)
+
+# --- 수정 / 삭제 (Update / Delete) ---
+with tab_edit:
+    customer_id = st.number_input("고객 ID", min_value=1, step=1)
+    conn = get_conn()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT id, name, email, tier FROM customers WHERE id = %s",
+                (customer_id,)
+            )
+            customer = cur.fetchone()
+    finally:
+        release_conn(conn)
+
+    if customer:
+        with st.form("edit_customer"):
+            new_name = st.text_input("이름", value=customer["name"])
+            tier_opts = get_tier_list()
+            new_tier = st.selectbox(
+                "등급", tier_opts,
+                index=tier_opts.index(customer["tier"]) if customer["tier"] in tier_opts else 0
+            )
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.form_submit_button("수정 저장", type="primary"):
+                    conn = get_conn()
+                    try:
+                        with conn:
+                            with conn.cursor() as cur:
+                                cur.execute(
+                                    "UPDATE customers SET name=%s, tier=%s, updated_at=NOW() WHERE id=%s",
+                                    (new_name, new_tier, customer_id)
+                                )
+                        st.success("✅ 수정되었습니다!")
+                    finally:
+                        release_conn(conn)
+            with col2:
+                if st.form_submit_button("삭제 (소프트)", type="secondary"):
+                    conn = get_conn()
+                    try:
+                        with conn:
+                            with conn.cursor() as cur:
+                                cur.execute(
+                                    "UPDATE customers SET is_deleted=TRUE, deleted_at=NOW() WHERE id=%s",
+                                    (customer_id,)
+                                )
+                        st.warning("🗑️ 삭제 처리되었습니다.")
+                    finally:
+                        release_conn(conn)
+    else:
+        st.info("조회된 고객이 없습니다. ID를 확인하십시오.")
+```
+
+---
+
+## 참고 자료
+
+- [Databricks Lakebase 공식 문서](https://docs.databricks.com/en/database/index.html)
+- [Databricks Synced Tables](https://docs.databricks.com/en/database/synced-tables.html)
+- [PostgreSQL Indexes](https://www.postgresql.org/docs/current/indexes.html)
+- [PostgreSQL EXPLAIN](https://www.postgresql.org/docs/current/sql-explain.html)
+- [PostgreSQL Table Partitioning](https://www.postgresql.org/docs/current/ddl-partitioning.html)
+- [psycopg2 Connection Pool](https://www.psycopg.org/docs/pool.html)
+- [SQLAlchemy Engine Configuration](https://docs.sqlalchemy.org/en/20/core/engines.html)

@@ -1,0 +1,229 @@
+---
+title: "추론 추적과 자동 대응"
+---
+
+> 이 문서는 **[AI 에이전트](/training/10-agent-development/overview)** 섹션의 일부입니다.
+
+
+## 6. Inference Table — 자동 로깅과 활용
+
+### 활성화 방법
+
+Model Serving 엔드포인트 생성 시 `auto_capture_config`를 설정하면 모든 요청/응답이 Delta Table에 자동 저장됩니다.
+
+```python
+from databricks.sdk.service.serving import AutoCaptureConfigInput
+
+w.serving_endpoints.create(
+    name="customer-support-agent",
+    config=EndpointCoreConfigInput(
+        served_entities=[...],
+        auto_capture_config=AutoCaptureConfigInput(
+            catalog_name="catalog",
+            schema_name="schema",
+            table_name_prefix="agent_logs",
+            enabled=True
+        )
+    )
+)
+```
+
+### Inference Table 주요 스키마
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `request_id` | STRING | 고유 요청 ID (Trace와 연계 키) |
+| `timestamp` | TIMESTAMP | 요청 수신 시각 |
+| `status_code` | INT | HTTP 상태 코드 |
+| `execution_time_ms` | BIGINT | 총 처리 시간 |
+| `request` | VARIANT | 원본 요청 JSON |
+| `response` | VARIANT | 원본 응답 JSON |
+| `sampling_fraction` | DOUBLE | 샘플링 비율 |
+| `client_request_id` | STRING | 클라이언트 제공 요청 ID |
+
+### 실전 활용 쿼리
+
+```sql
+-- 최근 1시간 주요 지표 요약
+SELECT
+    COUNT(*)                                                            AS total_requests,
+    ROUND(AVG(execution_time_ms), 0)                                   AS avg_latency_ms,
+    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY execution_time_ms)    AS p95_latency_ms,
+    ROUND(SUM(CASE WHEN status_code != 200 THEN 1 ELSE 0 END)
+          * 100.0 / COUNT(*), 2)                                       AS error_rate_pct
+FROM catalog.schema.agent_logs_payload
+WHERE timestamp >= CURRENT_TIMESTAMP() - INTERVAL 1 HOUR;
+
+-- 토큰 사용량 및 비용 추정 (일별)
+SELECT
+    DATE(timestamp)                                                     AS date,
+    SUM(response:usage:prompt_tokens)                                  AS total_input_tokens,
+    SUM(response:usage:completion_tokens)                              AS total_output_tokens,
+    -- Claude 3.5 Sonnet 기준 예시 단가 적용
+    ROUND(SUM(response:usage:prompt_tokens)    / 1e6 * 3.0 +
+          SUM(response:usage:completion_tokens) / 1e6 * 15.0, 2)      AS estimated_cost_usd
+FROM catalog.schema.agent_logs_payload
+WHERE status_code = 200
+GROUP BY DATE(timestamp)
+ORDER BY date DESC;
+
+-- 드리프트 감지: 응답 길이 분포 변화
+SELECT
+    DATE_TRUNC('hour', timestamp)                                       AS hour,
+    AVG(LENGTH(response:choices[0]:message:content::STRING))           AS avg_response_length,
+    STDDEV(LENGTH(response:choices[0]:message:content::STRING))        AS stddev_response_length
+FROM catalog.schema.agent_logs_payload
+GROUP BY DATE_TRUNC('hour', timestamp)
+ORDER BY hour DESC;
+```
+
+### 피드백 루프 (Feedback Loop) 구성
+
+Inference Table 데이터를 활용해 사용자 피드백을 수집하고 재훈련 데이터셋을 구축합니다.
+
+```python
+# 부정 피드백이 달린 요청을 재훈련 후보 데이터셋으로 큐레이션
+negative_samples = spark.sql("""
+    SELECT
+        logs.request_id,
+        logs.request:messages                        AS messages,
+        logs.response:choices[0]:message:content     AS response,
+        feedback.rating,
+        feedback.comment
+    FROM catalog.schema.agent_logs_payload logs
+    JOIN catalog.schema.user_feedback feedback
+      ON logs.request_id = feedback.request_id
+    WHERE feedback.rating <= 2
+      AND logs.timestamp >= CURRENT_TIMESTAMP() - INTERVAL 7 DAY
+""")
+negative_samples.write.mode("append").saveAsTable("catalog.schema.retraining_candidates")
+```
+
+---
+
+## 7. 알림과 자동 대응 (Alerting & Auto-response)
+
+### Lakehouse Monitoring 알림 설정
+
+Unity Catalog의 **Lakehouse Monitoring** 기능으로 메트릭이 임계값을 초과하면 자동 알림을 발송합니다.
+
+```python
+from databricks.sdk.service.catalog import MonitorInferenceLog, MonitorCronSchedule
+
+w.quality_monitors.create(
+    table_name="catalog.schema.agent_logs_payload",
+    inference_log=MonitorInferenceLog(
+        granularities=["1 hour", "1 day"],
+        timestamp_col="timestamp",
+        model_id_col="served_entity_name",
+        prediction_col="response",
+        problem_type="question_answering"
+    ),
+    schedule=MonitorCronSchedule(
+        quartz_cron_expression="0 0 * * * ?",  # 매시간
+        timezone_id="Asia/Seoul"
+    ),
+    notifications={
+        "on_failure": {"email_addresses": ["ml-ops@company.com"]},
+        "on_new_classification_tag_detected": {"email_addresses": ["ml-ops@company.com"]}
+    },
+    output_schema_name="catalog.schema"
+)
+```
+
+### 자동 롤백 파이프라인
+
+Databricks Jobs를 활용해 메트릭 이상 감지 시 자동 롤백을 구현합니다.
+
+```python
+def check_and_rollback(endpoint_name: str, stable_version: str, threshold: dict):
+    """메트릭 임계값 초과 시 자동 롤백"""
+
+    # 최근 15분 메트릭 조회
+    metrics = spark.sql("""
+        SELECT
+            COUNT(*) AS total,
+            SUM(CASE WHEN status_code != 200 THEN 1 ELSE 0 END)
+                * 100.0 / COUNT(*) AS error_rate,
+            PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY execution_time_ms)
+                AS p95_latency
+        FROM catalog.schema.agent_logs_payload
+        WHERE timestamp >= CURRENT_TIMESTAMP() - INTERVAL 15 MINUTE
+    """).first()
+
+    needs_rollback = (
+        metrics["error_rate"] > threshold["max_error_rate"] or
+        metrics["p95_latency"] > threshold["max_p95_latency_ms"]
+    )
+
+    if needs_rollback:
+        print(f"임계값 초과 — 롤백 실행: 현재 버전 → v{stable_version}")
+        w.serving_endpoints.update_config(
+            name=endpoint_name,
+            served_entities=[
+                ServedEntityInput(
+                    entity_name="catalog.schema.customer_support_agent",
+                    entity_version=stable_version,
+                    workload_size="Small",
+                    scale_to_zero_enabled=True
+                )
+            ]
+        )
+        notify_team(
+            f"[자동 롤백] {endpoint_name} → v{stable_version} "
+            f"(error_rate={metrics['error_rate']:.1f}%)"
+        )
+
+# 임계값 설정 및 실행
+THRESHOLDS = {"max_error_rate": 10.0, "max_p95_latency_ms": 8000}
+check_and_rollback("customer-support-agent", stable_version="3", threshold=THRESHOLDS)
+```
+
+---
+
+## 8. 전체 버전 업데이트 워크플로
+
+| 단계 | 작업 | 설명 |
+|------|------|------|
+| 1 | 개발 (v4) | 에이전트 신규 버전 개발 |
+| 2 | MLflow 로깅 + UC 등록 | `challenger` 앨리어스 부여 |
+| 3 | Review App 테스트 | 내부 테스터 검증 (오프라인 평가) |
+| 4 | 기준 미충족 | 1단계로 돌아가 재개발 |
+| 5 | Canary 배포 (10%) | 소량 트래픽으로 실서비스 검증 |
+| 6 | 모니터링 (24h) | Inference Table + MLflow Tracing 분석 |
+| 7a | 이상 감지 | 자동 롤백 (v4 → v3) + 알림 발송 |
+| 7b | 정상 확인 | 트래픽 100% 전환, `champion` 앨리어스 이동 |
+
+---
+
+## 9. 베스트 프랙티스와 흔한 실수
+
+### 베스트 프랙티스
+
+- **모든 실험을 MLflow Run으로 추적합니다.** 프롬프트, 모델 버전, 하이퍼파라미터를 빠짐없이 기록하면 나중에 어떤 조합이 왜 좋았는지 재현할 수 있습니다.
+- **앨리어스(Alias)를 사용해 버전 번호 의존을 제거합니다.** 코드에 버전 번호를 하드코딩하면 배포 시마다 코드를 변경해야 합니다.
+- **Canary → Full 롤아웃 단계를 반드시 거칩니다.** 아무리 오프라인 평가가 좋아도 실사용자 트래픽에서 예상치 못한 문제가 발생할 수 있습니다.
+- **Inference Table 보존 기간을 정책으로 명시합니다.** 기본적으로 무제한 누적되므로 TTL(Time-to-Live) 정책을 설정해 스토리지 비용을 관리합니다.
+- **품질 메트릭과 인프라 메트릭을 분리해 모니터링합니다.** Error Rate가 낮아도 응답 품질이 저하될 수 있습니다.
+
+### 흔한 실수
+
+| 실수 | 결과 | 해결책 |
+|------|------|--------|
+| 버전 번호를 코드에 하드코딩 | 배포마다 코드 변경 필요 | 앨리어스(champion/challenger) 사용 |
+| Canary 없이 즉시 100% 전환 | 전체 서비스 장애 위험 | 항상 점진적 롤아웃 적용 |
+| 오프라인 평가만으로 배포 결정 | 실사용 품질 저하 발생 | A/B 테스트 + 온라인 평가 병행 |
+| 롤백 절차 미수립 | 장애 시 복구 시간 증가 | 자동 롤백 파이프라인 사전 구축 |
+| 토큰 비용 모니터링 누락 | 월말 예산 초과 | 일별 비용 알림 설정 |
+| Tracing 비활성화 상태로 운영 | 장애 원인 파악 불가 | `autolog()`를 기본값으로 설정 |
+
+---
+
+## 참고 링크 (References)
+
+- [MLflow Model Registry — Unity Catalog](https://docs.databricks.com/en/mlflow/model-registry-uc.html)
+- [MLflow Tracing 개요](https://mlflow.org/docs/latest/llms/tracing/index.html)
+- [Databricks Model Serving — Traffic Splitting](https://docs.databricks.com/en/machine-learning/model-serving/traffic-splitting.html)
+- [Inference Tables 개요](https://docs.databricks.com/en/machine-learning/model-serving/inference-tables.html)
+- [Lakehouse Monitoring — LLM 모니터링](https://docs.databricks.com/en/lakehouse-monitoring/monitor-llm-endpoints.html)
+- [Databricks SDK — serving_endpoints](https://databricks-sdk-py.readthedocs.io/en/latest/workspace/serving/serving_endpoints.html)

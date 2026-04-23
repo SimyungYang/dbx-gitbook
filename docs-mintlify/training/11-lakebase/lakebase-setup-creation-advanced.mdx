@@ -1,0 +1,190 @@
+---
+title: "2단계: 연결 설정과 3단계: 인스턴스 사이징 가이드"
+---
+
+> 이 문서는 **[Lakebase](/training/11-lakebase/overview)** 섹션의 일부입니다.
+
+## 2단계: 연결 설정
+
+Lakebase는 표준 **PostgreSQL 프로토콜** 을 지원하므로, 기존 PostgreSQL 클라이언트와 드라이버를 그대로 사용할 수 있습니다.
+
+### 연결 정보 확인
+
+| 항목 | 값 |
+|------|-----|
+| **호스트** | `<database-name>-xxxx.lakebase.databricks.com` |
+| **포트** | `5432` (PostgreSQL 표준 포트) |
+| **데이터베이스명** | 생성 시 지정한 이름 (예: `app_db`) |
+| **인증** | Databricks Personal Access Token 또는 OAuth |
+
+### psql (CLI) 연결
+
+```bash
+# Personal Access Token으로 연결
+psql "host=app-db-xxxx.lakebase.databricks.com \
+      port=5432 \
+      dbname=app_db \
+      user=token \
+      password=dapi_your_personal_access_token \
+      sslmode=require"
+
+# 연결 테스트
+SELECT version();
+-- 결과: PostgreSQL 16.x (Lakebase)
+```
+
+### Python (psycopg2) 연결
+
+```python
+import psycopg2
+
+# 기본 연결
+conn = psycopg2.connect(
+    host="app-db-xxxx.lakebase.databricks.com",
+    port=5432,
+    dbname="app_db",
+    user="token",
+    password="dapi_your_personal_access_token",
+    sslmode="require"
+)
+
+# 연결 테스트
+cursor = conn.cursor()
+cursor.execute("SELECT version()")
+print(cursor.fetchone())
+# 출력: ('PostgreSQL 16.x (Lakebase)',)
+
+# 테이블 생성 예제
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS products (
+        product_id  SERIAL PRIMARY KEY,
+        name        VARCHAR(200) NOT NULL,
+        category    VARCHAR(100),
+        price       DECIMAL(10,2) NOT NULL,
+        stock       INTEGER DEFAULT 0,
+        created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+""")
+conn.commit()
+print("테이블 생성 완료!")
+```
+
+### Python (SQLAlchemy) 연결
+
+```python
+from sqlalchemy import create_engine
+
+# SQLAlchemy 엔진 생성
+engine = create_engine(
+    "postgresql+psycopg2://token:dapi_your_token@"
+    "app-db-xxxx.lakebase.databricks.com:5432/app_db",
+    connect_args={"sslmode": "require"},
+    pool_size=5,        # 커넥션 풀 크기
+    max_overflow=10,    # 최대 추가 연결 수
+    pool_timeout=30     # 풀 대기 타임아웃 (초)
+)
+
+# pandas와 함께 사용
+import pandas as pd
+df = pd.read_sql("SELECT * FROM products LIMIT 10", engine)
+print(df)
+```
+
+### JDBC 연결 (Java/Scala)
+
+```
+jdbc:postgresql://app-db-xxxx.lakebase.databricks.com:5432/app_db?
+  user=token&
+  password=dapi_your_token&
+  sslmode=require
+```
+
+> ⚠️ **SSL 필수**: Lakebase는 보안을 위해 **SSL 연결만 허용** 합니다. 연결 시 `sslmode=require`를 반드시 설정하시기 바랍니다.
+
+---
+
+## 3단계: 인스턴스 사이징 가이드
+
+Lakebase는 **오토스케일링** 을 지원하지만, 초기 워크로드 특성에 맞는 적절한 시작점을 선택하는 것이 좋습니다.
+
+| 워크로드 규모 | 동시 연결 수 | 데이터 크기 | 권장 사항 |
+|---------------|-------------|-------------|-----------|
+| **소규모**(PoC/개발) | 1~10 | 1GB 미만 | 기본 설정으로 시작합니다 |
+| **중규모**(소규모 프로덕션) | 10~100 | 1~50GB | 커넥션 풀링을 설정합니다 |
+| **대규모**(프로덕션) | 100~1,000 | 50GB~1TB | 커넥션 풀링 + 읽기 전용 복제본을 검토합니다 |
+| **초대규모** | 1,000+ | 1TB+ | Databricks 팀과 사이징 상담을 권장합니다 |
+
+> 🆕 **오토스케일링 (GA)**: Lakebase는 워크로드에 따라 자동으로 컴퓨팅 리소스를 확장/축소합니다. 스토리지는 최대 **8TB** 까지 자동 확장됩니다. 별도의 스케일링 작업이 필요 없습니다.
+
+---
+
+## 4단계: 사용자 및 역할 관리
+
+Lakebase는 **Unity Catalog** 와 통합되어, Databricks의 사용자 및 그룹 체계를 그대로 사용합니다.
+
+### Unity Catalog 기반 권한 관리
+
+```sql
+-- 특정 사용자에게 데이터베이스 사용 권한 부여
+GRANT USAGE ON DATABASE my_catalog.my_schema.app_db
+TO `user@company.com`;
+
+-- 특정 그룹에게 테이블 읽기 권한 부여
+GRANT SELECT ON TABLE my_catalog.my_schema.app_db.products
+TO `data_analysts`;
+
+-- 특정 그룹에게 테이블 쓰기 권한 부여
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE my_catalog.my_schema.app_db.orders
+TO `app_developers`;
+
+-- 권한 확인
+SHOW GRANTS ON TABLE my_catalog.my_schema.app_db.products;
+```
+
+### 역할 기반 접근 제어 패턴
+
+| 역할 | 권한 | 대상 사용자 |
+|------|------|-------------|
+| **읽기 전용** | SELECT | 데이터 분석가, BI 사용자 |
+| **읽기/쓰기** | SELECT, INSERT, UPDATE, DELETE | 앱 개발자, 백엔드 서비스 |
+| **관리자** | ALL PRIVILEGES | DBA, 플랫폼 관리자 |
+
+> 💡 **Unity Catalog 통합의 장점**: Lakebase의 권한은 Unity Catalog에서 중앙 관리됩니다. OLTP 데이터와 Delta Lake 데이터의 권한을 하나의 체계로 관리할 수 있어, 거버넌스 복잡도가 크게 줄어듭니다.
+
+---
+
+## 5단계: OAuth 인증 설정
+
+프로덕션 환경에서는 Personal Access Token 대신 **OAuth** 를 사용하는 것을 권장합니다.
+
+### 서비스 프린시펄(Service Principal) 인증
+
+```python
+import psycopg2
+from databricks.sdk import WorkspaceClient
+
+# Databricks SDK를 통해 OAuth 토큰 획득
+w = WorkspaceClient()
+token = w.tokens.create(
+    comment="Lakebase app connection",
+    lifetime_seconds=3600  # 1시간
+)
+
+# OAuth 토큰으로 Lakebase 연결
+conn = psycopg2.connect(
+    host="app-db-xxxx.lakebase.databricks.com",
+    port=5432,
+    dbname="app_db",
+    user="token",
+    password=token.token_value,
+    sslmode="require"
+)
+```
+
+| 인증 방식 | 적합한 환경 | 보안 수준 |
+|-----------|-------------|-----------|
+| **Personal Access Token** | 개발, 테스트 | 중간 |
+| **OAuth (Service Principal)** | 프로덕션 앱 | 높음 |
+| **OAuth (User-to-Machine)** | 대화형 앱 | 높음 |
+
+> ⚠️ **Personal Access Token 주의**: PAT는 만료일을 설정하더라도 유출 위험이 있습니다. 프로덕션 환경에서는 반드시 **OAuth 인증** 또는 **서비스 프린시펄** 을 사용하시기 바랍니다.

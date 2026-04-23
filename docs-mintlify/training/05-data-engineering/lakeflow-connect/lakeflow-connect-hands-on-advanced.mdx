@@ -1,0 +1,208 @@
+---
+title: "Step 4: CDC 변경사항 확인과 Step 5: 스키마 변경 시나리오"
+---
+
+> 이 문서는 **[데이터 엔지니어링](/training/05-data-engineering/overview)** 섹션의 일부입니다.
+
+## Step 4: CDC 변경사항 확인
+
+소스 MySQL에서 데이터를 변경하고, Databricks에서 변경 사항이 반영되는지 확인합니다.
+
+### 소스에서 변경 실행
+
+```sql
+-- [MySQL에서 실행] 새 고객 추가
+INSERT INTO ecommerce.customers (customer_id, name, email, city)
+VALUES (1001, '김테스트', 'test@example.com', 'Seoul');
+
+-- [MySQL에서 실행] 기존 고객 정보 수정
+UPDATE ecommerce.customers
+SET city = 'Busan'
+WHERE customer_id = 1001;
+
+-- [MySQL에서 실행] 새 주문 추가
+INSERT INTO ecommerce.orders (order_id, customer_id, amount, order_date)
+VALUES (5001, 1001, 50000, NOW());
+```
+
+### Databricks에서 변경 확인
+
+```sql
+-- CDC 변경사항 확인 (수초~수분 후)
+SELECT _change_type, _commit_timestamp, customer_id, name, city
+FROM analytics.bronze.customers
+WHERE customer_id = 1001
+ORDER BY _commit_timestamp DESC;
+
+-- 결과 예시:
+-- 예상 결과:
+-- | _change_type | _commit_timestamp  | customer_id | name   | city  |
+-- |-------------|-------------------|-------------|--------|-------|
+-- | UPDATE      | 2025-01-15 10:01  | 1001        | 김테스트 | Busan |
+-- | INSERT      | 2025-01-15 10:00  | 1001        | 김테스트 | Seoul |
+
+-- 주문 테이블 변경 확인
+SELECT * FROM analytics.bronze.orders
+WHERE order_id = 5001;
+```
+
+> 💡 **CDC 이력 보존**: Bronze 테이블에는 모든 변경 이력이 보존됩니다. INSERT, UPDATE, DELETE 모두 별도의 행으로 기록되므로, 특정 시점의 데이터 상태를 재현할 수 있습니다.
+
+---
+
+## Step 5: 스키마 변경 시나리오
+
+운영 DB에서 스키마가 변경되었을 때 Lakeflow Connect가 어떻게 대응하는지 확인합니다.
+
+### 시나리오: 소스에서 컬럼 추가
+
+```sql
+-- [MySQL에서 실행] 고객 테이블에 새 컬럼 추가
+ALTER TABLE ecommerce.customers ADD COLUMN phone VARCHAR(20);
+
+-- [MySQL에서 실행] 새 컬럼에 데이터 입력
+UPDATE ecommerce.customers
+SET phone = '010-1234-5678'
+WHERE customer_id = 1001;
+```
+
+### Databricks에서 스키마 변경 확인
+
+```sql
+-- 대상 테이블에 자동으로 phone 컬럼이 추가되었는지 확인
+DESCRIBE analytics.bronze.customers;
+
+-- 새 컬럼의 데이터 확인
+SELECT customer_id, name, phone
+FROM analytics.bronze.customers
+WHERE phone IS NOT NULL;
+
+-- 기존 행에서 phone은 NULL (스키마 추가 이전 데이터)
+SELECT customer_id, name, phone
+FROM analytics.bronze.customers
+WHERE phone IS NULL
+LIMIT 5;
+```
+
+> 💡 **스키마 진화 자동 처리**: Lakeflow Connect는 소스에서 컬럼이 추가되면 대상 Delta 테이블에도 자동으로 컬럼을 추가합니다. 기존 행의 새 컬럼 값은 NULL로 채워집니다.
+
+---
+
+## Step 6: SDP 파이프라인으로 Silver 변환 연결
+
+수집된 Bronze 데이터를 **SDP 파이프라인으로 정제하여 Silver 계층** 을 구축합니다.
+
+```sql
+-- SDP 파이프라인에서 Silver 변환 정의
+
+-- 고객 테이블: CDC 이력에서 최신 상태만 유지 (SCD Type 1)
+CREATE OR REFRESH STREAMING TABLE analytics.silver.customers;
+
+APPLY CHANGES INTO analytics.silver.customers
+FROM STREAM(analytics.bronze.customers)
+KEYS (customer_id)
+SEQUENCE BY _commit_timestamp
+STORED AS SCD TYPE 1;
+
+-- 주문 테이블: 데이터 품질 검증 + 정제
+CREATE OR REFRESH STREAMING TABLE analytics.silver.orders (
+    CONSTRAINT valid_amount EXPECT (amount > 0) ON VIOLATION DROP ROW,
+    CONSTRAINT valid_customer EXPECT (customer_id IS NOT NULL) ON VIOLATION DROP ROW
+)
+AS
+SELECT
+    order_id,
+    customer_id,
+    amount,
+    order_date,
+    _ingested_at AS ingested_at
+FROM STREAM(analytics.bronze.orders)
+WHERE _change_type != 'DELETE';
+```
+
+> 💡 **SCD Type 1 vs Type 2**: SCD Type 1은 변경 시 기존 데이터를 덮어씁니다(항상 최신 상태만 유지). SCD Type 2는 변경 이력을 모두 보존합니다. 자세한 내용은 [SDP: CDC와 SCD](../spark-declarative-pipelines/cdc-and-scd) 문서를 참고하시기 바랍니다.
+
+---
+
+## 트러블슈팅 가이드
+
+### 자주 발생하는 오류와 해결 방법
+
+| 오류 메시지 | 원인 | 해결 방법 |
+|-----------|------|----------|
+| `Connection failed: Access denied` | MySQL 계정 권한 부족 | `GRANT` 문으로 필요한 권한 부여 |
+| `Connection timed out` | 네트워크 연결 불가 | 보안 그룹, VPC Peering, PrivateLink 설정 확인 |
+| `Binlog not enabled` | MySQL Binlog 비활성화 | `log_bin=ON`, `binlog_format=ROW` 설정 |
+| `Schema evolution error` | 비호환 스키마 변경 | 대상 테이블 스키마 수동 조정 후 파이프라인 재시작 |
+| `Secret not found` | Secret Scope 미설정 | Databricks CLI로 Secret 생성 확인 |
+| `Insufficient permissions on target` | 대상 스키마 권한 부족 | Unity Catalog 권한 설정 확인 |
+
+### 파이프라인 재시작 방법
+
+```python
+# 파이프라인 상태 확인 (Databricks CLI)
+# databricks pipelines get --pipeline-id <pipeline-id>
+
+# 파이프라인이 FAILED 상태인 경우:
+# 1. Pipeline UI에서 에러 메시지 확인
+# 2. 원인 해결 (위의 표 참고)
+# 3. Pipeline UI에서 "Start" 클릭하여 재시작
+#    - "Full Refresh": 초기 스냅샷부터 다시 시작
+#    - "Start": 마지막 체크포인트에서 이어서 시작
+```
+
+### 성능 최적화 팁
+
+| 팁 | 설명 |
+|----|------|
+| **테이블 필터링** | 필요한 테이블만 선택하여 불필요한 수집 방지 |
+| **연속 vs 트리거** | 실시간이 필요 없으면 트리거 모드로 비용 절감 |
+| **대규모 초기 스냅샷** | 테이블이 매우 크면 오프피크 시간에 시작 |
+| **병렬 수집** | 여러 테이블을 하나의 파이프라인에서 동시 수집 |
+
+---
+
+## 클린업
+
+실습이 끝나면 생성한 리소스를 정리합니다.
+
+```sql
+-- 1. 파이프라인 중지 (UI에서 Stop 클릭 또는 API 사용)
+
+-- 2. 수집된 테이블 삭제
+DROP TABLE IF EXISTS analytics.bronze.customers;
+DROP TABLE IF EXISTS analytics.bronze.orders;
+DROP TABLE IF EXISTS analytics.silver.customers;
+DROP TABLE IF EXISTS analytics.silver.orders;
+
+-- 3. Connection 삭제
+DROP CONNECTION IF EXISTS mysql_ecommerce;
+
+-- 4. 스키마/카탈로그 삭제 (필요 시)
+-- DROP SCHEMA IF EXISTS analytics.bronze CASCADE;
+-- DROP SCHEMA IF EXISTS analytics.silver CASCADE;
+-- DROP CATALOG IF EXISTS analytics CASCADE;
+```
+
+> ⚠️ **주의**: `CASCADE` 옵션은 스키마/카탈로그 내의 모든 테이블을 삭제합니다. 프로덕션 환경에서는 절대 사용하지 마시기 바랍니다. 실습용 리소스만 삭제하시기 바랍니다.
+
+---
+
+## 정리
+
+이 실습에서 다음을 수행하였습니다:
+
+1. **MySQL Connection 생성**: Unity Catalog에 소스 접속 정보를 안전하게 등록
+2. **Ingestion Pipeline 생성**: 코드 없이 UI에서 CDC 수집 파이프라인 구성
+3. **실시간 CDC 확인**: 소스 변경사항이 수초 내에 Delta 테이블에 반영됨을 검증
+4. **스키마 진화 확인**: 소스에서 컬럼 추가 시 대상 테이블에 자동 반영됨을 검증
+5. **SDP 연동**: Bronze 데이터를 Silver로 변환하는 후처리 파이프라인 구성
+
+---
+
+## 참고 링크
+
+- [Databricks: Lakeflow Connect Tutorial](https://docs.databricks.com/aws/en/lakeflow-connect/)
+- [Databricks: Create a Connection](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-create-connection.html)
+- [Databricks: MySQL CDC Requirements](https://docs.databricks.com/aws/en/lakeflow-connect/)
+- [Databricks: SDP APPLY CHANGES](https://docs.databricks.com/aws/en/delta-live-tables/cdc.html)

@@ -1,0 +1,82 @@
+---
+title: "Medallion 아키텍처 — 전체 흐름 다이어그램과 계층 간 비교"
+---
+
+> 이 문서는 **[레이크하우스 아키텍처](/training/03-lakehouse-architecture/overview)** 섹션의 일부입니다.
+
+## 전체 흐름 다이어그램
+
+| 레이어 | 이름 | 데이터 품질 | 용도 |
+|--------|------|-----------|------|
+| 🥉 Bronze | Raw | 원본 그대로 | 데이터 수집, 감사 추적 |
+| 🥈 Silver | Cleansed | 정제, 표준화 | 분석 준비, 조인 |
+| 🥇 Gold | Aggregated | 비즈니스 레벨 집계 | 리포팅, ML, BI |
+
+**전체 흐름:**
+
+| 단계 | 소스 | 대상 | 설명 |
+|------|------|------|------|
+| 수집 | 주문 DB, 고객 DB, 웹 로그 | Bronze (bronze_orders, bronze_customers, bronze_clickstream) | 원본 데이터 보존 |
+| 정제 | Bronze | Silver (silver_orders, silver_customers, silver_page_views) | 데이터 정제 및 표준화 |
+| 집계 | Silver | Gold (gold_daily_revenue, gold_customer_360, gold_product_performance) | 비즈니스 메트릭 생성 |
+| 소비 | Gold | 경영진 대시보드, 마케팅 분석, ML 추천 모델 | 최종 활용 |
+
+*출처: [Databricks Docs](https://docs.databricks.com)*
+
+---
+
+## 계층 간 비교
+
+| 비교 항목 | Bronze | Silver | Gold |
+|-----------|--------|--------|------|
+| **데이터 품질** | 낮음 (원본 그대로) | 높음 (정제됨) | 최고 (비즈니스 검증) |
+| **스키마** | 소스와 동일 | 표준화됨 | 비즈니스 도메인 기준 |
+| **갱신 빈도** | 실시간 ~ 분 단위 | 분 ~ 시간 단위 | 시간 ~ 일 단위 |
+| **주요 소비자** | 데이터 엔지니어 | 데이터 분석가, DS | BI, 경영진, 앱 |
+| **보존 기간** | 장기 (원본 보존) | 중기 | 단기 ~ 중기 |
+| **테이블 수** | 소스 수와 비례 | Bronze와 유사 | 비즈니스 요구에 따라 |
+
+---
+
+## 모범 사례
+
+### 네이밍 컨벤션
+
+일관된 이름 규칙을 사용하면 테이블의 계층을 쉽게 식별할 수 있습니다.
+
+| 방식 | 예시 |
+|------|------|
+| **접두어 방식** | `bronze_orders`, `silver_orders`, `gold_daily_revenue` |
+| **스키마 분리 방식** | `raw.orders`, `cleaned.orders`, `analytics.daily_revenue` |
+| **카탈로그 분리 방식** | `bronze.ecommerce.orders`, `silver.ecommerce.orders`, `gold.ecommerce.daily_revenue` |
+
+Databricks에서는 **Unity Catalog의 3-Level 네임스페이스(Catalog → Schema → Table)** 를 활용하여 계층을 체계적으로 관리하는 것을 권장합니다.
+
+### 권한 관리
+
+| 계층 | 접근 권한 |
+|------|-----------|
+| **Bronze** | 데이터 엔지니어만 쓰기/읽기 가능합니다 |
+| **Silver** | 데이터 엔지니어가 쓰기, 분석가/과학자가 읽기 가능합니다 |
+| **Gold** | 넓은 읽기 권한 (BI 사용자, 경영진 포함) |
+
+---
+
+## 정리
+
+| 핵심 개념 | 설명 |
+|-----------|------|
+| **Bronze** | 원본 데이터를 그대로 보존하는 첫 번째 계층입니다. "있는 그대로 저장"합니다 |
+| **Silver** | 정제, 표준화, 중복 제거가 완료된 두 번째 계층입니다. "깨끗하게 정리"합니다 |
+| **Gold** | 비즈니스 목적에 맞게 집계된 세 번째 계층입니다. "바로 분석 가능"합니다 |
+| **Medallion** | Bronze → Silver → Gold 3계층 구조의 데이터 설계 패턴입니다 |
+
+다음 문서에서는 Delta Lake의 **실전 조작법**(MERGE, OPTIMIZE, VACUUM 등)을 자세히 살펴보겠습니다.
+
+---
+
+## 참고 링크
+
+- [Databricks: Medallion Architecture](https://docs.databricks.com/aws/en/lakehouse/medallion.html)
+- [Azure Databricks: Medallion lakehouse architecture](https://learn.microsoft.com/en-us/azure/databricks/lakehouse/medallion)
+- [Databricks Blog: Medallion Architecture](https://www.databricks.com/glossary/medallion-architecture)

@@ -1,0 +1,239 @@
+---
+title: "ML 플랫폼 개요"
+---
+
+> 이 문서는 **[ML 핵심 개념](/blog/guides/ml-fundamentals/overview)** 섹션의 일부입니다.
+
+
+
+Databricks는 단순한 데이터 플랫폼이 아니라, **데이터 준비부터 모델 학습, 배포, 모니터링까지 ML 라이프사이클 전체** 를 하나의 플랫폼에서 관리할 수 있는 통합 ML/AI 환경입니다. 이 가이드는 Databricks가 제공하는 ML/AI 관련 기능을 체계적으로 정리하여, 각 기능이 왜 필요하고 어떻게 작동하며 실전에서 어떻게 활용되는지를 전문가 수준으로 설명합니다.
+
+> **참고**
+이 가이드는 Databricks ML/AI **플랫폼 기능** 에 초점을 맞춥니다. ML 알고리즘/기법 자체에 대한 이론은 [ML 트렌드 & 최신 기법](ml-trends)을, GenAI/LLM 이론은 [GenAI 핵심 개념](../genai-concepts/README)을 참고하세요.
+
+
+---
+
+
+## 1. Databricks ML/AI 플랫폼 전체 아키텍처
+
+### Data Intelligence Platform에서 ML의 위치
+
+Databricks는 **Data Intelligence Platform** 이라는 비전 아래 데이터 엔지니어링, 분석, ML/AI를 하나의 Lakehouse 위에서 통합합니다. ML은 이 플랫폼의 핵심 축으로, 다음과 같은 이점을 제공합니다.
+
+| 전통적 ML 환경 (분리된 도구) | Databricks Lakehouse ML |
+|------------------------------|-------------------------|
+| 데이터를 별도 ML 플랫폼으로 복사 | Delta Lake에 저장된 데이터를 직접 사용 |
+| 실험 관리 도구 별도 구축 (자체 MLflow 서버) | MLflow가 Workspace에 내장 |
+| 모델 레지스트리를 별도 운영 | Unity Catalog에 모델을 데이터와 함께 거버넌스 |
+| 서빙 인프라 별도 구축 (K8s, SageMaker 등) | Model Serving Endpoint 내장 |
+| 피처 스토어 별도 운영 (Feast, Tecton 등) | Feature Engineering in Unity Catalog |
+
+이 통합의 핵심 가치는 **데이터 이동 최소화** 와 **거버넌스 통합** 입니다. 데이터 엔지니어가 만든 테이블을 데이터 사이언티스트가 바로 사용하고, 학습된 모델을 ML 엔지니어가 같은 플랫폼에서 배포하며, 모든 자산(데이터, 피처, 모델, 엔드포인트)이 Unity Catalog라는 단일 거버넌스 레이어로 관리됩니다.
+
+### Classic ML vs GenAI: 두 축의 역할
+
+Databricks ML/AI 기능은 크게 두 축으로 나뉩니다.
+
+| 구분 | Classic ML | GenAI |
+|------|-----------|-------|
+| **대표 작업** | 수치 예측, 분류, 이상 탐지, 추천 | 자연어 이해/생성, 대화, 코드 생성, 이미지 분석 |
+| **모델 유형** | XGBoost, LightGBM, RandomForest, PyTorch | LLM (GPT, Claude, Llama), Embedding 모델 |
+| **데이터 요구** | 정형 데이터 수천~수만 건 | 비정형 데이터 (텍스트, 이미지) + 대규모 사전학습 |
+| **Databricks 기능** | AutoML, MLflow, Feature Store, ML Runtime | Foundation Model APIs, Agent Framework, Vector Search |
+| **비용 구조** | 학습 1회 후 추론 저렴 | API 호출 시 토큰당 과금 또는 GPU 서빙 비용 |
+
+실전에서는 두 축을 **함께** 사용하는 경우가 많습니다. 예를 들어, 제조 공정에서 이상 탐지(Classic ML)가 알람을 발생시키면 GenAI Agent가 원인을 분석하고 대응 보고서를 자동 생성하는 파이프라인이 가능합니다.
+
+---
+
+
+## 2. 데이터 준비 & Feature Engineering
+
+### 왜 Feature Store가 필요한가
+
+ML 모델의 성능은 알고리즘보다 **피처(feature)의 품질** 에 의해 결정되는 경우가 많습니다. 그러나 실전에서는 세 가지 근본 문제가 반복적으로 발생합니다.
+
+1. **Training-Serving Skew**: 학습 시에는 배치로 계산한 피처를 사용하고, 서빙 시에는 다른 코드로 실시간 계산하면서 미묘한 불일치가 발생합니다. 예를 들어, 학습 데이터에서는 "최근 30일 평균 구매액"을 SQL로 계산했는데, 서빙 코드에서는 API 호출 시점 기준으로 계산하여 윈도우가 달라지는 경우입니다.
+2. **피처 중복 개발**: 데이터 사이언티스트 A가 만든 `avg_purchase_amount` 피처를 팀원 B가 모르고 다시 개발합니다. 조직 규모가 커질수록 동일한 비즈니스 개념에 대해 N개의 서로 다른 피처가 존재하게 됩니다.
+3. **피처 거버넌스 부재**: 어떤 모델이 어떤 피처를 사용하는지, 피처 정의가 언제 변경되었는지 추적이 불가능합니다.
+
+**Workspace Feature Store에서 UC 기반으로 전환한 이유**: 초기 Databricks Feature Store는 워크스페이스 단위로 격리되어 있어, 워크스페이스 간 피처 공유가 불가능했고 데이터 테이블과 별도의 거버넌스 체계를 사용했습니다. Unity Catalog 기반으로 전환하면서 피처 테이블이 **일반 Delta 테이블과 동일한 3-level 네임스페이스** (`catalog.schema.table`)로 관리되고, GRANT/REVOKE 권한, Lineage 추적, 크로스 워크스페이스 접근이 모두 통합되었습니다.
+
+Databricks는 이 문제를 **Feature Engineering in Unity Catalog** 로 해결합니다.
+
+### Feature Engineering in Unity Catalog
+
+| 구성 요소 | 설명 |
+|-----------|------|
+| **Feature Table** | Unity Catalog에 등록된 Delta 테이블. 일반 테이블과 동일하게 SQL로 조회 가능하며, 기본 키(primary key)를 통해 피처 룩업이 가능 |
+| **Feature Function** | Unity Catalog에 등록된 Python UDF를 피처로 직접 사용. **학습 시와 서빙 시 동일한 함수가 실행** 되어 training-serving skew를 원천적으로 방지. 예: `calculate_bmi(height, weight)` 함수를 한 번 등록하면 배치 학습과 실시간 추론에서 동일한 로직이 적용됨 |
+| **Feature Spec** | 모델이 사용하는 피처 테이블 + 피처 함수의 조합을 정의한 메타데이터. 모델과 함께 Unity Catalog에 저장 |
+
+**작동 원리**: `FeatureEngineeringClient`를 사용하여 학습 데이터셋을 생성할 때, 라벨 데이터와 피처 테이블을 자동으로 조인합니다. 이때 어떤 피처 테이블에서 어떤 키로 조인했는지가 모델에 기록되어, 서빙 시 동일한 피처를 자동으로 조회합니다.
+
+```python
+from databricks.feature_engineering import FeatureEngineeringClient, FeatureLookup
+
+fe = FeatureEngineeringClient()
+
+# 피처 룩업 정의
+feature_lookups = [
+    FeatureLookup(
+        table_name="catalog.schema.sensor_features",
+        feature_names=["avg_temperature", "vibration_rms"],
+        lookup_key="device_id"
+    )
+]
+
+# 학습 데이터셋 생성 (라벨 + 피처 자동 조인)
+training_set = fe.create_training_set(
+    df=labels_df,
+    feature_lookups=feature_lookups,
+    label="failure"
+)
+```
+
+### Feature Serving (온라인 추론용)
+
+배치 추론은 Delta 테이블에서 직접 피처를 읽으면 되지만, **실시간 추론** 에서는 밀리초 단위의 응답이 필요합니다. Delta Lake는 분석 워크로드에 최적화된 열 기반(Columnar) 스토리지이므로, 단일 키로 한 행을 빠르게 조회하는 Point Lookup에는 적합하지 않습니다.
+
+Databricks **Online Table** 은 이 문제를 해결합니다. Delta 테이블의 데이터를 **자동으로 고성능 키-값 저장소(내부적으로 RocksDB 기반)에 동기화** 하여, Primary Key 기반 서브밀리초 수준의 조회를 가능하게 합니다. 사용자는 별도의 캐시 레이어(Redis, DynamoDB 등)를 구축할 필요 없이, Unity Catalog UI에서 클릭 몇 번으로 Online Table을 생성할 수 있습니다.
+
+| 동기화 모드 | 설명 | 적합한 경우 |
+|-------------|------|------------|
+| **Snapshot** | 주기적으로 전체 테이블 복사 | 피처 변경이 드문 경우 |
+| **Triggered** | 수동 또는 API 트리거로 증분 동기화 | 배치 파이프라인 완료 후 동기화 |
+| **Continuous** | Delta 변경 사항을 실시간(초 단위) 반영 | 실시간 피처 업데이트가 필요한 경우 |
+
+> **주의**
+Online Table은 Unity Catalog 관리형 테이블에서만 생성 가능합니다. 외부 테이블(External Table)에서는 지원되지 않습니다.
+
+
+---
+
+
+## 3. 모델 학습 (Training)
+
+### Databricks Runtime ML
+
+Databricks Runtime ML은 표준 런타임에 **ML/DL 라이브러리가 사전 설치된 특수 런타임** 입니다. 직접 라이브러리를 설치하고 버전 충돌을 해결하는 고통을 없애줍니다.
+
+주요 사전 설치 라이브러리는 다음과 같습니다.
+
+| 카테고리 | 라이브러리 |
+|----------|-----------|
+| **Classic ML** | scikit-learn, XGBoost, LightGBM, CatBoost |
+| **Deep Learning** | PyTorch, TensorFlow, Keras |
+| **분산 학습** | Horovod, DeepSpeed, PyTorch Distributed |
+| **실험 관리** | MLflow (Workspace에 자동 연결) |
+| **데이터 처리** | pandas, NumPy, SciPy, Spark MLlib |
+| **시각화** | matplotlib, seaborn, plotly |
+| **GPU 지원** | CUDA, cuDNN (GPU 클러스터 선택 시) |
+
+Runtime ML 버전은 Databricks Runtime 버전과 동일한 넘버링을 따르며 (예: DBR 16.x ML), 분기마다 새로운 버전이 출시됩니다.
+
+### AutoML
+
+**왜 등장했는가**: 데이터 사이언티스트가 새 데이터셋에 대해 적합한 알고리즘, 하이퍼파라미터, 전처리 방법을 찾는 데 수일~수주가 걸립니다. AutoML은 이 탐색 과정을 자동화합니다.
+
+**Databricks AutoML의 차별점**: Google AutoML, AWS SageMaker Autopilot 등 대부분의 AutoML 도구는 결과 모델만 반환하는 **블랙박스** 방식입니다. Databricks AutoML은 근본적으로 다릅니다 -- 각 시도(trial)가 **완전한 실행 가능 노트북** 으로 생성되고, 모든 전처리/학습/평가 코드가 투명하게 공개됩니다. 이 노트북을 기반으로 도메인 지식을 반영한 수정이 가능하므로, AutoML이 **출발점(starting point)** 역할을 하고 데이터 사이언티스트가 **전문성을 더하는** 워크플로가 됩니다.
+
+**내부 탐색 과정**: AutoML은 내부적으로 다음 단계를 자동 수행합니다.
+
+1. **데이터 프로파일링**: 각 컬럼의 타입, 분포, 결측률을 분석하여 데이터 탐색 노트북 생성
+2. **전처리 자동화**: 수치형 컬럼의 결측치를 중앙값/평균으로 대체, 범주형 컬럼에 원-핫 인코딩, 날짜 컬럼에서 요일/월/시간 등 파생 피처 추출
+3. **알고리즘 탐색**: LightGBM, XGBoost, RandomForest, LogisticRegression/ElasticNet 등을 순차적으로 시도
+4. **하이퍼파라미터 최적화**: Hyperopt(TPE 알고리즘, Tree-structured Parzen Estimator) 기반으로 각 알고리즘의 최적 하이퍼파라미터를 탐색
+5. **앙상블 시도**: 상위 모델들의 가중 투표(Weighted Voting) 앙상블도 자동 시도
+
+아래 표는 Databricks AutoML의 주요 기능을 정리한 것입니다.
+
+| 기능 | 설명 |
+|------|------|
+| **지원 문제 유형** | 분류, 회귀, 시계열 예측 (Prophet, ARIMA 포함) |
+| **탐색 알고리즘** | LightGBM, XGBoost, sklearn (RandomForest, LogisticRegression 등) + Hyperopt TPE |
+| **자동 전처리** | 결측치 처리, 범주형 인코딩, 날짜 피처 추출, 텍스트 피처 TF-IDF |
+| **출력물** | 베스트 모델 노트북 + MLflow Experiment + 데이터 탐색 노트북 |
+| **사용 방법** | UI (Experiments > Create AutoML Experiment) 또는 Python API |
+| **제한사항** | 딥러닝 모델은 탐색하지 않음, 이미지/텍스트 전용 태스크 미지원, 대규모 데이터셋(수백GB 이상)에서는 샘플링 필요 |
+
+```python
+from databricks import automl
+
+summary = automl.classify(
+    dataset=train_df,
+    target_col="failure",
+    primary_metric="f1",
+    timeout_minutes=30
+)
+
+# 최고 성능 모델의 노트북 경로
+print(summary.best_trial.notebook_path)
+```
+
+> **참고**
+AutoML은 **baseline 모델** 을 빠르게 확보하는 용도로 가장 효과적입니다. 생성된 노트북을 기반으로 도메인 지식을 반영한 피처 추가, 커스텀 전처리 등을 수행하는 것이 일반적인 워크플로입니다.
+
+
+### 분산 학습
+
+Databricks 클러스터의 분산 컴퓨팅 능력을 ML 학습에 활용하는 방법은 여러 가지입니다.
+
+| 방법 | 적합한 경우 | 작동 방식 |
+|------|------------|-----------|
+| **Spark MLlib** | 대규모 정형 데이터, 클래식 ML 알고리즘 | Spark DataFrame 기반 분산 학습 |
+| **pandas UDF + Spark** | 그룹별 독립 모델 학습 (예: 매장별 수요 예측) | `applyInPandas()`로 그룹별 pandas 모델 병렬 학습 |
+| **Horovod / TorchDistributor** | 대규모 딥러닝 모델 (CNN, Transformer) | 데이터 병렬(Data Parallel) 분산 학습 |
+| **DeepSpeed** | 초대형 모델 (수십억 파라미터) | ZeRO 최적화로 메모리 효율적 분산 학습 |
+| **단일 노드 멀티 GPU** | 중간 규모 DL 모델 | PyTorch DDP 또는 Horovod 사용 |
+
+**TorchDistributor의 동작 원리**: Spark 클러스터는 일반적으로 데이터 처리를 위해 설계되었지만, TorchDistributor는 **Spark 워커 노드를 PyTorch 분산 학습 노드로 전환** 합니다. 내부적으로 다음 과정이 일어납니다.
+
+1. Spark 드라이버가 각 워커에 PyTorch 학습 프로세스를 시작하도록 지시
+2. 각 워커에서 `torch.distributed` 백엔드(NCCL for GPU, Gloo for CPU)가 초기화되어 프로세스 간 통신 채널 구성
+3. 데이터 병렬(Data Parallel) 방식으로 각 노드가 전체 모델의 복사본을 보유하고, 미니배치를 분할하여 학습
+4. 그래디언트를 AllReduce 연산으로 동기화하여 모델 파라미터를 일치시킴
+
+이 접근의 핵심 가치는 **Spark 클러스터 하나로 데이터 처리와 딥러닝 학습을 모두 수행** 할 수 있다는 것입니다. 별도의 Kubernetes 기반 학습 인프라(Kubeflow, Ray Train 등)를 구축할 필요가 없습니다.
+
+```python
+from pyspark.ml.torch.distributor import TorchDistributor
+
+def train_fn():
+    import torch
+    import torch.distributed as dist
+    # torch.distributed가 자동으로 초기화됨
+    # 일반 PyTorch DDP 학습 코드 작성
+    ...
+
+distributor = TorchDistributor(
+    num_processes=4,       # 총 GPU 프로세스 수
+    local_mode=False,      # True면 드라이버 노드만 사용
+    use_gpu=True           # GPU 사용 여부
+)
+distributor.run(train_fn)
+```
+
+**DeepSpeed ZeRO 최적화**: 수십억 파라미터 모델(예: Llama 7B 파인튜닝)은 단순 데이터 병렬로는 단일 GPU 메모리에 모델이 들어가지 않습니다. DeepSpeed의 **ZeRO(Zero Redundancy Optimizer)** 는 3단계로 메모리 사용을 최적화합니다.
+
+| ZeRO Stage | 분산 대상 | 메모리 절감 | 통신 오버헤드 |
+|------------|----------|-----------|-------------|
+| **Stage 1** | Optimizer States (Adam의 momentum, variance) | ~4x | 낮음 |
+| **Stage 2** | + Gradients | ~8x | 중간 |
+| **Stage 3** | + Model Parameters | ~N배 (N=GPU 수) | 높음 (파라미터 수집 필요) |
+
+Databricks ML Runtime에 DeepSpeed가 사전 설치되어 있으므로, TorchDistributor와 결합하여 대규모 모델의 파인튜닝을 수행할 수 있습니다.
+
+### GPU 클러스터 활용
+
+Databricks는 AWS(p4d, p5, g5), Azure(NC, ND 시리즈), GCP의 GPU 인스턴스를 지원합니다. GPU 클러스터 사용 시 고려사항은 다음과 같습니다.
+
+| 고려사항 | 권장 사항 |
+|---------|----------|
+| **인스턴스 선택** | 학습: A100/H100 (고대역폭). 추론: T4/A10G (비용 효율) |
+| **Runtime 선택** | 반드시 ML Runtime (GPU 버전) 선택 |
+| **스팟 인스턴스** | 학습 시 비용 절감 가능. 체크포인트 저장 필수 |
+| **단일 vs 멀티 노드** | 모델 크기 \< GPU 메모리이면 단일 노드로 충분 |
+
+---

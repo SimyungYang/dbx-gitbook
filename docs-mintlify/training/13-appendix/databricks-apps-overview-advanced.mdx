@@ -1,0 +1,199 @@
+---
+title: "Databricks Apps 개요 — 컴퓨트 사이징과 앱 인증 모델"
+---
+
+> **참고**
+
+## 컴퓨트 사이징
+
+앱의 워크로드에 맞는 컴퓨트 크기를 선택할 수 있습니다.
+
+| 크기 | vCPU | 메모리 | 적합한 용도 |
+|------|------|--------|-----------|
+| **Small**(기본) | 1 | 2 GB | 경량 대시보드, 간단한 API |
+| **Medium** | 2 | 6 GB | 데이터 시각화, 중간 규모 앱 |
+| **Large** | 4 | 12 GB | 복잡한 분석, 대량 데이터 처리 |
+
+> 🆕 **컴퓨트 사이징 GA**: Medium(2 vCPU, 6GB)과 Large(4 vCPU, 12GB) 옵션이 GA되어, 앱의 워크로드에 맞는 리소스를 선택할 수 있습니다.
+
+---
+
+## 앱 인증 모델
+
+Databricks Apps는 **두 가지 인증 모델** 을 지원합니다.
+
+### 1. 앱 서비스 프린시펄 인증 (App-on-behalf-of-itself)
+
+앱 생성 시 자동으로 할당된 **Service Principal** 의 권한으로 리소스에 접근합니다. 모든 사용자가 동일한 데이터를 보게 됩니다.
+
+```python
+# 앱 Service Principal 인증 (기본)
+from databricks.sdk import WorkspaceClient
+
+# 앱 내부에서는 자동으로 앱의 Service Principal로 인증됩니다
+w = WorkspaceClient()
+tables = w.tables.list(catalog_name="main", schema_name="default")
+```
+
+### 2. 사용자 대리 인증 (App-on-behalf-of-user)
+
+로그인한 **사용자의 OAuth 토큰** 을 사용하여 리소스에 접근합니다. 각 사용자가 자신의 권한에 맞는 데이터만 볼 수 있습니다.
+
+```python
+# 사용자 대리 인증
+from databricks.sdk import WorkspaceClient
+
+def get_user_client(request_headers):
+    """요청 헤더에서 사용자 토큰을 추출하여 클라이언트 생성"""
+    w = WorkspaceClient(
+        host=os.environ["DATABRICKS_HOST"],
+        token=request_headers.get("X-Forwarded-Access-Token")
+    )
+    return w
+```
+
+| 구분 | 앱 Service Principal | 사용자 대리 인증 |
+|------|---------------------|----------------|
+| **데이터 접근** | 모든 사용자가 동일 | 사용자별 권한 적용 |
+| **설정 복잡도** | 낮음 (기본값) | 중간 (토큰 전달 필요) |
+| **적합한 경우** | 공용 대시보드, 공개 데이터 | 개인화된 데이터 뷰, 민감 데이터 |
+| **감사(Audit)** | 앱 이름으로 기록 | 실제 사용자 이름으로 기록 |
+
+> 💡 **어떤 인증을 선택해야 할까요?** 데이터에 행/열 수준 보안이 필요하거나, 누가 어떤 데이터에 접근했는지 감사 추적이 중요하다면 **사용자 대리 인증** 을 사용하세요.
+
+---
+
+## 개발 워크플로
+
+Databricks Apps의 개발은 **로컬 개발 → 배포 → 테스트 → 반복** 사이클을 따릅니다.
+
+| 단계 | 작업 | 설명 |
+|------|------|------|
+| 1 | 로컬 개발 | app.py + app.yaml을 작성합니다 |
+| 2 | 배포 | CLI 또는 UI로 배포합니다 |
+| 3 | 테스트 | 앱 URL에 접속하여 테스트합니다 |
+| 4 | 로그 확인 | 문제를 진단합니다. 수정이 필요하면 1단계로 돌아갑니다 |
+| 5 | 프로덕션 | 완료 후 공유합니다 |
+
+### 로컬 프로젝트 구조
+
+```
+my-app/
+| 파일 | 설명 |
+|------|------|
+| `app.py` | 메인 앱 코드 |
+| `app.yaml` | Databricks Apps 설정 |
+| `requirements.txt` | 추가 Python 패키지 |
+| `static/logo.png` | 정적 파일 (선택) |
+```
+
+---
+
+## 배포 방법
+
+### 방법 1: Databricks CLI
+
+```bash
+# 1. 앱 생성 (최초 1회)
+databricks apps create my-dashboard \
+  --description "매출 분석 대시보드"
+
+# 2. 앱 배포 (코드 업로드 + 시작)
+databricks apps deploy my-dashboard \
+  --source-code-path ./my-app
+
+# 3. 앱 상태 확인
+databricks apps get my-dashboard
+
+# 4. 앱 로그 확인
+databricks apps get-logs my-dashboard
+```
+
+### 방법 2: Workspace UI
+
+1. 좌측 메뉴에서 **Compute**> **Apps** 선택
+2. **Create App** 클릭
+3. 앱 이름과 설명 입력
+4. 소스 코드 업로드 또는 Git 연결
+5. 리소스 바인딩 설정
+6. **Deploy** 클릭
+
+### 방법 3: Databricks Asset Bundles (DABs)
+
+프로덕션 환경에서는 DABs로 앱을 인프라-as-코드로 관리할 수 있습니다.
+
+```yaml
+# databricks.yml
+bundle:
+  name: my-dashboard
+
+resources:
+  apps:
+    my-dashboard:
+      name: "my-dashboard"
+      description: "매출 분석 대시보드"
+      source_code_path: ./src
+      config:
+        command:
+          - "streamlit"
+          - "run"
+          - "app.py"
+          - "--server.port"
+          - "8000"
+        resources:
+          - name: "warehouse"
+            sql_warehouse:
+              id: "${var.warehouse_id}"
+              permission: "CAN_USE"
+```
+
+---
+
+## 데이터 접근 방법
+
+앱에서 Databricks 데이터에 접근하는 주요 방법입니다.
+
+### SQL Warehouse를 통한 데이터 조회
+
+```python
+import streamlit as st
+from databricks import sql
+import os
+
+# SQL Warehouse 연결 (리소스 바인딩 활용)
+connection = sql.connect(
+    server_hostname=os.environ["DATABRICKS_HOST"],
+    http_path=os.environ["DATABRICKS_SQL_WAREHOUSE_HTTP_PATH"],
+    credentials_provider=lambda: {
+        "Authorization": f"Bearer {os.environ['DATABRICKS_TOKEN']}"
+    }
+)
+
+cursor = connection.cursor()
+cursor.execute("SELECT * FROM main.sales.daily_revenue LIMIT 100")
+df = cursor.fetchall_arrow().to_pandas()
+
+st.dataframe(df)
+```
+
+### Databricks SDK 사용
+
+```python
+from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+
+# Unity Catalog 테이블 목록 조회
+for table in w.tables.list(catalog_name="main", schema_name="sales"):
+    print(f"테이블: {table.name}")
+```
+
+---
+
+---
+
+## 참고 링크
+
+- [Databricks: Databricks Apps 개요](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/)
+- [Databricks: App 설정 (app.yaml)](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/configuration.html)
+- [Azure Databricks: Databricks Apps](https://learn.microsoft.com/en-us/azure/databricks/dev-tools/databricks-apps/)

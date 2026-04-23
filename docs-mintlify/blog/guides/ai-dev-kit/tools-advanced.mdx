@@ -1,0 +1,96 @@
+---
+title: "Tool 목록 및 — Skills System과 개요"
+---
+
+> 이 문서는 **[AI Dev Kit](/blog/guides/ai-dev-kit/overview)** 섹션의 일부입니다.
+
+## Skills System
+
+29개의 마크다운 기반 스킬 파일이 에이전트에게 Databricks 작업 수행 패턴을 가르칩니다. 에이전트는 `/skill` 명령으로 필요한 스킬을 로드합니다.
+
+### 주요 스킬 목록
+
+| 스킬 | 설명 |
+|---|---|
+| **synthetic-data** | 합성 데이터 생성 가이드 |
+| **dashboard** | AI/BI 대시보드 생성 패턴 |
+| **genie-space** | Genie Space 구성 및 인스트럭션 작성 |
+| **sdp** | Spark Declarative Pipeline(SDP) 패턴 |
+| **unity-catalog** | UC 객체 생성 및 권한 관리 |
+| **python-sdk** | Databricks Python SDK 사용 패턴 |
+| **agent-bricks** | Knowledge Assistant, Genie Agent 등 Agent Bricks 구축 |
+| **lakebase** | Lakebase(PostgreSQL) 설정 및 사용 |
+| **jobs** | Databricks Jobs 생성 및 스케줄링 |
+| **dabs** | Databricks Asset Bundles 구성 |
+| **apps** | Databricks Apps 풀스택 개발(APX 프레임워크) |
+| **mlflow** | MLflow 실험 및 모델 평가 |
+| **model-serving** | Model Serving Endpoint 구성 |
+| **vector-search** | Vector Search Index 생성 및 RAG 패턴 |
+
+> **팁**
+스킬은 에이전트의 "사전 지식"입니다. 예를 들어 "대시보드를 만들어줘"라고 요청하면, 에이전트가 `dashboard` 스킬을 로드한 후 올바른 Lakeview 대시보드 JSON 구조를 생성합니다.
+
+
+### 커스텀 스킬 추가
+
+프로젝트 디렉토리의 `skills/` 폴더에 마크다운 파일을 추가하면 에이전트가 해당 스킬을 인식합니다.
+
+```markdown
+<!-- skills/my-custom-skill.md -->
+# My Custom Skill
+
+## 개요
+이 스킬은 특정 비즈니스 로직을 수행하는 방법을 안내합니다.
+
+## 단계
+1. 먼저 데이터를 조회합니다.
+2. 필요한 변환을 수행합니다.
+3. 결과를 저장합니다.
+```
+
+---
+
+## 도구 사용 패턴
+
+에이전트가 도구를 조합하여 복잡한 작업을 수행하는 대표적인 패턴입니다.
+
+### 순차 실행 패턴
+
+이전 도구의 출력이 다음 도구의 입력이 되는 패턴입니다.
+
+```
+manage_uc_objects (스키마 생성) → execute_sql (테이블 생성) → create_or_update_dashboard (대시보드 생성)
+```
+
+### 조건 분기 패턴
+
+이전 도구의 결과에 따라 다음 행동을 결정하는 패턴입니다.
+
+```
+list_clusters (클러스터 목록 조회)
+  ├─ 실행 중인 클러스터 있음 → get_best_cluster → execute_databricks_command
+  └─ 없음 → start_cluster → (대기) → execute_databricks_command
+```
+
+### 반복 확인 패턴
+
+장시간 작업의 완료를 대기하는 패턴입니다.
+
+```
+start_update (파이프라인 실행)
+  → get_update (상태 확인) → RUNNING → (대기) → get_update
+  → get_update (상태 확인) → COMPLETED → 결과 보고
+```
+
+> **참고**
+에이전트는 이러한 패턴을 **스킬 파일** 에서 학습합니다. 예를 들어 `sdp` 스킬은 파이프라인 생성 → 실행 → 상태 확인의 전체 흐름을 안내합니다.
+
+
+---
+
+## 참고 링크
+
+- [Databricks MCP Server](https://github.com/databricks-solutions/ai-dev-kit/tree/main/databricks-mcp-server)
+- [Databricks Skills](https://github.com/databricks-solutions/ai-dev-kit/tree/main/databricks-skills)
+- [Claude Agent SDK 도구 문서](https://docs.anthropic.com/en/docs/agents)
+- [MCP Protocol 규격](https://modelcontextprotocol.io/)

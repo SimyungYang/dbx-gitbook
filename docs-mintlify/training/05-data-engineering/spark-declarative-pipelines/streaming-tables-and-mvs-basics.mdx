@@ -1,0 +1,201 @@
+---
+title: "ST와 MV — 왜 두 가지 테이블 유형이 필요한가?"
+---
+
+> 이 문서는 **[데이터 엔지니어링](/training/05-data-engineering/overview)** 섹션의 일부입니다.
+
+## 왜 두 가지 테이블 유형이 필요한가?
+
+데이터 파이프라인에서 처리하는 데이터의 성격은 크게 두 가지입니다:
+
+1. **계속 추가되는 데이터**— 로그, 이벤트, 트랜잭션처럼 새 데이터가 지속적으로 들어오는 경우
+2. **집계/변환이 필요한 데이터**— 기존 데이터를 GROUP BY, JOIN 등으로 요약하거나 변환하는 경우
+
+SDP(Spark Declarative Pipelines)는 이 두 가지 상황에 최적화된 서로 다른 테이블 유형을 제공합니다.
+
+> 💡 쉽게 비유하면, **Streaming Table** 은 "받은 편지함"처럼 새 메일이 계속 쌓이는 곳이고, **Materialized View** 는 "대시보드"처럼 전체 데이터를 요약해서 보여주는 곳입니다.
+
+---
+
+## Streaming Table (스트리밍 테이블)
+
+### 개념
+
+**Streaming Table** 은 새로 도착한 데이터만 **증분(Incremental)** 으로 처리하여 추가하는 테이블입니다. 한 번 처리된 데이터는 다시 처리하지 않으며, **Append-Only** 방식으로 동작합니다.
+
+### 핵심 특성
+
+| 특성 | 설명 |
+|------|------|
+| **처리 방식** | 증분 처리 (Incremental). 마지막 처리 이후의 새 데이터만 읽습니다 |
+| **데이터 모델** | 기본적으로 Append-Only. `APPLY CHANGES`로 UPDATE/DELETE 가능 |
+| **소스 요구사항** | 스트리밍 소스 필요 (`STREAM()` 함수 사용) |
+| **상태 관리** | 체크포인트를 통해 "어디까지 읽었는지" 자동 추적합니다 |
+| **적합한 계층** | Medallion의 **Bronze**, **Silver** 계층 |
+
+### 지원하는 소스 유형
+
+**Streaming Table 소스 유형**
+
+| 소스 유형 | 설명 |
+|-----------|------|
+| 클라우드 스토리지 (Auto Loader) | S3, ADLS, GCS 등에서 파일을 자동 수집합니다 |
+| Kafka / Event Hub (메시지 큐) | 실시간 메시지 스트림을 수집합니다 |
+| 다른 Streaming Table (체이닝) | 이전 Streaming Table의 출력을 입력으로 사용합니다 |
+| CDC 소스 (APPLY CHANGES) | CDC 변경 데이터를 처리합니다 |
+
+### SQL 예제
+
+```sql
+-- 기본 Streaming Table: 새 데이터를 증분 처리
+CREATE OR REFRESH STREAMING TABLE silver_orders
+AS SELECT
+    CAST(order_id AS BIGINT) AS order_id,
+    CAST(customer_id AS BIGINT) AS customer_id,
+    CAST(amount AS DECIMAL(12,2)) AS amount,
+    CAST(order_date AS TIMESTAMP) AS order_date,
+    CAST(status AS STRING) AS status
+FROM STREAM(bronze_orders);
+```
+
+### Python 예제
+
+```python
+import dlt
+from pyspark.sql.functions import col
+
+@dlt.table(
+    comment="정제된 주문 데이터 (증분 처리)",
+    table_properties={"quality": "silver"}
+)
+def silver_orders():
+    return (
+        dlt.read_stream("bronze_orders")
+           .select(
+               col("order_id").cast("bigint"),
+               col("customer_id").cast("bigint"),
+               col("amount").cast("decimal(12,2)"),
+               col("order_date").cast("timestamp"),
+               col("status").cast("string")
+           )
+    )
+```
+
+### 내부 동작 원리
+
+1. **첫 번째 실행**: 소스의 모든 데이터를 읽어 테이블에 저장합니다
+2. **이후 실행**: 체크포인트를 기준으로 "마지막으로 읽은 위치" 이후의 새 데이터만 읽습니다
+3. **결과**: 이전에 처리한 데이터를 다시 읽지 않으므로 매우 효율적입니다
+
+> ⚠️ Streaming Table의 소스는 반드시 `STREAM()` 함수로 감싸야 합니다. 이를 빠뜨리면 일반 배치 읽기가 되어 매번 전체 데이터를 다시 처리하게 됩니다.
+
+---
+
+## Materialized View (Materialized View)
+
+### 개념
+
+**Materialized View** 는 쿼리의 결과를 미리 계산하여 저장하는 테이블입니다. 소스 데이터가 변경되면 결과를 **자동으로 재계산** 합니다. 일반 VIEW와 달리 결과가 물리적으로 저장되어 있으므로 조회가 빠릅니다.
+
+### 핵심 특성
+
+| 특성 | 설명 |
+|------|------|
+| **처리 방식** | 소스 변경 시 결과를 재계산합니다. 가능한 경우 증분 갱신을 시도합니다 |
+| **데이터 모델** | 전체 결과를 유지합니다. UPDATE/DELETE가 자동 반영됩니다 |
+| **소스 요구사항** | 모든 테이블/뷰를 소스로 사용 가능합니다 (`STREAM()` 불필요) |
+| **적합한 연산** | GROUP BY, JOIN, UNION, 윈도우 함수 등 모든 SQL 연산 |
+| **적합한 계층** | Medallion의 **Silver**(일부), **Gold** 계층 |
+
+### SQL 예제
+
+```sql
+-- 일별 매출 집계 (Materialized View)
+CREATE OR REFRESH MATERIALIZED VIEW gold_daily_revenue
+AS SELECT
+    DATE(order_date) AS sale_date,
+    COUNT(*) AS order_count,
+    SUM(amount) AS total_revenue,
+    AVG(amount) AS avg_order_value,
+    COUNT(DISTINCT customer_id) AS unique_customers
+FROM silver_orders
+GROUP BY DATE(order_date);
+```
+
+### Python 예제
+
+```python
+import dlt
+from pyspark.sql.functions import col, count, sum as _sum, avg, countDistinct, date_trunc
+
+@dlt.table(
+    comment="일별 매출 집계",
+    table_properties={"quality": "gold"}
+)
+def gold_daily_revenue():
+    return (
+        dlt.read("silver_orders")  # STREAM이 아닌 일반 read
+           .groupBy(date_trunc("day", col("order_date")).alias("sale_date"))
+           .agg(
+               count("*").alias("order_count"),
+               _sum("amount").alias("total_revenue"),
+               avg("amount").alias("avg_order_value"),
+               countDistinct("customer_id").alias("unique_customers")
+           )
+    )
+```
+
+### 내부 동작 원리
+
+1. **첫 번째 실행**: 소스의 전체 데이터를 읽어 쿼리 결과를 계산하고 저장합니다
+2. **이후 실행**: 소스 데이터의 변경사항을 감지하여 결과를 갱신합니다
+   - **증분 갱신 가능**: 일부 쿼리 패턴(단순 필터, 집계 등)은 변경분만으로 결과를 갱신합니다
+   - **전체 재계산 필요**: 복잡한 JOIN, 윈도우 함수 등은 전체 데이터를 다시 계산합니다
+3. **결과**: 항상 소스의 최신 상태를 반영한 정확한 결과를 제공합니다
+
+> 💡 Materialized View는 소스에서 데이터가 UPDATE되거나 DELETE되어도 결과에 자동으로 반영됩니다. 이것이 Streaming Table과의 가장 큰 차이점입니다.
+
+---
+
+## 핵심 차이 비교
+
+### 상세 비교표
+
+| 비교 항목 | Streaming Table | Materialized View |
+|----------|----------------|-------------------|
+| **처리 모델** | 증분 처리 (Append 기반) | 전체 결과 재계산 (또는 증분 갱신) |
+| **소스 읽기** | `STREAM()` 함수 필수 | 일반 테이블 참조 |
+| **INSERT** | ✅ 새 행 추가 | ✅ 결과에 반영 |
+| **UPDATE** | ❌ 기본 미지원 (APPLY CHANGES 필요) | ✅ 자동 반영 |
+| **DELETE** | ❌ 기본 미지원 (APPLY CHANGES 필요) | ✅ 자동 반영 |
+| **적합한 연산** | 필터, 변환, 정제 | 집계, JOIN, 복잡한 연산 |
+| **Medallion 계층** | Bronze, Silver | Silver(일부), Gold |
+| **갱신 비용** | 낮음 (새 데이터만) | 중간~높음 (변경 범위에 따라) |
+| **실시간성** | 높음 | 중간 |
+| **상태 관리** | 체크포인트로 진행 위치 추적 | 소스-타겟 간 차이 감지 |
+
+### 언제 무엇을 선택할까?
+
+**데이터 처리 유형 선택 가이드**
+
+| 질문 | 조건 | 권장 유형 |
+|------|------|----------|
+| 새 데이터만 계속 추가되는가? | Yes + 단순 변환/필터만 필요 | Streaming Table |
+| 새 데이터만 계속 추가되는가? | Yes + 집계/JOIN 필요 | Materialized View |
+| UPDATE/DELETE 포함? | CDC 처리 필요 | Streaming Table + APPLY CHANGES |
+| UPDATE/DELETE 포함? | CDC 불필요 | Materialized View |
+
+### 의사결정 가이드
+
+| 상황 | 권장 테이블 유형 | 이유 |
+|------|----------------|------|
+| 클라우드 스토리지에서 파일 수집 | **Streaming Table** | Auto Loader와 함께 증분 처리가 효율적입니다 |
+| Kafka에서 이벤트 소비 | **Streaming Table** | 스트리밍 소스를 자연스럽게 처리합니다 |
+| 로그/이벤트 데이터 적재 | **Streaming Table** | Append-Only 특성에 잘 맞습니다 |
+| CDC 데이터 반영 | **Streaming Table**+ APPLY CHANGES | CDC의 INSERT/UPDATE/DELETE를 모두 처리합니다 |
+| 일별/월별 매출 집계 | **Materialized View** | GROUP BY 집계는 전체 데이터 기반이 필요합니다 |
+| 여러 테이블 JOIN | **Materialized View** | JOIN 결과를 미리 계산하여 조회 성능을 높입니다 |
+| 중복 제거 (DISTINCT) | **Materialized View** | 전체 데이터에서 중복을 제거해야 합니다 |
+| 윈도우 함수 (순위, 누적합) | **Materialized View** | 전체 데이터 맥락이 필요한 연산입니다 |
+
+---

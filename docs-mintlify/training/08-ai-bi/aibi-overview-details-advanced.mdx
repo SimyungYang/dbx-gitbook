@@ -1,0 +1,126 @@
+---
+title: "Genie Space vs Genie Code과 AI/BI Dashboa"
+---
+
+## Genie Space vs Genie Code 비교
+
+| 비교 항목 | Genie Space | Genie Code |
+|----------|------------|------------|
+| **접근 방식** | 사전 구성된 Space에 질문 | 자유로운 탐색적 분석 |
+| **대상 사용자** | 비기술 비즈니스 사용자 | 분석가, 데이터 사이언티스트 |
+| **쿼리 범위** | 지정된 테이블만 (최대 20개 권장) | Workspace 내 모든 테이블 |
+| **생성 코드** | SQL만 | Python + SQL |
+| **시각화** | 테이블/차트 자동 생성 | matplotlib, plotly 등 자유 |
+| **인증된 답변** | 지원 (관리자가 사전 검증) | 미지원 |
+| **컴퓨트** | SQL Warehouse | Serverless Compute (노트북) |
+| **거버넌스** | Space별 테이블 접근 제어 | Unity Catalog 권한 기반 |
+| **MCP 연동** | Genie Agent (Agent Bricks) | AI Dev Kit MCP 서버 |
+
+> **참고**
+**선택 가이드**: 반복적인 비즈니스 질문에는 **Genie Space** (인증된 답변으로 정확도 보장), 탐색적이고 복잡한 데이터 분석에는 **Genie Code** (Python + 시각화 자유도)를 사용하세요.
+
+
+---
+
+## AI/BI Dashboard 구성 요소 상세
+
+### 위젯 유형
+
+| 위젯 유형 | 용도 | 설정 항목 |
+|----------|------|----------|
+| **카운터 (Counter)** | 단일 KPI 표시 (매출, 고객 수 등) | 값, 목표값, 비교 기간 |
+| **테이블 (Table)** | 상세 데이터 조회 | 정렬, 필터, 컬럼 서식 |
+| **막대 차트 (Bar)** | 범주별 비교 | X축, Y축, 색상, 스택 |
+| **선 차트 (Line)** | 시계열 트렌드 | X축(시간), Y축, 그룹 |
+| **파이 차트 (Pie)** | 비율/구성 | 카테고리, 값 |
+| **산점도 (Scatter)** | 변수 간 관계 | X축, Y축, 크기, 색상 |
+| **히트맵 (Heatmap)** | 2차원 밀도 표현 | X축, Y축, 값 |
+| **텍스트 (Markdown)** | 설명, 제목, 주석 | Markdown 문법 지원 |
+| **필터 (Filter)** | 대시보드 전체 필터링 | 드롭다운, 날짜 범위, 텍스트 |
+
+### 대시보드 설계 모범 사례
+
+| 원칙 | 설명 | 예시 |
+|------|------|------|
+| **3초 규칙** | 핵심 KPI를 3초 안에 파악 가능해야 함 | 상단에 카운터 위젯 배치 |
+| **피라미드 구조** | 위→아래로 요약→상세 배치 | KPI → 트렌드 차트 → 상세 테이블 |
+| **필터 우선** | 날짜/지역 필터를 최상단에 배치 | 전체 대시보드에 영향 |
+| **쿼리 최적화** | Gold 테이블 사용, 불필요한 JOIN 제거 | 응답 시간 2초 이내 목표 |
+| **공유 시 권한 확인** | 대시보드와 테이블 SELECT 권한 모두 부여 | 데이터 미표시 방지 |
+
+```sql
+-- 대시보드용 Gold 테이블 설계 예시
+CREATE TABLE sales.gold.dashboard_daily_summary AS
+SELECT
+  sale_date,
+  region,
+  product_category,
+  COUNT(*) AS order_count,
+  SUM(amount) AS total_revenue,
+  COUNT(DISTINCT customer_id) AS unique_customers,
+  AVG(amount) AS avg_order_value
+FROM sales.silver.orders
+WHERE sale_date >= current_date() - INTERVAL 365 DAYS
+GROUP BY sale_date, region, product_category;
+
+-- Liquid Clustering 적용 (대시보드 필터 패턴에 맞게)
+ALTER TABLE sales.gold.dashboard_daily_summary
+CLUSTER BY (sale_date, region);
+```
+
+---
+
+## 실전 활용 사례
+
+### 사례 1: 제조업 생산 모니터링
+
+| 구성 요소 | 용도 | 상세 |
+|----------|------|------|
+| **AI/BI Dashboard** | 실시간 생산 현황 | 라인별 생산량, 불량률, 설비 가동률 |
+| **Alerts** | 이상 감지 | 불량률 > 5% 시 Slack 알림 |
+| **Genie** | 원인 분석 | "어제 3라인 불량률이 높았던 원인은?" |
+
+### 사례 2: 리테일 매출 분석
+
+| 구성 요소 | 용도 | 상세 |
+|----------|------|------|
+| **AI/BI Dashboard** | 일별/주별 매출 트렌드 | 지역별, 카테고리별 매출 비교 |
+| **Genie** | 경영진 즉석 질문 | "이번 분기 상위 10개 매장 매출은?" |
+| **Metric Views** | KPI 표준화 | 매출, 객단가, 재방문율 통일 정의 |
+
+### 사례 3: 금융 리스크 모니터링
+
+| 구성 요소 | 용도 | 상세 |
+|----------|------|------|
+| **AI/BI Dashboard** | 포트폴리오 리스크 현황 | VaR, 신용등급 분포, 연체율 |
+| **Alerts** | 규제 임계값 위반 | 자본적정성 비율 \< 8% 시 즉시 알림 |
+| **Genie** | 규제 보고 지원 | "이번 달 신규 연체 고객 목록은?" |
+
+> **참고**
+**업종별 Genie Space 분리 전략**: 하나의 거대한 Genie Space보다 업무 도메인별로 작은 Space를 여러 개 만드는 것이 정확도에 유리합니다. 예: "매출 분석" Space, "고객 분석" Space, "재고 분석" Space.
+
+
+---
+
+## 더 알아보기
+
+| 주제 | 문서 |
+|------|------|
+| 대시보드 상세 | [AI/BI 대시보드](./lakeview-dashboards) |
+| Genie 상세 | [Genie](./genie) |
+| 알림 상세 | [알림과 스케줄링](./alerts-and-scheduling) |
+| 기술 아키텍처 | [AI/BI 아키텍처 심화](./aibi-architecture) |
+| 외부 BI 연동 | [하이브리드 BI 전략](./hybrid-bi-strategy) |
+
+---
+
+## 참고 링크
+
+- [Databricks: AI/BI](https://docs.databricks.com/aws/en/aibi/)
+- [Databricks: AI/BI Dashboards](https://docs.databricks.com/aws/en/aibi/dashboards/)
+- [Databricks: Genie](https://docs.databricks.com/aws/en/aibi/genie/)
+- [Databricks: Alerts](https://docs.databricks.com/aws/en/sql/user/alerts/)
+- [Databricks: Metric Views](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-metric-view.html)
+- [Databricks: Genie Code](https://docs.databricks.com/aws/en/genie/genie-code.html)
+- [Databricks: SQL Warehouses](https://docs.databricks.com/aws/en/compute/sql-warehouse/index.html)
+- [Databricks: Unity Catalog — Table Comments](https://docs.databricks.com/aws/en/data-governance/unity-catalog/manage-privileges/ownership.html)

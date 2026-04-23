@@ -1,0 +1,135 @@
+---
+title: "OpenAI 모델 & Codex"
+---
+
+> 이 문서는 **[GenAI 개념](/blog/guides/genai-concepts/overview)** 섹션의 일부입니다.
+
+
+
+## 5. Codex -- 코딩 에이전트
+
+### Cloud Codex vs CLI Codex
+
+| 구분 | Cloud Codex | CLI Codex |
+|---|---|---|
+| 환경 | ChatGPT 내 클라우드 실행 | 로컬 터미널 |
+| 실행 방식 | 샌드박스 VM에서 자율 실행 | 로컬 repo에서 직접 실행 |
+| 소스 | SaaS | **오픈소스 (Rust)** |
+| 주요 용도 | PR 생성, 리팩토링 | 로컬 개발 보조 |
+
+---
+
+## 6. Operator & Deep Research
+
+### Operator -- 브라우저 자동화 에이전트
+
+Computer-Using Agent(CUA) 기술 기반. 스크린샷 → 분석 → 클릭/타이핑 → 새 스크린샷의 반복 루프로 작동합니다. 민감한 작업 시 사용자에게 제어권을 반환합니다.
+
+### Deep Research -- 자율 리서치 에이전트
+
+o3 모델 기반으로, 5~30분에 걸쳐 수십 개의 웹 페이지를 탐색하여 **구조화된 보고서** 를 생성합니다. 사람이 며칠간 할 리서치를 자동화하는 개념입니다.
+
+### ChatGPT Agent Mode로의 통합
+
+2025년 7월, Operator + Deep Research + 기존 도구들을 **ChatGPT Agent Mode** 라는 통합 경험으로 결합했습니다. o3가 최초로 ChatGPT의 모든 도구를 에이전틱하게 사용할 수 있는 모델입니다.
+
+---
+
+## 7. 추론 모델 (o3, o4-mini)
+
+o3과 o4-mini는 **체인 오브 쏘트(Chain-of-Thought) 추론 중에 도구를 호출** 할 수 있는 최초의 모델입니다.
+
+| 모델 | Input (1M) | Output (1M) | 특징 |
+|---|---|---|---|
+| **o3** | $10.00 | $40.00 | 최고 추론 성능 |
+| **o4-mini** | $1.10 | $4.40 | o3 대비 80% 저렴, 추론 성능의 90% 유지 |
+| GPT-4.1 | $2.00 | $8.00 | 추론 없음. 빠른 응답, Agent 최적화 |
+
+> **주의**
+**o3 vs GPT-4.1 선택 기준**: 정확한 추론이 필수 → o3, 빠른 응답과 도구 활용이 중요 → GPT-4.1
+
+
+---
+
+## 8. GPT-5 / GPT-5.2 -- 최신 모델 동향
+
+| 모델 | 출시 | 주요 특징 |
+|---|---|---|
+| **GPT-5** | 2025년 중반 | 전반적 성능 도약. 추론+생성 통합 |
+| **GPT-5.2** | 2025년 12월 | 환각 30% 감소. 가장 신뢰할 수 있는 모델 |
+
+---
+
+## 9. Databricks 환경에서의 시사점
+
+### OpenAI 모델을 Databricks에서 사용하는 방법
+
+| 방법 | 설명 | 적합한 경우 |
+|---|---|---|
+| **Foundation Model APIs** | Databricks가 호스팅하는 모델 | 오픈소스 모델 사용 시 |
+| **External Models** | 외부 모델을 Model Serving endpoint로 래핑 | OpenAI 모델 필요 시 |
+| **직접 API 호출** | 코드에서 OpenAI API 직접 호출 | 간단한 프로토타이핑 |
+
+```python
+import mlflow.deployments
+client = mlflow.deployments.get_deploy_client("databricks")
+
+response = client.predict(
+    endpoint="openai-gpt-4-1",
+    inputs={
+        "messages": [
+            {"role": "system", "content": "당신은 데이터 분석 전문가입니다."},
+            {"role": "user", "content": "매출 트렌드를 분석해주세요."},
+        ],
+        "temperature": 0.1,
+    },
+)
+```
+
+> **성공**
+**External Models의 장점**: OpenAI API 키를 개발자에게 직접 배포하지 않고, Databricks의 **거버넌스와 모니터링** 을 통해 중앙 관리할 수 있습니다.
+
+
+### Agents SDK + Databricks Agent Framework 조합
+
+| 시나리오 | 권장 조합 |
+|---|---|
+| Databricks 데이터 기반 Agent | **Databricks Agent Framework** |
+| 외부 시스템 연동 멀티에이전트 | **OpenAI Agents SDK** |
+| 하이브리드 | Agents SDK로 오케스트레이션 + Databricks Model Serving으로 모델 호출 |
+
+---
+
+## 10. 고객이 자주 묻는 질문
+
+### Q1. Chat Completions API를 당장 Responses API로 바꿔야 하나요?
+
+아니요, 당장은 아닙니다. 다만 새로운 Agent 프로젝트는 처음부터 Responses API를 권장합니다.
+
+### Q2. Agents SDK vs LangGraph vs Databricks Agent Framework?
+
+| 기준 | OpenAI Agents SDK | LangGraph | Databricks Agent Framework |
+|---|---|---|---|
+| 복잡도 | 낮음 | 높음 | 중간 |
+| 데이터 거버넌스 | 별도 구현 | 별도 구현 | Unity Catalog 내장 |
+| 추천 상황 | OpenAI 중심 멀티에이전트 | 복잡한 워크플로우 | Databricks 데이터 중심 Agent |
+
+### Q3. GPT-4.1과 o3 중 어떤 모델을 Agent에 사용해야 하나요?
+
+대부분의 Agent에는 GPT-4.1이 적합합니다. o3는 수학적 추론이나 복잡한 논리 문제에서 우수합니다.
+
+### Q4. OpenAI Agent 기술을 Databricks 환경에서 사용할 때 보안/거버넌스는?
+
+**External Models + Unity Catalog 조합을 권장합니다.** API 키를 Databricks Secret으로 관리하고, External Model endpoint로 래핑하여 노출하지 않습니다.
+
+---
+
+## 11. 참고 자료
+
+| 자료 | 링크 |
+|---|---|
+| Agents SDK GitHub | [github.com/openai/openai-agents-python](https://github.com/openai/openai-agents-python) |
+| Responses API 가이드 | [platform.openai.com/docs/guides/responses-vs-chat-completions](https://platform.openai.com/docs/guides/responses-vs-chat-completions) |
+| GPT-4.1 발표 | [openai.com/index/gpt-4-1/](https://openai.com/index/gpt-4-1/) |
+| Codex | [openai.com/index/introducing-codex/](https://openai.com/index/introducing-codex/) |
+| External Models 설정 | [docs.databricks.com/en/generative-ai/external-models/index.html](https://docs.databricks.com/en/generative-ai/external-models/index.html) |

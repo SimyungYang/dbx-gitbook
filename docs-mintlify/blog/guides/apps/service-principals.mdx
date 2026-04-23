@@ -1,0 +1,158 @@
+---
+title: "서비스 프린시펄 (SP) 권한 관리"
+---
+
+> 이 문서는 **[Databricks Apps](/blog/guides/apps/overview)** 섹션의 일부입니다.
+
+
+
+## 서비스 프린시펄 자동 생성 동작 방식
+
+앱 생성 시 Databricks가 **전용 서비스 프린시펄(SP)** 을 자동으로 생성합니다. 이 SP가 앱의 영구적인 아이덴티티로 동작합니다.
+
+이 자동 생성 메커니즘이 왜 중요한지 이해하려면, 기존 방식을 먼저 떠올려 보세요. 일반적으로 외부 앱에서 Databricks에 접근하려면 **개인 액세스 토큰(PAT)** 을 생성하고, 이를 환경변수나 Secret Manager에 저장하고, 주기적으로 로테이션해야 합니다. PAT는 특정 사용자에게 귀속되므로 그 사용자가 퇴사하면 토큰이 무효화됩니다. 서비스 프린시펄은 이러한 문제를 근본적으로 해결합니다.
+
+| 특성 | 설명 |
+|------|------|
+| **자동 생성** | 앱 생성 시 1:1로 매핑되는 SP가 자동 생성됨 |
+| **전용** | 다른 앱과 공유하거나 변경할 수 없음 |
+| **권한 관리** | 이 SP에 UC 테이블, SQL Warehouse 등의 접근 권한을 부여 |
+| **라이프사이클** | 앱 삭제 시 SP도 함께 삭제됨 |
+
+이 표에서 **전용** 이라는 특성이 특히 중요합니다. 각 앱이 독립된 SP를 가지므로, 한 앱의 권한 변경이 다른 앱에 영향을 주지 않습니다. 또한 앱 삭제 시 SP가 함께 삭제되므로 "더 이상 사용하지 않는데 권한만 남아있는" 고아 서비스 계정 문제가 발생하지 않습니다.
+
+> **주의**
+**중요**: 앱의 서비스 프린시펄에 필요한 권한을 반드시 부여해야 합니다. 예를 들어 앱에서 UC 테이블을 조회하려면 해당 SP에 `SELECT` 권한을, SQL Warehouse를 사용하려면 `CAN USE` 권한을 부여해야 합니다.
+
+
+---
+
+## SP 권한 관리 — 실전 패턴
+
+앱을 만들 때마다 SP에 수동으로 `GRANT`를 실행하는 것은 번거롭습니다. 아래 패턴을 사용하면 권한 관리를 간소화할 수 있습니다.
+
+### 패턴 1: UC 그룹 활용 (가장 추천)
+
+**앱 전용 UC 그룹을 만들고, 필요한 권한을 그룹에 한 번만 부여합니다.** 새 앱을 만들면 SP를 그룹에 추가하기만 하면 모든 권한이 자동 상속됩니다.
+
+```sql
+-- [1회만 실행] 앱 전용 그룹 생성 + 카탈로그 권한 부여
+CREATE GROUP IF NOT EXISTS `databricks-apps`;
+
+GRANT USE CATALOG ON CATALOG my_catalog TO `databricks-apps`;
+GRANT USE SCHEMA ON CATALOG my_catalog TO `databricks-apps`;
+GRANT SELECT ON CATALOG my_catalog TO `databricks-apps`;
+```
+
+```bash
+# [앱 생성 후] SP를 그룹에 추가 — 이것만 하면 UC 권한 완료
+APP_NAME="my-dashboard-app"
+SP_ID=$(databricks apps get $APP_NAME -o json | jq -r .service_principal_id)
+GROUP_ID=$(databricks groups list --filter "displayName eq 'databricks-apps'" \
+  -o json | jq -r '.Resources[0].id')
+
+databricks api patch /api/2.0/preview/scim/v2/Groups/$GROUP_ID --json "{
+  \"schemas\": [\"urn:ietf:params:scim:api:messages:2.0:PatchOp\"],
+  \"Operations\": [{
+    \"op\": \"add\",
+    \"path\": \"members\",
+    \"value\": [{\"value\": \"$SP_ID\"}]
+  }]
+}"
+```
+
+| 단계 | 수동 GRANT (기존) | UC 그룹 (추천) |
+|------|:---:|:---:|
+| 앱 1개째 | GRANT 4~5줄 실행 | 그룹 생성 + GRANT (1회) |
+| 앱 2개째 | GRANT 4~5줄 다시 | SP를 그룹에 추가 (1줄) |
+| 앱 10개째 | GRANT 40~50줄 누적 | SP를 그룹에 추가 (1줄) |
+
+> **참고**
+**그룹 권한 설계 팁**: 앱의 용도에 따라 그룹을 분리하면 최소 권한 원칙을 지킬 수 있습니다.
+- `databricks-apps-readonly` — `SELECT`만 필요한 대시보드 앱
+- `databricks-apps-readwrite` — `SELECT` + `MODIFY`가 필요한 데이터 입력 앱
+- `databricks-apps-admin` — 스키마/테이블 생성이 필요한 관리 앱
+
+
+### 패턴 2: 자동화 스크립트
+
+앱 생성 후 한 번 실행하면 모든 권한을 자동으로 설정하는 스크립트입니다.
+
+```bash
+#!/bin/bash
+# grant-app-permissions.sh — 앱 생성 후 한 번 실행
+# 사용법: ./grant-app-permissions.sh <앱이름> [카탈로그명]
+
+APP_NAME=$1
+CATALOG=${2:-"my_catalog"}
+
+SP_CLIENT_ID=$(databricks apps get $APP_NAME -o json | jq -r .service_principal_client_id)
+SP_ID=$(databricks apps get $APP_NAME -o json | jq -r .service_principal_id)
+echo "=== $APP_NAME SP 권한 설정 (Client ID: $SP_CLIENT_ID) ==="
+
+# 1. 엔타이틀먼트 부여 (workspace-access, databricks-sql-access)
+databricks api patch /api/2.0/preview/scim/v2/ServicePrincipals/$SP_ID --json '{
+  "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+  "Operations": [{"op": "add", "value": {
+    "entitlements": [
+      {"value": "workspace-access"},
+      {"value": "databricks-sql-access"}
+    ]
+  }}]
+}'
+echo "✓ 엔타이틀먼트 부여 완료"
+
+# 2. SQL Warehouse CAN_USE 권한 (기본 웨어하우스에 부여)
+WH_ID=$(databricks warehouses list -o json | jq -r '.[0].id')
+TOKEN=$(databricks auth token | jq -r .access_token)
+HOST=$(databricks auth env | jq -r .env.DATABRICKS_HOST)
+
+curl -s -X PATCH "$HOST/api/2.0/permissions/warehouses/$WH_ID" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"access_control_list\": [{
+    \"service_principal_name\": \"$SP_CLIENT_ID\",
+    \"permission_level\": \"CAN_USE\"
+  }]}" > /dev/null
+echo "✓ SQL Warehouse CAN_USE 부여 완료"
+
+# 3. UC 카탈로그 권한 출력 (노트북에서 실행)
+echo ""
+echo "아래 SQL을 노트북 또는 SQL Editor에서 실행하세요:"
+echo "----------------------------------------"
+echo "GRANT USE CATALOG ON CATALOG $CATALOG TO \`$SP_CLIENT_ID\`;"
+echo "GRANT USE SCHEMA ON CATALOG $CATALOG TO \`$SP_CLIENT_ID\`;"
+echo "GRANT SELECT ON CATALOG $CATALOG TO \`$SP_CLIENT_ID\`;"
+echo "----------------------------------------"
+```
+
+```bash
+# 실행
+chmod +x grant-app-permissions.sh
+./grant-app-permissions.sh my-dashboard-app my_catalog
+```
+
+### 패턴 3: app.yaml 리소스 선언 (Warehouse, Endpoint만)
+
+`app.yaml`에 리소스를 선언하면 **Warehouse CAN_USE, Endpoint CAN_QUERY 등은 자동 부여**됩니다. 단, UC 테이블 GRANT는 여전히 수동입니다.
+
+```yaml
+resources:
+  - name: sql_warehouse
+    sql_warehouse:
+      id: "abc123"
+      permission: "CAN_USE"        # ← SP에 자동 부여
+  - name: serving_endpoint
+    serving_endpoint:
+      name: "my-endpoint"
+      permission: "CAN_QUERY"      # ← SP에 자동 부여
+```
+
+### 추천 조합
+
+| 상황 | 추천 |
+|------|------|
+| **앱 1~2개** | app.yaml 리소스 선언 + 수동 GRANT |
+| **앱 여러 개, 같은 카탈로그** | **UC 그룹 (패턴 1)** — 가장 효율적 |
+| **CI/CD 자동화** | **스크립트 (패턴 2)** + DABs |
+| **워크샵/데모** | AI Dev Kit `deploy.sh` (자동 처리) |

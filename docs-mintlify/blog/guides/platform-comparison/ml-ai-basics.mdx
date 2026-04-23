@@ -1,0 +1,117 @@
+---
+title: "ML/AI 비교 — ML 플랫폼과 GenAI / LLM / Agent"
+---
+
+> 이 문서는 **[플랫폼 비교](/blog/guides/platform-comparison/overview)** 섹션의 일부입니다.
+
+## ML 플랫폼
+
+| 항목 | Databricks | Snowflake | AWS (SageMaker/Bedrock) | GCP (Vertex AI) | MS Fabric |
+|---|---|---|---|---|---|
+| **ML 플랫폼** | Mosaic AI + MLflow (End-to-End 통합) | Snowpark ML + Cortex (후발) | SageMaker (독립 서비스) | Vertex AI (독립 서비스) | Synapse ML (제한적) |
+| **실험 추적** | MLflow Tracking (업계 표준 OSS, 19K+ GitHub Stars) | 자체 도구 없음 | SageMaker Experiments | Vertex AI Experiments | MLflow 연동 가능 |
+| **모델 레지스트리** | Unity Catalog Models (거버넌스 통합) | Snowflake Model Registry (초기) | SageMaker Model Registry | Vertex AI Model Registry | 제한적 |
+| **Feature Store** | Unity Catalog Feature Store (온라인+오프라인 통합) | 미지원 | SageMaker Feature Store | Vertex AI Feature Store | 미지원 |
+| **AutoML** | Databricks AutoML (Glass-box, 코드 생성) | 미지원 | SageMaker Autopilot | Vertex AI AutoML | 제한적 |
+| **데이터-ML 거버넌스** | 학습 데이터→모델→서빙 전체 리니지 (유일) | 분리 (데이터/ML 별도) | 분리 (Lake Formation↔SageMaker) | 분리 (Dataplex↔Vertex AI) | 부분적 |
+
+## GenAI / LLM / Agent
+
+| 항목 | Databricks | Snowflake | AWS Bedrock | GCP Vertex AI | MS Fabric |
+|---|---|---|---|---|---|
+| **Foundation Model API** | 다양한 모델 (DBRX, Llama, Mixtral 등) — Pay-per-token | Cortex LLM Functions (제한된 모델) | Bedrock (다양한 모델) | Gemini + 다양한 모델 | Azure OpenAI 연동 |
+| **모델 파인튜닝** | Foundation Model Fine-tuning (GUI + API) | 미지원 | Bedrock Custom Model | Vertex AI Tuning | Azure OpenAI Fine-tuning |
+| **자체 모델 호스팅** | GPU Model Serving — 어떤 모델이든 호스팅 | Snowpark Container Services (초기) | SageMaker Endpoints | Vertex AI Endpoints | 제한적 |
+| **벡터 검색** | Vector Search — Unity Catalog 통합, Delta Sync 자동 갱신 | Cortex Search | OpenSearch / Bedrock KB (별도) | Vertex AI Vector Search (별도) | Azure AI Search 연동 |
+| **RAG 구축** | Vector Search + Delta Sync + ai_parse_document() | Cortex Search (제한적) | Bedrock Knowledge Base | Vertex AI RAG | Azure AI 연동 필요 |
+| **Agent 프레임워크** | Mosaic AI Agent Framework (업계 최선두) | Cortex Analyst (SQL 전용) | Bedrock Agents | Vertex AI Agent Builder | Azure AI Agent Service |
+| **Agent 평가** | Agent Evaluation — 자동 품질 측정 | 미지원 | 제한적 (수동) | 제한적 (수동) | 제한적 |
+| **Agent 도구 연결** | Unity Catalog Functions as Tools (거버넌스 통합) | 제한적 | Lambda Functions | Cloud Functions | Azure Functions |
+
+> **성공**
+**Databricks AI 핵심 차별화**: 데이터가 있는 곳에서 바로 ML 학습, 모델 서빙, GenAI Agent 구축, 평가까지 수행합니다. MLflow(업계 표준 OSS)로 전 과정을 추적하고, Agent Evaluation으로 체계적 품질 측정이 가능합니다. **데이터 복사나 서비스 전환 없이 End-to-End AI를 구현하는 유일한 플랫폼** 입니다.
+
+
+> **주의**
+**경쟁사 장점**: AWS Bedrock은 가장 다양한 외부 LLM 모델(Anthropic Claude, Meta Llama, Cohere 등)을 지원합니다. GCP Vertex AI는 Gemini 모델과의 긴밀한 통합, 멀티모달 AI에서 강점이 있습니다. MS Fabric은 Azure OpenAI와 네이티브 연동되어 GPT-4 계열 모델을 쉽게 활용할 수 있습니다.
+
+
+---
+
+## MLflow — 업계 표준 ML 라이프사이클 관리
+
+### MLflow 상세 비교
+
+**MLflow** 는 Databricks가 만든 오픈소스 ML 라이프사이클 관리 플랫폼으로, **19K+ GitHub Stars** 와 **1,600만+ 월간 다운로드** 를 기록하는 업계 표준입니다.
+
+| MLflow 기능 | 설명 | SageMaker 대응 | Vertex AI 대응 |
+|---|---|---|---|
+| **MLflow Tracking** | 실험 파라미터, 메트릭, 아티팩트 자동 기록 | SageMaker Experiments | Vertex AI Experiments |
+| **MLflow Models** | 모델 패키징 (다양한 프레임워크 지원) | SageMaker Model | Vertex AI Model |
+| **MLflow Model Registry** | 모델 버전 관리, 스테이지 전환 (UC 통합) | SageMaker Model Registry | Vertex AI Model Registry |
+| **MLflow Evaluate** | 모델 품질 자동 평가 (분류/회귀/LLM) | 수동 | 수동 |
+| **MLflow Recipes** | ML 파이프라인 템플릿 | SageMaker Pipelines | Vertex AI Pipelines |
+| **MLflow Deployments** | 모델 서빙 관리 | SageMaker Endpoints | Vertex AI Endpoints |
+| **오픈소스** | **완전 오픈소스 (Apache 2.0)** | 비공개 | 비공개 |
+| **플랫폼 의존** | **Zero**— 어디서든 MLflow 사용 가능 | AWS 종속 | GCP 종속 |
+
+### MLflow와 Unity Catalog 통합의 가치
+
+```
+[데이터-ML 통합 거버넌스 — Databricks만 가능]
+
+Unity Catalog
+  ├─ 학습 데이터 (catalog.schema.training_data)
+  │   └─ 접근 제어: GRANT SELECT ON TABLE ...
+  │
+  ├─ Feature Table (catalog.schema.features)
+  │   └─ 온라인/오프라인 Feature Store 통합
+  │
+  ├─ ML 모델 (catalog.schema.model_name)
+  │   ├─ 버전 관리 (v1, v2, ...)
+  │   ├─ 스테이지 (Staging → Production)
+  │   ├─ 리니지: 어떤 데이터로 학습했는지 자동 추적
+  │   └─ 접근 제어: GRANT EXECUTE ON MODEL ...
+  │
+  └─ Serving Endpoint
+      ├─ 모델 v2를 서빙 중
+      ├─ 트래픽 분할 (A/B 테스트)
+      └─ 사용 로그 → System Tables에 자동 기록
+```
+
+> **참고**
+**경쟁사와의 핵심 차이**: SageMaker에서는 학습 데이터(S3) → 모델(SageMaker Registry) → 서빙(SageMaker Endpoint)이 **각각 다른 거버넌스** 를 가집니다. Lake Formation은 데이터만, SageMaker는 모델만 관리하며, 둘 사이의 리니지는 수동으로 추적해야 합니다.
+
+
+---
+
+## Feature Engineering 비교
+
+### Feature Store 상세 비교
+
+| 항목 | Databricks Feature Store | SageMaker Feature Store | Vertex AI Feature Store | Snowflake | Fabric |
+|---|---|---|---|---|---|
+| **오프라인 Store** | Unity Catalog 테이블 (Delta Lake) | S3 기반 | BigQuery/Bigtable | 미지원 | 미지원 |
+| **온라인 Store** | DynamoDB / CosmosDB / Cloud Bigtable 자동 동기화 | DynamoDB | Bigtable | 미지원 | 미지원 |
+| **온라인-오프라인 동기화** | 자동 (Serverless 파이프라인) | 수동/스케줄 | 수동/스케줄 | N/A | N/A |
+| **Feature 거버넌스** | Unity Catalog 통합 (접근 제어, 리니지) | 별도 (IAM) | 별도 (IAM) | N/A | N/A |
+| **Point-in-Time 조회** | 자동 (시간 기반 조인) | 수동 구현 | 자동 | N/A | N/A |
+| **Feature 공유** | Catalog 간 공유 (Delta Sharing) | AWS 계정 내 | GCP 프로젝트 내 | N/A | N/A |
+| **Feature 계산** | SQL 또는 Python으로 정의 | Python SDK | Python SDK | N/A | N/A |
+| **모델 연결** | 모델이 어떤 Feature를 사용했는지 자동 추적 | 수동 | 수동 | N/A | N/A |
+
+### Feature Engineering 워크플로
+
+| 단계 | Databricks | AWS (SageMaker) | GCP (Vertex AI) |
+|---|---|---|---|
+| **Feature 정의** | SQL/Python으로 DLT에서 정의 | Python SDK | Python SDK |
+| **Feature 저장** | Unity Catalog 테이블로 자동 등록 | Feature Store API로 저장 | Feature Store API로 저장 |
+| **학습 데이터 생성** | `FeatureEngineeringClient.create_training_set()` | `FeatureGroup.create_dataset()` | `FeatureOnlineStoreService` |
+| **온라인 서빙** | Model Serving에서 자동 Feature Lookup | SageMaker Endpoint + Feature Store | Vertex AI Endpoint + Feature Store |
+| **모니터링** | Lakehouse Monitor로 Feature 드리프트 감지 | 수동 | 수동 |
+
+> **성공**
+**Feature Store의 핵심 가치**: Databricks Feature Store는 **Unity Catalog에 통합** 되어 있으므로, Feature 테이블도 일반 테이블과 동일한 접근 제어, 리니지, 감사가 적용됩니다. SageMaker/Vertex AI의 Feature Store는 데이터 카탈로그와 **분리** 되어 있어, Feature에 대한 거버넌스가 별도로 필요합니다.
+
+
+---

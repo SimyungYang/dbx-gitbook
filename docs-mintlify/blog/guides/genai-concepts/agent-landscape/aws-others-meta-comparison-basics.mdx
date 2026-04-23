@@ -1,0 +1,118 @@
+---
+title: "Meta -- "오픈소스 Agent 민주화""
+---
+
+> 이 문서는 **[GenAI 개념](/blog/guides/genai-concepts/overview)** 섹션의 일부입니다.
+
+## 3. Meta -- "오픈소스 Agent 민주화"
+
+### 3.1 전략 개요
+
+Meta의 전략은 명확합니다: **"최고 수준의 오픈소스 모델과 도구를 제공하여, Agent 생태계의 표준이 된다."** 클라우드 서비스 매출이 아닌, 오픈소스를 통한 생태계 장악과 자사 서비스(Instagram, WhatsApp, Workplace) 연동이 핵심 수익 모델입니다.
+
+> **성공**
+**핵심 메시지**: "가장 좋은 AI 모델은 누구나 사용할 수 있어야 한다. 오픈소스는 선의가 아니라 전략이다 -- 개발자 생태계를 장악하면 플랫폼이 된다."
+
+
+### 3.2 핵심 제품 스택
+
+#### Llama 4 모델 패밀리
+
+Llama 4는 Meta의 최신 오픈소스 LLM 패밀리로, **Mixture of Experts (MoE)** 아키텍처를 전면 채택했습니다.
+
+| 모델 | 전체 파라미터 | 활성 파라미터 | 컨텍스트 | 특징 |
+|------|------------|------------|---------|------|
+| **Llama 4 Scout** | 109B | 17B | **10M 토큰** | 초대용량 컨텍스트, 효율적 추론 |
+| **Llama 4 Maverick** | 400B | 약 100B | **1M 토큰** | GPT-4o 급 성능, 오픈소스 최강 |
+
+> **참고**
+**MoE(Mixture of Experts) 아키텍처의 의미**:
+
+Scout의 경우 전체 109B 파라미터 중 매 토큰마다 17B만 활성화됩니다. 이는 다음을 의미합니다:
+- **추론 비용**: 17B 모델 수준의 GPU 요구량으로 109B 수준의 지식을 활용
+- **Agent 시나리오**: 비용 효율이 극도로 중요한 대규모 Agent 배포에 적합
+- **10M 컨텍스트**: 전체 코드베이스나 수백 페이지 문서를 한 번에 처리 가능
+
+Maverick은 반대로 최고 성능을 추구합니다. 400B 규모로 GPT-4o와 직접 경쟁하며, 1M 컨텍스트로 복잡한 Agent 추론을 지원합니다.
+
+
+#### Llama Stack
+
+Llama Stack은 Meta가 제공하는 **Agent 빌딩을 위한 통합 API 레이어** 입니다. 모델만 오픈소스하는 것이 아니라, Agent 구축에 필요한 전체 스택을 표준화합니다.
+
+| API 카테고리 | 포함 기능 |
+|-------------|----------|
+| **Inference** | 텍스트 생성, Tool Calling, Structured Output |
+| **Safety** | 입력/출력 필터링, Llama Guard 통합 |
+| **Memory** | 벡터 스토어, 대화 히스토리, 장기 기억 |
+| **Agents** | Agent 루프, 도구 실행, 멀티턴 관리 |
+| **Evaluation** | 자동 평가, 벤치마크 실행 |
+| **Post-training** | Fine-tuning, RLHF, DPO |
+
+```python
+# Llama Stack Agent 예시
+from llama_stack_client import LlamaStackClient
+
+client = LlamaStackClient(base_url="http://localhost:5000")
+
+# Agent 생성
+agent = client.agents.create(
+    agent_config={
+        "model": "Llama4-Scout-109B-MoE",
+        "instructions": "당신은 데이터 분석 전문가입니다.",
+        "tools": [
+            {"type": "code_interpreter"},
+            {"type": "brave_search"},
+            {"type": "function", "function": custom_tool}
+        ],
+        "tool_choice": "auto",
+        "max_infer_iters": 10  # 최대 추론 반복 횟수
+    }
+)
+```
+
+#### 오픈소스 전략의 의미
+
+Meta의 오픈소스 전략은 단순한 모델 공개가 아닙니다.
+
+| 계층 | 오픈소스 여부 | 설명 |
+|------|-------------|------|
+| **모델 가중치** | 공개 (Llama License) | 상업적 사용 가능, 7억 MAU 이상 시 라이선스 필요 |
+| **학습 코드** | 일부 공개 | 학습 레시피, 데이터 처리 파이프라인 |
+| **평가 프레임워크** | 공개 | Llama Stack Evals |
+| **안전 도구** | 공개 | Llama Guard, CyberSecEval, Purple Llama |
+| **Agent 프레임워크** | 공개 | Llama Stack |
+
+> **주의**
+**Llama 라이선스 주의사항**: Llama 4는 "오픈소스"로 불리지만, 엄밀히는 **오픈 웨이트(Open Weight)** 모델입니다. 월간 활성 사용자 7억 명 이상인 서비스에서 사용하려면 별도 라이선스가 필요합니다. 또한, Llama 출력으로 다른 LLM을 학습시키는 것은 라이선스 위반입니다.
+
+
+### 3.3 멀티에이전트 아키텍처
+
+Meta는 AWS나 Microsoft처럼 자체 관리형 오케스트레이션 서비스를 제공하지 않습니다. 대신 Llama Stack의 Agent API를 통해 **프레임워크 수준의 멀티에이전트** 를 지원합니다.
+
+실제 프로덕션 멀티에이전트 배포는 다음 조합으로 이루어집니다:
+
+- **Llama 4 모델**+ **LangGraph/CrewAI/Strands**(오케스트레이션) + **클라우드 서비스**(인프라)
+- 즉, Meta는 "두뇌(모델)"를 제공하고, "몸(인프라)"은 클라우드 벤더가 제공하는 구조
+
+### 3.4 차별점 요약
+
+- **오픈 웨이트 최강 모델**: Llama 4 Maverick은 오픈소스 모델 중 최고 성능
+- **극한 비용 효율**: Scout의 MoE 아키텍처로 17B 활성 파라미터에 109B 지식 활용
+- **10M 컨텍스트**: 오픈소스 모델 중 최대 컨텍스트 윈도우
+- **플랫폼 의존 없음**: 어떤 클라우드, 어떤 프레임워크에서든 사용 가능
+- **자체 호스팅 가능**: 민감 데이터를 클라우드 밖에서 처리해야 하는 규제 환경에 적합
+
+### 3.5 Databricks 연동 시사점
+
+> **참고**
+**Databricks에서 Llama 4를 활용하려면**:
+- **Mosaic AI Gateway**: Llama 4 모델을 Databricks Model Serving에 배포하고, Gateway에서 통합 관리. 자체 호스팅으로 데이터 주권 확보
+- **Foundation Model API**: Databricks가 관리하는 Llama 4 엔드포인트를 바로 사용 (Pay-per-token)
+- **Fine-tuning**: Databricks에서 Llama 4를 도메인 특화 데이터로 Fine-tuning 가능 (PEFT, QLoRA)
+- **Agent Bricks + Llama 4**: Agent Bricks에서 Serving Endpoint로 배포된 Llama 4를 백엔드 모델로 사용
+- **비용 최적화**: Scout 모델을 고빈도/저복잡도 Agent에, Maverick을 저빈도/고복잡도 Agent에 배치하는 티어드 전략
+
+
+---

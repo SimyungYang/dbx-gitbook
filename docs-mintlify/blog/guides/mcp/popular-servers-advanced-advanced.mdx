@@ -1,0 +1,126 @@
+---
+title: "시나리오별 권장 MCP 조합과 실전 조합 전략 심화"
+---
+
+> 이 문서는 **[MCP](/blog/guides/mcp/overview)** 섹션의 일부입니다.
+
+## 시나리오별 권장 MCP 조합
+
+| 역할/업무 | 권장 MCP 서버 | 핵심 활용 |
+|----------|-------------|----------|
+| **데이터 엔지니어** | Databricks SQL + Slack + GitHub | 파이프라인 모니터링, 장애 알림, 코드 관리 |
+| **데이터 분석가** | Databricks SQL + Google Sheets + Slack | 데이터 조회, 보고서 자동화, 결과 공유 |
+| **백엔드 개발자** | GitHub + JIRA + PostgreSQL + Slack | 코드 리뷰, 이슈 추적, DB 디버깅 |
+| **DevOps/SRE** | Kubernetes + Datadog + PagerDuty + Slack | 인시던트 대응, 로그 분석, 알림 관리 |
+| **프로덕트 매니저** | JIRA + Notion + Slack + Google Calendar | 스프린트 관리, 문서화, 일정 관리 |
+| **SA/SE (솔루션 아키텍트)** | Databricks MCP + GitHub + Slack + Brave Search | 고객 지원, PoC, 기술 리서치 |
+
+---
+
+
+## 실전 조합 전략 심화
+
+위의 10개 시나리오는 개별 워크플로입니다. 여기서는 **여러 시나리오를 조합** 하여 팀 전체의 업무를 체계적으로 자동화하는 전략을 소개합니다.
+
+### 전략 1: 데이터 팀의 "아침 자동 브리핑" 시스템
+
+매일 아침 자동으로 실행되는 종합 브리핑을 구성합니다:
+
+```
+[매일 오전 9시 자동 실행]
+1. Databricks SQL MCP → 야간 ETL 잡 실행 결과 확인
+2. Databricks SQL MCP → 주요 테이블 데이터 품질 체크
+3. JIRA MCP → 미해결 데이터 이슈 티켓 현황
+4. GitHub MCP → 리뷰 대기 중인 PR 목록
+5. LLM 분석 → 위 정보를 종합하여 우선순위 정리
+6. Slack MCP → #data-team 채널에 브리핑 전송
+```
+
+### 전략 2: "데이터 이슈 자동 에스컬레이션" 파이프라인
+
+데이터 품질 이슈를 발견하면 자동으로 관련 팀에 알리고 추적합니다:
+
+```
+[데이터 품질 알림 발생 시]
+1. Databricks SQL MCP → 이상 데이터 상세 분석
+2. GitHub MCP → 관련 파이프라인 코드의 최근 변경 확인
+3. LLM 분석 → 원인 추정 및 영향도 평가
+4. JIRA MCP → 자동 티켓 생성 (원인 분석 결과 포함)
+5. Slack MCP → 담당자 멘션과 함께 이슈 알림
+```
+
+### 전략 3: 역할별 MCP 조합 최적화
+
+모든 팀원이 같은 MCP 서버를 사용할 필요는 없습니다. 역할에 따라 최적의 조합이 다릅니다:
+
+| 역할 | 필수 MCP | 선택 MCP | 도구 수 목표 |
+|------|---------|---------|------------|
+| **데이터 엔지니어** | Databricks SQL, GitHub, Slack | JIRA, Kubernetes | 8-12개 |
+| **데이터 분석가** | Databricks SQL, Google Sheets, Slack | Notion, Brave Search | 6-10개 |
+| **ML 엔지니어** | Databricks SQL, GitHub, Slack, Vector Search | MLflow (UC Functions) | 10-15개 |
+| **DevOps/SRE** | Kubernetes, Datadog/Prometheus, Slack, PagerDuty | AWS, GitHub | 10-15개 |
+
+> **팁**
+**실전 팁**: 처음에는 Slack + 핵심 데이터 소스(Databricks SQL 또는 PostgreSQL) 2개만 연결하세요. 이 조합만으로도 "분석 → 결과 공유" 워크플로가 가능하며, 추가 MCP는 필요성이 입증된 후에 하나씩 추가하는 것이 가장 효과적입니다.
+
+
+---
+
+
+## MCP 서버 선택 시 체크리스트
+
+MCP 서버를 선택할 때 확인해야 할 항목들입니다:
+
+| 항목 | 확인 사항 |
+|------|----------|
+| **공식 여부** | Anthropic 공식, 벤더 공식(Notion, AWS 등), 커뮤니티 중 어디에 해당하는가? |
+| **활성도** | GitHub Star 수, 최근 커밋 날짜, 이슈 응답 속도 |
+| **보안** | API 키 관리 방식, 최소 권한 지원, 데이터 전송 암호화 |
+| **전송 방식** | stdio만 지원? Streamable HTTP도 지원? (Databricks 연동 시 HTTP 필수) |
+| **Tool 수** | 제공하는 Tool이 너무 많으면 LLM의 선택 정확도 하락 |
+| **에러 처리** | 실패 시 의미 있는 에러 메시지를 반환하는가? |
+| **문서화** | 설치 가이드, Tool 설명, 예제가 충분한가? |
+
+> **주의**
+**커뮤니티 서버 주의사항**: 커뮤니티 MCP 서버는 공식 서버에 비해 유지보수가 불안정할 수 있습니다. 프로덕션 환경에서는 반드시 코드를 검토하고, 가능하면 공식 서버나 벤더 공식 서버를 우선 사용하세요.
+
+
+---
+
+
+## MCP 서버 도입 우선순위 가이드
+
+수많은 MCP 서버 중 어디서부터 시작해야 할지 모르겠다면, 다음 우선순위를 참고하세요:
+
+**1순위 (즉시 도입 — 모든 팀에 필수):**
+- **Slack**(또는 Teams): 결과 공유 채널. MCP의 "마지막 1마일"
+- **핵심 데이터 소스**: Databricks SQL(Databricks 환경) 또는 PostgreSQL(로컬 환경)
+
+**2순위 (팀별 선택 — 2-4주 내 도입):**
+- **GitHub**: 개발 팀 필수
+- **JIRA/Linear**: 프로젝트 관리 팀 필수
+- **Brave Search**: 리서치가 많은 역할에 유용
+
+**3순위 (상황에 따라 — 1-2개월 내 도입):**
+- **Notion/Confluence**: 문서화 자동화가 필요한 경우
+- **Google Sheets**: 보고서 자동화가 필요한 경우
+- **AWS/GCP**: 클라우드 인프라 관리가 필요한 경우
+
+**4순위 (고급 — 성숙 단계에서 도입):**
+- **Datadog/Grafana**: 모니터링 자동화
+- **PagerDuty**: 인시던트 대응 자동화
+- **Custom MCP**: 사내 시스템 연동
+
+> **팁**
+**경험적 법칙**: 처음 2개 MCP 서버(Slack + 데이터 소스)로 80%의 가치를 얻을 수 있습니다. 나머지 20%의 가치를 위해 추가 서버를 도입하는 것은 기본 워크플로가 안정된 후에 진행하세요.
+
+
+---
+
+
+## 다음 단계
+
+- [MCP 개요](overview): MCP 프로토콜의 기본 개념
+- [일반 MCP 설정](setup-general): 클라이언트별 상세 설정 방법
+- [Databricks MCP 활용](databricks-mcp): Databricks 환경의 Managed/External/Custom MCP
+- [베스트 프랙티스](best-practices): 보안, Tool 설계, 비용 최적화

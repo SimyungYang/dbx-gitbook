@@ -1,0 +1,133 @@
+---
+title: "왜 Unity Catalog가 필요한가?과 Hive Metastore의 "
+---
+
+## 왜 Unity Catalog가 필요한가?
+
+데이터 플랫폼이 성장하면서 조직은 다음과 같은 **거버넌스 문제** 에 직면하게 됩니다.
+
+| 문제 | 구체적 상황 |
+|------|-------------|
+| **데이터 사일로** | 각 팀이 자체 데이터 저장소를 운영하며, 같은 데이터가 여러 곳에 중복됩니다 |
+| **권한 관리 혼란** | 누가 어떤 데이터에 접근할 수 있는지 추적이 어렵습니다 |
+| **감사 불가** | 규정 준수(GDPR, HIPAA 등)를 위해 데이터 접근 이력이 필요하지만, 추적할 방법이 없습니다 |
+| **리니지 부재** | 데이터가 어디서 왔고, 어디로 흘러가는지 알 수 없어 장애 영향도 파악이 어렵습니다 |
+| **ML 모델 관리** | 테이블은 관리되지만 ML 모델, 함수 등은 별도 시스템에서 관리해야 합니다 |
+
+> 💡 **데이터 거버넌스(Data Governance)란?** 조직의 데이터가 안전하게 관리되고, 적절한 사람만 접근할 수 있으며, 규정을 준수하도록 하는 정책과 프로세스의 총체입니다. "누가, 어떤 데이터를, 언제, 왜 사용했는지"를 추적하고 통제하는 것이 핵심입니다.
+
+---
+
+## Hive Metastore의 한계
+
+Unity Catalog 이전에 Databricks는 **Hive Metastore(HMS)** 를 사용하여 테이블 메타데이터를 관리했습니다. 하지만 HMS에는 근본적인 한계가 있었습니다.
+
+| 항목 | Hive Metastore (HMS) | Unity Catalog (UC) |
+|------|---------------------|-------------------|
+| **관리 범위** | 테이블, 뷰만 관리 | 테이블, 뷰, 볼륨, 함수, ML 모델, 커넥션 등 |
+| **네임스페이스** | 2-Level (`schema.table`) | **3-Level**(`catalog.schema.table`) |
+| **권한 모델** | Workspace 단위로 격리 | **Account 단위** 로 통합 관리 |
+| **세밀한 접근 제어** | 테이블 수준까지만 | **행(Row), 열(Column)** 수준까지 |
+| **크로스 워크스페이스** | 불가 (각 Workspace 별도 HMS) | **여러 Workspace에서 동일 데이터 공유** |
+| **감사(Audit)** | 제한적 | **통합 감사 로그**(시스템 테이블) |
+| **데이터 리니지** | 없음 | **자동 리니지 추적** |
+| **Identity 관리** | Workspace별 별도 관리 | **Account 수준 Identity Federation** |
+
+> ⚠️ **마이그레이션 안내**: Databricks는 Hive Metastore에서 Unity Catalog로의 마이그레이션을 적극 권장하고 있습니다. 신규 Workspace는 기본적으로 Unity Catalog가 활성화됩니다. 기존 HMS 테이블은 `SYNC` 명령으로 UC로 마이그레이션할 수 있습니다.
+
+---
+
+## Unity Catalog란?
+
+![Unity Catalog 오브젝트 모델 계층 구조](https://docs.databricks.com/aws/en/assets/images/object-model-40d730065eefed283b936a8664f1b247.png)
+
+*출처: [Databricks 공식 문서](https://docs.databricks.com/aws/en/data-governance/unity-catalog/index.html)*
+
+
+> 💡 **Unity Catalog** 는 Databricks의 **통합 데이터 거버넌스 솔루션** 입니다. 테이블, 파일, ML 모델, AI 에이전트 등 모든 데이터 자산을 하나의 카탈로그에서 관리하며, 접근 권한, 감사, 리니지를 통합적으로 제공합니다.
+
+Unity Catalog는 Databricks 플랫폼의 **모든 데이터와 AI 자산을 하나의 통합 거버넌스 레이어** 에서 관리하는 솔루션입니다. 데이터 엔지니어링, 데이터 웨어하우징, 머신러닝, AI 에이전트 개발 등 모든 워크로드에서 일관된 보안과 거버넌스를 적용할 수 있습니다.
+
+---
+
+## Unity Catalog의 핵심 가치
+
+| 가치 | 설명 |
+|------|------|
+| **통합 관리** | 테이블, 파일, ML 모델, 함수를 하나의 시스템에서 관리합니다 |
+| **세밀한 접근 제어** | 테이블, 행, 열 수준까지 권한을 관리합니다 |
+| **감사 (Audit)** | 누가, 언제, 어떤 데이터에 접근했는지 추적합니다 |
+| **리니지 (Lineage)** | 데이터가 어디서 왔고, 어디로 가는지 시각적으로 추적합니다 |
+| **데이터 디스커버리** | 태그, 설명, 검색을 통해 필요한 데이터를 빠르게 찾을 수 있습니다 |
+| **크로스 워크스페이스** | 여러 Workspace에서 동일한 카탈로그를 공유합니다 |
+| **Delta Sharing** | 오픈 프로토콜로 외부 조직과 안전하게 데이터를 공유합니다 |
+
+> 🆕 **ABAC (Attribute-Based Access Control)**: 태그 기반으로 접근 정책을 정의할 수 있는 기능이 Preview로 출시되었습니다. 예를 들어, "PII" 태그가 붙은 모든 컬럼에 마스킹을 자동 적용할 수 있습니다.
+
+---
+
+## 아키텍처 개요
+
+Unity Catalog의 전체 아키텍처는 **Account → Metastore → Catalog → Schema → Object** 계층으로 구성됩니다.
+
+![Unity Catalog 객체 모델 — 계층 구조](https://docs.databricks.com/en/_images/unity-catalog-object-hierarchy.png)
+
+> 출처: [Databricks 공식 문서 — Unity Catalog](https://docs.databricks.com/aws/en/data-governance/unity-catalog/)
+
+### 계층 구조 상세
+
+| 계층 | 설명 | 개수 제한 |
+|------|------|-----------|
+| **Account** | Databricks 최상위 계정입니다. 모든 리소스의 루트입니다 | 1개 |
+| **Metastore** | 클라우드 리전별로 생성되며, 메타데이터를 저장합니다 | 리전별 1개 |
+| **Catalog** | 최상위 네임스페이스 컨테이너입니다. 환경별/팀별로 분리합니다 | Metastore당 다수 |
+| **Schema (Database)** | 관련 객체를 논리적으로 그룹화합니다 | Catalog당 다수 |
+| **Object** | 실제 데이터 자산 (테이블, 뷰, 볼륨, 함수, 모델) | Schema당 다수 |
+
+---
+
+## 3-Level 네임스페이스
+
+Unity Catalog는 모든 데이터 자산을 **`catalog.schema.object`**3-Level 네임스페이스로 참조합니다.
+
+| 수준 | 오브젝트 | 설명 |
+|------|---------|------|
+| **Catalog** | 카탈로그 | 최상위 컨테이너 |
+| └ **Schema** | 스키마 | 논리적 그룹 |
+|   - | Table | 테이블 |
+|   - | View | 뷰 |
+|   - | Volume | 볼륨 (파일) |
+|   - | Function | 함수 |
+|   - | Model | ML 모델 |
+
+```sql
+-- 완전한 3-Level 네임스페이스로 테이블 참조
+SELECT * FROM production.ecommerce.orders;
+
+-- 기본 카탈로그와 스키마 설정
+USE CATALOG production;
+USE SCHEMA ecommerce;
+
+-- 설정 후 간단하게 참조 가능
+SELECT * FROM orders;
+```
+
+| 레벨 | 역할 | 예시 |
+|------|------|------|
+| **Catalog** | 최상위 컨테이너. 환경별, 팀별로 분리합니다 | `production`, `development`, `staging` |
+| **Schema** | 관련 객체를 논리적으로 그룹화합니다 | `ecommerce`, `hr`, `finance` |
+| **Object** | 실제 데이터 자산 (테이블, 뷰, 볼륨 등) | `orders`, `customers` |
+
+### 카탈로그 설계 패턴
+
+| 패턴 | 예시 카탈로그 |
+|------|-------------|
+| **환경별 분리** | `production`, `development`, `staging` |
+| **팀별 분리** | `data_engineering`, `data_science`, `analytics` |
+| **혼합 패턴 (권장)** | `prod_ecommerce`, `dev_ecommerce`, `prod_analytics` |
+
+*출처: [Databricks Docs](https://docs.databricks.com)*
+
+> 💡 **카탈로그 설계 모범 사례**: 환경(prod/dev/staging)과 도메인(ecommerce/finance)을 결합하는 혼합 패턴이 가장 유연합니다. 예를 들어, `prod_ecommerce`, `dev_ecommerce`처럼 명명하면 환경과 도메인이 한눈에 파악됩니다.
+
+---

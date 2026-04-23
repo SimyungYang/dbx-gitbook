@@ -1,0 +1,177 @@
+---
+title: "종합 비교 & 선택 가이드"
+---
+
+> 이 문서는 **[GenAI 개념](/blog/guides/genai-concepts/overview)** 섹션의 일부입니다.
+
+프레임워크 종합 비교 테이블, 의사결정 트리, Agent UI 개요, 2025년 생태계 트렌드, 고객 FAQ, 연습문제를 다룹니다.
+
+---
+
+## 프레임워크 종합 비교
+
+### 전체 비교표
+
+| 항목 | LangChain | LangGraph | CrewAI | OpenAI SDK | AutoGen | Databricks |
+|------|-----------|-----------|--------|-----------|---------|------------|
+| **설계 철학** | 체인 (순차 연결) | 그래프 (유향 그래프) | 역할/팀 | 핸드오프 | 대화 기반 | 엔터프라이즈 운영 |
+| **학습 난이도** | 중간 | 높음 | 낮음 | 낮음 | 중간 | 중간 |
+| **유연성** | 높음 | 매우 높음 | 중간 | 중간 | 높음 | 중간 |
+| **프로덕션 적합성** | 부분적 | 좋음 | 제한적 | 좋음 | 제한적 | 최적 |
+| **Multi-Agent** | 기본 | 우수 | 우수 | 좋음 | 우수 | 좋음 |
+| **상태 관리** | Memory (제한적) | Checkpoint (강력) | 내부 관리 | 기본 | 대화 히스토리 | MLflow + UC |
+| **모델 종속성** | 없음 (700+) | 없음 | 없음 | OpenAI 중심 | 없음 | 없음 (FMAPI) |
+| **거버넌스** | 없음 | 없음 | 없음 | 기본 | 없음 | 네이티브 (UC) |
+| **MLflow 통합** | 플러그인 | 플러그인 | 플러그인 | 커스텀 | 커스텀 | 네이티브 |
+| **배포** | 자체 구축 필요 | 자체 구축 필요 | 자체 구축 필요 | OpenAI 호스팅 | 자체 구축 필요 | 원클릭 서버리스 |
+| **Tracing** | LangSmith (유료) | LangSmith (유료) | 제한적 | OpenAI 대시보드 | 제한적 | MLflow Tracing (무료) |
+| **커뮤니티** | 매우 큼 | 큼 | 중간 | 큼 | 중간 | Databricks 커뮤니티 |
+| **주요 사용처** | PoC, 프로토타입 | 복잡한 워크플로 | 빠른 데모 | OpenAI 생태계 | 연구/실험 | 엔터프라이즈 배포 |
+
+### 성격별 비교
+
+> **참고**
+**한 줄 요약**:
+- **LangChain**= "레고 블록 세트" (다양하지만 복잡)
+- **LangGraph**= "프로그래밍 가능한 회로판" (강력하지만 어려움)
+- **CrewAI**= "팀 빌딩 게임" (직관적이지만 제한적)
+- **OpenAI SDK**= "콜센터 시스템" (깔끔하지만 OpenAI 한정)
+- **AutoGen**= "자유 토론방" (창의적이지만 예측 불가)
+- **Databricks**= "기업용 관제탑" (안전하지만 플랫폼 종속)
+
+
+---
+
+## 프레임워크 선택 가이드 -- 의사결정 트리
+
+### 시나리오별 추천
+
+| 시나리오 | 추천 프레임워크 | 이유 |
+|----------|----------------|------|
+| 빠른 프로토타입/데모가 목표 | **CrewAI** | 10분 내에 멀티에이전트 데모 가능 |
+| 복잡한 워크플로 + 조건 분기 | **LangGraph** | 유향 그래프로 어떤 흐름이든 표현 가능 |
+| OpenAI만 사용 + 핸드오프 패턴 | **OpenAI Agents SDK** | 가장 깔끔한 Handoff 구현 |
+| Databricks 환경에서 프로덕션 배포 | **Databricks Agent Framework**(+ LangGraph) | 거버넌스, 모니터링, 원클릭 배포 |
+| 연구/실험 + 코드 실행 | **AutoGen** | Agent 간 자유 대화 + 코드 실행 내장 |
+| RAG 파이프라인만 필요 | **LangChain**(LCEL) | 간단한 파이프라인에 적합 |
+| 기존 LangChain 코드 마이그레이션 | **LangGraph** | LangChain 컴포넌트 재사용 가능 |
+
+### 의사결정 흐름
+
+```
+[시작] 어떤 Agent를 만들려는가?
+│
+├── "단순 RAG / QA 봇"
+│   └── LangChain LCEL 또는 Databricks Agent Bricks (Knowledge Assistant)
+│
+├── "복잡한 멀티스텝 워크플로"
+│   ├── Databricks 환경?
+│   │   ├── YES → LangGraph + Databricks Agent Framework
+│   │   └── NO  → LangGraph 단독
+│   └── 조건 분기/루프 필요?
+│       ├── YES → LangGraph
+│       └── NO  → LangChain LCEL
+│
+├── "멀티에이전트 협업"
+│   ├── 역할 기반 (리서처, 작성자 등)?
+│   │   ├── 프로덕션? → LangGraph Multi-Agent
+│   │   └── PoC/데모? → CrewAI
+│   ├── 대화 기반 (자유 토론)?
+│   │   └── AutoGen
+│   └── 라우팅/핸드오프?
+│       ├── OpenAI만 사용? → OpenAI Agents SDK
+│       └── 모델 무관? → LangGraph Swarm 패턴
+│
+└── "엔터프라이즈 프로덕션"
+    └── Databricks Agent Framework (빌드 프레임워크는 선택)
+        ├── 복잡한 로직 → + LangGraph
+        ├── 간단한 로직 → + 순수 Python
+        └── 노코드 → Agent Bricks
+```
+
+> **주의**
+**실전 팁**: 프레임워크 선택에 너무 많은 시간을 쓰지 마세요. 중요한 것은 "어떤 프레임워크를 쓰느냐"가 아니라 "Agent가 해결하는 비즈니스 문제가 무엇인가"입니다. 대부분의 엔터프라이즈 시나리오에서는 **LangGraph + Databricks Agent Framework** 조합이 정답입니다.
+
+
+---
+
+## Agent UI/배포 기술 스택
+
+Agent를 만들었다면 사용자가 상호작용할 UI가 필요합니다. 용도와 환경에 따라 적합한 프론트엔드 기술이 다릅니다.
+
+### 주요 프론트엔드 기술
+
+| 기술 | 특징 | 적합한 용도 |
+|------|------|------------|
+| **Streamlit** | Python만으로 웹앱 구축. 가장 빠른 프로토타이핑 | PoC, 내부 도구, 데이터 대시보드 |
+| **Gradio** | ML 모델 데모 특화. Hugging Face 통합 | 모델 데모, 인터랙티브 ML 실험 |
+| **Chainlit** | LangChain/LangGraph 전용 채팅 UI. 대화형 Agent에 최적화 | Agent 채팅 인터페이스 |
+| **Databricks Apps** | Databricks 네이티브 웹앱 호스팅. OAuth 통합 | 프로덕션 엔터프라이즈 앱 |
+
+### 비교표
+
+| 항목 | Streamlit | Gradio | Chainlit | Databricks Apps |
+|------|-----------|--------|----------|----------------|
+| **언어** | Python | Python | Python | Python (Streamlit/Dash/FastAPI) |
+| **학습 난이도** | 매우 낮음 | 낮음 | 낮음 | 중간 |
+| **UI 자유도** | 중간 | 낮음 | 낮음 (채팅 특화) | 높음 (프레임워크 선택 가능) |
+| **채팅 UI** | `st.chat_message` | `gr.ChatInterface` | 네이티브 지원 | Streamlit 기반 |
+| **스트리밍** | `st.write_stream` | 지원 | 네이티브 지원 | Streamlit 기반 |
+| **인증** | 없음 (자체 구현) | 없음 | 없음 | OAuth 통합 (Databricks) |
+| **프로덕션 적합성** | 제한적 | 제한적 | 제한적 | 우수 |
+| **배포** | Streamlit Cloud / 자체 서버 | HF Spaces / 자체 서버 | 자체 서버 | Databricks 서버리스 |
+| **Databricks 통합** | SDK 연동 필요 | SDK 연동 필요 | SDK 연동 필요 | 네이티브 (서비스 프린시펄) |
+
+> **참고**
+**추천 경로**: PoC 단계에서는 Streamlit으로 빠르게 만들고, 프로덕션에서는 Databricks Apps(Streamlit 호스팅)로 배포하면 코드 변경 최소화로 인증/보안이 자동 적용됩니다.
+
+
+### Agent UI 코드 예시 (Streamlit + Databricks Model Serving)
+
+```python
+import streamlit as st
+from databricks.sdk import WorkspaceClient
+
+st.title("고객 서비스 Agent")
+
+# Databricks 클라이언트 초기화
+w = WorkspaceClient()
+
+# 대화 히스토리 관리
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# 기존 메시지 표시
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+# 사용자 입력
+if prompt := st.chat_input("질문을 입력하세요"):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # Agent 호출 (Model Serving Endpoint)
+    with st.chat_message("assistant"):
+        response = w.serving_endpoints.query(
+            name="customer-service-agent",
+            messages=st.session_state.messages,
+        )
+        answer = response.choices[0].message.content
+        st.markdown(answer)
+        st.session_state.messages.append(
+            {"role": "assistant", "content": answer}
+        )
+```
+
+---
+
+<CardGroup cols={1}>
+  <Card title="종합 비교 & 선택 가이드 — 심화 — 기초" href="comparison-advanced-basics">
+    기본 개념과 핵심 기능
+  </Card>
+  <Card title="종합 비교 & 선택 가이드 — 심화 — 심화" href="comparison-advanced-advanced">
+    고급 패턴과 실전 활용
+  </Card>
+</CardGroup>

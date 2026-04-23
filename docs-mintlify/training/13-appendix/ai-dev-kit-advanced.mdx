@@ -1,0 +1,97 @@
+---
+title: "활용 사례과 Databricks Asset Bundles와"
+---
+
+> **참고**
+
+## 활용 사례
+
+### 사례 1: 자연어로 데이터 파이프라인 구축
+
+```
+사용자: "S3 버킷 s3://raw-data/events/ 에서 JSON 파일을 읽어
+bronze_events 테이블로 적재하고,
+PII 컬럼을 마스킹한 silver_events 테이블을 만들어줘"
+```
+
+AI Dev Kit는 이 요청을 분석하여 SDP 파이프라인 코드를 생성하고, `create_or_update_pipeline` 도구로 Databricks에 배포합니다.
+
+### 사례 2: 데이터 탐색 및 분석
+
+```
+사용자: "customers 테이블의 구조를 보여주고,
+가입월별 고객 수 추이를 차트로 시각화해줘"
+```
+
+AI Dev Kit가 테이블 메타데이터를 조회하고, SQL을 실행한 뒤, 대시보드를 생성하는 과정을 자동으로 수행합니다.
+
+### 사례 3: 운영 모니터링
+
+```
+사용자: "지금 실행 중인 Job 중 1시간 넘게 걸리는 것이 있어?
+있으면 상세 정보를 보여줘"
+```
+
+---
+
+## Databricks Asset Bundles와 연동
+
+AI Dev Kit는 `databricks.yml` 파일이 있는 프로젝트에서 자동으로 번들 설정을 인식합니다. 이를 통해 대상 워크스페이스, 카탈로그, 스키마 등의 컨텍스트를 자동으로 파악합니다.
+
+```yaml
+# databricks.yml 예시
+bundle:
+  name: my-data-project
+
+workspace:
+  host: https://<workspace-url>
+
+resources:
+  pipelines:
+    my_pipeline:
+      name: "ETL Pipeline"
+      target: "my_catalog.my_schema"
+```
+
+> 💡 **팁**: `databricks.yml`이 프로젝트에 있으면 AI Dev Kit가 자동으로 대상 환경을 인식하므로, "이 프로젝트의 파이프라인을 실행해줘"처럼 간결한 명령이 가능합니다.
+
+---
+
+## 모범 사례
+
+### 효과적인 프롬프트 작성
+
+| 비용이 높은 | 효과적 |
+|---|---|
+| "데이터 보여줘" | "catalog.schema.orders 테이블에서 최근 7일 매출 합계를 조회해줘" |
+| "파이프라인 만들어" | "S3의 JSON 파일을 Auto Loader로 읽어서 bronze 테이블에 적재하는 SDP 파이프라인을 만들어줘" |
+| "대시보드" | "월별 매출 추이(선 그래프)와 카테고리별 비중(파이 차트)을 포함한 대시보드를 만들어줘" |
+
+### 보안 고려사항
+
+- AI Dev Kit는 **사용자의 Databricks 권한** 을 그대로 상속합니다. Unity Catalog 권한이 적용되므로 접근 권한이 없는 데이터는 조회할 수 없습니다.
+- PAT(개인 접근 토큰)보다 **OAuth 인증** 을 권장합니다. 토큰 만료 관리가 자동으로 이루어집니다.
+- `.mcp.json` 파일에 토큰을 직접 작성하지 마세요. 환경 변수나 프로파일을 사용하세요.
+- `.gitignore`에 민감한 설정 파일이 포함되어 있는지 확인하세요.
+
+---
+
+## 정리
+
+| 항목 | 내용 |
+|---|---|
+| **핵심 가치** | AI 코딩 어시스턴트에서 자연어로 Databricks 플랫폼 제어 |
+| **기반 기술** | MCP (Model Context Protocol) |
+| **지원 도구** | Claude Code, VS Code, Cursor, Windsurf, Claude Desktop |
+| **인증** | Databricks Unified Auth (OAuth, PAT, Service Principal) |
+| **권한** | Unity Catalog 권한을 그대로 상속 |
+
+---
+
+## 참고 링크
+
+- [Databricks AI Dev Kit 공식 문서](https://docs.databricks.com/aws/en/dev-tools/ai-dev-kit.html)
+- [Databricks AI Dev Kit PyPI](https://pypi.org/project/databricks-ai-dev-kit/)
+- [MCP (Model Context Protocol) 소개](https://modelcontextprotocol.io/)
+- [Databricks 통합 인증 가이드](https://docs.databricks.com/aws/en/dev-tools/auth/unified-auth-client.html)
+- [Databricks Asset Bundles](https://docs.databricks.com/aws/en/dev-tools/bundles/)

@@ -1,0 +1,160 @@
+---
+title: "Databricks Apps 기초"
+---
+
+> 이 문서는 **[GenAI 개념](/blog/guides/genai-concepts/overview)** 섹션의 일부입니다.
+
+
+
+Databricks Apps를 활용한 프로덕션 배포, 단계별 기술 스택 선택 가이드, 종합 비교 테이블, 고객 FAQ, 연습문제를 다룹니다.
+
+---
+
+
+## Databricks Apps -- 프로덕션 배포의 정답
+
+### 왜 Databricks Apps인가?
+
+Agent 앱을 프로덕션에 배포할 때 가장 큰 장벽은 기술 자체가 아니라 **인프라 운영** 입니다.
+
+| 직접 배포 시 해야 할 것 | Databricks Apps가 해결하는 것 |
+|------------------------|-----------------------------|
+| 서버 프로비저닝 (EC2, VM) | 서버리스 컨테이너 자동 실행 |
+| SSL 인증서 발급/갱신 | HTTPS 자동 적용 |
+| 인증/인가 시스템 구현 | OAuth 기반 Databricks 사용자 인증 자동 통합 |
+| SQL Warehouse 연결 설정 | `DATABRICKS_WAREHOUSE_ID` 환경 변수로 자동 연결 |
+| Model Serving 엔드포인트 연결 | 서비스 프린시펄을 통한 직접 접근 |
+| 네트워크 보안 (VPN, 방화벽) | Databricks 네트워크 내 격리 실행 |
+| Unity Catalog 권한 관리 | 서비스 프린시펄에 UC 권한 부여로 해결 |
+| CI/CD 파이프라인 구성 | `databricks apps deploy` 명령어로 즉시 배포 |
+
+### 지원 프레임워크
+
+| 프레임워크 | 지원 여부 | 권장 사용 사례 |
+|-----------|----------|---------------|
+| **Streamlit** | 공식 지원 | 채팅 UI + 대시보드, 가장 많은 예제 |
+| **Dash** | 공식 지원 | 차트 중심 모니터링 대시보드 |
+| **Gradio** | 공식 지원 | ML 모델 데모, 멀티모달 앱 |
+| **Flask** | 공식 지원 | 경량 웹 서버, API + 간단한 UI |
+| **FastAPI** | 공식 지원 | API 서버, SSE/WebSocket |
+| **Chainlit** | 미지원 | (FastAPI 래핑으로 우회 가능하나 비권장) |
+
+### app.yaml 설정 예시
+
+**Streamlit Agent 앱 (가장 일반적):**
+
+```yaml
+command:
+  - "streamlit"
+  - "run"
+  - "app.py"
+  - "--server.port"
+  - "8000"
+  - "--server.address"
+  - "0.0.0.0"
+
+env:
+  - name: "DATABRICKS_WAREHOUSE_ID"
+    valueFrom: "warehouse-id"
+  - name: "SERVING_ENDPOINT"
+    value: "mlops-agent-endpoint"
+
+resources:
+  - name: "warehouse-id"
+    type: "sql_warehouse"
+    sql_warehouse:
+      id: "abc123def456"
+      permission: "CAN_USE"
+  - name: "serving-endpoint"
+    type: "serving_endpoint"
+    serving_endpoint:
+      name: "mlops-agent-endpoint"
+      permission: "CAN_QUERY"
+```
+
+**FastAPI API 서버:**
+
+```yaml
+command:
+  - "uvicorn"
+  - "main:app"
+  - "--host"
+  - "0.0.0.0"
+  - "--port"
+  - "8000"
+
+env:
+  - name: "DATABRICKS_WAREHOUSE_ID"
+    valueFrom: "warehouse-id"
+
+resources:
+  - name: "warehouse-id"
+    type: "sql_warehouse"
+    sql_warehouse:
+      id: "abc123def456"
+      permission: "CAN_USE"
+```
+
+### 배포 워크플로
+
+```bash
+# 1. 앱 생성 (최초 1회)
+databricks apps create \
+  --name mlops-agent-app \
+  --description "MLOps 모니터링 및 Agent 채팅"
+
+# 2. 앱 배포 (코드 변경 시마다)
+databricks apps deploy mlops-agent-app \
+  --source-code-path ./app
+
+# 3. 배포 상태 확인
+databricks apps get mlops-agent-app
+
+# 4. 로그 확인
+databricks apps get-logs mlops-agent-app
+```
+
+### PoC Streamlit → Databricks Apps 마이그레이션
+
+로컬에서 `streamlit run app.py`로 개발한 앱을 Databricks Apps로 마이그레이션하는 단계:
+
+**Step 1: 인증 방식 변경**
+
+```python
+# Before (로컬 개발)
+from databricks.sdk import WorkspaceClient
+w = WorkspaceClient(
+    host="https://xxx.cloud.databricks.com",
+    token="dapi..."  # PAT 하드코딩
+)
+
+# After (Databricks Apps)
+from databricks.sdk import WorkspaceClient
+w = WorkspaceClient()  # 서비스 프린시펄 자동 인증
+```
+
+**Step 2: 환경 변수 사용**
+
+```python
+import os
+
+# 하드코딩 제거, 환경 변수 사용
+warehouse_id = os.environ.get("DATABRICKS_WAREHOUSE_ID")
+endpoint_name = os.environ.get("SERVING_ENDPOINT", "default-agent")
+```
+
+**Step 3: requirements.txt 정리**
+
+```
+streamlit>=1.38.0
+databricks-sdk>=0.30.0
+plotly>=5.0.0
+```
+
+**Step 4: app.yaml 작성 및 배포**
+
+> **성공**
+**마이그레이션 핵심 원칙**: (1) PAT/토큰 하드코딩 → 서비스 프린시펄 자동 인증, (2) 호스트/엔드포인트 하드코딩 → 환경 변수, (3) `requirements.txt`에 모든 의존성 명시. 이 세 가지만 지키면 대부분의 로컬 Streamlit 앱은 Databricks Apps로 바로 배포 가능합니다.
+
+
+---

@@ -1,0 +1,128 @@
+---
+title: "Delta Lake 성능 튜닝 체크리스트 — Delta Lake란?"
+---
+
+<Info>
+Delta Lake의 기본 개념과 트랜잭션 로그 구조는 [GenAI 도구 가이드](/blog/guides/genai-tools/overview)를 참고하세요.
+Unity Catalog에서의 테이블 관리와 권한 설정은 [플랫폼 설정 가이드](/blog/guides/platform-setup/authentication/overview)를 참고하세요.
+</Info>
+
+## Delta Lake란?
+
+**Delta Lake**는 데이터 레이크 위에 ACID 트랜잭션, 스키마 관리, 타임 트래블 등을 제공하는 오픈소스 스토리지 레이어입니다.
+
+### 왜 성능 튜닝이 필요한가?
+
+Delta Lake는 기본 설정만으로도 잘 동작하지만, 데이터가 수십 GB~TB 규모로 커지면 **스몰 파일 누적**, **비용이 높은인 파일 레이아웃**, **불필요한 이전 버전 파일** 등이 쿼리 성능을 크게 떨어뜨립니다.
+특히 실시간 스트리밍이나 잦은 소량 INSERT가 반복되는 테이블에서는, 튜닝 없이 방치하면 쿼리 시간이 수 배~수십 배 느려질 수 있습니다.
+이 체크리스트는 Delta Lake 테이블이 느려졌을 때 체크해야 할 항목을 **우선순위 순서**로 정리합니다.
+
+---
+
+## 권장 실행 순서
+
+처음 성능 튜닝을 시작한다면 아래 순서를 따르세요:
+
+| 순서 | 작업 | 설명 |
+|------|------|------|
+| 1 | **Liquid Clustering 설정** | 자주 필터링하는 컬럼을 클러스터링 키로 지정 |
+| 2 | **OPTIMIZE 실행** | 기존 데이터에 클러스터링을 소급 적용하고 파일 병합 |
+| 3 | **VACUUM 스케줄 등록** | 불필요한 이전 버전 파일 삭제로 스토리지 절약 |
+| 4 | **모니터링 체크** | `DESCRIBE DETAIL`로 파일 수/크기를 주기적 확인 |
+
+---
+
+## 1. 클러스터링 전략 선택
+
+### 의사결정 가이드
+
+| 기준 | Liquid Clustering | Z-ORDER | Hive 파티셔닝 |
+|------|-------------------|---------|--------------|
+| DBR 버전 | 13.3+ | 모든 버전 | 모든 버전 |
+| 클러스터링 키 변경 | `ALTER TABLE`로 즉시 변경 | OPTIMIZE 재실행 필요 | 테이블 재생성 필요 |
+| 다중 키 성능 | 우수 (모든 키 동등) | 첫 번째 키에 편향 | 키 순서에 의존 |
+| 스몰 파일 자동 정리 | 자동 (OPTIMIZE 시) | 수동 OPTIMIZE 필요 | 수동 관리 |
+| 추천 시나리오 | **신규 테이블 기본 선택** | 레거시 호환 | 날짜 기반 대량 삭제 |
+
+### Liquid Clustering 설정
+
+아래 SQL은 새 테이블을 만들면서 `region`과 `order_date`를 클러스터링 키로 지정합니다. 이 두 컬럼으로 필터링하는 쿼리가 자동으로 데이터 스킵의 혜택을 받습니다.
+
+```sql
+-- 신규 테이블: 생성 시 CLUSTER BY로 클러스터링 키 지정
+CREATE TABLE my_catalog.sales.orders (
+  order_id     BIGINT,
+  customer_id  BIGINT,
+  order_date   DATE,
+  region       STRING,
+  amount       DECIMAL(12,2)
+)
+CLUSTER BY (region, order_date);
+```
+
+이미 존재하는 테이블에 Liquid Clustering을 적용하려면 `ALTER TABLE`을 사용합니다. 키 변경이 즉시 반영되지만, 기존 데이터에 적용하려면 `OPTIMIZE`를 한 번 실행해야 합니다.
+
+```sql
+-- 기존 테이블에 Liquid Clustering 전환
+ALTER TABLE my_catalog.sales.orders
+CLUSTER BY (region, order_date);
+
+-- 클러스터링 적용 (기존 데이터에 소급)
+OPTIMIZE my_catalog.sales.orders;
+```
+
+### Z-ORDER (레거시)
+
+Liquid Clustering을 지원하지 않는 구버전 환경에서만 사용합니다. DBR 13.3 이상이라면 Liquid Clustering을 권장합니다.
+
+```sql
+-- Liquid Clustering 지원 안 되는 환경에서만 사용
+OPTIMIZE my_catalog.sales.orders
+ZORDER BY (region, order_date);
+```
+
+<Warning>
+Liquid Clustering과 Z-ORDER는 **동시에 사용할 수 없습니다**.
+Liquid Clustering이 설정된 테이블에 ZORDER를 실행하면 오류가 발생합니다.
+</Warning>
+
+---
+
+## 2. OPTIMIZE 전략
+
+`OPTIMIZE`는 여러 개의 작은 파일을 더 큰 파일로 병합(compaction)하고, 클러스터링 키에 따라 데이터를 재배치합니다. 스몰 파일이 줄어들면 쿼리 시 읽어야 할 파일 수가 감소하여 성능이 크게 향상됩니다.
+
+### 실행 타이밍
+
+| 워크로드 패턴 | OPTIMIZE 빈도 | 이유 |
+|--------------|--------------|------|
+| 시간당 수십~수백 건 append | 4~6시간마다 | 스몰 파일 누적 방지 |
+| 배치 ETL (1일 1회) | ETL 직후 1회 | 바로 분석 쿼리에 최적화 |
+| 스트리밍 (분 단위 마이크로배치) | 1~2시간마다 | 마이크로배치 파일 병합 |
+| 읽기 전용 (append 없음) | 불필요 | 이미 최적화된 상태 |
+
+### 예약 실행
+
+전체 테이블을 OPTIMIZE하거나, `WHERE` 조건으로 최근 데이터만 부분 최적화할 수 있습니다. 부분 OPTIMIZE는 대형 테이블에서 실행 시간을 크게 줄여줍니다.
+
+```sql
+-- 전체 테이블 OPTIMIZE (Lakeflow Job 또는 Scheduled Query에서 실행)
+OPTIMIZE my_catalog.sales.orders;
+
+-- 부분 OPTIMIZE — 최근 7일 데이터만 최적화 (대형 테이블에 권장)
+OPTIMIZE my_catalog.sales.orders
+WHERE order_date >= current_date() - INTERVAL 7 DAYS;
+```
+
+### OPTIMIZE 결과 확인
+
+이 쿼리는 테이블의 작업 히스토리를 보여줍니다. `numFilesRemoved`(제거된 파일 수)가 크다면 스몰 파일이 많이 병합되었다는 의미입니다.
+
+```sql
+DESCRIBE HISTORY my_catalog.sales.orders;
+
+-- numFilesAdded, numFilesRemoved를 확인
+-- numFilesRemoved가 크면 스몰 파일이 많았다는 의미
+```
+
+---

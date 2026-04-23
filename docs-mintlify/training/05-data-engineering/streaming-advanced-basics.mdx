@@ -1,0 +1,114 @@
+---
+title: "윈도우 유형 (Window Types)과 Output Mode 심화"
+---
+
+> 이 문서는 **[데이터 엔지니어링](/training/05-data-engineering/overview)** 섹션의 일부입니다.
+
+## 윈도우 유형 (Window Types)
+
+스트리밍 집계에서 **시간 기반 윈도우** 는 데이터를 시간 구간별로 그룹화하는 핵심 메커니즘입니다. Structured Streaming은 3가지 윈도우 유형을 지원합니다.
+
+### Tumbling Window (고정 윈도우)
+
+**겹치지 않는 고정 크기** 윈도우입니다. 각 이벤트는 정확히 하나의 윈도우에만 속합니다.
+
+```python
+from pyspark.sql.functions import window
+
+# 5분 단위 고정 윈도우
+df.withWatermark("event_time", "10 minutes") \
+  .groupBy(window("event_time", "5 minutes"), "device_id") \
+  .agg(avg("temperature").alias("avg_temp"))
+
+# 결과 윈도우: [10:00-10:05), [10:05-10:10), [10:10-10:15), ...
+```
+
+| 항목 | 설명 |
+|------|------|
+| **사용 시기** | 5분/1시간/일별 집계 등 비중복 구간 통계 |
+| **장점** | 단순하고 직관적, 메모리 효율적 |
+| **단점** | 윈도우 경계에서 데이터가 분리됨 (10:04:59와 10:05:01이 다른 윈도우) |
+
+### Sliding Window (슬라이딩 윈도우)
+
+**윈도우가 겹치는** 구간 집계입니다. 하나의 이벤트가 여러 윈도우에 속할 수 있습니다.
+
+```python
+# 10분 윈도우, 5분마다 슬라이딩
+df.withWatermark("event_time", "10 minutes") \
+  .groupBy(window("event_time", "10 minutes", "5 minutes"), "device_id") \
+  .agg(avg("temperature").alias("avg_temp"))
+
+# 결과 윈도우: [10:00-10:10), [10:05-10:15), [10:10-10:20), ...
+# → 각 이벤트가 2개 윈도우에 포함됨
+```
+
+| 항목 | 설명 |
+|------|------|
+| **사용 시기** | 이동 평균, 연속적인 이상 감지 |
+| **장점** | 윈도우 경계 문제가 완화됨 |
+| **단점** | Tumbling 대비 메모리 사용량 증가 (윈도우 수 = 윈도우 크기 / 슬라이드 간격) |
+
+### Session Window (세션 윈도우)
+
+**활동 간 간격(gap)** 기반으로 동적 크기의 윈도우를 생성합니다. 이벤트 간 gap이 임계값을 초과하면 새 세션이 시작됩니다.
+
+```python
+from pyspark.sql.functions import session_window
+
+# 30분 이상 활동이 없으면 세션 종료
+df.withWatermark("event_time", "1 hour") \
+  .groupBy(session_window("event_time", "30 minutes"), "user_id") \
+  .agg(
+      count("*").alias("page_views"),
+      min("event_time").alias("session_start"),
+      max("event_time").alias("session_end")
+  )
+```
+
+| 항목 | 설명 |
+|------|------|
+| **사용 시기** | 사용자 세션 분석, 웹 클릭스트림, IoT 장비 활동 구간 |
+| **장점** | 실제 활동 패턴에 맞는 자연스러운 그룹화 |
+| **단점** | 세션 종료를 감지하려면 워터마크가 필수이며, 메모리 사용이 예측하기 어려움 |
+
+### 윈도우 유형 비교
+
+| 비교 | Tumbling | Sliding | Session |
+|------|---------|---------|---------|
+| **윈도우 크기** | 고정 | 고정 | 가변 (gap 기반) |
+| **겹침** | 없음 | 있음 | 없음 |
+| **이벤트 소속** | 1개 윈도우 | 여러 윈도우 | 1개 세션 |
+| **메모리** | 낮음 | 중간 | 높음 (가변) |
+| **워터마크 필수** | 권장 | 권장 | **필수** |
+| **대표 사용** | 일별/시간별 통계 | 이동 평균 | 사용자 세션 |
+
+---
+
+## Output Mode 심화
+
+writeStream의 `outputMode`는 **결과 테이블의 어떤 행을 싱크에 쓸 것인지** 를 결정합니다.
+
+| Output Mode | 동작 | 사용 가능 조건 | 적합한 싱크 |
+|------------|------|-------------|-----------|
+| **Append**(기본) | 새로 추가된 행만 출력 | 집계 없는 쿼리, 또는 워터마크가 있는 집계 | Delta Table, Kafka |
+| **Update** | 변경된 행만 출력 | 집계, mapGroupsWithState | Delta Table (MERGE와 결합) |
+| **Complete** | 전체 결과 테이블 출력 | 집계 쿼리만 | 소규모 결과, 메모리 싱크 |
+
+```python
+# Append Mode: 새 행만 쓰기 (가장 일반적)
+df.writeStream.outputMode("append").toTable("output")
+
+# Update Mode: 변경된 행만 쓰기
+df.groupBy("device_id").agg(avg("temp")) \
+  .writeStream.outputMode("update").toTable("device_avg")
+
+# Complete Mode: 전체 결과 덮어쓰기 (소규모만)
+df.groupBy("status").count() \
+  .writeStream.outputMode("complete") \
+  .format("memory").queryName("status_count").start()
+```
+
+> ⚠️ **Complete Mode 주의**: 결과 테이블 전체를 매번 다시 쓰므로, **결과가 소규모(수천 행 이하)인 경우에만** 사용하세요. 대규모 결과에 사용하면 성능이 급격히 저하됩니다.
+
+---

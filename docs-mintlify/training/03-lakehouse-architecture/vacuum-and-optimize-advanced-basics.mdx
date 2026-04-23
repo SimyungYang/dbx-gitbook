@@ -1,0 +1,76 @@
+---
+title: "ANALYZE TABLE (통계 수집)과 운영 주기 권장사항"
+---
+
+> 이 문서는 **[레이크하우스 아키텍처](/training/03-lakehouse-architecture/overview)** 섹션의 일부입니다.
+
+## ANALYZE TABLE (통계 수집)
+
+> 💡 **ANALYZE TABLE** 은 테이블의 **컬럼 통계(statistics)** 를 수집하는 명령입니다. 쿼리 최적화기(Query Optimizer)가 이 통계를 활용하여 더 효율적인 실행 계획을 수립합니다.
+
+### 사용법
+
+```sql
+-- 전체 테이블 통계 수집
+ANALYZE TABLE catalog.schema.orders COMPUTE STATISTICS;
+
+-- 특정 컬럼의 통계만 수집
+ANALYZE TABLE catalog.schema.orders
+COMPUTE STATISTICS FOR COLUMNS order_date, customer_id, amount;
+
+-- Delta Statistics 수집 (데이터 스킵을 위한 통계)
+ANALYZE TABLE catalog.schema.orders
+COMPUTE DELTA STATISTICS;
+```
+
+### 수집되는 통계 정보
+
+| 통계 | 설명 | 활용 |
+|------|------|------|
+| **행 수(numRows)** | 테이블의 전체 행 수 | JOIN 순서 최적화 |
+| **최소/최대값(min/max)** | 각 컬럼의 최솟값과 최댓값 | Data Skipping |
+| **NULL 수(numNulls)** | 각 컬럼의 NULL 개수 | 필터 최적화 |
+| **고유값 수(distinctCount)** | 컬럼의 고유값 수 | JOIN 전략 선택 |
+
+---
+
+## 운영 주기 권장사항
+
+| 작업 | 권장 주기 | 설명 |
+|------|-----------|------|
+| **OPTIMIZE** | 일 1회 또는 데이터 변경 후 | 소형 파일을 합쳐 쿼리 성능 유지 |
+| **VACUUM** | 주 1회 | 불필요한 파일 삭제로 스토리지 비용 절약 |
+| **ANALYZE TABLE** | 주 1회 또는 대량 변경 후 | 쿼리 최적화기에 최신 통계 제공 |
+
+### 운영 스크립트 예시
+
+```sql
+-- 일일 유지 보수 스크립트
+-- Step 1: 데이터 압축
+OPTIMIZE catalog.schema.orders;
+
+-- Step 2: 불필요한 파일 정리 (30일 보존)
+VACUUM catalog.schema.orders RETAIN 720 HOURS;
+
+-- Step 3: 통계 갱신
+ANALYZE TABLE catalog.schema.orders COMPUTE STATISTICS;
+```
+
+```python
+# PySpark로 여러 테이블 일괄 유지 보수
+tables = [
+    "catalog.schema.orders",
+    "catalog.schema.customers",
+    "catalog.schema.products"
+]
+
+for table in tables:
+    spark.sql(f"OPTIMIZE {table}")
+    spark.sql(f"VACUUM {table} RETAIN 720 HOURS")
+    spark.sql(f"ANALYZE TABLE {table} COMPUTE STATISTICS")
+    print(f"✅ {table} 유지 보수 완료")
+```
+
+> 💡 **Predictive Optimization** 이 활성화된 Managed Table이라면, OPTIMIZE와 VACUUM을 Databricks가 자동으로 실행합니다. 수동 유지 보수가 필요 없어지므로, 가능하다면 Predictive Optimization 사용을 권장합니다. 자세한 내용은 [Predictive Optimization](./predictive-optimization) 문서를 참고하세요.
+
+---

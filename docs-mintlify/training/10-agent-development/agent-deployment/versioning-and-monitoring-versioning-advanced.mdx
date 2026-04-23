@@ -1,0 +1,182 @@
+---
+title: "배포 전략 (Deployment Strateg과 모니터링 핵심 메트릭"
+---
+
+> 이 문서는 **[AI 에이전트](/training/10-agent-development/overview)** 섹션의 일부입니다.
+
+## 3. 배포 전략 (Deployment Strategies)
+
+### 3-1. Canary 배포
+
+신규 버전에 소량의 트래픽(예: 5–10%)만 먼저 흘려 리스크를 제한합니다.
+
+```python
+from databricks.sdk.service.serving import (
+    ServedEntityInput, TrafficConfig, Route, EndpointCoreConfigInput
+)
+
+# Canary: v4에 10% 트래픽 할당
+w.serving_endpoints.update_config(
+    name="customer-support-agent",
+    served_entities=[
+        ServedEntityInput(
+            entity_name="catalog.schema.customer_support_agent",
+            entity_version="3",
+            name="v3-stable",
+            workload_size="Small",
+            scale_to_zero_enabled=False
+        ),
+        ServedEntityInput(
+            entity_name="catalog.schema.customer_support_agent",
+            entity_version="4",
+            name="v4-canary",
+            workload_size="Small",
+            scale_to_zero_enabled=False
+        ),
+    ],
+    traffic_config=TrafficConfig(
+        routes=[
+            Route(served_model_name="v3-stable", traffic_percentage=90),
+            Route(served_model_name="v4-canary",  traffic_percentage=10),
+        ]
+    )
+)
+```
+
+### 3-2. Blue-Green 배포
+
+두 개의 동일한 환경(Blue = 현재, Green = 신규)을 운영하고, 검증 후 즉시 전환합니다. 트래픽 전환이 순간적(0→100%)이므로 롤백도 빠릅니다.
+
+```python
+# Green 환경 검증 완료 후 100% 전환
+w.serving_endpoints.update_config(
+    name="customer-support-agent",
+    served_entities=[
+        ServedEntityInput(
+            entity_name="catalog.schema.customer_support_agent",
+            entity_version="4",  # Green → 전체 트래픽
+            workload_size="Small",
+            scale_to_zero_enabled=True
+        )
+    ]
+)
+```
+
+### 3-3. A/B 테스트 (Traffic Splitting)
+
+두 버전을 동시에 운영하며 비즈니스 메트릭(전환율, 해결률 등)을 비교합니다.
+
+```python
+# A/B 테스트: 50/50 분할
+traffic_config = TrafficConfig(
+    routes=[
+        Route(served_model_name="variant-a", traffic_percentage=50),
+        Route(served_model_name="variant-b", traffic_percentage=50),
+    ]
+)
+```
+
+> **참고:** A/B 테스트는 통계적 유의성(Statistical Significance)이 확보될 때까지 유지해야 합니다. 최소 수백 건 이상의 샘플이 필요합니다.
+
+---
+
+## 4. 모니터링 핵심 메트릭
+
+### 인프라 메트릭 (Infrastructure Metrics)
+
+| 메트릭 | 설명 | 권장 임계값 |
+|--------|------|------------|
+| **Latency (p50/p95/p99)** | 응답 시간 분포 | p95 > 5s → 알림 |
+| **Throughput (RPS)** | 초당 요청 수 | 비정상 급증/급감 감지 |
+| **Error Rate** | 4xx/5xx 비율 | > 5% → 알림, > 10% → 롤백 |
+| **Concurrency** | 동시 처리 요청 수 | 스케일 아웃 기준 |
+
+### LLM 특화 메트릭 (LLM-specific Metrics)
+
+| 메트릭 | 설명 | 활용 |
+|--------|------|------|
+| **Token 사용량** | 입력/출력 토큰 수 | 비용 예측 및 이상 탐지 |
+| **Context Length** | 컨텍스트 윈도우 활용률 | 최대 한계 근접 시 최적화 |
+| **Tool Call Count** | 에이전트 루프 당 도구 호출 횟수 | 무한 루프 탐지 |
+| **Retrieval Relevance** | RAG 검색 관련성 점수 | 지식 베이스 품질 측정 |
+
+### 품질 메트릭 (Quality Metrics)
+
+```sql
+-- LLM Judge를 활용한 응답 품질 점수 집계
+SELECT
+    DATE(timestamp)                                             AS date,
+    AVG(quality_score)                                         AS avg_quality_score,
+    AVG(relevance_score)                                       AS avg_relevance_score,
+    AVG(groundedness_score)                                    AS avg_groundedness_score,
+    COUNT(CASE WHEN quality_score < 3 THEN 1 END)              AS low_quality_count
+FROM catalog.schema.agent_quality_assessments
+GROUP BY DATE(timestamp)
+ORDER BY date DESC;
+```
+
+---
+
+## 5. MLflow Tracing — 추론 과정 추적
+
+### Tracing이 필요한 이유
+
+프로덕션에서 에이전트가 잘못된 답변을 생성했을 때, 어느 단계에서 문제가 발생했는지 파악하려면 **분산 추적 (Distributed Tracing)** 이 필수입니다. MLflow Tracing은 LLM 호출, RAG 검색, 도구 실행 각 단계를 Span 단위로 기록합니다.
+
+### 자동 추적 활성화
+
+```python
+import mlflow
+
+# LangChain 자동 계측
+mlflow.langchain.autolog()
+
+# 또는 LlamaIndex 자동 계측
+mlflow.llama_index.autolog()
+```
+
+### 커스텀 Span 추가
+
+```python
+import mlflow
+
+@mlflow.trace(name="customer-support-agent", span_type="CHAIN")
+def run_agent(user_query: str) -> str:
+
+    # 검색 단계 추적
+    with mlflow.start_span(name="retrieve_context", span_type="RETRIEVER") as span:
+        context_docs = vector_store.similarity_search(user_query, k=5)
+        span.set_attribute("num_retrieved_docs", len(context_docs))
+        span.set_attribute("query", user_query)
+
+    # LLM 호출 단계 추적
+    with mlflow.start_span(name="generate_response", span_type="LLM") as span:
+        response = llm.invoke(
+            messages=[{"role": "user", "content": user_query}],
+            context=context_docs
+        )
+        span.set_attribute("input_tokens",  response.usage.prompt_tokens)
+        span.set_attribute("output_tokens", response.usage.completion_tokens)
+        span.set_attribute("total_cost_usd", calculate_cost(response.usage))
+
+    return response.content
+```
+
+### 프로덕션 Trace 분석
+
+```python
+import mlflow
+
+# 최근 실패한 Trace 조회
+failed_traces = mlflow.search_traces(
+    filter_string="status = 'ERROR'",
+    max_results=50,
+    order_by=["timestamp_ms DESC"]
+)
+
+# 특정 Request ID로 Trace 조회 (Inference Table과 연계)
+trace = mlflow.get_trace(request_id="tr-abc123")
+print(trace.to_json(pretty=True))
+```
+
+---

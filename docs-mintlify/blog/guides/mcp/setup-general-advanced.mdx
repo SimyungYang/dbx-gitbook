@@ -1,0 +1,223 @@
+---
+title: "Cursor / VS Code에서 MCP 설정과 인기 MCP 서버 목록"
+---
+
+> 이 문서는 **[MCP](/blog/guides/mcp/overview)** 섹션의 일부입니다.
+
+## Cursor / VS Code에서 MCP 설정
+
+### 왜 IDE별로 설정 파일 위치가 다른가
+
+IDE마다 프로젝트 설정 파일의 관례가 다르기 때문입니다. Cursor는 `.cursor/` 디렉토리, VS Code는 `.vscode/` 디렉토리를 사용합니다. MCP 프로토콜은 전송 방식과 메시지 형식만 표준화하고, 설정 파일 형식은 각 클라이언트에 위임했습니다.
+
+**실전 팁**: 같은 프로젝트에서 Cursor와 VS Code를 모두 사용하는 팀이라면, 두 설정 파일을 모두 만들어 git에 커밋하세요. MCP 서버 설정은 동일하고 파일 위치만 다르므로, 하나를 작성하고 복사하면 됩니다.
+
+### Cursor
+
+프로젝트 루트에 `.cursor/mcp.json` 파일을 생성합니다:
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_xxx"
+      }
+    }
+  }
+}
+```
+
+### VS Code (GitHub Copilot)
+
+프로젝트 루트에 `.vscode/mcp.json` 파일을 생성합니다:
+
+```json
+{
+  "servers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_xxx"
+      }
+    }
+  }
+}
+```
+
+> **참고**
+VS Code에서는 `"servers"` 키를 사용하지만, Claude Desktop과 Cursor에서는 `"mcpServers"` 키를 사용합니다. 설정 파일을 복사할 때 이 차이를 주의하세요.
+
+
+### Databricks Genie Code에서 MCP 설정
+
+Databricks Genie Code는 위의 로컬 클라이언트와 전혀 다른 방식으로 MCP를 설정합니다. JSON 파일이 아니라 **UI** 에서 설정하며, Unity Catalog Connection을 통해 인증을 관리합니다.
+
+```
+Genie Code 패널 > 설정 아이콘 > MCP Servers > Add Server
+→ Managed MCP: Unity Catalog Functions, Vector Search, Genie Space 등 선택
+→ External MCP: Unity Catalog Connection 선택
+→ Custom MCP: Databricks App URL 입력
+```
+
+이 방식의 장점은 **개별 사용자가 API 키를 관리할 필요가 없다** 는 것입니다. 관리자가 Unity Catalog Connection을 한 번 설정하면, 워크스페이스의 모든 사용자가 해당 MCP 서버를 사용할 수 있습니다.
+
+자세한 내용은 [Databricks MCP 활용](databricks-mcp) 페이지를 참고하세요.
+
+---
+
+## 인기 MCP 서버 목록
+
+| 서버 | 패키지 | 주요 기능 |
+|------|--------|----------|
+| **GitHub** | `@modelcontextprotocol/server-github` | 리포 검색, Issue/PR 관리, 코드 검색 |
+| **Slack** | `@modelcontextprotocol/server-slack` | 메시지 전송, 채널 관리, 검색 |
+| **Google Drive** | `@modelcontextprotocol/server-gdrive` | 파일 검색, 문서 읽기 |
+| **PostgreSQL** | `@modelcontextprotocol/server-postgres` | DB 스키마 조회, SQL 쿼리 실행 |
+| **Filesystem** | `@modelcontextprotocol/server-filesystem` | 로컬 파일 읽기/쓰기/검색 |
+| **Brave Search** | `@modelcontextprotocol/server-brave-search` | 웹 검색, 로컬 검색 |
+| **Notion** | `@notionhq/notion-mcp-server` | 페이지/DB 관리, 검색, 댓글 |
+| **Jira** | `@anthropic/jira-mcp-server` | 이슈 생성/검색/관리 |
+
+> **참고**
+위 패키지들은 `npx -y <패키지명>`으로 바로 실행할 수 있습니다. Node.js 18+ 가 설치되어 있어야 합니다.
+
+
+### 서버 설치 전 확인사항
+
+MCP 서버를 설치하기 전에 다음 환경이 준비되어 있는지 확인하세요:
+
+| 필요 환경 | 확인 명령어 | 최소 버전 |
+|----------|-----------|----------|
+| **Node.js** | `node --version` | 18.0+ (대부분의 MCP 서버 기본 요구) |
+| **npm/npx** | `npx --version` | Node.js와 함께 설치됨 |
+| **Python** | `python --version` | 3.10+ (Python MCP 서버 사용 시) |
+| **uv**(선택)| `uv --version` | 최신 (Python MCP 개발 시 권장) |
+
+```bash
+# Node.js 설치 확인 및 MCP 서버 테스트
+node --version           # v18.0.0 이상 필요
+npx --version            # npx 사용 가능 확인
+
+# 간단한 MCP 서버 테스트 (Filesystem)
+npx -y @modelcontextprotocol/server-filesystem /tmp
+# 정상이면 JSON-RPC 메시지가 stdout에 출력됨
+```
+
+---
+
+## 커스텀 MCP 서버 만들기 (Python)
+
+Python MCP SDK(`mcp`)를 사용하면 간단하게 자체 MCP 서버를 만들 수 있습니다.
+
+### 환경 설정
+
+```bash
+# uv 사용 (권장)
+uv init my-mcp-server && cd my-mcp-server
+uv venv && source .venv/bin/activate
+uv add "mcp[cli]"
+
+# 또는 pip 사용
+pip install "mcp[cli]"
+```
+
+### 서버 코드 작성
+
+```python
+# server.py
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("my-tools")
+
+@mcp.tool()
+async def search_products(query: str) -> str:
+    """제품 카탈로그에서 검색합니다.
+
+    Args:
+        query: 검색할 제품명 또는 키워드
+    """
+    # 실제 비즈니스 로직 (DB 조회, API 호출 등)
+    results = [
+        {"name": "노트북 Pro", "price": 1200000},
+        {"name": "노트북 Air", "price": 900000},
+    ]
+    return str([r for r in results if query.lower() in r["name"].lower()])
+
+@mcp.tool()
+async def get_order_status(order_id: str) -> str:
+    """주문 상태를 조회합니다.
+
+    Args:
+        order_id: 주문 번호
+    """
+    return f"주문 {order_id}: 배송 중 (예상 도착일: 2026-04-02)"
+
+if __name__ == "__main__":
+    mcp.run(transport="stdio")
+```
+
+### 테스트 및 디버깅
+
+```bash
+# MCP Inspector로 대화형 테스트
+mcp dev server.py
+
+# Claude Desktop에 등록
+# claude_desktop_config.json에 추가:
+```
+
+```json
+{
+  "mcpServers": {
+    "my-tools": {
+      "command": "uv",
+      "args": ["run", "--directory", "/path/to/my-mcp-server", "server.py"]
+    }
+  }
+}
+```
+
+> **팁**
+`mcp dev server.py` 명령어는 브라우저에서 MCP Inspector를 열어, 서버의 도구를 대화형으로 테스트할 수 있게 해줍니다. 개발 중 반드시 활용하세요.
+
+
+---
+
+## 팀 설정 공유 전략
+
+### 전략 1: `.mcp.json` + 환경변수 (권장)
+
+팀 전체가 같은 MCP 서버를 사용하도록 프로젝트 루트에 `.mcp.json`을 커밋하되, 실제 인증 정보는 환경변수로 분리합니다:
+
+```
+프로젝트 리포지토리에 포함 (git 커밋):
+├── .mcp.json                  ← MCP 서버 구성 (토큰 없이)
+├── .env.example               ← 환경변수 템플릿 (실제 값 없이)
+└── README.md                  ← MCP 설정 가이드 링크
+
+각 팀원의 로컬 환경:
+└── .env                       ← 실제 토큰 값 (.gitignore에 추가)
+```
+
+### 전략 2: 문서 기반 공유
+
+CI/CD 시크릿 매니저(GitHub Secrets, AWS Secrets Manager 등)와 연동하여, 팀 위키에 설정 절차를 문서화합니다. 새 팀원 온보딩 시 문서를 따라 설정하면 됩니다.
+
+### 전략 3: Databricks Unity Catalog Connection (엔터프라이즈)
+
+Databricks 환경에서는 Unity Catalog Connection으로 MCP 서버를 중앙 관리합니다. 관리자가 한 번 Connection을 생성하면, 워크스페이스의 모든 사용자가 해당 MCP 서버를 사용할 수 있습니다. 개별 사용자가 API 키를 관리할 필요가 없어 **가장 안전하고 효율적인 방법** 입니다.
+
+> **참고**
+**권장 조합**: 로컬 개발에서는 `.mcp.json` + 환경변수, Databricks 환경에서는 Unity Catalog Connection. 두 환경에서 같은 MCP 서버를 사용하되, 인증 방식만 다르게 설정합니다.
+
+
+---
+
+## 다음 단계
+
+- [Databricks MCP 활용](databricks-mcp): Databricks 환경에서 Managed/External/Custom MCP 활용하기
+- [베스트 프랙티스](best-practices): 보안, Tool 설계, 디버깅 팁

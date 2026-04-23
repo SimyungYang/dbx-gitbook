@@ -1,0 +1,296 @@
+---
+title: "네트워킹 & 접근 제어"
+---
+
+> 이 문서는 **[Databricks Apps](/blog/guides/apps/overview)** 섹션의 일부입니다.
+
+Databricks Apps의 네트워크 아키텍처, IP 접근 제어, 인증 없는 접근 방법, 그리고 보안 설정을 다룹니다.
+
+---
+
+## 네트워크 아키텍처
+
+Databricks Apps는 **Serverless Compute Plane** 에서 실행됩니다. Control Plane은 인증과 라우팅만 처리하고, 실제 앱 트래픽은 Serverless Compute Plane으로 직접 전달됩니다.
+
+| 구성 요소 | 위치 | 설명 |
+|-----------|------|------|
+| **인증 & 라우팅** | Control Plane | OAuth 인증, URL 라우팅, IP Access List 적용 |
+| **앱 컨테이너** | Serverless Compute Plane | 앱 코드가 실행되는 격리된 서버리스 환경 |
+| **SQL Warehouse** | Serverless Compute Plane | 앱이 호출하는 쿼리 엔진 |
+| **Model Serving** | Serverless Compute Plane | AI/ML 모델 추론 엔드포인트 |
+| **Unity Catalog** | Control Plane | 메타데이터 및 거버넌스 |
+
+### 트래픽 흐름
+
+```
+[사용자 브라우저]
+    ↓ HTTPS (인터넷 또는 Private Link)
+[Control Plane] ← OAuth 인증 + IP Access List 적용
+    ↓ 인증 완료 후
+[Serverless Compute Plane — 앱 컨테이너] ← 트래픽 직접 전달
+    ↓ 클라우드 프로바이더 내부 네트워크
+[SQL Warehouse / Model Serving / Unity Catalog]
+```
+
+> **참고**
+**핵심 포인트**: 사용자의 첫 요청은 Control Plane에서 인증 처리 후, 이후 모든 트래픽은 **Serverless Compute Plane으로 직접** 전달됩니다. Control Plane과 Compute Plane 간 통신은 클라우드 프로바이더의 내부 네트워크를 사용하여 퍼블릭 인터넷을 거치지 않습니다. 단, 사용자와 `databricksapps.com` 도메인 간 통신은 Private Link가 없으면 퍼블릭 인터넷을 경유할 수 있습니다.
+
+
+---
+
+## IP 접근 제어 (IP Access Lists)
+
+Databricks Apps에 접근할 수 있는 IP 주소를 제한하여 보안을 강화할 수 있습니다.
+
+### 워크스페이스 IP Access List 연동
+
+Databricks Apps는 **워크스페이스의 IP Access List 설정을 상속** 합니다. 워크스페이스에 IP Access List가 구성되어 있으면, 앱에 대한 접근도 동일한 IP 제한이 적용됩니다.
+
+| 설정 위치 | 적용 범위 | 설명 |
+|-----------|----------|------|
+| **워크스페이스 IP Access List** | 워크스페이스 전체 (앱 포함) | Admin Console > Settings > IP Access Lists |
+| **앱별 개별 IP 제한** | 현재 미지원 | 워크스페이스 레벨에서만 제어 가능 |
+
+### IP Access List 설정 방법
+
+**1. Admin Console에서 설정:**
+
+1. 워크스페이스 Admin Console 접속
+2. **Settings** > **Security** > **IP access lists** 이동
+3. 허용할 IP 범위 추가 (CIDR 형식)
+
+**2. REST API로 설정:**
+
+```bash
+# IP Access List 추가
+curl -X POST \
+  "https://<workspace-url>/api/2.0/ip-access-lists" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "label": "Office Network",
+    "list_type": "ALLOW",
+    "ip_addresses": ["203.0.113.0/24", "198.51.100.0/24"]
+  }'
+```
+
+**3. Databricks CLI로 설정:**
+
+```bash
+databricks ip-access-lists create \
+  --label "Office Network" \
+  --list-type ALLOW \
+  --ip-addresses "203.0.113.0/24,198.51.100.0/24"
+```
+
+> **주의**
+**IP Access List의 영향**: IP Access List를 활성화하면 **워크스페이스의 모든 접근** (UI, API, 앱)이 제한됩니다. 앱 사용자가 허용된 IP에서 접속해야 하므로, VPN 없이 외부에서 접속하는 사용자가 있다면 해당 IP를 반드시 허용 목록에 추가하세요.
+
+
+### 앱별 IP 제한이 필요한 경우
+
+현재 Databricks Apps는 **앱별 개별 IP 제한을 지원하지 않습니다**. 모든 앱에 동일한 워크스페이스 IP Access List가 적용됩니다. 앱별로 다른 IP 정책이 필요하다면 다음 대안을 고려하세요:
+
+| 대안 | 설명 | 복잡도 |
+|------|------|--------|
+| **별도 워크스페이스** | 다른 IP 정책이 필요한 앱을 별도 워크스페이스에 배포 | 높음 |
+| **앱 코드 내 IP 검증** | Flask/FastAPI에서 `request.headers.get('X-Forwarded-For')`로 IP 확인 | 중간 |
+| **사용자 인증 강화** | IP 대신 사용자 권한으로 접근 제어 | 낮음 |
+
+---
+
+## SSO 없이 앱 접근하기
+
+Databricks Apps는 기본적으로 **워크스페이스 SSO 인증이 필수** 입니다. 하지만 특정 시나리오에서는 SSO 없이 앱에 접근해야 할 수 있습니다.
+
+### 기본 동작: SSO 필수
+
+| 접근 방식 | 인증 요구사항 | 지원 여부 |
+|-----------|-------------|----------|
+| **브라우저 접속** | 워크스페이스 SSO 로그인 필수 | 기본 동작 |
+| **API 호출 (PAT)** | Personal Access Token + CAN USE 권한 | 지원 |
+| **API 호출 (OAuth)** | OAuth M2M 토큰 | 지원 |
+| **퍼블릭 익명 접근** | 인증 없음 | **미지원** |
+
+> **주의**
+**핵심 제약**: Databricks Apps의 URL에 접속하면 **반드시 Databricks 워크스페이스 인증** 을 거쳐야 합니다. Databricks 계정이 없는 외부 사용자(고객, 파트너 등)는 앱에 접근할 수 없습니다. 이는 설계 의도이며, 보안과 거버넌스를 위한 것입니다.
+
+**향후 로드맵**: 외부 IdP(Identity Provider) 기반 인증이 **H2 FY27 (DAIS 이후)** 에 예정되어 있습니다. 이 기능이 출시되면 Databricks 워크스페이스 계정 없이도 외부 IdP로 인증한 사용자가 앱에 접근할 수 있게 됩니다.
+
+
+### 대안 0: Identity Federation (현재 가능한 최선)
+
+외부 사용자가 앱에 접근해야 하는 경우, **Identity Federation + SCIM/JIT provisioning** 을 사용하면 외부 사용자를 IdP(Okta, Entra ID 등)를 통해 온보딩할 수 있습니다. 풀 워크스페이스 접근 없이 앱만 사용할 수 있도록 설정합니다.
+
+```
+[외부 사용자] → [회사 IdP (Okta/Entra)] → SCIM/JIT → [Databricks 워크스페이스] → [앱]
+```
+
+
+### 대안 1: API 엔드포인트로 접근 (M2M)
+
+앱이 REST API를 제공하는 경우(FastAPI, Flask), 다른 시스템에서 **서비스 프린시펄 또는 PAT** 으로 앱의 API를 직접 호출할 수 있습니다.
+
+```bash
+# PAT을 사용한 API 호출
+curl -X GET "https://<app-url>/api/data" \
+  -H "Authorization: Bearer <personal-access-token>"
+
+# OAuth M2M 토큰을 사용한 API 호출
+curl -X GET "https://<app-url>/api/data" \
+  -H "Authorization: Bearer <oauth-access-token>"
+```
+
+> **참고**
+이 방식은 **사람이 아닌 시스템 간 통신** 에 적합합니다. 사용자가 브라우저로 앱 UI에 접근하려면 여전히 SSO가 필요합니다.
+
+
+### 대안 2: 프록시 서버 구성
+
+Databricks Apps 앞에 별도의 프록시 서버(Nginx, Cloudflare 등)를 두고, 프록시가 Databricks에 인증한 뒤 결과를 외부에 노출하는 패턴입니다.
+
+```
+[외부 사용자] → [프록시 서버 (인증 처리)] → [Databricks App]
+```
+
+이 패턴은 복잡도가 높으므로, 외부 사용자 접근이 핵심 요구사항이라면 **Cloud Run, ECS/Fargate 등 별도 플랫폼** 에 앱을 배포하고 Databricks SDK로 데이터에 접근하는 것이 더 적합할 수 있습니다.
+
+### 대안 3: Databricks Apps를 API 백엔드로, 외부 프론트엔드 분리
+
+```
+[외부 프론트엔드 (Vercel/Netlify)] → [Databricks App REST API (PAT 인증)] → [Unity Catalog]
+```
+
+프론트엔드는 외부 호스팅에 배포하여 누구나 접근 가능하게 하고, 데이터 접근이 필요한 API 호출만 Databricks App으로 보내는 패턴입니다.
+
+---
+
+## Private Link 지원
+
+Databricks Apps는 워크스페이스의 **Private Link 설정을 따릅니다**.
+
+### AWS PrivateLink
+
+| 시나리오 | 앱 접근 가능 여부 | 설명 |
+|----------|-----------------|------|
+| **퍼블릭 네트워크 허용** | 인터넷에서 접근 가능 | 기본 설정 |
+| **프론트엔드 PrivateLink만** | VPC 내부에서만 접근 | 프론트엔드 PrivateLink 엔드포인트를 통해 접근 |
+| **백엔드 PrivateLink** | 앱→리소스 통신이 프라이빗 | 앱과 데이터 플레인 간 통신에 영향 |
+| **PrivateLink Only 모드** | VPC 내부에서만 접근 | 퍼블릭 접근 완전 차단 |
+
+### Azure Private Link
+
+Azure에서도 동일한 원칙이 적용됩니다. 워크스페이스가 Private Link로 구성되어 있으면 앱 접근도 Private Link를 통해서만 가능합니다.
+
+### GCP Private Service Connect
+
+GCP에서는 Private Service Connect를 통해 앱에 접근합니다. 단, GCP에서는 **CNAME 체이싱이 지원되지 않으므로**, 앱별로 개별 DNS A 레코드를 생성하여 프론트엔드 Private Link IP를 가리켜야 합니다.
+
+### DNS 포워딩 필수 설정 (중요)
+
+> **주의**
+**Private Link 환경에서 가장 흔한 배포 실패 원인**: `databricksapps.com` 도메인에 대한 **조건부 DNS 포워딩** 을 구성하지 않으면 앱 접속 시 "Public access is not allowed for workspace" 오류가 발생합니다.
+
+
+Private Link 환경에서는 앱 도메인(`*.databricksapps.com`)이 워크스페이스 도메인과 **별도** 이므로, DNS 포워딩을 추가로 구성해야 합니다:
+
+```
+# 조건부 DNS 포워딩 구성 대상
+*.databricksapps.com → 프론트엔드 PrivateLink 엔드포인트 IP
+```
+
+이 설정이 없으면 `databricksapps.com` 도메인이 퍼블릭 IP로 해석되어 Private Link Only 워크스페이스에서 접속이 차단됩니다.
+
+> **참고**
+**Private Link 환경에서의 앱 접근**: Private Link Only 모드의 워크스페이스에서는 앱 URL도 프라이빗 네트워크에서만 접근 가능합니다. 사용자가 VPN을 통해 접속하거나, VPC/VNet 내부에서 접속해야 합니다.
+
+
+---
+
+## Egress (아웃바운드) 제어
+
+앱 컨테이너에서 **외부 인터넷으로의 아웃바운드 트래픽** 은 기본적으로 허용됩니다. 이는 앱에서 외부 API(OpenAI, Slack, 이메일 서비스 등)를 호출할 수 있음을 의미합니다.
+
+| 트래픽 방향 | 기본 설정 | 제어 방법 |
+|------------|----------|----------|
+| **인바운드** (사용자→앱) | SSO 인증 필수 | IP Access List, Private Link |
+| **아웃바운드** (앱→외부) | 허용 | NCC, Network Policy |
+| **내부** (앱→Databricks 서비스) | 자동 연결 | 서비스 프린시펄 권한으로 제어 |
+
+### Network Connectivity Configuration (NCC)
+
+NCC를 사용하면 앱에 **안정적인 Egress IP** 를 할당할 수 있습니다. 이 IP를 외부 시스템의 방화벽 허용 목록에 추가하면, 특정 IP에서만 접근을 허용하는 외부 서비스와 연동할 수 있습니다.
+
+또한 NCC에 **PrivateLink 연결** 을 구성하여 앱에서 S3 버킷, NLB 등 프라이빗 대상에 접근할 수 있습니다.
+
+### Network Policy (Enterprise tier)
+
+Enterprise 등급에서는 **Network Policy** 로 앱의 아웃바운드 트래픽을 승인된 도메인만 허용하도록 제한할 수 있습니다. 이는 데이터 유출 방지(DLP)에 유용합니다.
+
+> **참고**
+Network Policy를 적용하기 전에 **dry-run 모드** 로 먼저 검증하는 것을 권장합니다. `system.access.outbound_network` 시스템 테이블을 조회하여 실제로 어떤 외부 도메인에 접속하는지 확인하세요.
+
+
+### 앱 빌드 시 필수 Egress 도메인
+
+Network Policy를 적용할 때 다음 도메인은 반드시 허용해야 합니다 (앱 빌드 및 의존성 설치에 필요):
+
+| 도메인 | 용도 |
+|--------|------|
+| `*.databricksapps.com` | 앱 런타임 |
+| `pypi.org` | Python 패키지 설치 |
+| `files.pythonhosted.org` | Python 패키지 다운로드 |
+| `registry.npmjs.org` | Node.js 패키지 설치 |
+| `*.amazonaws.com` | AWS 인프라 접근 |
+
+> **주의**
+**보안 고려사항**: 앱에서 외부 API를 호출할 때, API 키는 반드시 **Secret 리소스** 로 관리하세요. 앱 코드에 하드코딩하거나 `app.yaml`의 `value`에 직접 넣지 마세요.
+
+
+---
+
+## 커스텀 도메인
+
+현재 Databricks Apps는 **커스텀 도메인을 직접 지원하지 않습니다**. 앱 URL은 항상 Databricks가 자동으로 생성하는 형식을 따릅니다:
+
+```
+https://<app-name>-<workspace-id>.<region>.databricksapps.com
+```
+
+### 커스텀 도메인이 필요한 경우의 대안
+
+| 대안 | 설명 | 복잡도 |
+|------|------|--------|
+| **CNAME + 리버스 프록시** | Cloudflare나 Nginx에서 커스텀 도메인 → 앱 URL로 프록시 | 중간 |
+| **URL 리다이렉트** | 커스텀 도메인에서 앱 URL로 302 리다이렉트 | 낮음 |
+| **별도 플랫폼** | 커스텀 도메인이 필수라면 Cloud Run/Vercel에 배포 | 높음 |
+
+> **참고**
+커스텀 도메인 지원은 많은 사용자가 요청하고 있는 기능이며, 향후 로드맵에서 검토될 가능성이 있습니다.
+
+
+---
+
+## 보안 체크리스트
+
+Databricks Apps를 프로덕션에 배포하기 전에 확인해야 할 네트워킹 및 보안 항목을 정리합니다.
+
+| # | 항목 | 확인 방법 |
+|---|------|----------|
+| 1 | **IP Access List 설정** | 필요한 경우 워크스페이스에 IP 제한이 적용되어 있는지 확인 |
+| 2 | **Private Link 구성** | 민감 데이터를 다루는 경우 Private Link 환경 사용 |
+| 3 | **SP 최소 권한** | 앱의 서비스 프린시펄에 필요한 최소 권한만 부여 |
+| 4 | **Secret 관리** | 모든 민감 정보가 Secret 리소스로 관리되는지 확인 |
+| 5 | **사용자 인증** | 민감 데이터는 사용자 인증(User Authorization)으로 접근 제어 |
+| 6 | **감사 로그** | 앱 접근 및 데이터 조회에 대한 로깅 구현 |
+| 7 | **HTTPS** | 자동 적용됨 (별도 설정 불필요) |
+| 8 | **앱 간 격리** | 자동 적용됨 (각 앱은 독립된 네임스페이스에서 실행) |
+
+---
+
+## 참고 자료
+
+- [워크스페이스 IP Access Lists](https://docs.databricks.com/aws/en/security/network/ip-access-list)
+- [AWS PrivateLink 설정](https://docs.databricks.com/aws/en/security/network/classic/privatelink)
+- [Azure Private Link 설정](https://docs.databricks.com/azure/en/security/network/classic/private-link-standard)
+- [Databricks Apps 보안](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/auth)

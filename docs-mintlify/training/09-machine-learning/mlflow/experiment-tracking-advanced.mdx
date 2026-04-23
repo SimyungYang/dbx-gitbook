@@ -1,0 +1,224 @@
+---
+title: "실험 추적 — 하이퍼파라미터 튜닝 연동과 태그 전략 및 실험 조직화"
+---
+
+> 이 문서는 **[머신러닝](/training/09-machine-learning/overview)** 섹션의 일부입니다.
+
+## 하이퍼파라미터 튜닝 연동
+
+실험 추적의 진정한 가치는 **하이퍼파라미터 튜닝과 결합** 할 때 발휘됩니다. 각 탐색 조합이 자동으로 기록되므로, 최적 파라미터를 체계적으로 찾을 수 있습니다.
+
+### Optuna + MLflow
+
+```python
+import optuna
+import mlflow
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import f1_score
+
+mlflow.set_experiment("/Workspace/experiments/fraud-detection-tuning")
+
+def objective(trial):
+    with mlflow.start_run(nested=True):  # 부모 Run 하위에 중첩 Run 생성
+        params = {
+            "n_estimators": trial.suggest_int("n_estimators", 50, 500),
+            "max_depth": trial.suggest_int("max_depth", 3, 20),
+            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
+            "subsample": trial.suggest_float("subsample", 0.5, 1.0)
+        }
+        mlflow.log_params(params)
+
+        model = GradientBoostingClassifier(**params, random_state=42)
+        model.fit(X_train, y_train)
+
+        score = f1_score(y_test, model.predict(X_test))
+        mlflow.log_metric("f1_score", score)
+        mlflow.sklearn.log_model(model, "model")
+
+        return score
+
+# 부모 Run 안에서 튜닝 실행
+with mlflow.start_run(run_name="optuna-tuning-50trials"):
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=50)
+
+    # 최적 파라미터 기록
+    mlflow.log_params({f"best_{k}": v for k, v in study.best_params.items()})
+    mlflow.log_metric("best_f1_score", study.best_value)
+```
+
+### Hyperopt + SparkTrials (분산 튜닝)
+
+```python
+from hyperopt import fmin, tpe, hp, SparkTrials, STATUS_OK
+import mlflow
+
+space = {
+    "n_estimators": hp.choice("n_estimators", [100, 200, 300, 500]),
+    "max_depth": hp.quniform("max_depth", 3, 20, 1),
+    "learning_rate": hp.loguniform("learning_rate", -4, -1)
+}
+
+def train_model(params):
+    with mlflow.start_run(nested=True):
+        params["max_depth"] = int(params["max_depth"])
+        mlflow.log_params(params)
+
+        model = GradientBoostingClassifier(**params, random_state=42)
+        model.fit(X_train, y_train)
+        score = f1_score(y_test, model.predict(X_test))
+        mlflow.log_metric("f1_score", score)
+
+        return {"loss": -score, "status": STATUS_OK}
+
+# Spark 클러스터에서 병렬 튜닝
+spark_trials = SparkTrials(parallelism=4)
+with mlflow.start_run(run_name="hyperopt-distributed"):
+    best = fmin(fn=train_model, space=space, algo=tpe.suggest,
+                max_evals=50, trials=spark_trials)
+```
+
+---
+
+## 태그 전략 및 실험 조직화
+
+대규모 ML 팀에서는 **체계적인 태그 전략** 이 실험 관리의 핵심입니다.
+
+### 추천 태그 체계
+
+| 태그 키 | 용도 | 예시 값 |
+|---------|------|---------|
+| `team` | 담당 팀 | `fraud`, `recommendation` |
+| `project` | 프로젝트 이름 | `credit-scoring-v2` |
+| `data_version` | 학습 데이터 버전 | `2025-03-01` |
+| `feature_set` | 사용한 피처 그룹 | `basic`, `advanced`, `all` |
+| `experiment_type` | 실험 유형 | `baseline`, `tuning`, `ablation` |
+| `stage` | 개발 단계 | `exploration`, `validation`, `production` |
+
+### 실험 네이밍 컨벤션
+
+```
+/Workspace/experiments/{team}/{project}/{experiment-type}
+
+예시:
+/Workspace/experiments/fraud/credit-scoring/baseline
+/Workspace/experiments/fraud/credit-scoring/feature-ablation
+/Workspace/experiments/fraud/credit-scoring/hyperopt-tuning
+```
+
+---
+
+## Databricks 추가 기능
+
+Databricks에서 MLflow를 사용하면 추가적인 편의 기능을 활용할 수 있습니다.
+
+| 구성 요소 | 연결 대상 | 설명 |
+|-----------|-----------|------|
+| **Databricks Notebook** | MLflow Experiment | 자동으로 연결됩니다 |
+| **MLflow Experiment** | Run 기록 | 실험 실행 기록을 관리합니다 |
+| **Run 기록** | Unity Catalog 모델 레지스트리 | 모델을 등록합니다 |
+| **Run 기록** | 아티팩트 스토리지 | 클라우드 스토리지에 아티팩트를 저장합니다 |
+| **MLflow UI** | MLflow Experiment | UI에서 실험을 조회합니다 |
+| **Experiment API** | MLflow Experiment | API로 실험을 프로그래밍 방식으로 접근합니다 |
+
+| 기능 | 설명 |
+|------|------|
+| **노트북 자동 연동** | 노트북에서 학습하면 해당 노트북의 실험에 자동으로 Run이 연결됩니다 |
+| **노트북 스냅샷** | 각 Run에 실행 시점의 노트북 코드가 자동 저장됩니다 |
+| **Git 연동** | Git 커밋 해시가 Run에 자동 기록되어 코드 버전 추적이 가능합니다 |
+| **Autolog 기본 활성화** | Databricks Runtime ML에서는 autolog가 기본 활성화됩니다 |
+| **Unity Catalog 통합** | `registered_model_name`에 3-level namespace(`catalog.schema.model`)를 사용하여 UC에 직접 모델을 등록합니다 |
+| **클러스터 정보 기록** | 학습에 사용된 클러스터 사양(노드 수, 인스턴스 타입 등)이 자동 기록됩니다 |
+
+> ⚠️ **주의사항**: Databricks에서 `mlflow.set_tracking_uri()`를 별도로 호출할 필요가 없습니다. Databricks 환경에서는 자동으로 워크스페이스의 MLflow Tracking Server에 연결됩니다.
+
+---
+
+## 실습: 전체 실험 추적 워크플로
+
+다음은 데이터 준비부터 최적 모델 선택까지의 전체 워크플로입니다.
+
+```python
+# ── 전체 실험 추적 워크플로 ──
+import mlflow
+import mlflow.sklearn
+from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+import pandas as pd
+
+# 1. 데이터 준비
+X, y = make_classification(n_samples=10000, n_features=20,
+                           n_informative=10, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 2. 실험 설정
+mlflow.set_experiment("/Workspace/experiments/classification-benchmark")
+
+# 3. 여러 알고리즘 비교
+models = {
+    "logistic_regression": LogisticRegression(max_iter=1000, random_state=42),
+    "random_forest": RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42),
+    "gradient_boosting": GradientBoostingClassifier(n_estimators=200, learning_rate=0.1, random_state=42)
+}
+
+for name, model in models.items():
+    with mlflow.start_run(run_name=name):
+        # 학습
+        model.fit(X_train, y_train)
+        preds = model.predict(X_test)
+        probs = model.predict_proba(X_test)[:, 1]
+
+        # 메트릭 기록
+        mlflow.log_metrics({
+            "accuracy": accuracy_score(y_test, preds),
+            "f1_score": f1_score(y_test, preds),
+            "roc_auc": roc_auc_score(y_test, probs)
+        })
+
+        # 모델 저장
+        mlflow.sklearn.log_model(model, "model", input_example=X_test[:3])
+
+        # 태그 설정
+        mlflow.set_tags({
+            "algorithm": name,
+            "experiment_type": "baseline_comparison"
+        })
+
+# 4. 최고 성능 모델 자동 선택
+experiment = mlflow.get_experiment_by_name("/Workspace/experiments/classification-benchmark")
+best_run = mlflow.search_runs(
+    experiment_ids=[experiment.experiment_id],
+    order_by=["metrics.roc_auc DESC"],
+    max_results=1
+).iloc[0]
+
+print(f"최고 성능 모델: {best_run['tags.algorithm']}")
+print(f"ROC-AUC: {best_run['metrics.roc_auc']:.4f}")
+print(f"Run ID: {best_run['run_id']}")
+```
+
+---
+
+## 정리
+
+| 항목 | 핵심 포인트 |
+|------|------------|
+| **Experiment** | 관련 실험을 묶는 컨테이너. 프로젝트/팀별로 구분합니다 |
+| **Run** | 한 번의 학습 실행. 파라미터, 메트릭, 아티팩트, 태그를 기록합니다 |
+| **수동 로깅** | `log_param`, `log_metric`, `log_artifact`, `log_model`로 세밀하게 제어합니다 |
+| **자동 로깅** | `mlflow.autolog()`로 코드 변경 없이 자동 추적합니다 |
+| **튜닝 연동** | Optuna, Hyperopt와 중첩 Run으로 결합하여 체계적으로 최적화합니다 |
+| **Databricks 통합** | 노트북 스냅샷, Git 연동, Unity Catalog 모델 등록이 자동으로 지원됩니다 |
+
+---
+
+## 참고 링크
+
+- [Databricks: MLflow Tracking](https://docs.databricks.com/aws/en/mlflow/tracking.html)
+- [Databricks: MLflow Experiment 관리](https://docs.databricks.com/aws/en/mlflow/experiments.html)
+- [Databricks: Autologging](https://docs.databricks.com/aws/en/mlflow/databricks-autologging.html)
+- [MLflow 공식 문서: Tracking](https://mlflow.org/docs/latest/tracking.html)
+- [Databricks Blog: Best Practices for MLflow Experiment Tracking](https://www.databricks.com/blog)

@@ -1,0 +1,121 @@
+---
+title: "Supervisor 심화 — 실전 예제: KA + Genie + Super"
+---
+
+> 이 문서는 **[Agent Bricks](/blog/guides/agent-bricks/overview)** 섹션의 일부입니다.
+
+## 실전 예제: KA + Genie + Supervisor 조합
+
+### 시나리오
+
+> "고객 지원팀을 위한 AI 어시스턴트를 만들자.
+> - 제품 매뉴얼/FAQ는 Knowledge Assistant로 처리
+> - 주문/매출 데이터 조회는 Genie Space로 처리
+> - 두 에이전트를 Supervisor Agent로 통합"
+
+### 구축 순서
+
+```
+Step 1: Knowledge Assistant 생성
+  ├── 이름: "product-support-ka"
+  ├── Knowledge Source: UC Volume (product_docs/)
+  │   ├── product_manual.pdf
+  │   ├── faq.md
+  │   └── troubleshooting_guide.docx
+  └── Instructions: "고객 질문에 친절하게 응답. 반드시 출처 인용."
+
+Step 2: Genie Space 생성
+  ├── 이름: "order-analytics-genie"
+  ├── 테이블: sales.orders, sales.customers, sales.products
+  ├── Knowledge Store:
+  │   ├── 컬럼 설명: "order_date = 주문일, revenue = 매출액"
+  │   └── JOIN 정의: orders.customer_id = customers.id
+  └── Sample Questions: "이번 달 매출은?", "Top 10 고객 리스트"
+
+Step 3: Supervisor Agent 생성
+  ├── 이름: "customer-support-supervisor"
+  ├── 서브 에이전트 1: product-support-ka
+  │   └── Description: "제품 사용법, FAQ, 문제 해결 가이드 관련 질문 처리"
+  ├── 서브 에이전트 2: order-analytics-genie
+  │   └── Description: "주문, 매출, 고객 데이터 조회 및 분석"
+  └── Instructions:
+      "고객 지원팀을 위한 통합 어시스턴트.
+       제품 관련 질문은 product-support-ka로,
+       데이터 조회 질문은 order-analytics-genie로 라우팅."
+
+Step 4: 테스트
+  ├── "이 제품 설정 방법이 뭐야?" → KA 라우팅 확인
+  ├── "지난달 매출 합계 알려줘" → Genie 라우팅 확인
+  └── "VIP 고객의 제품 이용 가이드를 정리해줘" → 복합 라우팅 확인
+
+Step 5: 권한 부여 및 배포
+  ├── 고객지원팀에 CAN QUERY 권한 부여
+  └── AI Playground 또는 API로 서비스
+```
+
+---
+
+
+## 제한사항
+
+- 영어만 지원
+- Supervisor당 최대 20개 서브 에이전트
+- Agent Endpoints는 Knowledge Assistant만 지원
+- Enhanced Security and Compliance 워크스페이스 미지원
+- 에이전트 삭제 시 임시 저장 데이터도 함께 삭제
+
+---
+
+
+## 오케스트레이션 메커니즘 심층 분석
+
+Supervisor Agent의 핵심은 **"올바른 서브 에이전트에게 올바른 작업을 위임하는 것"** 입니다. 이 오케스트레이션이 내부적으로 어떻게 작동하는지 이해하면, 라우팅 오류를 예방하고 복잡한 멀티 에이전트 시스템을 안정적으로 운영할 수 있습니다.
+
+### 오케스트레이션 루프 상세
+
+```
+[사용자 질문 수신]
+    ↓
+[Phase 1: 권한 필터링]
+    - 질문한 사용자의 ID 확인
+    - 각 서브 에이전트에 대한 사용자의 접근 권한 확인
+    - 접근 불가한 서브 에이전트를 후보 목록에서 제외
+    - 모든 서브 에이전트가 접근 불가 → "권한이 없습니다" 응답 후 종료
+    ↓
+[Phase 2: 의도 분석 & 라우팅]
+    - Supervisor LLM이 질문의 의도를 분석
+    - 접근 가능한 서브 에이전트들의 Description을 컨텍스트로 제공
+    - Instructions(있는 경우)를 참고하여 라우팅 규칙 적용
+    - 최적의 서브 에이전트 1개 선택 (또는 복합 질문 시 순차적으로 여러 개)
+    ↓
+[Phase 3: 태스크 위임]
+    - 선택된 서브 에이전트에 질문(또는 변환된 서브 태스크) 전달
+    - 서브 에이전트 유형에 따른 호출 방식:
+      · KA Endpoint → REST API 호출
+      · Genie Space → Genie API 호출 (사용자 권한으로)
+      · UC Function → 함수 실행
+      · MCP Server → MCP 프로토콜 호출
+    ↓
+[Phase 4: 응답 수신 & 종합]
+    - 서브 에이전트의 응답 수신
+    - 복합 질문인 경우 여러 서브 에이전트의 응답을 종합(Synthesis)
+    - 최종 응답 포맷팅
+    ↓
+[Phase 5: 추가 작업 판단]
+    - LLM이 "추가 서브 에이전트 호출이 필요한가?"를 판단
+    - 필요하면 Phase 2로 돌아감 (반복)
+    - 불필요하면 최종 응답 반환
+    ↓
+[최종 응답 반환]
+```
+
+### 단일 질문 vs 복합 질문 처리
+
+| 질문 유형 | 예시 | 처리 방식 |
+|-----------|------|-----------|
+| **단일 도메인** | "연차 정책 알려줘" | KA 하나에 직접 라우팅 → 응답 반환 |
+| **단일 도메인 (데이터)** | "이번 달 매출은?" | Genie 하나에 직접 라우팅 → SQL 실행 → 응답 반환 |
+| **복합 질문** | "VIP 고객 리스트를 뽑아서, 각 고객에게 보낼 맞춤 제안서를 작성해줘" | Genie(VIP 고객 조회) → KA(제안서 템플릿) → 종합 응답 |
+| **모호한 질문** | "우리 회사 현황 알려줘" | Supervisor가 가장 관련성 높은 에이전트를 추론하여 라우팅 |
+
+---

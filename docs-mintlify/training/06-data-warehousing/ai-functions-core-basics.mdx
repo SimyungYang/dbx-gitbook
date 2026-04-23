@@ -1,0 +1,148 @@
+---
+title: "왜 SQL에 AI 함수가 필요한가요?과 ai_query() — 범용 LL"
+---
+
+> 이 문서는 **[데이터 웨어하우징](/training/06-data-warehousing/overview)** 섹션의 일부입니다.
+
+## 왜 SQL에 AI 함수가 필요한가요?
+
+전통적으로 텍스트 분류, 감정 분석, 정보 추출 같은 작업을 하려면 Python 코드를 작성하고, ML 모델을 별도로 호출해야 했습니다. Databricks의 **AI 함수** 를 사용하면 이 모든 것을 **SQL 쿼리 한 줄** 로 수행할 수 있습니다.
+
+> 💡 AI 함수는 내부적으로 **Model Serving 엔드포인트** 를 호출합니다. Foundation Model API에서 제공하는 LLM(Llama, DBRX 등)이나 외부 모델(OpenAI, Anthropic) 엔드포인트를 사용할 수 있습니다. SQL Warehouse(Pro 또는 Serverless)에서 실행해야 합니다.
+
+---
+
+## ai_query() — 범용 LLM 호출
+
+가장 유연한 AI 함수로, 자유 형식의 프롬프트를 LLM에 전달하고 응답을 받습니다.
+
+### 기본 문법
+
+```sql
+ai_query(
+    endpoint,           -- Model Serving 엔드포인트 이름
+    request,            -- 프롬프트 (문자열 또는 STRUCT)
+    returnType,         -- 반환 타입 (기본: STRING)
+    failOnError,        -- 에러 시 실패 여부 (기본: true)
+    modelParameters     -- 모델 파라미터 (temperature, max_tokens 등)
+)
+```
+
+### 사용 예시
+
+```sql
+-- 1. 기본 사용: 텍스트 요약
+SELECT
+    article_id,
+    ai_query(
+        'databricks-meta-llama-3-3-70b-instruct',
+        CONCAT('다음 기사를 한국어 3줄로 요약해 주세요:\n\n', article_text)
+    ) AS summary
+FROM news_articles;
+
+-- 2. 구조화된 응답 반환 (JSON → STRUCT)
+SELECT
+    review_id,
+    ai_query(
+        'databricks-meta-llama-3-3-70b-instruct',
+        CONCAT('다음 리뷰를 분석하여 JSON으로 반환해 주세요: ', review_text),
+        returnType => 'STRUCT<sentiment STRING, topics ARRAY<STRING>, score INT>'
+    ) AS analysis
+FROM customer_reviews;
+
+-- 3. 모델 파라미터 지정
+SELECT ai_query(
+    'databricks-meta-llama-3-3-70b-instruct',
+    '데이터 레이크하우스의 장점을 5가지 나열해 주세요.',
+    modelParameters => named_struct(
+        'temperature', 0.1,           -- 낮을수록 결정적 (0.0~2.0)
+        'max_tokens', 500,            -- 최대 응답 토큰 수
+        'top_p', 0.9                  -- 확률 기반 토큰 선택 범위
+    )
+) AS response;
+
+-- 4. 시스템 프롬프트 + 사용자 프롬프트 (Chat 형식)
+SELECT ai_query(
+    'databricks-meta-llama-3-3-70b-instruct',
+    named_struct(
+        'messages', ARRAY(
+            named_struct('role', 'system', 'content', '당신은 전문 데이터 분석가입니다. 한국어로 답변해 주세요.'),
+            named_struct('role', 'user', 'content', CONCAT('다음 데이터를 분석해 주세요: ', data_text))
+        )
+    )
+) AS analysis
+FROM reports;
+
+-- 5. 배치 처리 시 에러 무시 (일부 실패해도 전체 쿼리 계속)
+SELECT
+    doc_id,
+    ai_query(
+        'databricks-meta-llama-3-3-70b-instruct',
+        CONCAT('요약: ', content),
+        failOnError => false
+    ) AS summary
+FROM documents;
+```
+
+### 사용 가능한 엔드포인트
+
+| 엔드포인트 이름 | 모델 | 설명 |
+|----------------|------|------|
+| `databricks-meta-llama-3-3-70b-instruct` | Llama 3.3 70B | Meta의 최신 오픈소스 LLM입니다 |
+| `databricks-dbrx-instruct` | DBRX | Databricks가 만든 오픈소스 LLM입니다 |
+| `databricks-gte-large-en` | GTE Large | 영어 텍스트 임베딩 모델입니다 |
+| `databricks-bge-large-en` | BGE Large | 영어 텍스트 임베딩 모델입니다 |
+| 사용자 지정 | 커스텀 모델 | Model Serving에 배포한 사용자 모델입니다 |
+| 사용자 지정 | 외부 모델 | OpenAI, Anthropic 등의 프록시 엔드포인트입니다 |
+
+> 💡 **Pay-per-token 엔드포인트**: `databricks-` 접두사가 붙은 내장 엔드포인트는 별도 설정 없이 바로 사용할 수 있으며, 사용한 토큰 수에 따라 과금됩니다.
+
+---
+
+## ai_classify() — 텍스트 분류
+
+텍스트를 미리 정의한 카테고리 중 하나로 분류합니다. 별도의 학습 데이터 없이 LLM의 이해력만으로 분류를 수행합니다.
+
+### 문법
+
+```sql
+ai_classify(content, labels)
+-- content: 분류할 텍스트 (STRING)
+-- labels:  카테고리 목록 (ARRAY<STRING>)
+```
+
+### 예시
+
+```sql
+-- 고객 문의 유형 분류
+SELECT
+    ticket_id,
+    subject,
+    ai_classify(
+        subject || ': ' || body,
+        ARRAY('배송문의', '반품/환불', '상품문의', '결제문제', '기타')
+    ) AS category
+FROM support_tickets;
+
+-- 감정 분석 (긍정/부정/중립)
+SELECT
+    review_id,
+    review_text,
+    ai_classify(review_text, ARRAY('긍정', '부정', '중립')) AS sentiment
+FROM customer_reviews;
+
+-- 언어 감지
+SELECT
+    doc_id,
+    ai_classify(content, ARRAY('한국어', '영어', '일본어', '중국어')) AS language
+FROM documents;
+
+-- 긴급도 분류
+SELECT
+    alert_id,
+    message,
+    ai_classify(message, ARRAY('긴급', '높음', '보통', '낮음')) AS priority
+FROM system_alerts;
+```
+
+---

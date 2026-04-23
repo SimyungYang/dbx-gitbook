@@ -1,0 +1,240 @@
+---
+title: "실전 패턴과 엔드포인트 생성"
+---
+
+> 이 문서는 **[머신러닝](/training/09-machine-learning/overview)** 섹션의 일부입니다.
+
+
+
+## 실전 패턴
+
+### 패턴 1: 앙상블 모델 (Ensemble)
+
+여러 모델의 예측을 결합하여 최종 예측을 만드는 패턴입니다. 각 모델을 개별 artifact로 저장하고 `load_context()`에서 한꺼번에 로드합니다.
+
+```python
+class EnsembleModel(mlflow.pyfunc.PythonModel):
+    """XGBoost + LightGBM + Logistic Regression 앙상블"""
+
+    def load_context(self, context):
+        import joblib
+        self.models = {
+            "xgb": joblib.load(context.artifacts["xgb_model"]),
+            "lgbm": joblib.load(context.artifacts["lgbm_model"]),
+            "lr": joblib.load(context.artifacts["lr_model"]),
+        }
+        # 각 모델의 가중치 (검증 세트 성능 기반)
+        self.weights = {"xgb": 0.5, "lgbm": 0.35, "lr": 0.15}
+
+    def predict(self, context, model_input, params=None):
+        # 각 모델로 예측 후 가중 평균
+        weighted_pred = sum(
+            self.weights[name] * model.predict_proba(model_input)[:, 1]
+            for name, model in self.models.items()
+        )
+
+        return pd.DataFrame({
+            "ensemble_probability": weighted_pred,
+            "prediction": (weighted_pred >= 0.5).astype(int)
+        })
+```
+
+### 패턴 2: 파인튜닝 임베딩 모델 (Fine-tuned Embedding)
+
+Hugging Face 모델을 파인튜닝한 후 커스텀 전처리와 함께 배포하는 패턴입니다.
+
+```python
+class FineTunedEmbeddingModel(mlflow.pyfunc.PythonModel):
+    """파인튜닝된 sentence-transformers 모델"""
+
+    def load_context(self, context):
+        from sentence_transformers import SentenceTransformer
+
+        # 파인튜닝된 모델 경로에서 로드
+        model_dir = context.artifacts["finetuned_model_dir"]
+        self.model = SentenceTransformer(model_dir)
+        self.model.eval()
+
+    def predict(self, context, model_input, params=None):
+        # 입력이 DataFrame인 경우 텍스트 컬럼 추출
+        if isinstance(model_input, pd.DataFrame):
+            texts = model_input["text"].tolist()
+        else:
+            texts = list(model_input)
+
+        # 임베딩 생성 (배치 처리)
+        batch_size = (params or {}).get("batch_size", 32)
+        embeddings = self.model.encode(
+            texts,
+            batch_size=batch_size,
+            normalize_embeddings=True
+        )
+
+        return pd.DataFrame(
+            embeddings,
+            columns=[f"dim_{i}" for i in range(embeddings.shape[1])]
+        )
+```
+
+### 패턴 3: 비즈니스 룰 결합 모델
+
+ML 예측에 규칙 기반 로직을 결합하는 패턴입니다.
+
+```python
+class CreditScoringModel(mlflow.pyfunc.PythonModel):
+    """ML 예측 + 하드 룰(Hard Rule)을 결합한 신용 평가 모델"""
+
+    def load_context(self, context):
+        import joblib
+        self.ml_model = joblib.load(context.artifacts["ml_model"])
+
+    def _apply_hard_rules(self, df, ml_score):
+        """비즈니스 룰로 ML 점수를 오버라이드"""
+        final_score = ml_score.copy()
+
+        # 하드 룰: 연체 이력이 있으면 무조건 거절
+        final_score[df["delinquency_count"] > 0] = 0.0
+
+        # 하드 룰: 신용 기간 1년 미만은 최대 0.4로 제한
+        new_customers = df["credit_age_months"] < 12
+        final_score[new_customers] = final_score[new_customers].clip(upper=0.4)
+
+        return final_score
+
+    def predict(self, context, model_input, params=None):
+        ml_score = self.ml_model.predict_proba(model_input)[:, 1]
+        final_score = self._apply_hard_rules(model_input, ml_score)
+
+        return pd.DataFrame({
+            "ml_score": ml_score,
+            "final_score": final_score,
+            "approved": (final_score >= 0.5).astype(int)
+        })
+```
+
+---
+
+## 엔드포인트 생성
+
+### 방법 1: SDK (MLflow Deployments)
+
+```python
+import mlflow.deployments
+
+client = mlflow.deployments.get_deploy_client("databricks")
+
+# 엔드포인트 생성
+endpoint = client.create_endpoint(
+    name="fraud-detection-v2",
+    config={
+        "served_entities": [{
+            "entity_name": "catalog.schema.fraud_detection_custom",
+            "entity_version": "3",
+            "workload_size": "Small",           # Small / Medium / Large
+            "scale_to_zero_enabled": True,      # 트래픽 없을 때 0으로 축소
+            "workload_type": "CPU"              # CPU 또는 GPU_SMALL / GPU_MEDIUM / GPU_LARGE
+        }],
+        "auto_capture_config": {
+            "catalog_name": "catalog",
+            "schema_name": "schema",
+            "table_name_prefix": "fraud_endpoint"
+        }
+    }
+)
+```
+
+### 방법 2: Databricks SDK
+
+```python
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.serving import (
+    EndpointCoreConfigInput,
+    ServedEntityInput,
+    AutoCaptureConfigInput
+)
+
+w = WorkspaceClient()
+
+# 엔드포인트 생성
+endpoint = w.serving_endpoints.create(
+    name="fraud-detection-v2",
+    config=EndpointCoreConfigInput(
+        served_entities=[
+            ServedEntityInput(
+                entity_name="catalog.schema.fraud_detection_custom",
+                entity_version="3",
+                workload_size="Small",
+                scale_to_zero_enabled=True,
+                workload_type="CPU"
+            )
+        ],
+        auto_capture_config=AutoCaptureConfigInput(
+            catalog_name="catalog",
+            schema_name="schema",
+            table_name_prefix="fraud_endpoint",
+            enabled=True
+        )
+    )
+)
+
+# 엔드포인트 준비 대기
+endpoint = w.serving_endpoints.wait_get_serving_endpoint_not_updating(
+    name="fraud-detection-v2"
+)
+print(f"Endpoint state: {endpoint.state.ready}")
+```
+
+### 방법 3: REST API
+
+```bash
+curl -X POST "https://<workspace-url>/api/2.0/serving-endpoints" \
+  -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "fraud-detection-v2",
+    "config": {
+      "served_entities": [{
+        "entity_name": "catalog.schema.fraud_detection_custom",
+        "entity_version": "3",
+        "workload_size": "Small",
+        "scale_to_zero_enabled": true
+      }]
+    }
+  }'
+```
+
+### 워크로드 크기 옵션
+
+| 워크로드 크기 | 동시 요청 수 (대략) | 적합한 사용 사례 |
+|--------------|---------------------|----------------|
+| **Small** | 최대 4 동시 요청 | 개발/테스트, 저트래픽 |
+| **Medium** | 최대 16 동시 요청 | 중간 트래픽 프로덕션 |
+| **Large** | 최대 64 동시 요청 | 고트래픽 프로덕션 |
+
+---
+
+## GPU 서빙 설정
+
+딥러닝 모델이나 대규모 모델은 GPU 서빙이 필요합니다.
+
+| GPU 워크로드 타입 | GPU 종류 | 적합한 모델 |
+|------------------|---------|------------|
+| `GPU_SMALL` | T4 (16GB) | 소규모 딥러닝 모델, 임베딩 모델 |
+| `GPU_MEDIUM` | A10G (24GB) | 중규모 트랜스포머, 이미지 모델 |
+| `GPU_LARGE` | A100 (80GB) | 대규모 LLM, 파인튜닝된 Foundation Model |
+
+```python
+# GPU 엔드포인트 생성 예시
+endpoint = client.create_endpoint(
+    name="embedding-model-gpu",
+    config={
+        "served_entities": [{
+            "entity_name": "catalog.schema.sentence_transformer",
+            "entity_version": "1",
+            "workload_size": "Small",
+            "workload_type": "GPU_SMALL",       # GPU 타입 지정
+            "scale_to_zero_enabled": True
+        }]
+    }
+)
+```

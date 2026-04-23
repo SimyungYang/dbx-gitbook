@@ -1,0 +1,341 @@
+---
+title: "재학습 전략 심화"
+---
+
+> 이 문서는 **[ML 핵심 개념](/blog/guides/ml-fundamentals/overview)** 섹션의 일부입니다.
+
+## Part 5: 모델 버전 관리 & 롤백
+
+재학습된 새 모델이 항상 더 좋다는 보장은 없습니다. **즉시 이전 모델로 되돌릴 수 있는 능력** 은 운영 안정성의 핵심입니다.
+
+### Unity Catalog 에일리어스 기반 롤백
+
+코드를 변경하지 않고 **에일리어스만 변경** 하면 즉시 롤백이 가능합니다. 배치 추론 코드는 항상 `models:/model_name@Champion` 참조를 사용합니다.
+
+```python
+def rollback_model(model_name, target_version=None):
+    current = client.get_model_version_by_alias(model_name, "Champion")
+    current_version = int(current.version)
+
+    if target_version is None:
+        target_version = max(1, current_version - 1)
+
+    # 현재 Champion에 태그 추가
+    client.set_model_version_tag(
+        name=model_name, version=str(current_version),
+        key="rolled_back", value="true"
+    )
+
+    # 에일리어스 변경 → 즉시 롤백 완료
+    client.set_registered_model_alias(
+        name=model_name, alias="Champion", version=target_version
+    )
+```
+
+> **주의**
+롤백이 필요한 상황: (1) 새 모델의 운영 성능이 검증 성능보다 현저히 낮은 경우, (2) 특정 데이터 구간에서 심각한 오류를 보이는 경우, (3) 규제/컴플라이언스 이슈로 이전 모델 복구가 필요한 경우.
+
+
+---
+
+
+## Part 6: Incremental Learning (점진적 학습)
+
+Full Retraining은 확실하지만, 데이터가 수억 건으로 커지면 학습 시간과 비용이 과도해집니다. **Incremental Learning** 은 기존 모델을 폐기하지 않고 **새 데이터만으로 모델을 보강** 합니다.
+
+### XGBoost의 Warm-start Incremental Learning
+
+XGBoost는 트리를 순차적으로 추가하는 방식이므로, 기존 트리를 유지하면서 **새로운 트리만 추가** 할 수 있습니다.
+
+```python
+# Batch 1: 초기 모델 학습 (100 trees)
+model_inc = xgb.train(params, dtrain1, num_boost_round=100)
+
+# Batch 2: 기존 모델에 추가 학습 (50 trees 추가)
+# 핵심: xgb_model 파라미터로 기존 모델 전달
+model_inc = xgb.train(params, dtrain2, num_boost_round=50, xgb_model=model_inc)
+
+# Batch 3: 계속 추가 학습
+model_inc = xgb.train(params, dtrain3, num_boost_round=50, xgb_model=model_inc)
+```
+
+| 비교 항목 | Full Retraining | Incremental Learning |
+|----------|----------------|---------------------|
+| 데이터 | 전체 (예: 1년치 100만건) | 새 데이터만 (예: 1주일치) |
+| 시간 | 오래 걸림 (예: 2시간) | 빠름 (예: 10분) |
+| 비용 | 높음 | 낮음 |
+| 정확도 | 최고 | 양호 |
+| 사용 시점 | 데이터 변화가 점진적일 때, 빈번한 업데이트가 필요할 때 | 학습 시간/비용 절감이 필요할 때 |
+
+---
+
+
+## Part 7: Continual Learning (연속 학습)
+
+Incremental Learning의 심각한 부작용이 있습니다: **Catastrophic Forgetting(파국적 망각)**. 새 데이터만으로 모델을 학습하면 이전에 학습한 패턴을 잊어버릴 수 있습니다.
+
+### 해결책: Experience Replay (경험 재생)
+
+이전 데이터의 **대표 샘플을 Replay Buffer에 보관** 하고, 새 데이터와 함께 학습합니다.
+
+```python
+class ReplayBuffer:
+    def __init__(self, max_size=2000):
+        self.buffer = []
+        self.max_size = max_size
+
+    def add(self, X, Y):
+        data = list(zip(X.values.tolist(), Y.values.tolist()))
+        self.buffer.extend(data)
+        if len(self.buffer) > self.max_size:
+            self.buffer = random.sample(self.buffer, self.max_size)
+
+    def get_replay_data(self, n_samples=500):
+        samples = random.sample(self.buffer, min(n_samples, len(self.buffer)))
+        X = pd.DataFrame([s[0] for s in samples], columns=feature_columns)
+        Y = pd.Series([s[1] for s in samples])
+        return X, Y
+
+
+# Continual Learning: 새 데이터 + 리플레이 데이터 결합
+replay = ReplayBuffer(max_size=2000)
+
+for batch in batches:
+    X_rep, Y_rep = replay.get_replay_data(500)
+    X_combined = pd.concat([X_batch, X_rep], ignore_index=True)
+    Y_combined = pd.concat([Y_batch, Y_rep], ignore_index=True)
+
+    model_cl = xgb.train(params, xgb.DMatrix(X_combined, label=Y_combined), num_boost_round=150)
+    replay.add(X_batch, Y_batch)
+```
+
+> **참고**
+**다중 생산 라인, 다중 제품** 을 하나의 모델로 관리하는 환경에서는 Experience Replay가 특히 중요합니다. 실제 운영에서는 Replay Buffer를 **Delta Lake 테이블** 로 관리합니다.
+
+
+---
+
+
+## Part 8: Online Learning (River 라이브러리)
+
+지금까지의 모든 기법(Full Retrain, Incremental, Continual)은 **배치(Batch) 방식** 입니다. **Online Learning** 은 데이터가 들어올 때마다 즉시 모델을 업데이트하여 **실시간으로 적응** 합니다.
+
+### River 라이브러리
+
+Python의 **River**(creme + scikit-multiflow 통합)는 Online Learning 전용 프레임워크입니다. **Hoeffding Adaptive Tree** 는 드리프트를 자동 감지하고 트리 구조를 동적으로 변경합니다.
+
+```python
+from river import tree, metrics, preprocessing, compose
+
+model_online = compose.Pipeline(
+    preprocessing.StandardScaler(),         # 실시간 표준화
+    tree.HoeffdingAdaptiveTreeClassifier(seed=42)
+)
+metric = metrics.F1()
+
+for _, row in data.iterrows():
+    x = {col: row[col] for col in feature_columns}
+    y = int(row[label_col])
+
+    y_pred = model_online.predict_one(x)        # 1. 현재 모델로 예측
+    if y_pred is not None:
+        metric.update(y, y_pred)                 # 2. 메트릭 업데이트
+    model_online.learn_one(x, y)                 # 3. 이 한 건으로 모델 업데이트
+```
+
+> **주의**
+Online Learning은 단독 사용보다 **"보조 모델"** 로 활용하는 것을 권장합니다. 주력 모델(XGBoost Batch)은 주 1회 재학습하고, Online 모델은 실시간 트렌드를 파악하는 **조기 경보 시스템** 역할을 합니다. Databricks Structured Streaming과 결합하면 실시간 파이프라인 구축이 가능합니다.
+
+
+---
+
+## Part 9: RL 기반 재학습 전략 자동 선택 (Contextual Bandit)
+
+**"지금 이 상황에서 어떤 재학습 전략을 써야 하는가?"** 를 AI가 자동으로 학습하게 합니다. Contextual Bandit은 강화학습(RL)의 간소화 버전으로, **현재 상황(Context)을 보고 최적의 행동(Action)을 선택** 하는 기법입니다.
+
+### Thompson Sampling 기반 전략 선택기
+
+```python
+class RetrainingBandit:
+    def __init__(self):
+        self.actions = ["no_action", "incremental", "sliding_window", "full_retrain"]
+        self.alpha = {a: 1.0 for a in self.actions}  # Beta 분포 파라미터
+        self.beta_ = {a: 1.0 for a in self.actions}
+
+    def select_action(self, context):
+        scores = {}
+        drift = context.get("drift_level", 0)
+        for action in self.actions:
+            base_score = np.random.beta(self.alpha[action], self.beta_[action])
+            # 컨텍스트 기반 보정
+            if action == "full_retrain" and drift > 0.2:
+                base_score += 0.3
+            elif action == "incremental" and 0.05 < drift <= 0.2:
+                base_score += 0.2
+            elif action == "no_action" and drift < 0.05:
+                base_score += 0.3
+            scores[action] = base_score
+        return max(scores, key=scores.get), scores
+
+    def update(self, action, reward):
+        if reward > 0:
+            self.alpha[action] += reward
+        else:
+            self.beta_[action] += abs(reward)
+```
+
+> **참고**
+Contextual Bandit은 MLOps 자동화의 **최종 단계** 에 해당하며, 현재 최신 연구 분야입니다. 숙련된 공정 엔지니어의 **경험 기반 의사결정** 을 AI가 학습하는 것으로 이해할 수 있습니다.
+
+
+---
+
+
+## Part 10: Active Learning (라벨링 비용 최소화)
+
+ML 모델의 성능은 레이블 데이터의 양과 질에 의존합니다. 하지만 제조 현장에서 정확한 레이블 확보는 매우 비용이 큽니다 (설비 분해 점검, 비파괴 검사 등). **Active Learning** 은 모델이 **"판단이 어려운 샘플"** 을 선별하여 전문가에게 레이블링을 요청하는 방식으로, **전체의 10~20%만 레이블링** 해도 동등한 성능을 달성합니다.
+
+### 불확실성 기반 샘플 선택 (Uncertainty Sampling)
+
+```python
+# 모델의 예측 확률로 불확실성 측정
+probas = model_full.predict(xgb.DMatrix(full_df[feature_columns]))
+uncertainty = np.abs(probas - 0.5)  # 0.5에 가까울수록 불확실
+
+# 가장 불확실한 500건을 우선 레이블링
+n_query = 500
+active_idx = np.argsort(uncertainty)[:n_query]
+
+# Active Learning으로 선택한 500건으로 학습
+X_sel = full_df.iloc[active_idx][feature_columns]
+Y_sel = full_df.iloc[active_idx][label_col]
+model_al = xgb.train(params, xgb.DMatrix(X_sel, label=Y_sel), num_boost_round=150)
+```
+
+| 방법 | 학습 데이터 | 레이블링 비용 | 성능 |
+|------|-----------|-------------|------|
+| Active Learning | 불확실한 500건 | 최소 | Random 대비 우수 |
+| Random Sampling | 랜덤 500건 | 최소 | Active 대비 열등 |
+| Full Training | 전체 데이터 | 최대 | 최고 |
+
+---
+
+
+## Part 11: Warm-start vs Cold-start
+
+재학습 시 가장 먼저 결정해야 할 것: **기존 모델의 학습 결과를 활용할 것인가, 버릴 것인가?**
+
+| 방법 | 설명 | 장점 | 단점 | 적용 시나리오 |
+|------|------|------|------|------------|
+| **Cold-start** | 모델을 처음부터 새로 학습 | 오래된 패턴 완전 제거 | 시간/비용 큼 | Concept Drift (공정 레시피 변경, 설비 대체) |
+| **Warm-start** | 기존 모델을 시작점으로 추가 학습 | 빠름, 기존 지식 보존 | 오래된 패턴 잔존 | Data Drift (계절 변화, 원자재 미세 변경) |
+
+### 결정 기준
+
+```
+IF Concept Drift 의심 (PSI > 0.5 또는 F1 급락)
+  → Cold-start (처음부터)
+ELIF Data Drift만 (PSI 0.1~0.5)
+  → Warm-start (기존 모델 + 새 데이터)
+ELIF 변화 없음 (PSI < 0.1)
+  → 재학습 불필요
+```
+
+```python
+# Cold-start: 전체 데이터로 처음부터
+model_cold = xgb.train(params, dtrain, num_boost_round=200)
+
+# Warm-start: 기존 모델에서 새 데이터로 추가 학습 (훨씬 빠름)
+model_warm = xgb.train(params, dtrain_new, num_boost_round=50, xgb_model=model_cold)
+```
+
+---
+
+
+## Part 12: 프로덕션 아키텍처
+
+Part 1~11의 모든 기법을 **하나의 통합 아키텍처** 로 조합합니다. Databricks의 Workflow, Data Quality Monitoring, Delta Lake, Unity Catalog, MLflow를 유기적으로 연결합니다.
+
+### 전략별 적용 가이드
+
+| 상황 | 권장 전략 | Databricks 구현 | 적용 예시 |
+|------|----------|----------------|----------|
+| 정기 재학습 (주 1회) | Sliding Window Full Retrain | Workflow 스케줄 | 양산 라인 예지보전 모델 |
+| 급격한 드리프트 | Cold-start Full Retrain | Monitoring Alert → Workflow 트리거 | 공정 레시피 대폭 변경 |
+| 점진적 드리프트 | Warm-start Incremental | 이벤트 기반 Workflow | 계절 변화 미세 조정 |
+| 실시간 적응 | Online Learning (보조) | Structured Streaming + River | 실시간 설비 상태 모니터링 |
+| 레이블 부족 | Active Learning | Human-in-the-loop 파이프라인 | 신규 라인/제품 초기 데이터 수집 |
+| 다중 라인/설비 | Continual (Replay) | Delta Lake 기반 Replay Buffer | 여러 모듈 라인 통합 모델 |
+| 자동 전략 선택 | Contextual Bandit | MLOps Agent 통합 | 성숙한 MLOps 환경의 최종 목표 |
+
+### MLOps 도입 로드맵
+
+| Phase | 기간 | 내용 |
+|-------|------|------|
+| **Phase 1** | 1~2개월 | 스케줄 기반 Full Retrain (주 1회) + Champion/Challenger 비교 |
+| **Phase 2** | 3~4개월 | PSI 기반 드리프트 탐지 + 성능 기반 트리거 (하이브리드) |
+| **Phase 3** | 5~6개월 | Warm-start Incremental + Active Learning + Continual Learning |
+| **Phase 4** | 6개월+ | Online Learning (보조) + Contextual Bandit (자동 전략 선택) |
+
+### 핵심 요약
+
+| 기법 | 한 줄 요약 | 비용 | 정확도 | 도입 우선순위 |
+|------|----------|------|--------|------------|
+| **Full Retrain** | 전체 데이터로 처음부터 학습 | 높음 | 최고 | 1순위 (필수) |
+| **Sliding Window** | 최근 N일 데이터만 사용 | 중간 | 높음 | 1순위 (필수) |
+| **Warm-start** | 기존 모델에서 출발하여 추가 학습 | 낮음 | 양호 | 2순위 |
+| **Incremental** | 기존 모델 + 새 데이터로 보강 | 낮음 | 양호 | 2순위 |
+| **Continual (Replay)** | 과거 대표 샘플 + 새 데이터 | 중간 | 높음 | 3순위 |
+| **Active Learning** | 불확실한 샘플만 레이블링 | 레이블 비용 최소 | 효율적 | 3순위 |
+| **Online** | 데이터 1건씩 즉시 학습 | 매우 낮음 | 보통 | 4순위 (선택) |
+| **RL (Bandit)** | AI가 전략을 자동 선택 | 자동화 | 적응적 | 4순위 (선택) |
+
+> **참고**
+**최신 트렌드 (2024~2025)**: Federated Learning(연합 학습), Delta Live Tables + Workflow 기반 Continuous Learning Pipelines, LLMOps(LLM Fine-tuning/RAG 재학습), AI Agent 기반 자율 MLOps 아키텍처가 주목받고 있습니다.
+
+
+---
+
+
+## Part 13: Level 2 자동 재학습 (Jobs trigger with taskValues)
+
+Databricks Jobs에서 **모니터링 노트북(08)이 드리프트를 감지하면, taskValues를 통해 이 노트북을 자동 호출** 합니다. 사람 개입 없는 완전 자동 재학습 — 이것이 **Level 2 MLOps의 핵심** 입니다.
+
+### Level 2 자동 재학습 아키텍처
+
+| 단계 | 노트북 | 동작 |
+|------|--------|------|
+| 1 | 08 모니터링 | PSI > 0.2 감지 → `taskValues("drift_detected"=True)` |
+| 2 | 03d 재학습 | taskValues 수신 → `full_retrain_pipeline()` 자동 실행 |
+| 3 | 05 검증 | Champion vs Challenger 자동 비교 |
+| 4 | 06 추론 | 새 Champion으로 배치 예측 자동 실행 |
+
+```python
+# Jobs 파이프라인에서 호출될 때 자동 실행
+drift_detected = dbutils.jobs.taskValues.get(
+    taskKey="model_monitoring",
+    key="drift_detected",
+    default=False
+)
+max_psi = dbutils.jobs.taskValues.get(
+    taskKey="model_monitoring",
+    key="max_psi",
+    default=0.0
+)
+
+if drift_detected:
+    # 자동 재학습 실행
+    result = full_retrain_pipeline(reason=f"auto_drift_psi_{max_psi:.2f}")
+
+    # 결과를 다음 태스크(검증)에 전달
+    dbutils.jobs.taskValues.set(key="retrain_completed", value=True)
+    dbutils.jobs.taskValues.set(key="new_model_version", value=result.get("version", ""))
+```
+
+> **주의**
+처음에는 드리프트 감지 시 **Slack 알림만 보내고 사람이 확인 후 재학습** 하는 "반자동" 모드로 시작하세요. 3개월간 시스템을 신뢰할 수 있게 된 후 완전 자동(Level 2)으로 전환하는 것이 안전합니다.
+
+
+---
+
+**다음 단계**: [ML 트렌드 & 최신 기법](ml-trends) | [04. 모델 등록](../04-model-registration)

@@ -1,0 +1,142 @@
+---
+title: "AutoML과 MLOps 트렌드"
+---
+
+> 이 문서는 **[ML 핵심 개념](/blog/guides/ml-fundamentals/overview)** 섹션의 일부입니다.
+
+
+
+AutoML, 앙상블 기법(Stacking), Feature Selection(Boruta, SHAP), 비정형 이상탐지(Anomalib, Foundation Model), MLOps 자동화 트렌드, PoC 적용 로드맵을 다룹니다.
+
+---
+
+## 5. AutoML (자동 머신러닝)
+
+Databricks AutoML은 **코드 없이** 알고리즘 선택, HPO, 피처 엔지니어링을 자동 수행합니다.
+
+```python
+from databricks import automl
+summary = automl.classify(
+    dataset=spark.table("lgit_pm_training"),
+    target_col="machine_failure",
+    primary_metric="f1",
+    timeout_minutes=30,
+)
+```
+
+> **참고**
+**권장 전략**: AutoML로 30분 내 베이스라인을 확보한 후, 생성된 노트북 기반으로 커스터마이징하세요.
+
+
+---
+
+## 6. 앙상블 기법 — "집단 지성"
+
+### Stacking (스태킹)
+
+여러 기본 모델(XGBoost, CatBoost, LightGBM)의 예측을 **메타 모델(Logistic Regression)** 이 결합합니다.
+
+### 주의점
+
+| 고려사항 | 설명 |
+|---------|------|
+| **다양성 확보** | 서로 다른 계열을 결합 |
+| **과적합 위험** | 3~5개가 적정 |
+| **추론 시간** | 모델 수만큼 증가 |
+
+---
+
+## 7. Feature Selection — "어떤 센서가 중요한가?"
+
+| 기법 | 원리 |
+|------|------|
+| **Boruta** | 랜덤 포레스트 기반 통계적 검정 |
+| **RFE** | 반복적으로 가장 약한 피처 제거 |
+| **SHAP-based** | 각 센서의 기여도와 방향을 정량화 |
+
+> **참고**
+SHAP 기반 피처 선택은 **설비 엔지니어와 데이터 과학자 간의 공통 언어** 가 됩니다.
+
+
+---
+
+## 8. 비정형 데이터 최신 트렌드 — 이상탐지
+
+### Anomalib 지원 모델 비교
+
+| 모델 | AUROC | 속도 | 적용 포인트 |
+|------|-------|------|-----------|
+| **PatchCore** | 99.1% | 보통 | 정확도 최우선 |
+| **EfficientAD** | 98.8% | 가장 빠름 | 실시간 검사, 엣지 디바이스 |
+| **Reverse Distillation** | 98.5% | 빠름 | 속도/정확도 균형 |
+
+### Foundation Model 기반 이상탐지 (2024~)
+
+| 기술 | 제조 적용 가치 |
+|------|-------------|
+| **WinCLIP** | 학습 데이터 불필요 — 신규 라인 즉시 검사 |
+| **AnomalyCLIP** | 텍스트 설명만으로 탐지 |
+| **GPT-4V / Gemini Vision** | 이상 탐지 + 자연어 설명 생성 |
+
+> **주의**
+신규 제품 라인에서 Zero-shot 모델로 시작하고, 데이터 축적 후 PatchCore/EfficientAD로 전환하는 **2단계 전략** 이 현실적입니다.
+
+
+---
+
+## 9. MLOps 자동화 트렌드
+
+### Feature Store
+
+| 기능 | Databricks 지원 |
+|------|----------------|
+| **Offline** | Unity Catalog 테이블 |
+| **Online** | Online Tables |
+| **Feature Function** | Python UDF |
+| **Point-in-Time Lookups** | Feature Engineering Client |
+
+### Model Monitoring
+
+| 기능 | 제조 적용 가치 |
+|------|-------------|
+| **Data Quality Monitoring** | 센서 분포 변화 자동 감지 |
+| **Inference Tables** | 모든 예측 결과 기록 |
+| **Alerts** | Recall 하락 시 자동 알림 |
+
+### LLMOps / Agent-based MLOps
+
+AI Agent가 드리프트 감지 → 재학습 → 검증 → 배포 **전 과정을 자동화** 합니다.
+
+---
+
+## 10. PoC 적용 로드맵
+
+### Phase 1: 빠른 성과 확보 (1~2주)
+
+1. 멀티 알고리즘 비교 (2시간)
+2. Databricks AutoML (30분)
+3. SMOTE-ENN 불균형 처리 (1시간)
+
+### Phase 2: 성능 최적화 (2~4주)
+
+4. Optuna HPO (반일)
+5. Stacking 앙상블 (반일)
+6. PatchCore + EfficientAD (1일)
+
+### Phase 3: 운영 안정화 (1~3개월)
+
+7. Data Quality Monitoring (1일)
+8. Feature Store (1주)
+9. MLOps Agent (2주)
+
+---
+
+### 핵심 메시지
+
+> **주의**
+**ML 프로젝트 성공의 열쇠는 "최신 알고리즘"이 아니라 "체계적인 실험 관리"입니다.**
+
+
+---
+
+**다음 단계**: [재학습 전략](retraining-strategies) | [03. 모델 학습](../03-model-training)

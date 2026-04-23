@@ -5,4 +5,4 @@ description: "Databricks Apps 아키텍처 설명 정정 — Serverless Compute 
 
 ## 버그 수정
 
-- **Apps 아키텍처: Control Plane → Serverless Compute Plane 정정** — [Apps 개요](/practices/apps/overview)와 [Apps 네트워킹](/practices/apps/networking) 가이드의 아키텍처 설명이 실제 동작에 맞게 수정되었습니다. Databricks Apps는 Control Plane이 아닌 **Serverless Compute Plane**(Model Serving, Vector Search와 동일한 서버리스 인프라)에서 실행됩니다. Control Plane은 OAuth 인증과 URL 라우팅만 담당하고, 인증 이후 트래픽은 Compute Plane으로 직접 전달됩니다. 트래픽 흐름 다이어그램과 구성 요소 표가 이에 맞춰 갱신되어, 앱의 네트워크 경로·격리 수준·보안 특성을 정확하게 파악할 수 있습니다
+- **Apps 아키텍처: Control Plane → Serverless Compute Plane 정정** — [Apps 개요](/blog/guides/apps/overview)와 [Apps 네트워킹](/blog/guides/apps/networking) 가이드의 아키텍처 설명이 실제 동작에 맞게 수정되었습니다. Databricks Apps는 Control Plane이 아닌 **Serverless Compute Plane**(Model Serving, Vector Search와 동일한 서버리스 인프라)에서 실행됩니다. Control Plane은 OAuth 인증과 URL 라우팅만 담당하고, 인증 이후 트래픽은 Compute Plane으로 직접 전달됩니다. 트래픽 흐름 다이어그램과 구성 요소 표가 이에 맞춰 갱신되어, 앱의 네트워크 경로·격리 수준·보안 특성을 정확하게 파악할 수 있습니다

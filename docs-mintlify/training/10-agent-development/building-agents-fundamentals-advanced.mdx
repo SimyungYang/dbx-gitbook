@@ -1,0 +1,158 @@
+---
+title: "Unity Catalog Functions를 과 Managed MCP S"
+---
+
+> 이 문서는 **[AI 에이전트](/training/10-agent-development/overview)** 섹션의 일부입니다.
+
+## Unity Catalog Functions를 Tool로 활용
+
+에이전트가 사용할 수 있는 **도구(Tool)** 를 Unity Catalog의 SQL/Python 함수로 정의할 수 있습니다. 이렇게 하면 도구에 대한 **거버넌스(권한 관리, 감사)** 가 자동으로 적용됩니다.
+
+### SQL Function Tool 생성
+
+```sql
+-- 주문 상태 조회 Tool
+CREATE OR REPLACE FUNCTION catalog.schema.get_order_status(
+    order_id BIGINT COMMENT '조회할 주문번호'
+)
+RETURNS TABLE(order_id BIGINT, status STRING, updated_at TIMESTAMP)
+COMMENT '주문번호로 현재 주문 상태를 조회합니다'
+RETURN
+    SELECT order_id, status, updated_at
+    FROM catalog.schema.orders
+    WHERE order_id = get_order_status.order_id;
+
+-- 고객 정보 조회 Tool
+CREATE OR REPLACE FUNCTION catalog.schema.get_customer_info(
+    customer_email STRING COMMENT '고객 이메일 주소'
+)
+RETURNS TABLE(name STRING, tier STRING, total_orders INT)
+COMMENT '이메일로 고객 정보를 조회합니다'
+RETURN
+    SELECT name, tier, lifetime_orders AS total_orders
+    FROM catalog.schema.gold_customer_360
+    WHERE email = get_customer_info.customer_email;
+
+-- Python Function Tool (외부 API 호출 등)
+CREATE OR REPLACE FUNCTION catalog.schema.send_notification(
+    customer_email STRING COMMENT '알림을 받을 고객 이메일',
+    message STRING COMMENT '알림 메시지 내용'
+)
+RETURNS STRING
+LANGUAGE PYTHON
+COMMENT '고객에게 이메일 알림을 발송합니다'
+AS $$
+    import requests
+    response = requests.post("https://api.example.com/notify",
+        json={"email": customer_email, "message": message})
+    return f"알림 발송 {'성공' if response.ok else '실패'}"
+$$;
+```
+
+### 에이전트에 Tool 연결
+
+```python
+# UC Functions를 에이전트의 Tool로 등록
+tools = [
+    {
+        "type": "uc_function",
+        "function": {
+            "name": "catalog.schema.get_order_status"
+        }
+    },
+    {
+        "type": "uc_function",
+        "function": {
+            "name": "catalog.schema.get_customer_info"
+        }
+    },
+    {
+        "type": "uc_function",
+        "function": {
+            "name": "catalog.schema.send_notification"
+        }
+    }
+]
+```
+
+### Tool 호출 흐름
+
+| 단계 | 구성 요소 | 설명 |
+|------|-----------|------|
+| 1 | 사용자 입력 | "주문 12345 상태를 알려주세요" |
+| 2 | LLM 판단 | "get_order_status를 호출해야겠다" |
+| 3 | Tool 호출 | `get_order_status(12345)` 실행 |
+| 4 | Tool 결과 | 결과: 배송중 |
+| 5 | LLM 응답 생성 | 결과를 자연어로 변환 |
+| 6 | 최종 응답 | "주문 12345는 현재 배송 중입니다." |
+
+---
+
+## Managed MCP Servers
+
+> 🆕 **MCP(Model Context Protocol) Servers**: AI 에이전트가 Databricks 리소스(테이블, SQL Warehouse, 볼륨 등)와 외부 API에 **안전하게 연결** 할 수 있는 관리형 서버입니다.
+
+MCP를 사용하면 에이전트가 접근할 수 있는 리소스를 **중앙에서 관리** 하고, 각 리소스에 대한 접근 권한을 Unity Catalog와 연동하여 제어할 수 있습니다.
+
+---
+
+## 에이전트 로깅 (MLflow)
+
+구축한 에이전트를 MLflow에 로깅하면 버전 관리, 평가, 배포가 가능해집니다.
+
+```python
+import mlflow
+
+# 에이전트를 MLflow 모델로 로깅
+mlflow.set_experiment("/Workspace/agents/customer-support")
+
+with mlflow.start_run(run_name="v1-rag-agent"):
+    # 에이전트 메타데이터 기록
+    mlflow.log_param("llm_model", "llama-3.3-70b")
+    mlflow.log_param("vector_index", "catalog.schema.docs_index")
+    mlflow.log_param("num_retrieval_docs", 5)
+    mlflow.log_param("temperature", 0.1)
+
+    # 에이전트를 MLflow 모델로 저장
+    model_info = mlflow.pyfunc.log_model(
+        artifact_path="agent",
+        python_model=CustomerSupportAgent(),
+        pip_requirements=[
+            "mlflow>=2.12",
+            "databricks-vectorsearch",
+            "databricks-sdk"
+        ],
+        registered_model_name="catalog.schema.customer_support_agent"
+    )
+
+    print(f"Model URI: {model_info.model_uri}")
+```
+
+---
+
+## 로컬 테스트
+
+배포 전에 노트북에서 에이전트를 테스트할 수 있습니다.
+
+```python
+# 에이전트 인스턴스 생성
+agent = CustomerSupportAgent()
+
+# 테스트 대화
+response = agent.predict(
+    messages=[
+        ChatAgentMessage(role="user", content="주문 12345의 배송 상태가 궁금합니다")
+    ]
+)
+print(response.messages[0].content)
+
+# 멀티턴 대화 테스트
+response2 = agent.predict(
+    messages=[
+        ChatAgentMessage(role="user", content="주문 12345의 배송 상태가 궁금합니다"),
+        ChatAgentMessage(role="assistant", content=response.messages[0].content),
+        ChatAgentMessage(role="user", content="그러면 예상 도착일은 언제인가요?")
+    ]
+)
+print(response2.messages[0].content)
+```

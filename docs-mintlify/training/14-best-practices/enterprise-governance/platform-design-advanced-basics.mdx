@@ -1,0 +1,99 @@
+---
+title: "Account Console 설정 가이드과 CMK (Customer Ma"
+---
+
+## 3. Account Console 설정 가이드
+
+### 3.1 핵심 설정 체크리스트
+
+| 설정 영역 | 항목 | 권장 설정 | 위치 |
+|----------|------|----------|------|
+| **계정 보안** | 2FA/MFA 강제 | 전체 사용자 필수 | Settings → Authentication |
+| **SSO** | SAML 2.0 / OIDC | 사내 IdP 연동 (Okta, Azure AD) | Settings → Single sign-on |
+| **사용자 프로비저닝** | SCIM | IdP에서 자동 동기화 | Settings → User provisioning |
+| **감사 로그** | 활성화 | 전체 Workspace 대상 | Settings → Audit logs |
+| **IP 접근 제한** | IP Access List | 사무실 + VPN IP만 허용 | Settings → IP access lists |
+
+### 3.2 IP Access List 설정
+
+```json
+{
+  "label": "corporate-office-and-vpn",
+  "list_type": "ALLOW",
+  "ip_addresses": [
+    "203.0.113.0/24",
+    "198.51.100.0/24",
+    "10.0.0.0/8"
+  ]
+}
+```
+
+| IP Access List 유형 | 동작 | 용도 |
+|-------------------|------|------|
+| **ALLOW** | 목록의 IP만 접근 허용 | 사무실/VPN IP 화이트리스트 |
+| **BLOCK** | 목록의 IP 접근 차단 | 특정 IP 블랙리스트 |
+
+> **참고**
+**Account 수준 vs Workspace 수준**: Account Console에서 설정한 IP Access List는 모든 Workspace에 적용됩니다. Workspace 수준에서 추가 제한을 설정할 수 있지만, Account 수준 제한을 완화할 수는 없습니다.
+
+
+---
+
+## 4. CMK (Customer Managed Key) 설정
+
+### 4.1 CMK 적용 대상
+
+| 암호화 대상 | 설명 | CMK 적용 방법 |
+|-----------|------|-------------|
+| **관리형 서비스 (Managed Services)** | 노트북 소스, 시크릿, 쿼리 결과 | Account Console → Encryption keys |
+| **Workspace 스토리지** | DBFS Root, 시스템 데이터 | Workspace 생성 시 CMK 지정 |
+| **Unity Catalog 데이터** | 관리형 테이블, 볼륨 | External Location에 CMK가 적용된 S3/ADLS 사용 |
+
+### 4.2 AWS KMS 설정 예시
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowDatabricksUsage",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::414351767826:root"
+      },
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:ReEncrypt*",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AllowDatabricksGrant",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::414351767826:root"
+      },
+      "Action": [
+        "kms:CreateGrant",
+        "kms:ListGrants",
+        "kms:RevokeGrant"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "Bool": {
+          "kms:GrantIsForAWSResource": "true"
+        }
+      }
+    }
+  ]
+}
+```
+
+> **주의**
+**CMK 삭제 주의**: CMK를 삭제하면 해당 키로 암호화된 모든 데이터에 접근할 수 없습니다. KMS 키 삭제 대기 기간(7~30일)을 반드시 설정하고, 키 순환(rotation) 정책을 사용하세요.
+
+
+---

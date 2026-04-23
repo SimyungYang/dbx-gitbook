@@ -27,7 +27,7 @@ Databricks는 Data + AI Summit 2024에서 **Mosaic AI Agent Framework** 와 **Ag
 
 ### 고품질 생성형 AI 애플리케이션 구축의 과제
 
-GenAI 애플리케이션의 PoC(개념 증명)를 만드는 것은 비교적 간단하지만, 프로덕션 수준의 고품질 앱을 실제로 제공하는 것은 많은 고객에게 큰 도전입니다. 고객 대면 앱이 요구하는 품질 기준을 충족하려면 AI 출력이 **정확하고(accurate), 안전하며(safe), 거버넌스를 갖추어야(governed)** 합니다. 이 수준의 품질에 도달하기 위해 개발자들은 다음과 같은 어려움을 겪습니다:
+GenAI 애플리케이션의 개념 증명(PoC)을 구축하는 것은 비교적 간단하지만, 고품질 애플리케이션을 실제로 제공하는 것은 많은 고객들에게 큰 도전으로 증명되었습니다. 고객 대면 애플리케이션에 요구되는 품질 기준을 충족하려면 AI 출력이 **정확하고(accurate), 안전하며(safe), 거버넌스를 갖추어야(governed)** 합니다. 이 수준의 품질에 도달하기 위해 개발자들은 다음과 같은 어려움을 겪습니다:
 
 - 애플리케이션의 품질을 평가하기 위한 올바른 지표 선택
 - 애플리케이션 품질을 측정하기 위한 효율적인 사람의 피드백 수집
@@ -42,9 +42,9 @@ Databricks AI Research 팀과의 긴밀한 협업을 통해 구축된 **Agent Fr
 
 **GenAI 애플리케이션의 손쉬운 평가** — Agent Evaluation은 Databricks AI Research와 협력하여 개발된 지표(metrics) 모음을 제공하여 애플리케이션의 품질을 측정합니다. 응답과 사람의 피드백을 자동으로 평가 테이블에 기록하고 결과를 빠르게 분석하여 잠재적인 품질 문제를 식별할 수 있습니다. 시스템 제공 AI 심사위원(AI judges)들은 정확성, 환각(hallucination), 유해성(harmfulness), 유용성(helpfulness) 등 일반적인 기준에 따라 이러한 응답들을 평가하며, 품질 문제의 근본 원인을 파악합니다. 이 심사위원들은 도메인 전문가의 피드백을 사용하여 보정되지만, 사람의 레이블 없이도 품질을 측정할 수 있습니다.
 
-이후 Agent Framework로 다양한 구성을 실험하면서 품질 문제를 해결하고, 각 변경이 앱 품질에 미치는 영향을 측정할 수 있습니다. 목표 품질에 도달하면 Agent Evaluation의 비용 및 지연(latency) 지표를 활용해 품질/비용/지연 간 최적의 균형점을 찾을 수 있습니다.
+그런 다음 Agent Framework를 사용하여 애플리케이션의 다양한 구성을 실험하고 조정함으로써 이러한 품질 문제를 해결하고 각 변경 사항이 앱 품질에 미치는 영향을 측정할 수 있습니다. 품질 임계값에 도달하면 Agent Evaluation의 비용 및 지연(latency) 지표를 사용하여 품질/비용/지연 간의 최적 트레이드오프를 결정할 수 있습니다.
 
-**빠른 엔드투엔드 개발 워크플로우** — Agent Framework는 MLflow와 통합되어 개발자들이 `log_model` 및 `mlflow.evaluate`와 같은 표준 MLflow API를 사용하여 GenAI 애플리케이션을 기록하고 품질을 평가할 수 있게 합니다. 품질에 만족하면 개발자들은 MLflow를 사용하여 이러한 애플리케이션을 프로덕션에 배포하고 사용자의 피드백을 받아 품질을 더욱 향상시킬 수 있습니다. Agent Framework와 Agent Evaluation은 MLflow 및 Data Intelligence Platform과 통합되어, GenAI 애플리케이션의 구축부터 배포까지 완성된 엔드투엔드 워크플로우를 제공합니다.
+**빠른 엔드투엔드 개발 워크플로우** — Agent Framework는 MLflow와 통합되어 개발자들이 `log_model` 및 `mlflow.evaluate`와 같은 표준 MLflow API를 사용하여 GenAI 애플리케이션을 기록하고 품질을 평가할 수 있게 합니다. 품질에 만족하면 개발자들은 MLflow를 사용하여 이러한 애플리케이션을 프로덕션에 배포하고 사용자의 피드백을 받아 품질을 더욱 향상시킬 수 있습니다. Agent Framework와 Agent Evaluation은 MLflow 및 Data Intelligence Platform과 통합되어 GenAI 애플리케이션을 구축하고 배포하는 완전히 포장된 경로를 제공합니다.
 
 **앱 수명 주기 관리(App Lifecycle Management)** — Agent Framework는 권한 관리부터 Databricks Model Serving을 통한 배포에 이르기까지 에이전틱 애플리케이션의 수명 주기를 관리하기 위한 간소화된 SDK를 제공합니다.
 
@@ -92,7 +92,7 @@ Agent Framework와 Agent Evaluation을 사용하여 고품질 애플리케이션
 ![평가 세트의 각 개별 레코드를 검사하여 상황 파악](https://www.databricks.com/sites/default/files/inline-images/image1_5.gif)
 
 > **참고**
-**고객 사례 — Lippert**: "Mosaic AI Agent Framework는 우리 팀에 결정적인 전환점이 되었습니다. GenAI 애플리케이션의 결과를 평가하고 데이터 소스에 대한 완전한 제어를 유지하면서 출력의 정확도를 입증할 수 있었습니다. Databricks Data Intelligence Platform 덕분에 프로덕션 배포에 자신감을 갖게 되었습니다."
+**고객 사례 — Lippert**: "Mosaic AI Agent Framework는 우리에게 게임 체인저였습니다. GenAI 애플리케이션의 결과를 평가하고 데이터 소스에 대한 완전한 제어를 유지하면서 출력의 정확도를 입증할 수 있었습니다. Databricks Data Intelligence Platform 덕분에 프로덕션 배포에 자신감을 갖게 되었습니다."
 — Kenan Colson, VP Data & AI, Lippert
 
 

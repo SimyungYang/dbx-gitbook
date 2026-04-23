@@ -1,0 +1,148 @@
+---
+title: "AI Dev Kit 스킬 연동 — 커스텀 스킬 작성과 개요"
+---
+
+> 이 문서는 **[Genie Code](/blog/guides/genie-code/overview)** 섹션의 일부입니다.
+
+## 6. 커스텀 스킬 작성
+
+### 6.1 왜 커스텀 스킬인가?
+
+AI Dev Kit의 기본 스킬은 Databricks 플랫폼의 범용 베스트 프랙티스를 제공합니다. 하지만 실제 업무에서는 조직 고유의 네이밍 규칙, 데이터 모델, 파이프라인 패턴이 있습니다. 커스텀 스킬을 만들면 이러한 **조직 특화 지식** 을 Genie Code에 주입할 수 있습니다.
+
+### 6.2 SKILL.md 템플릿
+
+```markdown
+---
+description: |
+  이 스킬이 언제 로드되어야 하는지 설명합니다.
+  예: "사내 고객 데이터 파이프라인, customer_360 테이블, 고객 세그먼트 관련 작업"
+tools:
+  - execute_sql
+  - create_or_update_pipeline
+---
+
+# 고객 360 파이프라인 가이드
+
+## 개요
+우리 조직의 고객 360 테이블은 다음 구조를 따릅니다...
+
+## 네이밍 규칙
+- 카탈로그: `prod_analytics`
+- 스키마: `customer_360`
+- Bronze 테이블: `raw_` 접두사
+- Silver 테이블: `cleaned_` 접두사
+- Gold 테이블: 접두사 없이 비즈니스 명칭 사용
+
+## 파이프라인 패턴
+```sql
+-- Bronze: 원본 데이터 수집
+CREATE OR REFRESH STREAMING TABLE raw_customer_events
+AS SELECT * FROM STREAM read_files('/Volumes/landing/customer/events/');
+
+-- Silver: 정제 및 타입 캐스팅
+CREATE OR REFRESH MATERIALIZED VIEW cleaned_customer_events AS
+SELECT
+  CAST(event_id AS BIGINT),
+  CAST(customer_id AS STRING),
+  CAST(event_timestamp AS TIMESTAMP),
+  event_type
+FROM LIVE.raw_customer_events
+WHERE event_id IS NOT NULL;
+```
+
+## 주의사항
+- PII 컬럼은 반드시 `ai_mask()` 함수로 마스킹
+- 일별 파이프라인은 KST 기준 새벽 2시 실행
+```
+
+### 6.3 배포 방법
+
+커스텀 스킬을 배포하는 두 가지 경로가 있습니다.
+
+**개인 스킬 (User Skills)**
+
+```bash
+# 워크스페이스 사용자 디렉토리에 업로드
+databricks workspace mkdirs /Workspace/Users/<your-email>/.assistant/skills/my-custom-skill
+databricks workspace import /Workspace/Users/<your-email>/.assistant/skills/my-custom-skill/SKILL.md \
+  --file ./my-custom-skill/SKILL.md --overwrite
+```
+
+**팀 전체 공유 (Workspace Skills)**
+
+```bash
+# 워크스페이스 루트에 업로드 (관리자 권한 필요)
+databricks workspace mkdirs /Workspace/.assistant/skills/my-custom-skill
+databricks workspace import /Workspace/.assistant/skills/my-custom-skill/SKILL.md \
+  --file ./my-custom-skill/SKILL.md --overwrite
+```
+
+> **주의**
+Workspace 스킬은 해당 워크스페이스의 **모든 Genie Code 사용자** 에게 자동 적용됩니다. 조직 전체에 영향을 미치므로 배포 전 충분한 검토가 필요합니다.
+
+
+---
+
+## 7. 주의사항 & 트러블슈팅
+
+### 7.1 Agent 모드 필수
+
+AI Dev Kit 스킬은 **Agent 모드에서만** 동작합니다. Edit 모드나 Chat 모드에서는 스킬이 로드되지 않습니다. Genie Code 프롬프트 입력창 좌측에서 모드가 Agent로 설정되어 있는지 확인하세요.
+
+### 7.2 스킬이 자동 로드되지 않을 때
+
+스킬의 `description` 필드가 사용자의 요청과 충분히 매칭되지 않으면 자동 로드가 실패할 수 있습니다. 이 경우 두 가지 해결 방법이 있습니다.
+
+1. **@멘션으로 강제 로드**: `@databricks-iceberg` 처럼 스킬 이름을 직접 지정
+2. **프롬프트에 키워드 추가**: description에 포함된 키워드를 프롬프트에 명시적으로 포함
+
+### 7.3 스킬 업데이트
+
+AI Dev Kit은 지속적으로 업데이트됩니다. 최신 스킬을 받으려면 설치 스크립트를 다시 실행하세요.
+
+```bash
+# 최신 버전으로 업데이트 (기존 스킬 덮어쓰기)
+curl -sSL https://raw.githubusercontent.com/databricks-solutions/ai-dev-kit/main/databricks-skills/install_skills.sh \
+  | bash -s -- --install-to-genie
+```
+
+### 7.4 스킬 비활성화
+
+특정 스킬이 불필요하거나 의도치 않게 로드되는 경우, 해당 스킬 폴더를 워크스페이스에서 삭제하면 됩니다.
+
+```bash
+databricks workspace delete /Workspace/Users/<your-email>/.assistant/skills/databricks-synthetic-data-gen --recursive
+```
+
+### 7.5 설치 실패 시
+
+설치 스크립트가 실패하는 주요 원인과 해결 방법입니다.
+
+| 증상 | 원인 | 해결 |
+|------|------|------|
+| `databricks: command not found` | Databricks CLI 미설치 | `curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh \| sh` |
+| `Error: auth: cannot configure default credentials` | 인증 미설정 | `databricks auth login --host https://<workspace-url>` |
+| `Error: Path already exists` | 이전 설치 잔재 | `--install-to-genie` 플래그가 자동 덮어쓰기 처리 |
+| 일부 스킬만 설치됨 | 네트워크 타임아웃 | 스크립트 재실행 (멱등성 보장) |
+
+이 표에서 알 수 있듯이, 대부분의 설치 문제는 Databricks CLI 설정과 관련되어 있습니다. CLI 인증이 정상이면 스킬 설치는 거의 실패하지 않습니다.
+
+> **참고**
+스킬 설치 스크립트는 **멱등(idempotent)** 합니다. 여러 번 실행해도 동일한 결과를 보장하므로, 문제가 발생하면 안심하고 재실행하세요.
+
+
+---
+
+## 8. 정리
+
+AI Dev Kit 스킬은 Genie Code를 단순한 코드 생성 도구에서 **Databricks 전문가 수준의 AI 어시스턴트** 로 업그레이드합니다. 핵심 포인트를 요약합니다.
+
+| 항목 | 요약 |
+|------|------|
+| **설치** | `curl` 한 줄로 30개+ 스킬 일괄 설치 |
+| **동작** | Agent 모드에서 요청에 따라 자동 로드 |
+| **역할** | 기본 MCP(실행)를 보완하는 도메인 지식(가이드) |
+| **커스텀** | `SKILL.md` 작성으로 조직 맞춤 지식 추가 |
+| **업데이트** | `install_skills.sh` 재실행으로 최신 버전 유지 |
+| **제한** | Agent 모드 전용, MCP 도구 제한과는 별개 |

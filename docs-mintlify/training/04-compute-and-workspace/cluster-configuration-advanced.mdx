@@ -1,0 +1,192 @@
+---
+title: "클러스터 설정 — Init Script (초기화 스크립트)"
+---
+
+> 이 문서는 **[컴퓨트](/training/04-compute-and-workspace/overview)** 섹션의 일부입니다.
+
+## Init Script (초기화 스크립트)
+
+> 💡 **Init Script** 는 클러스터가 시작될 때 **각 노드에서 자동으로 실행되는 셸 스크립트** 입니다. 시스템 패키지 설치, 환경 변수 설정, 보안 구성 등에 사용합니다.
+
+### Init Script 유형
+
+| 유형 | 실행 시점 | 적합한 용도 |
+|------|----------|-----------|
+| **Cluster-scoped** | 해당 클러스터 시작 시 | 특정 클러스터에만 필요한 설정 |
+| **Global** | 모든 클러스터 시작 시 | 보안 에이전트, 모니터링 도구 |
+
+### 사용 예시
+
+```bash
+#!/bin/bash
+# Init Script 예시: 시스템 패키지 설치
+
+# OS 패키지 설치
+apt-get update && apt-get install -y libmagic-dev
+
+# Python 패키지 설치
+pip install opencv-python-headless pdf2image
+```
+
+Init Script는 Unity Catalog Volume 또는 Workspace에 저장하여 참조합니다.
+
+```
+Init Script 경로: /Volumes/production/config/init-scripts/install-packages.sh
+```
+
+> ⚠️ **주의**: Init Script가 실패하면 클러스터 시작이 실패합니다. 스크립트를 배포하기 전에 반드시 테스트하고, 에러 처리 로직을 포함하세요.
+
+---
+
+## 환경 변수 (Environment Variables)
+
+클러스터에 환경 변수를 설정하여 코드에서 참조할 수 있습니다. API 엔드포인트, 환경 구분값 등을 코드와 분리하여 관리할 때 유용합니다.
+
+```
+환경 변수 설정 (클러스터 설정 > Advanced > Spark 환경 변수):
+
+ENV=production
+API_ENDPOINT=https://api.company.com
+REGION=ap-northeast-2
+```
+
+```python
+# 코드에서 환경 변수 참조
+import os
+env = os.environ.get("ENV", "dev")
+api_url = os.environ.get("API_ENDPOINT")
+```
+
+> ⚠️ **보안 주의**: 비밀번호나 API 키 같은 민감한 정보는 환경 변수 대신 **Databricks Secrets** 를 사용하세요. 환경 변수는 클러스터 설정에 평문으로 저장되므로 보안에 취약합니다.
+
+---
+
+## 클러스터 태그 (Tags)
+
+클러스터에 태그를 추가하면 **비용 추적, 리소스 분류, 정책 적용** 에 활용할 수 있습니다. 특히 비용 분석 시 팀별, 프로젝트별 비용을 구분하는 데 매우 유용합니다.
+
+```
+태그 예시:
+team = data-engineering
+project = sales-pipeline
+cost-center = DE-001
+environment = production
+```
+
+태그는 클라우드 제공자의 인스턴스 태그에도 전파되므로, AWS Cost Explorer나 Azure Cost Management에서 Databricks 비용을 팀별/프로젝트별로 분석할 수 있습니다.
+
+---
+
+## 클러스터 풀 (Instance Pools)
+
+> 💡 **클러스터 풀(Instance Pool)** 은 유휴 인스턴스를 미리 확보해두는 기능입니다. 클러스터가 시작되거나 스케일 아웃될 때 새 인스턴스를 프로비저닝하는 대신 **풀에서 즉시 할당** 받아 시작 시간을 크게 단축합니다.
+
+### 동작 원리
+
+| 이벤트 | 풀에서 할당 | 풀 잔여 | 비고 |
+|--------|-----------|---------|------|
+| (초기 상태) | - | 5개 유휴 대기 | - |
+| 클러스터 A 시작 | 3개 (즉시) | 2개 | - |
+| 클러스터 B 시작 | 2개 (즉시) | 0개 | - |
+| 클러스터 C 시작 | 풀 비어있음 | 0개 | 새 인스턴스 프로비저닝 (수 분 소요), 동시에 풀 보충 (Min Idle 유지) |
+
+### 주요 설정
+
+| 설정 | 설명 | 권장값 |
+|------|------|--------|
+| **Min Idle Instances** | 풀에서 항상 유지할 최소 유휴 인스턴스 수 | 2~5 (즉시 할당 보장) |
+| **Max Capacity** | 풀의 최대 인스턴스 수 | 팀 규모에 따라 설정 |
+| **Instance Type** | 풀에서 관리할 인스턴스 유형 | 가장 자주 사용하는 유형 |
+| **Idle Instance Auto Termination** | 유휴 인스턴스 자동 종료 시간 | 30~60분 |
+
+### 풀 사용 시 이점
+
+| 항목 | 풀 미사용 | 풀 사용 |
+|------|----------|---------|
+| 클러스터 시작 시간 | 3~7분 | 30초~1분 |
+| 스케일 아웃 시간 | 2~5분 | 즉시~30초 |
+| 비용 | 인스턴스 사용 시간만 | 유휴 인스턴스 비용 추가 (소량) |
+
+---
+
+## 자동 종료 (Auto Termination)
+
+비용 절약을 위해 **자동 종료** 설정은 매우 중요합니다. 설정하지 않으면, 아무도 사용하지 않아도 클러스터가 계속 실행되어 비용이 발생합니다. 특히 개발/탐색용 All-Purpose 클러스터에서는 반드시 설정해야 합니다.
+
+```
+자동 종료 시간: 30분 (유휴 후)
+```
+
+- All-Purpose 클러스터에서 설정하는 것을 **강력히 권장** 합니다
+- 일반적으로 **30분~120분** 사이로 설정합니다
+- Job 클러스터는 Job 완료 후 자동으로 종료되므로 별도 설정이 불필요합니다
+
+### 자동 종료 권장 시간
+
+| 용도 | 권장 자동 종료 시간 |
+|------|-------------------|
+| 개인 탐색/개발 | 30분 |
+| 팀 공유 개발 | 60분 |
+| 대화형 분석 (Power User) | 90~120분 |
+| 프로덕션 All-Purpose | 설정 필수 (60분 권장) |
+
+---
+
+## 클러스터 정책 (Cluster Policies)
+
+> 💡 **클러스터 정책(Cluster Policy)** 은 관리자가 클러스터 설정의 **허용 범위를 제한** 하는 규칙입니다. 사용자가 과도한 리소스를 설정하거나 비용이 높은인 구성을 하는 것을 방지합니다.
+
+```json
+{
+  "spark_version": {
+    "type": "regex",
+    "pattern": "15\\.[0-9]+\\.x-scala.*",
+    "hidden": false
+  },
+  "num_workers": {
+    "type": "range",
+    "minValue": 1,
+    "maxValue": 10,
+    "defaultValue": 2
+  },
+  "node_type_id": {
+    "type": "allowlist",
+    "values": ["m5.xlarge", "m5.2xlarge", "r5.xlarge"],
+    "defaultValue": "m5.xlarge"
+  },
+  "autotermination_minutes": {
+    "type": "range",
+    "minValue": 10,
+    "maxValue": 120,
+    "defaultValue": 30
+  }
+}
+```
+
+---
+
+## 정리
+
+| 핵심 설정 | 설명 |
+|-----------|------|
+| **Runtime** | Spark 엔진과 라이브러리가 포함된 소프트웨어 패키지. 최신 LTS 버전을 권장합니다 |
+| **노드 타입** | 워크로드 특성(메모리, CPU, GPU)에 맞는 인스턴스를 선택합니다 |
+| **오토스케일링** | 부하에 따라 Worker 수를 자동 조절합니다. 대화형 작업에 적합합니다 |
+| **Spot 인스턴스** | Worker에 적용하여 비용을 크게 절감할 수 있습니다 |
+| **Photon** | C++ 기반 고성능 엔진으로 SQL/DataFrame 성능을 향상시킵니다 |
+| **Init Script** | 클러스터 시작 시 자동 실행되는 셸 스크립트입니다 |
+| **환경 변수** | 코드와 분리된 설정값을 관리합니다. 민감 정보는 Secrets를 사용합니다 |
+| **클러스터 풀** | 유휴 인스턴스를 미리 확보하여 시작 시간을 단축합니다 |
+| **자동 종료** | 유휴 시 자동 종료하여 불필요한 비용을 방지합니다 |
+| **클러스터 정책** | 관리자가 허용 범위를 제한하여 비용과 보안을 관리합니다 |
+
+---
+
+## 참고 링크
+
+- [Databricks: Cluster configuration](https://docs.databricks.com/aws/en/compute/configure.html)
+- [Databricks: Photon](https://docs.databricks.com/aws/en/compute/photon.html)
+- [Databricks: Instance Pools](https://docs.databricks.com/aws/en/compute/pool-index.html)
+- [Databricks: Cluster Policies](https://docs.databricks.com/aws/en/admin/clusters/policies.html)
+- [Databricks: Init Scripts](https://docs.databricks.com/aws/en/init-scripts/index.html)
+- [Azure Databricks: Compute configuration](https://learn.microsoft.com/en-us/azure/databricks/compute/configure)
