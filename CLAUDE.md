@@ -101,14 +101,19 @@
 - ❌ "IC360 포털에서 SP 1개로..."
 - ✅ "외부 포털에서 SP 1개로..."
 
-### URL 경로 규칙
-파일 경로는 탭 이름과 일치해야 합니다:
-- `intro/` → Databricks 소개 탭
-- `practices/` → 모범 사례 가이드 탭
-- `ai-ml/` → AI/ML & 동향 탭
+### URL 경로 규칙 (주의)
+**Mintlify는 기존 디렉토리 구조 변경에 매우 민감합니다.** 새 디렉토리로 대규모 파일 이동을 하면 Mintlify 빌드가 깨질 수 있습니다 (전체 404 발생 경험 있음).
+
+현재 파일 경로는 역사적 구조를 유지합니다:
+- `training/` → Databricks 소개 탭 (번호 접두어 포함: 02-, 03- 등)
+- `blog/guides/` → 모범 사례 가이드 + AI/ML 탭
+- `ai-trends/` → AI/ML & 동향 탭 (동향 부분)
 - `translations/` → 공식 블로그 내용 탭
 - `releases/` → 릴리스 & 로드맵 탭
-- `hands-on/` → 핸즈온 탭
+- `workshop/` → Genie Code 워크샵 탭
+- `blog/hands-on/` → MLOps 핸즈온 탭
+
+**절대 대규모 파일 이동을 시도하지 마세요.** URL 미관보다 사이트 동작이 우선입니다.
 
 ## 변경 이력
 
