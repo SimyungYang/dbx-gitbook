@@ -1265,6 +1265,8 @@
                   },
                   "training/14-best-practices/enterprise-governance/access-control",
                   "blog/guides/apps/obo-user-tracking",
+                  "training/14-best-practices/enterprise-governance/genie-consumer-access",
+                  "training/14-best-practices/enterprise-governance/pii-abac",
                   "training/14-best-practices/enterprise-governance/data-classification",
                   "training/14-best-practices/enterprise-governance/data-quality-cicd"
                 ]

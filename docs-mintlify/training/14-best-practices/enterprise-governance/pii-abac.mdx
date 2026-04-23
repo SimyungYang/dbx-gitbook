@@ -1,0 +1,379 @@
+---
+title: "PII 데이터 ABAC 처리 (권한별 마스킹)"
+---
+
+사용자 그룹/역할에 따라 PII(개인식별정보)를 **자동으로 마스킹하거나 행 단위로 필터링**하는 방법을 단계별로 안내합니다. Unity Catalog의 Column Mask, Row Filter, ABAC 정책을 사용합니다.
+
+---
+
+## 이 가이드에서 만드는 것
+
+| 기능 | 효과 |
+|---|---|
+| **Column Mask** | 권한 없는 사용자에게 SSN → `***-**-****`, 이메일 → `***@example.com` 으로 마스킹 |
+| **Row Filter** | 사용자가 속한 부서의 데이터만 조회 가능 |
+| **ABAC 정책** | PII 태그가 붙은 모든 테이블에 마스킹 규칙을 **자동 일괄 적용** |
+
+---
+
+## 전체 구성 흐름
+
+<Steps>
+  <Step title="테스트 테이블 준비">
+    PII 컬럼이 포함된 샘플 테이블 생성
+  </Step>
+  <Step title="PII 태그 생성 및 적용">
+    Unity Catalog 관리 태그로 PII 컬럼 분류
+  </Step>
+  <Step title="마스킹 함수(UDF) 작성">
+    그룹 멤버십에 따라 원본/마스킹 값을 반환하는 함수 생성
+  </Step>
+  <Step title="Row Filter 함수 작성">
+    부서별 행 접근 제어 함수 생성
+  </Step>
+  <Step title="테이블에 적용">
+    수동 방식 또는 ABAC 정책으로 일괄 적용
+  </Step>
+  <Step title="테스트">
+    다른 사용자로 로그인하여 마스킹/필터 확인
+  </Step>
+</Steps>
+
+---
+
+## Step 1: 테스트 테이블 준비
+
+```sql
+CREATE CATALOG IF NOT EXISTS demo;
+USE CATALOG demo;
+CREATE SCHEMA IF NOT EXISTS hr;
+USE SCHEMA hr;
+
+CREATE OR REPLACE TABLE employees (
+  name        STRING,
+  email       STRING,
+  phone       STRING,
+  ssn         STRING,
+  address     STRING,
+  department  STRING,
+  salary      INT
+);
+
+INSERT INTO employees VALUES
+('김영수', 'ys.kim@company.com',    '010-1234-5678', '901215-1234567', '서울시 강남구 테헤란로 123',   'Engineering', 85000000),
+('이미나', 'mina.lee@company.com',  '010-2345-6789', '880923-2345678', '부산시 해운대구 센텀로 45',    'HR',          72000000),
+('박준혁', 'jh.park@company.com',   '010-3456-7890', '950410-1456789', '대전시 유성구 대학로 67',      'Finance',     78000000),
+('최서연', 'sy.choi@company.com',   '010-4567-8901', '921103-2567890', '인천시 연수구 송도대로 89',    'Engineering', 90000000),
+('정민우', 'mw.jung@company.com',   '010-5678-9012', '870715-1678901', '광주시 북구 용봉로 12',        'HR',          68000000);
+```
+
+---
+
+## Step 2: PII 태그 생성 및 적용
+
+### 관리 태그(Governed Tag) 생성
+
+UI에서 생성하는 방법:
+
+1. **Catalog** 사이드바 클릭
+2. 상단의 **Govern** 탭 클릭
+3. **Governed Tags** > **Create governed tag** 클릭
+4. 설정:
+   - Key: `pii`
+   - Allowed values: `ssn`, `email`, `phone`, `address`
+5. **Create** 클릭
+
+### 컬럼에 태그 적용
+
+```sql
+ALTER TABLE demo.hr.employees
+ALTER COLUMN ssn SET TAGS ('pii' = 'ssn');
+
+ALTER TABLE demo.hr.employees
+ALTER COLUMN email SET TAGS ('pii' = 'email');
+
+ALTER TABLE demo.hr.employees
+ALTER COLUMN phone SET TAGS ('pii' = 'phone');
+
+ALTER TABLE demo.hr.employees
+ALTER COLUMN address SET TAGS ('pii' = 'address');
+```
+
+### 태그 확인
+
+```sql
+SELECT tag_name, tag_value, column_name
+FROM system.information_schema.column_tags
+WHERE schema_name = 'hr' AND table_name = 'employees';
+```
+
+결과:
+
+| tag_name | tag_value | column_name |
+|---|---|---|
+| pii | ssn | ssn |
+| pii | email | email |
+| pii | phone | phone |
+| pii | address | address |
+
+---
+
+## Step 3: 마스킹 함수(UDF) 작성
+
+각 PII 유형별로 마스킹 함수를 만듭니다. `IS_ACCOUNT_GROUP_MEMBER()` 함수로 사용자 그룹을 확인하여, 권한이 있으면 원본을, 없으면 마스킹된 값을 반환합니다.
+
+### SSN 마스킹
+
+```sql
+CREATE OR REPLACE FUNCTION demo.hr.mask_ssn(ssn STRING)
+RETURN CASE
+  WHEN IS_ACCOUNT_GROUP_MEMBER('pii_authorized') THEN ssn
+  WHEN ssn IS NULL THEN NULL
+  ELSE CONCAT(
+    SUBSTRING(ssn, 1, 6),  -- 생년월일은 보존
+    '-*******'              -- 뒷자리 마스킹
+  )
+END;
+-- 결과 예: 901215-******* (pii_authorized 아닌 경우)
+-- 결과 예: 901215-1234567 (pii_authorized인 경우)
+```
+
+### 이메일 마스킹
+
+```sql
+CREATE OR REPLACE FUNCTION demo.hr.mask_email(email STRING)
+RETURN CASE
+  WHEN IS_ACCOUNT_GROUP_MEMBER('pii_authorized') THEN email
+  WHEN email IS NULL THEN NULL
+  ELSE CONCAT('***', SUBSTRING(email, INSTR(email, '@')))
+END;
+-- 결과 예: ***@company.com
+```
+
+### 전화번호 마스킹
+
+```sql
+CREATE OR REPLACE FUNCTION demo.hr.mask_phone(phone STRING)
+RETURN CASE
+  WHEN IS_ACCOUNT_GROUP_MEMBER('pii_authorized') THEN phone
+  WHEN phone IS NULL THEN NULL
+  ELSE CONCAT('***-****-', RIGHT(REGEXP_REPLACE(phone, '[^0-9]', ''), 4))
+END;
+-- 결과 예: ***-****-5678
+```
+
+### 주소 마스킹
+
+```sql
+CREATE OR REPLACE FUNCTION demo.hr.mask_address(address STRING)
+RETURN CASE
+  WHEN IS_ACCOUNT_GROUP_MEMBER('pii_authorized') THEN address
+  WHEN address IS NULL THEN NULL
+  ELSE REGEXP_REPLACE(address, '[0-9]+', '***')
+END;
+-- 결과 예: 서울시 강남구 테헤란로 ***
+```
+
+---
+
+## Step 4: Row Filter 함수 작성
+
+사용자가 속한 부서의 데이터만 볼 수 있도록 행 필터를 만듭니다.
+
+```sql
+CREATE OR REPLACE FUNCTION demo.hr.dept_filter(dept STRING)
+RETURN
+  -- admin 그룹은 모든 행 접근 가능
+  IS_ACCOUNT_GROUP_MEMBER('admin')
+  -- HR 그룹은 전체 직원 데이터 접근 가능
+  OR IS_ACCOUNT_GROUP_MEMBER('hr_full_access')
+  -- 그 외에는 본인 부서 데이터만
+  OR IS_ACCOUNT_GROUP_MEMBER(dept);
+```
+
+**작동 원리:**
+- `admin` 그룹 → 모든 행 보임
+- `hr_full_access` 그룹 → 모든 행 보임
+- `Engineering` 그룹 → department = 'Engineering'인 행만 보임
+- `Finance` 그룹 → department = 'Finance'인 행만 보임
+
+---
+
+## Step 5: 테이블에 적용
+
+두 가지 방식 중 선택합니다.
+
+### 방법 A: 수동 적용 (Runtime 12.2+, 모든 환경)
+
+개별 테이블에 직접 마스크와 필터를 설정합니다. 테이블 수가 적을 때 적합합니다.
+
+```sql
+-- Row Filter 적용
+ALTER TABLE demo.hr.employees
+SET ROW FILTER demo.hr.dept_filter ON (department);
+
+-- Column Mask 적용
+ALTER TABLE demo.hr.employees
+ALTER COLUMN ssn SET MASK demo.hr.mask_ssn;
+
+ALTER TABLE demo.hr.employees
+ALTER COLUMN email SET MASK demo.hr.mask_email;
+
+ALTER TABLE demo.hr.employees
+ALTER COLUMN phone SET MASK demo.hr.mask_phone;
+
+ALTER TABLE demo.hr.employees
+ALTER COLUMN address SET MASK demo.hr.mask_address;
+```
+
+### 방법 B: ABAC 정책 (Runtime 16.4+, 권장)
+
+PII 태그가 붙은 **모든 테이블에 자동으로 적용**됩니다. 테이블이 많거나 새 테이블이 자주 추가될 때 적합합니다.
+
+```sql
+-- SSN 마스킹 정책: pii=ssn 태그가 있는 모든 컬럼에 자동 적용
+CREATE POLICY mask_pii_ssn
+ON CATALOG demo
+COMMENT 'SSN 마스킹 — pii_authorized 그룹 제외'
+COLUMN MASK demo.hr.mask_ssn
+TO `account users`
+EXCEPT `pii_authorized`
+FOR TABLES
+MATCH COLUMNS has_tag_value('pii', 'ssn') AS ssn
+ON COLUMN ssn;
+
+-- 이메일 마스킹 정책
+CREATE POLICY mask_pii_email
+ON CATALOG demo
+COMMENT '이메일 마스킹 — pii_authorized 그룹 제외'
+COLUMN MASK demo.hr.mask_email
+TO `account users`
+EXCEPT `pii_authorized`
+FOR TABLES
+MATCH COLUMNS has_tag_value('pii', 'email') AS email
+ON COLUMN email;
+
+-- 전화번호 마스킹 정책
+CREATE POLICY mask_pii_phone
+ON CATALOG demo
+COMMENT '전화번호 마스킹 — pii_authorized 그룹 제외'
+COLUMN MASK demo.hr.mask_phone
+TO `account users`
+EXCEPT `pii_authorized`
+FOR TABLES
+MATCH COLUMNS has_tag_value('pii', 'phone') AS phone
+ON COLUMN phone;
+
+-- 주소 마스킹 정책
+CREATE POLICY mask_pii_address
+ON CATALOG demo
+COMMENT '주소 마스킹 — pii_authorized 그룹 제외'
+COLUMN MASK demo.hr.mask_address
+TO `account users`
+EXCEPT `pii_authorized`
+FOR TABLES
+MATCH COLUMNS has_tag_value('pii', 'address') AS address
+ON COLUMN address;
+```
+
+> **참고**
+ABAC 정책의 핵심 장점: 나중에 `pii = email` 태그가 붙은 **새 테이블이 추가되면 자동으로 마스킹 정책이 적용**됩니다. 테이블별로 수동 설정할 필요가 없습니다.
+
+
+---
+
+## Step 6: 테스트
+
+### 현재 사용자의 그룹 멤버십 확인
+
+```sql
+SELECT
+  CURRENT_USER() AS current_user,
+  IS_ACCOUNT_GROUP_MEMBER('pii_authorized') AS is_pii_authorized,
+  IS_ACCOUNT_GROUP_MEMBER('admin') AS is_admin,
+  IS_ACCOUNT_GROUP_MEMBER('Engineering') AS is_engineering;
+```
+
+### 마스킹 결과 확인
+
+```sql
+SELECT name, email, phone, ssn, department
+FROM demo.hr.employees;
+```
+
+**`pii_authorized` 그룹이 아닌 `Engineering` 그룹 사용자의 결과:**
+
+| name | email | phone | ssn | department |
+|---|---|---|---|---|
+| 김영수 | ***@company.com | ***-****-5678 | 901215-******* | Engineering |
+| 최서연 | ***@company.com | ***-****-8901 | 921103-******* | Engineering |
+
+- PII 컬럼은 마스킹됨
+- Engineering 부서의 행만 보임 (Row Filter)
+
+**`pii_authorized` + `admin` 그룹 사용자의 결과:**
+
+| name | email | phone | ssn | department |
+|---|---|---|---|---|
+| 김영수 | ys.kim@company.com | 010-1234-5678 | 901215-1234567 | Engineering |
+| 이미나 | mina.lee@company.com | 010-2345-6789 | 880923-2345678 | HR |
+| 박준혁 | jh.park@company.com | 010-3456-7890 | 950410-1456789 | Finance |
+| 최서연 | sy.choi@company.com | 010-4567-8901 | 921103-2567890 | Engineering |
+| 정민우 | mw.jung@company.com | 010-5678-9012 | 870715-1678901 | HR |
+
+- PII 컬럼 원본 노출
+- 모든 부서의 행 보임
+
+---
+
+## Genie Space와의 연동
+
+이 마스킹과 필터는 **Genie Space에서도 자동으로 적용**됩니다.
+
+- Consumer 사용자가 Genie에서 "직원 이메일 목록 보여줘"라고 질문하면, 해당 사용자의 그룹에 따라 마스킹된 결과가 반환됩니다
+- Genie Space 작성자의 크레덴셜로 쿼리가 실행되지만, **데이터 접근 권한은 조회하는 사용자 기준**으로 적용됩니다
+- 자세한 Genie Consumer 설정은 [Genie Space Consumer 전용 운영](/training/14-best-practices/enterprise-governance/genie-consumer-access) 가이드를 참고하세요
+
+---
+
+## 마스킹 해제 (필요 시)
+
+```sql
+-- 수동 적용된 마스크 제거
+ALTER TABLE demo.hr.employees ALTER COLUMN ssn DROP MASK;
+ALTER TABLE demo.hr.employees ALTER COLUMN email DROP MASK;
+ALTER TABLE demo.hr.employees ALTER COLUMN phone DROP MASK;
+ALTER TABLE demo.hr.employees ALTER COLUMN address DROP MASK;
+
+-- Row Filter 제거
+ALTER TABLE demo.hr.employees DROP ROW FILTER;
+
+-- ABAC 정책 제거
+DROP POLICY mask_pii_ssn ON CATALOG demo;
+DROP POLICY mask_pii_email ON CATALOG demo;
+DROP POLICY mask_pii_phone ON CATALOG demo;
+DROP POLICY mask_pii_address ON CATALOG demo;
+```
+
+---
+
+## 주의사항
+
+| 제한 | 설명 |
+|---|---|
+| 뷰(View)에 적용 불가 | Row Filter / Column Mask 모두 뷰에서는 사용 불가 |
+| 컬럼당 1개의 Mask | 하나의 컬럼에 여러 마스크를 중첩할 수 없음 |
+| 테이블당 1개의 Row Filter | 사용자-테이블 조합당 1개만 동작 |
+| Time Travel 미지원 | 마스킹된 테이블에서 `VERSION AS OF` 사용 불가 |
+| ABAC 정책은 Runtime 16.4+ | 수동 방식은 12.2+에서 가능 |
+| UDF는 단순하게 | API 호출, DB 조회를 피하고 기본 CASE문 사용 권장 |
+
+---
+
+## 참고 문서
+
+- [Unity Catalog Tags](https://docs.databricks.com/aws/en/data-governance/unity-catalog/tags)
+- [Row Filters and Column Masks](https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/)
+- [ABAC 정책 개요](https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac/)
+- [ABAC 튜토리얼](https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac/tutorial)
+- [IS_ACCOUNT_GROUP_MEMBER 함수](https://docs.databricks.com/aws/en/sql/language-manual/functions/is_account_group_member.html)
