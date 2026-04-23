@@ -1,0 +1,8 @@
+---
+title: "2027년 7월 14일"
+description: "AI Dev Kit 배포 스크립트 Windows Git Bash 경로 변환 이슈 수정"
+---
+
+## 버그 수정
+
+- **AI Dev Kit 배포 — Windows Git Bash 경로 변환 오류 수정** — [Genie Code + AI Dev Kit 구성 가이드](/workshop/section-3-ai-tools-setup/genie-code-aidevkit)에서 안내하는 `deploy.sh`와 `uninstall.sh`가 Windows Git Bash(MINGW64) 환경에서 `/Workspace/...` 경로를 로컬 Windows 경로로 잘못 변환하던 문제가 수정되었습니다. 이전까지 Windows 사용자에게서 간헐적으로 발생하던 `databricks workspace import-dir` 실패가 해결되어, macOS·Linux와 동일한 한 줄 배포 경험을 Windows에서도 그대로 사용할 수 있습니다
