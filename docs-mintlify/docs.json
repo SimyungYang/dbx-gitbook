@@ -670,21 +670,28 @@
                   "blog/guides/genie-code/overview",
                   "blog/guides/genie-code/usage",
                   "blog/guides/genie-code/scenarios",
-                  "blog/guides/genie-code/prompt-cookbook",
-                  "blog/guides/genie-code/prompt-cookbook-advanced",
-                  "blog/guides/genie-code/prompt-cookbook-core",
-                  "blog/guides/genie-code/prompt-cookbook-details",
-                  "blog/guides/genie-code/prompt-cookbook-foundations",
-                  "blog/guides/genie-code/mcp",
-                  "blog/guides/genie-code/mcp-advanced",
-                  "blog/guides/genie-code/mcp-basics",
-                  "blog/guides/genie-code/mcp-capabilities",
-                  "blog/guides/genie-code/mcp-setup",
-                  "blog/guides/genie-code/settings-best-practices",
-                  "blog/guides/genie-code/settings-best-practices-advanced",
-                  "blog/guides/genie-code/settings-best-practices-basics",
-                  "blog/guides/genie-code/settings-best-practices-config",
-                  "blog/guides/genie-code/settings-best-practices-skills-agent",
+                  {
+                    "group": "프롬프트 쿡북",
+                    "pages": [
+                      "blog/guides/genie-code/prompt-cookbook",
+                      "blog/guides/genie-code/prompt-cookbook-data",
+                      "blog/guides/genie-code/prompt-cookbook-ml",
+                      "blog/guides/genie-code/prompt-cookbook-ops"
+                    ]
+                  },
+                  {
+                    "group": "MCP 연동",
+                    "pages": [
+                      "blog/guides/genie-code/mcp",
+                      "blog/guides/genie-code/mcp-usage"
+                    ]
+                  },
+                  {
+                    "group": "설정 & 모범사례",
+                    "pages": [
+                      "blog/guides/genie-code/settings-best-practices"
+                    ]
+                  },
                   "blog/guides/genie-code/ai-dev-kit-skills"
                 ]
               },
@@ -740,24 +747,26 @@
               "blog/guides/apps/authentication",
               "blog/guides/apps/service-principals",
               "blog/guides/apps/resources",
-              "blog/guides/apps/deployment",
-              "blog/guides/apps/deployment-advanced",
-              "blog/guides/apps/deployment-basics",
-              "blog/guides/apps/deployment-dev-and-deploy",
-              "blog/guides/apps/deployment-dev-deploy",
-              "blog/guides/apps/deployment-operations",
+              {
+                "group": "배포 워크플로우",
+                "pages": [
+                  "blog/guides/apps/deployment",
+                  "blog/guides/apps/deployment-dev-deploy",
+                  "blog/guides/apps/deployment-operations"
+                ]
+              },
               "blog/guides/apps/updating",
               "blog/guides/apps/networking",
-              "blog/guides/apps/advanced",
-              "blog/guides/apps/advanced-advanced",
-              "blog/guides/apps/advanced-appkit",
-              "blog/guides/apps/advanced-dabs",
-              "blog/guides/apps/advanced-details",
-              "blog/guides/apps/advanced-foundations",
-              "blog/guides/apps/advanced-frameworks",
-              "blog/guides/apps/advanced-infrastructure",
-              "blog/guides/apps/advanced-lakebase",
-              "blog/guides/apps/advanced-scaling",
+              {
+                "group": "고급 기능",
+                "pages": [
+                  "blog/guides/apps/advanced",
+                  "blog/guides/apps/advanced-scaling",
+                  "blog/guides/apps/advanced-lakebase",
+                  "blog/guides/apps/advanced-dabs",
+                  "blog/guides/apps/advanced-appkit"
+                ]
+              },
               {
                 "group": "예제",
                 "pages": [
