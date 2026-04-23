@@ -1,39 +1,55 @@
 ---
-title: "Databricks 종합 교육 자료"
+title: "Databricks 가이드 시작하기"
 ---
 
 
-Databricks Data Intelligence Platform의 핵심 기능과 아키텍처를 체계적으로 다루는 한국어 교육 자료입니다.
+**Databricks**는 데이터 엔지니어링, SQL 분석, 머신러닝, AI 에이전트를 **하나의 플랫폼**에서 수행할 수 있는 통합 데이터 인텔리전스 플랫폼입니다.
 
-## 커리큘럼
+이 가이드는 Databricks를 처음 접하는 분부터 프로덕션 운영을 준비하는 분까지, **한국어로 체계적으로 학습**할 수 있도록 구성되어 있습니다.
+
+---
+
+## 어디서부터 시작해야 하나요?
+
+| 상황 | 시작 페이지 |
+|------|-----------|
+| **Databricks가 처음이에요** | [Databricks란?](/training/02-databricks-overview/what-is-databricks) → [아키텍처](/training/02-databricks-overview/databricks-architecture) |
+| **빨리 써보고 싶어요** | [무료 체험 시작하기](/training/02-databricks-overview/getting-started-trial) |
+| **데이터 파이프라인을 만들어야 해요** | [데이터 엔지니어링](/training/05-data-engineering/overview) |
+| **SQL로 분석하고 싶어요** | [데이터 웨어하우징](/training/06-data-warehousing/overview) |
+| **AI/ML 기능이 궁금해요** | [머신러닝](/training/09-machine-learning/overview) |
+| **AI 에이전트를 만들고 싶어요** | [AI 에이전트](/training/10-agent-development/overview) |
+
+---
+
+## 역할별 추천 학습 경로
+
+| 역할 | 추천 순서 |
+|------|----------|
+| **데이터 엔지니어** | Databricks 개요 → 레이크하우스 → 컴퓨트 → **데이터 엔지니어링** → Unity Catalog |
+| **데이터 분석가** | Databricks 개요 → **데이터 웨어하우징** → **AI/BI** → Unity Catalog |
+| **데이터 과학자** | Databricks 개요 → 컴퓨트 → **머신러닝** → AI 에이전트 |
+| **플랫폼 관리자** | Databricks 개요 → 컴퓨트 → **Unity Catalog** → **보안과 거버넌스** |
+
+---
+
+## 이 탭의 구성
 
 | 섹션 | 내용 |
 |------|------|
-| [00. 선행 지식](00-prerequisites/README) | RDB 기초, Star/Snowflake 스키마, 빅데이터 역사, 생태계, 실시간 처리 |
-| [01. 데이터 기초](01-data-fundamentals/README) | 데이터 엔지니어링, 웨어하우스 vs 레이크, ETL/ELT, 배치 vs 스트리밍 |
-| [02. Databricks 개요](02-databricks-overview/README) | Databricks란, 아키텍처, Workspace, Notebook |
-| [03. 레이크하우스](03-lakehouse-architecture/README) | Delta Lake, Medallion 아키텍처, Iceberg 호환 |
-| [04. 컴퓨트](04-compute-and-workspace/README) | Spark 기초, 클러스터, SQL Warehouse, Serverless |
-| [05. 데이터 엔지니어링](05-data-engineering/README) | Auto Loader, SDP, Lakeflow Connect, Lakeflow Jobs |
-| [06. 데이터 웨어하우징](06-data-warehousing/README) | Databricks SQL, AI 함수, 쿼리 최적화 |
-| [07. Unity Catalog](07-unity-catalog/README) | 거버넌스, 권한, 리니지, Delta Sharing |
-| [08. AI/BI](08-ai-bi/README) | 대시보드, Genie, 알림 |
-| [09. 머신러닝](09-machine-learning/README) | MLflow, Model Serving, Feature Engineering |
-| [10. AI 에이전트](10-agent-development/README) | Vector Search, RAG, Agent Evaluation, Agent Bricks |
-| [11. Lakebase](11-lakebase/README) | PostgreSQL OLTP, Data Sync |
-| [12. 보안](12-security-and-governance/README) | 인증, 네트워크, 시스템 테이블 |
-| [13. 부록](13-appendix/README) | CLI, Asset Bundles, 용어 사전, 학습 로드맵 |
+| **Databricks 플랫폼** | Databricks란? 아키텍처, Workspace, Notebook |
+| **레이크하우스 아키텍처** | Delta Lake, Medallion, Iceberg |
+| **컴퓨트** | Spark, 클러스터, SQL Warehouse, Serverless |
+| **데이터 엔지니어링** | Auto Loader, SDP, Lakeflow Connect/Jobs |
+| **데이터 웨어하우징** | SQL 기능, 테이블/뷰, AI 함수 |
+| **Lakebase** | OLTP 데이터베이스, Apps 연동 |
+| **Unity Catalog** | 거버넌스, 접근 제어, 리니지, 공유 |
+| **AI/BI** | 대시보드, Genie, Metric Views |
+| **머신러닝** | MLflow, Model Serving, Feature Engineering |
+| **AI 에이전트** | Vector Search, RAG, Agent Bricks |
+| **보안과 거버넌스** | SSO, 네트워크, 감사, System Tables |
 
-## 역할별 추천 경로
-
-- **데이터 엔지니어**: 00 → 01 → 02 → 03 → 04 → **05(핵심)**→ 07
-- **데이터 분석가**: 00(RDB) → 01 → 02 → **06(핵심)**→ **08(핵심)**→ 07
-- **데이터 과학자**: 01 → 02 → 04 → **09(핵심)**→ 10
-- **플랫폼 관리자**: 02 → 04 → **07(핵심)**→ **12(핵심)**
-
-## 참고 문서
-
-- [Databricks AWS 공식 문서](https://docs.databricks.com/aws/en/)
-- [Azure Databricks 공식 문서](https://learn.microsoft.com/en-us/azure/databricks/)
-- [Databricks 릴리즈 노트](https://docs.databricks.com/aws/en/release-notes/)
-- [Databricks 공식 블로그](https://www.databricks.com/blog)
+> **다른 탭도 확인해보세요**
+- **실전 가이드** — 운영 팁, 프롬프트 전략, 배포 패턴
+- **AI/ML 개념** — LLM, RAG, Agent 아키텍처 배경지식
+- **워크샵** — Genie Code 핸즈온, Smart TV/IoT 실습

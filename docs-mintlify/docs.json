@@ -19,9 +19,14 @@
         "tab": "기능 가이드",
         "groups": [
           {
+            "group": "시작하기",
+            "pages": [
+              "training/overview"
+            ]
+          },
+          {
             "group": "Databricks 플랫폼",
             "pages": [
-              "training/02-databricks-overview/overview",
               "training/02-databricks-overview/what-is-databricks",
               "training/02-databricks-overview/databricks-architecture",
               "training/02-databricks-overview/getting-started-trial",
