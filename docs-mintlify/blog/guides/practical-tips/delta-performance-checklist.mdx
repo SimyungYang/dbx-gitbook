@@ -2,12 +2,334 @@
 title: "Delta Lake 성능 튜닝 체크리스트"
 ---
 
+<Info>
+Delta Lake의 기본 개념과 트랜잭션 로그 구조는 [GenAI 도구 가이드](/blog/guides/genai-tools/overview)를 참고하세요.
+Unity Catalog에서의 테이블 관리와 권한 설정은 [플랫폼 설정 가이드](/blog/guides/platform-setup/authentication/overview)를 참고하세요.
+</Info>
 
-<CardGroup cols={1}>
-  <Card title="Delta Lake 성능 튜닝 체크리스트 — 기초" href="delta-performance-checklist-basics">
-    기본 개념과 핵심 기능
-  </Card>
-  <Card title="Delta Lake 성능 튜닝 체크리스트 — 심화" href="delta-performance-checklist-advanced">
-    고급 패턴과 실전 활용
-  </Card>
-</CardGroup>
+## Delta Lake란?
+
+**Delta Lake**는 데이터 레이크 위에 ACID 트랜잭션, 스키마 관리, 타임 트래블 등을 제공하는 오픈소스 스토리지 레이어입니다.
+
+### 왜 성능 튜닝이 필요한가?
+
+Delta Lake는 기본 설정만으로도 잘 동작하지만, 데이터가 수십 GB~TB 규모로 커지면 **스몰 파일 누적**, **비용이 높은인 파일 레이아웃**, **불필요한 이전 버전 파일** 등이 쿼리 성능을 크게 떨어뜨립니다.
+특히 실시간 스트리밍이나 잦은 소량 INSERT가 반복되는 테이블에서는, 튜닝 없이 방치하면 쿼리 시간이 수 배~수십 배 느려질 수 있습니다.
+이 체크리스트는 Delta Lake 테이블이 느려졌을 때 체크해야 할 항목을 **우선순위 순서**로 정리합니다.
+
+---
+
+## 권장 실행 순서
+
+처음 성능 튜닝을 시작한다면 아래 순서를 따르세요:
+
+| 순서 | 작업 | 설명 |
+|------|------|------|
+| 1 | **Liquid Clustering 설정** | 자주 필터링하는 컬럼을 클러스터링 키로 지정 |
+| 2 | **OPTIMIZE 실행** | 기존 데이터에 클러스터링을 소급 적용하고 파일 병합 |
+| 3 | **VACUUM 스케줄 등록** | 불필요한 이전 버전 파일 삭제로 스토리지 절약 |
+| 4 | **모니터링 체크** | `DESCRIBE DETAIL`로 파일 수/크기를 주기적 확인 |
+
+---
+
+## 1. 클러스터링 전략 선택
+
+### 의사결정 가이드
+
+| 기준 | Liquid Clustering | Z-ORDER | Hive 파티셔닝 |
+|------|-------------------|---------|--------------|
+| DBR 버전 | 13.3+ | 모든 버전 | 모든 버전 |
+| 클러스터링 키 변경 | `ALTER TABLE`로 즉시 변경 | OPTIMIZE 재실행 필요 | 테이블 재생성 필요 |
+| 다중 키 성능 | 우수 (모든 키 동등) | 첫 번째 키에 편향 | 키 순서에 의존 |
+| 스몰 파일 자동 정리 | 자동 (OPTIMIZE 시) | 수동 OPTIMIZE 필요 | 수동 관리 |
+| 추천 시나리오 | **신규 테이블 기본 선택** | 레거시 호환 | 날짜 기반 대량 삭제 |
+
+### Liquid Clustering 설정
+
+아래 SQL은 새 테이블을 만들면서 `region`과 `order_date`를 클러스터링 키로 지정합니다. 이 두 컬럼으로 필터링하는 쿼리가 자동으로 데이터 스킵의 혜택을 받습니다.
+
+```sql
+-- 신규 테이블: 생성 시 CLUSTER BY로 클러스터링 키 지정
+CREATE TABLE my_catalog.sales.orders (
+  order_id     BIGINT,
+  customer_id  BIGINT,
+  order_date   DATE,
+  region       STRING,
+  amount       DECIMAL(12,2)
+)
+CLUSTER BY (region, order_date);
+```
+
+이미 존재하는 테이블에 Liquid Clustering을 적용하려면 `ALTER TABLE`을 사용합니다. 키 변경이 즉시 반영되지만, 기존 데이터에 적용하려면 `OPTIMIZE`를 한 번 실행해야 합니다.
+
+```sql
+-- 기존 테이블에 Liquid Clustering 전환
+ALTER TABLE my_catalog.sales.orders
+CLUSTER BY (region, order_date);
+
+-- 클러스터링 적용 (기존 데이터에 소급)
+OPTIMIZE my_catalog.sales.orders;
+```
+
+### Z-ORDER (레거시)
+
+Liquid Clustering을 지원하지 않는 구버전 환경에서만 사용합니다. DBR 13.3 이상이라면 Liquid Clustering을 권장합니다.
+
+```sql
+-- Liquid Clustering 지원 안 되는 환경에서만 사용
+OPTIMIZE my_catalog.sales.orders
+ZORDER BY (region, order_date);
+```
+
+<Warning>
+Liquid Clustering과 Z-ORDER는 **동시에 사용할 수 없습니다**.
+Liquid Clustering이 설정된 테이블에 ZORDER를 실행하면 오류가 발생합니다.
+</Warning>
+
+---
+
+## 2. OPTIMIZE 전략
+
+`OPTIMIZE`는 여러 개의 작은 파일을 더 큰 파일로 병합(compaction)하고, 클러스터링 키에 따라 데이터를 재배치합니다. 스몰 파일이 줄어들면 쿼리 시 읽어야 할 파일 수가 감소하여 성능이 크게 향상됩니다.
+
+### 실행 타이밍
+
+| 워크로드 패턴 | OPTIMIZE 빈도 | 이유 |
+|--------------|--------------|------|
+| 시간당 수십~수백 건 append | 4~6시간마다 | 스몰 파일 누적 방지 |
+| 배치 ETL (1일 1회) | ETL 직후 1회 | 바로 분석 쿼리에 최적화 |
+| 스트리밍 (분 단위 마이크로배치) | 1~2시간마다 | 마이크로배치 파일 병합 |
+| 읽기 전용 (append 없음) | 불필요 | 이미 최적화된 상태 |
+
+### 예약 실행
+
+전체 테이블을 OPTIMIZE하거나, `WHERE` 조건으로 최근 데이터만 부분 최적화할 수 있습니다. 부분 OPTIMIZE는 대형 테이블에서 실행 시간을 크게 줄여줍니다.
+
+```sql
+-- 전체 테이블 OPTIMIZE (Lakeflow Job 또는 Scheduled Query에서 실행)
+OPTIMIZE my_catalog.sales.orders;
+
+-- 부분 OPTIMIZE — 최근 7일 데이터만 최적화 (대형 테이블에 권장)
+OPTIMIZE my_catalog.sales.orders
+WHERE order_date >= current_date() - INTERVAL 7 DAYS;
+```
+
+### OPTIMIZE 결과 확인
+
+이 쿼리는 테이블의 작업 히스토리를 보여줍니다. `numFilesRemoved`(제거된 파일 수)가 크다면 스몰 파일이 많이 병합되었다는 의미입니다.
+
+```sql
+DESCRIBE HISTORY my_catalog.sales.orders;
+
+-- numFilesAdded, numFilesRemoved를 확인
+-- numFilesRemoved가 크면 스몰 파일이 많았다는 의미
+```
+
+---
+
+## 3. VACUUM 모범 사례
+
+### VACUUM이 왜 필요한가?
+
+Delta Lake는 UPDATE, DELETE, OPTIMIZE를 실행할 때마다 새 파일을 생성하고, 이전 파일은 Time Travel(과거 버전 조회)을 위해 그대로 남겨둡니다. 이 "더 이상 현재 버전에서 사용하지 않는 파일"이 계속 쌓이면 **스토리지 비용**이 증가하고, 메타데이터 목록이 커져 **파일 리스팅 속도**도 느려집니다. `VACUUM`은 보존 기간이 지난 이전 파일을 물리적으로 삭제합니다.
+
+### 기본 실행
+
+아래 SQL은 기본 보존 기간(7일)보다 오래된 불필요 파일을 삭제합니다.
+
+```sql
+-- 기본 보존 기간 (7일) 적용
+VACUUM my_catalog.sales.orders;
+
+-- 보존 기간을 명시적으로 지정 (7일 = 168시간)
+VACUUM my_catalog.sales.orders RETAIN 168 HOURS;  -- 7일
+```
+
+### 안전한 VACUUM 설정
+
+테이블 속성으로 보존 기간을 설정해두면, VACUUM 실행 시 별도로 기간을 지정하지 않아도 됩니다.
+
+```sql
+-- 테이블 속성으로 보존 기간 설정 (권장)
+ALTER TABLE my_catalog.sales.orders
+SET TBLPROPERTIES (
+  'delta.deletedFileRetentionDuration' = 'interval 7 days',   -- 삭제된 파일 보존 기간
+  'delta.logRetentionDuration' = 'interval 30 days'           -- 트랜잭션 로그 보존 기간
+);
+```
+
+### VACUUM 주의사항
+
+| 항목 | 권장 | 이유 |
+|------|------|------|
+| 보존 기간 | >= 7일 | Time Travel, 롤백 여유 |
+| 실행 빈도 | 1일 1회 | 스토리지 비용 절감 |
+| 실행 시간대 | 오프피크 | I/O 부하 분산 |
+| `spark.databricks.delta.retentionDurationCheck.enabled` | `true` (기본) | 실수로 0시간 VACUUM 방지 |
+
+<Warning>
+`VACUUM RETAIN 0 HOURS`는 **Time Travel을 완전히 파괴**합니다.
+반드시 `retentionDurationCheck`를 비활성화해야 실행되며, 프로덕션에서는 금지합니다.
+</Warning>
+
+---
+
+## 4. Photon 활성화 체크리스트
+
+| 확인 항목 | 방법 | 기대 효과 |
+|----------|------|----------|
+| 클러스터 Runtime | `Photon` 체크박스 또는 `x.x.x-photon-scala2.12` 선택 | 자동 활성화 |
+| SQL Warehouse | Serverless 또는 Pro 선택 | 기본 Photon 적용 |
+| 워크로드 유형 | Scan, Filter, Agg, Join 위주 | 2~8x 속도 향상 |
+| 비호환 UDF | Python UDF → SQL 내장 함수로 변환 | Photon 최적화 경로 유지 |
+| 파일 포맷 | Parquet (Delta 기본) | Photon 최적 포맷 |
+
+### Photon 효과 확인
+
+```sql
+-- Query Profile에서 Photon 사용 여부 확인
+-- SQL Warehouse > Query History > 쿼리 선택 > Query Profile
+-- 각 연산자에 ⚡ 아이콘이 표시되면 Photon 적용
+
+-- Photon이 적용되지 않는 대표 패턴:
+-- 1. Python UDF 사용 시
+-- 2. 비표준 데이터 타입 (MapType 일부 연산)
+-- 3. 일부 복잡한 정규식 처리
+```
+
+---
+
+## 5. 스몰 파일 문제 진단 및 해결
+
+### 스몰 파일이 왜 문제인가?
+
+Delta Lake는 데이터를 Parquet 파일로 저장합니다. 파일 하나를 읽을 때마다 **메타데이터 파싱**, **파일 열기/닫기**, **네트워크 요청** 등의 오버헤드가 발생합니다.
+예를 들어 1GB 데이터가 10개의 100MB 파일에 있으면 오버헤드가 10번이지만, 1000개의 1MB 파일에 있으면 오버헤드가 1000번 발생합니다. 데이터 양은 같지만 파일 수가 많으면 **I/O 비용이 수십 배** 증가합니다.
+
+### 진단
+
+이 쿼리는 테이블의 전체 파일 수(`numFiles`)와 총 크기(`sizeInBytes`)를 보여줍니다. 평균 파일 크기 = `sizeInBytes / numFiles`로 계산하세요.
+
+```sql
+-- 파일 수와 평균 크기 확인
+DESCRIBE DETAIL my_catalog.sales.orders;
+-- numFiles, sizeInBytes 확인
+-- 평균 파일 크기 = sizeInBytes / numFiles
+```
+
+| 평균 파일 크기 | 상태 | 조치 |
+|--------------|------|------|
+| 64MB ~ 1GB | 정상 | 유지 |
+| 10MB ~ 64MB | 경고 | OPTIMIZE 실행 |
+| < 10MB | 심각 | 즉시 OPTIMIZE, 원인 파악 |
+| > 1GB | 과대 | 클러스터링 키 추가 검토 |
+
+### 원인별 해결
+
+```sql
+-- 원인 1: 잦은 소량 INSERT
+-- 해결: 마이크로배치 크기 증가 + 주기적 OPTIMIZE
+OPTIMIZE my_catalog.sales.orders;
+
+-- 원인 2: 과도한 파티셔닝 (예: 날짜+지역+상품 3중 파티션)
+-- 해결: Liquid Clustering으로 전환하면 파티션 없이 동일 효과
+ALTER TABLE my_catalog.sales.orders
+CLUSTER BY (region, order_date);
+
+-- 원인 3: 스트리밍 writeStream의 기본 출력 (1분 마이크로배치 → 매분 1개 파일 생성)
+-- 해결: trigger 간격 조정
+-- (PySpark 예시)
+# df.writeStream \
+#   .trigger(processingTime="5 minutes") \  # 1분 → 5분으로 늘려 파일 생성 빈도 감소
+#   .option("checkpointLocation", "...") \
+#   .toTable("my_catalog.sales.orders")
+```
+
+### 자동 컴팩션 활성화
+
+이 설정을 켜면 쓰기 작업 시 자동으로 파일을 최적 크기로 병합합니다. 수동 OPTIMIZE를 자주 실행하기 어려운 환경에 유용합니다.
+
+```sql
+ALTER TABLE my_catalog.sales.orders
+SET TBLPROPERTIES (
+  'delta.autoOptimize.optimizeWrite' = 'true',   -- 쓰기 시 파일 크기 최적화
+  'delta.autoOptimize.autoCompact' = 'true'       -- 쓰기 후 자동 파일 병합
+);
+```
+
+---
+
+## 6. 쿼리 최적화 팁
+
+### Predicate Pushdown 확인
+
+클러스터링 키나 파티션 키로 필터링하면 Delta Lake가 불필요한 파일을 건너뛰어 읽기 양을 크게 줄일 수 있습니다(Data Skipping). 단, 필터 컬럼에 함수를 적용하면 이 최적화가 무효화됩니다.
+
+```sql
+-- 좋은 예: 클러스터링/파티션 키로 직접 필터 → Data Skipping 적용
+SELECT * FROM my_catalog.sales.orders
+WHERE region = 'APAC' AND order_date >= '2026-01-01';
+
+-- 나쁜 예: 함수 적용 시 pushdown 불가 → 전체 파일 스캔
+SELECT * FROM my_catalog.sales.orders
+WHERE YEAR(order_date) = 2026;  -- pushdown 안 됨!
+
+-- 수정: 범위 필터로 변경하면 Data Skipping 다시 적용
+SELECT * FROM my_catalog.sales.orders
+WHERE order_date >= '2026-01-01' AND order_date < '2027-01-01';
+```
+
+### Column Pruning
+
+필요한 컬럼만 선택하면 읽는 데이터 양이 줄어듭니다. Parquet는 컬럼별로 데이터를 저장하므로 `SELECT *` 대신 필요 컬럼만 지정하면 I/O가 크게 감소합니다.
+
+```sql
+-- 나쁜 예: SELECT * — 모든 컬럼을 읽음
+SELECT * FROM my_catalog.sales.orders WHERE region = 'APAC';
+
+-- 좋은 예: 필요한 컬럼만 — 읽기 I/O 절감
+SELECT order_id, customer_id, amount
+FROM my_catalog.sales.orders
+WHERE region = 'APAC';
+```
+
+### JOIN 최적화
+
+작은 테이블(수만 건 이하)을 조인할 때 `BROADCAST` 힌트를 사용하면, Spark가 작은 테이블을 전체 노드에 복사하여 셔플 없이 조인합니다.
+
+```sql
+-- 작은 테이블(customers)을 BROADCAST → 셔플 제거로 대폭 속도 향상
+SELECT /*+ BROADCAST(c) */
+  o.order_id, o.amount, c.customer_name
+FROM my_catalog.sales.orders o
+JOIN my_catalog.sales.customers c ON o.customer_id = c.customer_id
+WHERE o.order_date >= '2026-01-01';
+```
+
+### 캐시 활용
+
+대화형 분석에서 동일 데이터를 반복 조회할 때 캐시를 활용하면 두 번째 쿼리부터 메모리에서 즉시 읽습니다.
+
+```sql
+-- 반복 사용 테이블 캐시 (대화형 분석 시)
+CACHE SELECT order_id, customer_id, amount, region
+FROM my_catalog.sales.orders
+WHERE order_date >= current_date() - INTERVAL 30 DAYS;
+```
+
+---
+
+## 종합 체크리스트
+
+| # | 항목 | SQL/설정 | 확인 |
+|---|------|---------|------|
+| 1 | Liquid Clustering 설정 | `ALTER TABLE ... CLUSTER BY (...)` | [ ] |
+| 2 | OPTIMIZE 스케줄 등록 | Lakeflow Job 또는 Scheduled Query | [ ] |
+| 3 | VACUUM 스케줄 등록 | `VACUUM ... RETAIN 168 HOURS` | [ ] |
+| 4 | 보존 기간 테이블 속성 설정 | `deletedFileRetentionDuration` | [ ] |
+| 5 | Photon Runtime 사용 | 클러스터 또는 SQL Warehouse 확인 | [ ] |
+| 6 | 스몰 파일 평균 크기 확인 | `DESCRIBE DETAIL` → 64MB~1GB | [ ] |
+| 7 | autoOptimize 활성화 | `optimizeWrite` + `autoCompact` | [ ] |
+| 8 | 쿼리에 SELECT * 없음 | 필요 컬럼만 지정 | [ ] |
+| 9 | 필터 조건에 함수 미사용 | 범위 조건으로 변환 | [ ] |
+| 10 | BROADCAST 힌트 적용 | 작은 차원 테이블 조인 시 | [ ] |
