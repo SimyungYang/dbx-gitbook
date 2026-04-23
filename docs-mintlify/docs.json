@@ -683,13 +683,17 @@
                     "group": "MCP 연동",
                     "pages": [
                       "blog/guides/genie-code/mcp",
+                      "blog/guides/genie-code/mcp-architecture",
                       "blog/guides/genie-code/mcp-usage"
                     ]
                   },
                   {
                     "group": "설정 & 모범사례",
                     "pages": [
-                      "blog/guides/genie-code/settings-best-practices"
+                      "blog/guides/genie-code/settings-best-practices",
+                      "blog/guides/genie-code/settings-instructions",
+                      "blog/guides/genie-code/settings-skills",
+                      "blog/guides/genie-code/settings-agent-tips"
                     ]
                   },
                   "blog/guides/genie-code/ai-dev-kit-skills"
