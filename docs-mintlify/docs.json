@@ -724,12 +724,6 @@
         "tab": "실전 가이드",
         "groups": [
           {
-            "group": "가이드 목록",
-            "pages": [
-              "blog/overview"
-            ]
-          },
-          {
             "group": "Platform Setup",
             "pages": [
               {
