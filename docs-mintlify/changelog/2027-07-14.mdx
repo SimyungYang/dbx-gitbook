@@ -1,0 +1,13 @@
+---
+title: "2027년 7월 14일"
+description: "AI Dev Kit README 영어·한국어 이중화, Windows Git Bash 경로 변환 문제 해결, 제거(uninstall) 안내 정리"
+---
+
+## 업데이트
+
+- **AI Dev Kit README 영어·한국어 이중 제공** — [Genie Code + AI Dev Kit 구성 가이드](/workshop/section-3-ai-tools-setup/genie-code-aidevkit)에서 참조하는 AI Dev Kit 저장소 README가 영어(기본)와 한국어(`docs/README_ko.md`) 두 버전으로 나뉘어 상단에서 서로 전환할 수 있게 되었습니다. 해외 구성원과 자료를 공유하거나 이중 언어 환경에서 온보딩을 진행할 때 별도 번역 없이 바로 활용할 수 있습니다
+- **README 내 제거(uninstall) 안내 & 프로젝트 구조 설명 정리** — 지난주 추가된 `uninstall.sh` 사용법과 저장소 프로젝트 구조 설명이 README 상단에서 바로 보이도록 정리되었습니다. 설치·배포 이후 정리 작업까지 단일 문서에서 순서대로 따라갈 수 있습니다
+
+## 버그 수정
+
+- **Windows Git Bash(MINGW64) 경로 변환 문제 해결** — Git Bash 환경에서 `/Workspace/...` 경로가 `C:/Program Files/Git/Workspace/...`로 자동 변환되어 `databricks workspace import-dir`가 실패하던 문제가 `deploy.sh`와 `uninstall.sh`에서 해결되었습니다. Windows에서 AI Dev Kit MCP 앱을 배포·제거할 때 별도 환경 변수 설정 없이 바로 동작하며, macOS·Linux 사용자에게는 영향이 없습니다
