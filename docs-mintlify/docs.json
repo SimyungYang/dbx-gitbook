@@ -538,35 +538,19 @@
           {
             "group": "Genie Space 운영",
             "pages": [
-              "training/08-ai-bi/overview",
-              "training/08-ai-bi/aibi-overview",
-              "training/08-ai-bi/aibi-overview-concepts",
-              "training/08-ai-bi/aibi-overview-details",
-              "training/08-ai-bi/aibi-architecture",
               {
                 "group": "AI/BI 대시보드",
-                "pages": [
-                  "training/08-ai-bi/lakeview-dashboards",
-                  "training/08-ai-bi/lakeview-dashboards-basics",
-                  "training/08-ai-bi/lakeview-dashboards-advanced"
-                ]
+                "pages": []
               },
-              "training/08-ai-bi/genie",
-              "training/08-ai-bi/alerts-and-scheduling",
               {
                 "group": "Metric Views",
                 "pages": [
                   {
                     "group": "Metric Views — 비즈니스 시맨틱 레이어",
-                    "pages": [
-                      "training/08-ai-bi/metric-views",
-                      "training/08-ai-bi/metric-views-basics",
-                      "training/08-ai-bi/metric-views-advanced"
-                    ]
+                    "pages": []
                   }
                 ]
-              },
-              "training/08-ai-bi/hybrid-bi-strategy"
+              }
             ]
           },
           {
@@ -1165,30 +1149,22 @@
           {
             "group": "한국어 RAG & Vector Search",
             "pages": [
-              {
-                "group": "한국어 RAG 최적화",
-                "pages": [
-                  "blog/guides/rag/korean-nlp",
-                  "blog/guides/rag/korean-nlp-basics",
-                  "blog/guides/rag/korean-nlp-advanced"
-                ]
-              },
+              "한국어 RAG 최적화",
+              "blog/guides/rag/korean-nlp",
+              "blog/guides/rag/korean-nlp-basics",
+              "blog/guides/rag/korean-nlp-advanced",
               "blog/guides/rag/korean-nlp-fundamentals",
               "blog/guides/rag/korean-nlp-morphology",
               "blog/guides/rag/korean-nlp-embedding",
               "blog/guides/rag/chunking-strategies",
-              {
-                "group": "고급 검색 전략",
-                "pages": [
-                  "blog/guides/rag/advanced-retrieval/overview",
-                  "blog/guides/rag/advanced-retrieval/hybrid-search",
-                  "blog/guides/rag/advanced-retrieval/preprocessing",
-                  "blog/guides/rag/advanced-retrieval/reranking",
-                  "blog/guides/rag/advanced-retrieval/postprocessing",
-                  "blog/guides/rag/advanced-retrieval/chunking-advanced",
-                  "blog/guides/rag/advanced-retrieval/implementation"
-                ]
-              }
+              "고급 검색 전략",
+              "blog/guides/rag/advanced-retrieval/overview",
+              "blog/guides/rag/advanced-retrieval/hybrid-search",
+              "blog/guides/rag/advanced-retrieval/preprocessing",
+              "blog/guides/rag/advanced-retrieval/reranking",
+              "blog/guides/rag/advanced-retrieval/postprocessing",
+              "blog/guides/rag/advanced-retrieval/chunking-advanced",
+              "blog/guides/rag/advanced-retrieval/implementation"
             ]
           },
           {
@@ -1199,8 +1175,7 @@
                 "pages": [
                   "blog/guides/practical-tips/lakebase-crud-patterns"
                 ]
-              },
-              "blog/guides/apps/obo-user-tracking"
+              }
             ]
           },
           {
@@ -1213,8 +1188,7 @@
                   "blog/guides/practical-tips/agent-eval-pipeline-basics",
                   "blog/guides/practical-tips/agent-eval-pipeline-advanced"
                 ]
-              },
-              "training/07-unity-catalog/pii-column-tracking"
+              }
             ]
           },
           {
@@ -1505,19 +1479,10 @@
                 ]
               },
               "blog/guides/rag/data-preparation",
-              "blog/guides/rag/chunking-strategies",
               "blog/guides/rag/vector-search",
               {
                 "group": "고급 검색 전략",
-                "pages": [
-                  "blog/guides/rag/advanced-retrieval/overview",
-                  "blog/guides/rag/advanced-retrieval/hybrid-search",
-                  "blog/guides/rag/advanced-retrieval/preprocessing",
-                  "blog/guides/rag/advanced-retrieval/reranking",
-                  "blog/guides/rag/advanced-retrieval/postprocessing",
-                  "blog/guides/rag/advanced-retrieval/chunking-advanced",
-                  "blog/guides/rag/advanced-retrieval/implementation"
-                ]
+                "pages": []
               },
               "blog/guides/rag/chain-building",
               "blog/guides/rag/evaluation",
