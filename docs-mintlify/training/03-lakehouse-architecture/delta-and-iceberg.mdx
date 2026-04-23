@@ -316,7 +316,7 @@ iceberg.rest-catalog.oauth2.token=<access-token>
 |------|----------|-----------|
 | **Databricks 중심** | Databricks(Delta) + UniForm → 외부 엔진 읽기 전용 | Databricks가 주 플랫폼이고, 일부 팀이 Snowflake/Trino 사용 |
 | **Snowflake 공존** | Databricks: ETL/ML, Snowflake: BI/분석 → IRC로 데이터 공유 | 양쪽 투자가 모두 큰 경우 |
-| **Open Lakehouse** | Delta Lake(오픈소스) + 멀티 엔진 → IRC로 통합 카탈로그 | 벤더 종속을 최소화하려는 경우 |
+| **Open Lakehouse** | Delta Lake(오픈소스) + 멀티 엔진 → IRC로 통합 카탈로그 | 플랫폼 의존을 최소화하려는 경우 |
 | **마이그레이션 중** | 기존 Iceberg → Databricks로 점진적 전환 | Foreign Iceberg Tables로 기존 데이터 유지하며 전환 |
 
 ### 비용 최적화 관점

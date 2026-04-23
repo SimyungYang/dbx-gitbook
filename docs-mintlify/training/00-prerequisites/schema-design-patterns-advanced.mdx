@@ -1,0 +1,200 @@
+---
+title: "데이터 모델링 패턴 — 심화"
+---
+
+> 이 문서는 **[선행 지식](/training/00-prerequisites/overview)** 섹션의 일부입니다.
+
+## Slowly Changing Dimension (SCD) — 디멘전 변경 처리
+
+현업에서 "고객이 서울에서 부산으로 이사했을 때, 과거 주문은 서울로 봐야 하나, 부산으로 봐야 하나?"라는 질문이 반드시 나옵니다. 이것을 **Slowly Changing Dimension(SCD)** 이라고 합니다.
+
+| SCD 유형 | 동작 방식 | 언제 쓰나요 |
+|----------|----------|------------|
+| **Type 1** | 새 값으로 **덮어쓰기**(이력 없음) | 오타 수정, 이력이 중요하지 않을 때 |
+| **Type 2** | 새 행 추가, 기존 행에 종료일 기록 | 고객 등급 변경, 조직 개편 등 이력 추적이 필수일 때 |
+| **Type 3** | 이전 값과 현재 값을 별도 컬럼으로 저장 | 직전 값만 알면 될 때 (거의 안 씀) |
+
+### Type 2가 정말 필요한 경우 vs 오버엔지니어링
+
+솔직히 말씀드리면, **Type 2를 구현해야 하는 경우는 생각보다 적습니다.** 많은 팀이 "혹시 필요할까 봐" Type 2를 모든 디멘전에 적용하는데, 이는 명백한 오버엔지니어링입니다.
+
+**Type 2가 진짜 필요한 경우:**
+- 고객 등급(VIP → Gold)이 바뀌었을 때, "VIP일 때의 매출"과 "Gold일 때의 매출"을 구분해서 봐야 하는 경우
+- 영업 조직이 개편되었을 때, "개편 전 A팀 소속일 때 실적"을 따로 봐야 하는 경우
+- 규정/감사 요건으로 "당시 시점의 정보"를 보존해야 하는 경우
+
+**Type 1로 충분한 경우 (=Type 2가 오버엔지니어링):**
+- 고객 전화번호, 이메일 변경 — 이전 전화번호로 분석할 일이 없습니다
+- 상품명 오타 수정
+- 주소 변경인데 지역별 매출 분석이 불필요한 경우
+
+```sql
+-- Type 2 SCD 예시: 고객 등급 변경 이력
+-- customer_key는 Surrogate Key (자동 생성), customer_id는 Natural Key (비즈니스 키)
+| customer_key | customer_id | name   | tier   | effective_date | end_date   | is_current |
+|-------------|-------------|--------|--------|----------------|------------|------------|
+| 1001        | C1          | 김철수 | Silver | 2024-01-01     | 2025-02-28 | false      |
+| 1002        | C1          | 김철수 | Gold   | 2025-03-01     | 9999-12-31 | true       |
+```
+
+> ⚠️ Type 2를 적용하면 디멘전 테이블의 행 수가 빠르게 증가하고, JOIN 조건에 날짜 범위가 추가되어 쿼리 복잡도가 올라갑니다. "이 디멘전에 Type 2가 정말 필요한가?"를 반드시 비즈니스 담당자와 확인하세요.
+
+---
+
+## Snowflake 스키마 (Snowflake Schema)
+
+### 개념
+
+> 💡 **Snowflake 스키마(눈꽃 모양 스키마)** 는 Star 스키마의 디멘전 테이블을 더 세분화(정규화)하여, 디멘전이 **하위 디멘전을 참조** 하는 구조입니다.
+
+### 언제 Snowflake를 쓰나요? (거의 안 씁니다)
+
+솔직히 말씀드리면, **현대 데이터 플랫폼에서 Snowflake 스키마를 선택하는 경우는 매우 드뭅니다.** Star 스키마의 디멘전 중복으로 인한 저장 비용 증가가 문제가 되던 시절(스토리지가 TB당 수천 달러이던 2000년대)에는 의미가 있었습니다. 하지만 지금은 S3 스토리지가 TB당 월 23달러입니다.
+
+Snowflake 스키마를 고려해야 하는 유일한 상황:
+- 디멘전 테이블 하나가 **수천만 건 이상** 이고, 그 안에 반복되는 서브 엔티티(예: 상품 → 카테고리 → 부서)의 텍스트 데이터가 매우 크면서, 그 서브 엔티티를 독립적으로 관리해야 할 때
+
+### Star vs Snowflake 비교
+
+| 비교 항목 | Star 스키마 | Snowflake 스키마 |
+|-----------|-----------|-----------------|
+| 디멘전 구조 | 하나의 넓은 테이블 | 여러 정규화된 테이블 |
+| JOIN 수 | 적음 (팩트 ↔ 디멘전만) | 많음 (디멘전 ↔ 하위 디멘전도) |
+| 쿼리 성능 | 빠름 | 상대적으로 느림 (JOIN 증가) |
+| 쿼리 작성 난이도 | 쉬움 | 복잡 (BI 분석가가 싫어합니다) |
+| 저장 공간 | 디멘전 중복 있음 | 중복 최소화 |
+| **실무 권장** | ✅ 거의 모든 경우 | 매우 특수한 경우에만 |
+
+---
+
+## One Big Table (OBT) 패턴 — 레이크하우스 시대의 비정규화
+
+### 왜 OBT가 떠오르고 있는가
+
+최근 Databricks, Snowflake 같은 현대 플랫폼에서는 모든 디멘전을 팩트에 미리 합쳐 놓은 **하나의 큰 테이블(One Big Table, OBT)** 패턴이 급격히 늘고 있습니다. 이유는 간단합니다:
+
+1. **스토리지가 압도적으로 저렴해졌습니다.** S3에 Parquet/Delta로 저장하면 TB당 월 23달러. 중복 데이터 걱정할 비용이 아닙니다.
+2. **컬럼 기반 압축이 뛰어납니다.** 같은 값이 반복되는 디멘전 컬럼(예: city = '서울'이 100만 번)은 압축 시 거의 공간을 차지하지 않습니다.
+3. **JOIN이 없으니 쿼리가 빠릅니다.** Star 스키마에서 4개 테이블을 JOIN하면 30초 걸리던 쿼리가, OBT에서는 3초에 끝납니다.
+4. **BI 사용자가 SQL을 몰라도 됩니다.** 테이블 하나만 알면 모든 분석이 가능하므로, 셀프 서비스 분석이 훨씬 쉬워집니다.
+
+```sql
+-- Gold 계층: 비정규화된 OBT 생성
+CREATE OR REPLACE TABLE gold.wide_orders AS
+SELECT
+    f.order_key,
+    f.order_number,
+    f.quantity,
+    f.amount,
+    -- 고객 디멘전
+    c.name AS customer_name,
+    c.city AS customer_city,
+    c.tier AS customer_tier,
+    -- 상품 디멘전
+    p.name AS product_name,
+    p.category AS product_category,
+    p.brand AS product_brand,
+    -- 날짜 디멘전
+    d.full_date AS order_date,
+    d.month,
+    d.quarter,
+    d.year,
+    d.is_business_day,
+    d.fiscal_year,
+    -- 플래그 디멘전
+    fl.is_returned,
+    fl.payment_type,
+    fl.channel
+FROM fact_orders f
+JOIN dim_customer c ON f.customer_key = c.customer_key
+JOIN dim_product p ON f.product_key = p.product_key
+JOIN dim_date d ON f.date_key = d.date_key
+JOIN dim_order_flags fl ON f.flag_key = fl.flag_key;
+```
+
+### Star 스키마 vs OBT — 언제 뭘 쓰나요
+
+| 상황 | 추천 패턴 | 이유 |
+|------|----------|------|
+| 데이터 엔지니어가 관리하는 Silver/Gold 계층 | Star 스키마 | 유지보수성, 데이터 일관성이 중요 |
+| BI 대시보드의 소스 테이블 | OBT | 분석가가 JOIN 없이 바로 사용 |
+| ML Feature Store | OBT | 모델 학습에 필요한 피처를 한 테이블에 |
+| Ad-hoc 분석이 많은 팀 | OBT | 셀프 서비스 분석 효율성 |
+
+> 💡 **현업에서는 Star와 OBT를 함께 씁니다.** Silver 계층에서 정규화된 엔티티 테이블을 관리하고, Gold 계층에서 용도별 OBT를 생성하는 패턴이 가장 일반적입니다. "Star냐 OBT냐"의 양자택일이 아니라, **계층별로 다른 패턴을 적용** 하는 것이 정답입니다.
+
+---
+
+## Databricks 레이크하우스에서의 모델링 실전 팁
+
+### Medallion 아키텍처와 모델링의 결합
+
+| 계층 | 모델링 방식 | 설명 |
+|------|-----------|------|
+| **Bronze** | 원본 그대로 | 모델링 없이 원본을 보존합니다. 스키마가 바뀌어도 괜찮습니다 |
+| **Silver** | 3NF에 가까운 정규화 | 정제된 엔티티별 테이블 (고객, 주문, 상품 등). 여기가 "Single Source of Truth"입니다 |
+| **Gold** | Star 스키마 또는 OBT | 비즈니스 분석용 팩트+디멘전 또는 용도별 비정규화 테이블 |
+
+### 파티셔닝? Liquid Clustering을 쓰세요
+
+전통적인 데이터 웨어하우스에서는 날짜나 지역 기준으로 **파티셔닝(Partitioning)** 을 해야 쿼리 성능이 나왔습니다. Databricks에서도 예전에는 `PARTITIONED BY (date)` 같은 설정이 필수였습니다.
+
+하지만 이제는 **Liquid Clustering** 을 사용하세요. 파티셔닝의 모든 장점을 가지면서, 파티션 키를 나중에 바꿀 수도 있고, 데이터 분포가 변해도 자동으로 최적화됩니다.
+
+```sql
+-- 전통적 파티셔닝 (이제 권장하지 않음)
+-- CREATE TABLE fact_orders (...) PARTITIONED BY (order_date);
+
+-- Liquid Clustering (현재 권장)
+CREATE TABLE fact_orders (
+    order_key BIGINT,
+    order_number STRING,
+    customer_key INT,
+    product_key INT,
+    date_key INT,
+    quantity INT,
+    amount DECIMAL(15,2)
+)
+CLUSTER BY (date_key, customer_key);
+
+-- 클러스터링 키는 나중에 변경 가능!
+ALTER TABLE fact_orders CLUSTER BY (date_key, product_key);
+```
+
+> ⚠️ 파티셔닝으로 시작했다가 "파티션 키를 바꿔야 하는데 테이블을 다시 만들어야 합니다"라는 상황에 처한 팀을 많이 봤습니다. Liquid Clustering은 이 문제를 근본적으로 해결합니다. 신규 테이블은 반드시 Liquid Clustering을 사용하세요.
+
+### Delta Lake의 모델링 영향
+
+Databricks의 Delta Lake를 쓰면, 전통적 RDBMS와 다른 몇 가지 설계 고려사항이 있습니다:
+
+| 전통 RDBMS | Delta Lake on Databricks |
+|-----------|------------------------|
+| 인덱스 생성 필수 | 인덱스 불필요 (Liquid Clustering + Data Skipping) |
+| 파티셔닝 필수 | Liquid Clustering 권장 |
+| 정규화로 저장 비용 절약 | 비정규화해도 컬럼 압축으로 비용 미미 |
+| SCD Type 2 직접 구현 | Delta Lake의 MERGE + Time Travel로 간소화 |
+| 물리적 삭제 | DELETE 후 VACUUM으로 정리 |
+
+---
+
+## 정리
+
+| 핵심 개념 | 실무 핵심 |
+|-----------|----------|
+| **정규화** | OLTP, Silver 계층에 적합. 3NF까지만 적용하세요 |
+| **Star 스키마** | 분석 모델링의 기본. 99%는 Star가 정답입니다 |
+| **dim_date** | 반드시 만드세요. 공휴일, 영업일, 회계연도를 포함해야 합니다 |
+| **Degenerate Dimension** | 주문번호 같은 식별자는 팩트에 남기세요 |
+| **Junk Dimension** | 플래그/코드 컬럼이 5개 이상이면 묶으세요 |
+| **SCD Type 2** | 비즈니스가 정말 요구할 때만 적용하세요. 오버엔지니어링 주의 |
+| **OBT** | Gold 계층, 대시보드 소스로 적극 활용하세요 |
+| **Liquid Clustering** | Databricks에서는 파티셔닝 대신 이것을 쓰세요 |
+
+---
+
+## 참고 링크
+
+- [Databricks: Liquid Clustering](https://docs.databricks.com/aws/en/delta/clustering)
+- [Databricks: Data modeling best practices](https://docs.databricks.com/aws/en/sql/language-manual/)
+- [Kimball Group: Dimensional Modeling Techniques](https://www.kimballgroup.com/data-warehouse-business-intelligence-resources/kimball-techniques/dimensional-modeling-techniques/)
+- [Databricks Blog: Star Schema vs OBT](https://www.databricks.com/blog)

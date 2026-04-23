@@ -1,0 +1,231 @@
+---
+title: "피처 테이블 관리 — 심화"
+---
+
+> 이 문서는 **[머신러닝](/training/09-machine-learning/overview)** 섹션의 일부입니다.
+
+## Point-in-time Lookups
+
+시계열 데이터에서는 **미래 데이터 누수(Data Leakage)** 를 방지하기 위해 Point-in-time Lookup이 필수적입니다. 이벤트 발생 시점 기준으로 **그 시점까지 알 수 있었던 피처만** 가져옵니다.
+
+> 💡 **데이터 누수(Data Leakage)** 란 학습 시에는 알 수 없는 미래 데이터가 피처로 포함되는 것을 말합니다. 예를 들어, 화요일에 발생한 거래의 사기 여부를 예측할 때 수요일의 피처 값을 사용하면 실제 서빙 환경과 달라집니다.
+
+```python
+# Point-in-time Lookup 예시
+training_set = fe.create_training_set(
+    df=labels_df,  # event_time 컬럼 포함
+    feature_lookups=[
+        FeatureLookup(
+            table_name="catalog.schema.customer_hourly_features",
+            lookup_key="customer_id",
+            timestamp_lookup_key="event_time"  # 이 시점 기준으로 조회
+        )
+    ],
+    label="is_fraud"
+)
+
+# event_time이 2025-03-15 14:00인 레코드 → 14:00 이전의 최신 피처만 가져옴
+# event_time이 2025-03-15 16:00인 레코드 → 16:00 이전의 최신 피처만 가져옴
+```
+
+### Point-in-time Lookup 동작 원리
+
+| 라벨 데이터 | 피처 테이블 | 결과 |
+|------------|-----------|------|
+| customer_id=A, event_time=14:00 | customer_id=A, timestamp=13:00, count=5 | count=5 (13:00 피처 사용) |
+| customer_id=A, event_time=14:00 | customer_id=A, timestamp=15:00, count=8 | **사용 안 함**(미래 데이터) |
+| customer_id=A, event_time=16:00 | customer_id=A, timestamp=15:00, count=8 | count=8 (15:00 피처 사용) |
+
+---
+
+## 온라인 vs 오프라인 스토어
+
+| 특성 | 오프라인 스토어 | 온라인 스토어 |
+|------|---------------|-------------|
+| **저장소** | Delta 테이블 (Unity Catalog) | DynamoDB, Azure Cosmos DB 등 |
+| **지연 시간** | 초~분 단위 | 밀리초 단위 |
+| **용도** | 배치 학습, 분석, 백필 | 실시간 추론 서빙 |
+| **데이터 크기** | 수십 TB까지 | 최신 스냅샷만 저장 |
+| **비용** | 상대적으로 저렴 | 읽기 처리량에 따라 증가 |
+
+### 온라인 스토어 퍼블리시
+
+```python
+from databricks.feature_engineering import FeatureEngineeringClient
+from databricks.feature_engineering.online_store_spec import AmazonDynamoDBSpec, AzureCosmosDBSpec
+
+fe = FeatureEngineeringClient()
+
+# AWS DynamoDB로 퍼블리시
+dynamodb_spec = AmazonDynamoDBSpec(
+    region="ap-northeast-2",
+    table_name="customer_features_online",
+    read_secret_prefix="feature-store/dynamo",
+    write_secret_prefix="feature-store/dynamo"
+)
+
+fe.publish_table(
+    name="catalog.schema.customer_features",
+    online_store=dynamodb_spec,
+    mode="merge"  # 기존 데이터와 병합
+)
+```
+
+```python
+# Azure Cosmos DB로 퍼블리시
+cosmosdb_spec = AzureCosmosDBSpec(
+    account_uri="https://my-cosmos.documents.azure.com:443/",
+    read_secret="feature-store/cosmos-key",
+    write_secret="feature-store/cosmos-key"
+)
+
+fe.publish_table(
+    name="catalog.schema.customer_features",
+    online_store=cosmosdb_spec,
+    mode="merge"
+)
+```
+
+---
+
+## 실습: 피처 테이블 전체 워크플로
+
+다음은 피처 생성부터 모델 학습, 서빙까지의 전체 워크플로입니다.
+
+```python
+from databricks.feature_engineering import FeatureEngineeringClient, FeatureLookup
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import f1_score
+import mlflow
+
+fe = FeatureEngineeringClient()
+
+# ── Step 1: 피처 계산 및 테이블 생성 ──
+customer_features_df = (
+    spark.table("catalog.schema.transactions")
+    .groupBy("customer_id")
+    .agg(
+        F.count("*").alias("total_transactions"),
+        F.avg("amount").alias("avg_amount"),
+        F.stddev("amount").alias("stddev_amount"),
+        F.countDistinct("merchant_id").alias("unique_merchants")
+    )
+)
+
+fe.create_table(
+    name="catalog.ml_features.customer_features",
+    primary_keys=["customer_id"],
+    df=customer_features_df,
+    description="고객별 거래 통계 피처"
+)
+
+# ── Step 2: 학습 데이터 생성 (FeatureLookup) ──
+labels_df = spark.table("catalog.schema.fraud_labels")
+
+training_set = fe.create_training_set(
+    df=labels_df,
+    feature_lookups=[
+        FeatureLookup(
+            table_name="catalog.ml_features.customer_features",
+            lookup_key="customer_id"
+        )
+    ],
+    label="is_fraud"
+)
+
+training_df = training_set.load_df().toPandas()
+
+# ── Step 3: 모델 학습 ──
+X = training_df.drop(columns=["is_fraud", "customer_id"])
+y = training_df["is_fraud"]
+
+model = GradientBoostingClassifier(n_estimators=200, learning_rate=0.1)
+model.fit(X, y)
+
+# ── Step 4: 모델 저장 (피처 메타데이터 포함) ──
+with mlflow.start_run(run_name="fraud-with-feature-store"):
+    fe.log_model(
+        model=model,
+        artifact_path="model",
+        flavor=mlflow.sklearn,
+        training_set=training_set,  # 피처 조회 정보가 모델에 기록됨
+        registered_model_name="catalog.schema.fraud_model_with_features"
+    )
+
+# ── Step 5: 서빙 시 자동 피처 조회 ──
+# 엔드포인트에 배포 후, 기본 키만 전달하면 피처는 자동 조회됩니다
+# 요청 예시: {"dataframe_records": [{"customer_id": "C12345"}]}
+# → customer_features 테이블에서 피처를 자동으로 가져와 예측 수행
+```
+
+---
+
+## 피처 테이블 업데이트
+
+기존 피처 테이블에 새로운 데이터를 추가하거나 갱신할 수 있습니다.
+
+```python
+# 방법 1: merge (기존 키와 겹치면 업데이트, 새 키는 추가)
+fe.write_table(
+    name="catalog.ml_features.customer_features",
+    df=new_features_df,
+    mode="merge"
+)
+
+# 방법 2: overwrite (전체 교체)
+fe.write_table(
+    name="catalog.ml_features.customer_features",
+    df=full_features_df,
+    mode="overwrite"
+)
+```
+
+> ⚠️ **주의**: `overwrite` 모드는 기존 데이터를 완전히 교체합니다. 점진적 업데이트에는 반드시 `merge` 모드를 사용하십시오.
+
+---
+
+## 모범 사례 및 안티패턴
+
+### 모범 사례
+
+| 항목 | 권장 사항 |
+|------|----------|
+| **기본 키 설계** | 비즈니스 엔티티의 고유 식별자를 사용합니다 (`customer_id`, `product_id`) |
+| **피처 분리** | 도메인별로 별도의 피처 테이블을 만듭니다 (고객, 상품, 가맹점 등) |
+| **설명 추가** | `description`과 `tags`를 반드시 작성하여 팀 간 검색이 가능하게 합니다 |
+| **Point-in-time** | 시계열 피처에는 반드시 타임스탬프 키를 포함합니다 |
+| **스케줄 갱신** | Databricks Jobs로 피처 테이블을 정기적으로 갱신합니다 |
+| **테스트** | 피처 계산 로직에 대한 단위 테스트를 작성합니다 |
+
+### 안티패턴
+
+| 안티패턴 | 고려사항 | 개선 방법 |
+|---------|--------|----------|
+| **거대한 단일 테이블** | 하나의 테이블에 수백 개 피처를 넣으면 관리와 갱신이 어렵습니다 | 도메인별로 분리하고 FeatureLookup으로 결합합니다 |
+| **노트북에서 직접 조인** | 피처 조회 로직이 모델에 기록되지 않아 서빙 시 불일치가 발생합니다 | 반드시 `FeatureLookup` + `fe.log_model()`을 사용합니다 |
+| **타임스탬프 없는 시계열 피처** | 미래 데이터 누수로 모델 성능이 과대평가됩니다 | `timestamp_keys`를 추가하고 `timestamp_lookup_key`를 사용합니다 |
+| **피처 이름에 버전 포함** | `avg_amount_v2`, `avg_amount_v3` 등은 혼란을 초래합니다 | 테이블 자체를 버전 관리하거나, Delta 테이블의 시간 여행을 활용합니다 |
+| **수동 피처 복사** | 피처를 CSV로 내보내 다른 프로젝트에서 사용하면 일관성이 깨집니다 | Unity Catalog의 권한 설정으로 테이블을 직접 공유합니다 |
+
+---
+
+## 정리
+
+| 항목 | 핵심 포인트 |
+|------|------------|
+| **피처 테이블** | 기본 키 + 피처를 Delta 테이블로 관리하여 재사용성과 일관성을 확보합니다 |
+| **FeatureLookup** | 라벨 데이터에 피처를 자동으로 결합하고, 메타데이터를 모델에 기록합니다 |
+| **Point-in-time** | 타임스탬프 키로 미래 데이터 누수를 방지합니다 |
+| **온라인/오프라인** | 오프라인은 학습용, 온라인은 실시간 서빙용으로 동일한 피처를 이중 저장합니다 |
+| **fe.log_model()** | 피처 조회 정보가 모델에 포함되어, 서빙 시 기본 키만으로 예측이 가능합니다 |
+| **명명 규칙** | 일관된 테이블/피처 명명과 설명으로 팀 간 피처 공유를 촉진합니다 |
+
+---
+
+## 참고 링크
+
+- [Databricks: Feature tables](https://docs.databricks.com/aws/en/machine-learning/feature-store/feature-tables.html)
+- [Databricks: Feature Engineering Client API](https://docs.databricks.com/aws/en/machine-learning/feature-store/python-api.html)
+- [Databricks: Point-in-time lookups](https://docs.databricks.com/aws/en/machine-learning/feature-store/time-series.html)
+- [Databricks: Online Store](https://docs.databricks.com/aws/en/machine-learning/feature-store/online-tables.html)
+- [Databricks Blog: Feature Engineering Best Practices](https://www.databricks.com/blog)

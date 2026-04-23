@@ -1,0 +1,217 @@
+---
+title: "SDP 파이프라인 설정 — 심화"
+---
+
+> 이 문서는 **[데이터 엔지니어링](/training/05-data-engineering/overview)** 섹션의 일부입니다.
+
+## 파이프라인 설정 전체 예제
+
+### JSON 설정
+
+```json
+{
+    "name": "ecommerce-etl-pipeline",
+    "catalog": "production",
+    "target": "ecommerce",
+    "serverless": true,
+    "channel": "CURRENT",
+    "development": false,
+    "continuous": false,
+    "photon": true,
+    "edition": "ADVANCED",
+    "configuration": {
+        "source_path": "s3://raw-data/ecommerce/",
+        "quality_threshold": "0.95",
+        "environment": "production"
+    },
+    "libraries": [
+        {
+            "notebook": {
+                "path": "/Workspace/pipelines/ecommerce/bronze"
+            }
+        },
+        {
+            "notebook": {
+                "path": "/Workspace/pipelines/ecommerce/silver"
+            }
+        },
+        {
+            "notebook": {
+                "path": "/Workspace/pipelines/ecommerce/gold"
+            }
+        }
+    ],
+    "notifications": [
+        {
+            "email_recipients": ["data-team@company.com"],
+            "alerts": {
+                "on_update_failure": true,
+                "on_update_success": false,
+                "on_flow_failure": true
+            }
+        }
+    ]
+}
+```
+
+### YAML 설정 (Asset Bundles)
+
+```yaml
+resources:
+  pipelines:
+    ecommerce_etl:
+      name: "ecommerce-etl-pipeline"
+      catalog: "${var.catalog}"
+      target: "${var.schema}"
+      serverless: true
+      channel: "CURRENT"
+      development: ${var.is_dev}
+      photon: true
+      edition: "ADVANCED"
+
+      configuration:
+        source_path: "${var.source_path}"
+        quality_threshold: "0.95"
+        environment: "${bundle.target}"
+
+      libraries:
+        - notebook:
+            path: "./pipelines/bronze.sql"
+        - notebook:
+            path: "./pipelines/silver.py"
+        - notebook:
+            path: "./pipelines/gold.sql"
+
+      notifications:
+        - email_recipients:
+            - "data-team@company.com"
+          alerts:
+            on_update_failure: true
+            on_flow_failure: true
+```
+
+---
+
+## 주요 설정 옵션 총정리
+
+| 설정 | 설명 | 기본값 |
+|------|------|--------|
+| `name` | 파이프라인 이름입니다 | (필수) |
+| `catalog` | Unity Catalog 카탈로그입니다 | — |
+| `target` | 타겟 스키마(데이터베이스)입니다 | — |
+| `serverless` | 서버리스 컴퓨트 사용 여부입니다 | `false` |
+| `channel` | 런타임 채널입니다 (CURRENT/PREVIEW) | `CURRENT` |
+| `development` | 개발 모드 활성화 여부입니다 | `true` |
+| `continuous` | 연속 실행 모드 여부입니다 | `false` |
+| `photon` | Photon 엔진 활성화 여부입니다 | `false` |
+| `edition` | 에디션입니다 (CORE/PRO/ADVANCED) | `ADVANCED` |
+| `configuration` | 파이프라인에서 사용할 키-값 매개변수입니다 | `{}` |
+| `libraries` | 파이프라인에 포함할 노트북/파일 목록입니다 | (필수) |
+
+### configuration 매개변수 활용
+
+`configuration`에 정의한 값은 파이프라인 코드에서 `spark.conf.get()`으로 접근할 수 있습니다.
+
+```python
+# Python에서 파이프라인 설정값 읽기
+source_path = spark.conf.get("source_path")
+quality_threshold = float(spark.conf.get("quality_threshold"))
+```
+
+```sql
+-- SQL에서 파이프라인 설정값 읽기
+SELECT * FROM STREAM read_files(
+    '${source_path}',
+    format => 'json'
+);
+```
+
+---
+
+## Continuous 모드 vs Triggered 모드
+
+| 모드 | 동작 | 적합한 시나리오 |
+|------|------|--------------|
+| **Triggered**(기본값) | 한 번 실행하고 종료합니다. 새 데이터가 있으면 처리하고 멈춥니다 | 배치 ETL, 스케줄 실행 |
+| **Continuous** | 항상 실행 상태를 유지하며, 새 데이터가 도착하면 즉시 처리합니다 | 실시간 스트리밍, 저지연 요구 |
+
+> ⚠️ **Continuous 모드는 항상 클러스터가 실행 중이므로 비용이 지속적으로 발생합니다.** 실시간 요구사항이 없다면 Triggered 모드 + 스케줄링을 권장합니다.
+
+### 실전 비용 비교: Continuous vs Triggered
+
+현업에서 가장 많이 묻는 질문이 "Continuous 모드 비용이 얼마나 되나요?"입니다.
+
+| 모드 | 24시간 기준 비용 (4 Worker, i3.xlarge) | 월 비용 예상 | 데이터 지연 |
+|------|:--------------------------------------:|:-----------:|:----------:|
+| **Continuous** | 24시간 × $X DBU = ~$50/일 | **~$1,500/월** | **수초~수분** |
+| **Triggered (1시간 간격)** | 24회 × 10분 = 4시간 × $X DBU = ~$8/일 | **~$250/월** | **최대 1시간** |
+| **Triggered (15분 간격)** | 96회 × 10분 = 16시간 × $X DBU = ~$33/일 | **~$1,000/월** | **최대 15분** |
+
+> 💡 **현업 팁**: 대부분의 내부 분석/BI 용도에서는 **15분~1시간 지연이 허용** 됩니다. "실시간이 필요하다"고 요청하는 경우에도, 실제로 확인해 보면 "1시간 이내면 충분"인 경우가 80% 이상입니다. **Continuous 모드는 정말 분 단위 지연이 비즈니스에 직접적인 영향을 미치는 경우(사기 탐지, 실시간 추천 등)에만 사용하세요.**
+
+---
+
+## 서버리스 SDP의 비용 예측 방법
+
+서버리스 SDP는 인프라를 자동 관리하지만, 비용 예측이 어렵다는 현업의 피드백이 있습니다.
+
+### 비용 구성 요소
+
+| 구성 요소 | 과금 기준 | 비중(일반적) |
+|----------|----------|:----------:|
+| **처리 DBU** | 데이터 처리량(바이트)에 비례 | 70~80% |
+| **대기 DBU** | Continuous 모드 시 유휴 대기 | 10~20% |
+| **유지보수 DBU** | OPTIMIZE, VACUUM 자동 실행 | 5~10% |
+
+### 비용 예측을 위한 실전 공식
+
+```
+월간 서버리스 SDP 비용 ≈
+    (일 데이터 처리량 GB × 처리 단가 × 30일)
+  + (유지보수 비중 10~15%)
+  + (Continuous 시 대기 비용)
+
+예시: 일 100GB 처리, Triggered 모드
+  ≈ (100GB × $0.07/GB × 30일) + 15%
+  ≈ $210 + $31.5
+  ≈ 약 $242/월
+```
+
+> 🔥 **현업에서는**: 서버리스 SDP 비용을 정확히 예측하기 어려우므로, **첫 달은 클래식(Job Cluster)과 서버리스를 병렬로 돌려서 비용을 비교** 하는 것을 권장합니다. 한 고객사에서는 서버리스 전환 후 비용이 20% 절감된 반면, 다른 고객사에서는 10% 증가한 사례도 있었습니다. **워크로드 특성에 따라 다르므로 반드시 직접 비교 테스트를 하세요.**
+
+### 서버리스 비용 모니터링
+
+```sql
+-- 서버리스 SDP의 일별 DBU 사용량 추적
+SELECT
+    DATE(usage_date) AS date,
+    sku_name,
+    SUM(usage_quantity) AS total_dbus,
+    SUM(usage_quantity * list_price) AS estimated_cost_usd
+FROM system.billing.usage
+WHERE sku_name LIKE '%SERVERLESS%DLT%'
+    AND usage_date > CURRENT_DATE() - INTERVAL 30 DAYS
+GROUP BY 1, 2
+ORDER BY date DESC;
+```
+
+---
+
+## 정리
+
+| 핵심 설정 | 권장값 |
+|-----------|--------|
+| **개발 단계** | Development 모드, Preview 채널 |
+| **프로덕션** | Production 모드, Current 채널 |
+| **비용 최적화** | 서버리스 또는 Spot 인스턴스 |
+| **성능 최적화** | Photon 활성화, Auto Scaling |
+| **환경 분리** | Asset Bundles 변수로 카탈로그/스키마 분리 |
+
+---
+
+## 참고 링크
+
+- [Databricks: Configure a SDP pipeline](https://docs.databricks.com/aws/en/delta-live-tables/configure-pipeline.html)
+- [Databricks: Pipeline settings](https://docs.databricks.com/aws/en/delta-live-tables/settings.html)
+- [Databricks: Serverless SDP](https://docs.databricks.com/aws/en/delta-live-tables/serverless-dlt.html)
+- [Azure Databricks: Configure pipelines](https://learn.microsoft.com/en-us/azure/databricks/delta-live-tables/configure-pipeline)

@@ -102,7 +102,7 @@ password = dbutils.secrets.get(scope="my-scope", key="db-password")
 jdbc_url = f"jdbc:postgresql://host:5432/mydb?user=admin&password={password}"
 ```
 
-> ⚠️ **현업에서의 사고 사례**: 노트북에 AWS Access Key를 하드코딩한 채로 Git에 push하여 보안 사고가 발생한 경우가 실제로 있습니다. `dbutils.secrets`를 쓰면 값이 `[REDACTED]`로 표시되어 실수로 노출될 위험이 없습니다.
+> ⚠️ **현업에서의 사고 사례**: 노트북에 AWS Access Key를 하드코딩한 채로 Git에 push하여 보안 사고가 발생한 경우가 실제로 있습니다. `dbutils.secrets`를 쓰면 값이 `[REDACTED]`로 표시되어 실수로 노출될 가능성이 없습니다.
 
 #### dbutils.widgets — 매개변수화된 노트북
 

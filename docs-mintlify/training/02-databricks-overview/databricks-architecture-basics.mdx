@@ -22,7 +22,7 @@ Databricks 아키텍처의 핵심은 **Control Plane(제어 평면)** 과 **Comp
 
 **데이터 주권(Data Sovereignty)**: 고객의 데이터는 항상 **고객의 클라우드 계정(S3, ADLS, GCS)에 저장** 됩니다. Databricks Control Plane은 메타데이터와 실행 명령만 관리하고, 실제 데이터는 절대 Databricks 측으로 이동하지 않습니다. 이것은 GDPR, HIPAA, 금융 규제에서 요구하는 데이터 레지던시 요건을 충족하는 핵심 설계입니다.
 
-**경쟁사와의 차이**: Snowflake는 데이터를 자체 관리 스토리지에 저장하므로, 데이터 이동(egress) 비용과 벤더 종속이 발생합니다. Databricks는 오픈 포맷(Delta Lake/Parquet)으로 고객 스토리지에 저장하므로, 언제든 다른 도구에서 직접 읽을 수 있습니다.
+**경쟁사와의 차이**: Snowflake는 데이터를 자체 관리 스토리지에 저장하므로, 데이터 이동(egress) 비용과 데이터 이식성이 제한됩니다. Databricks는 오픈 포맷(Delta Lake/Parquet)으로 고객 스토리지에 저장하므로, 언제든 다른 도구에서 직접 읽을 수 있습니다.
 
 **실전에서의 의미**: Control Plane 장애가 발생해도 데이터는 안전합니다. 고객의 S3 버킷에 그대로 있으므로, 다른 Spark 클러스터나 Trino, Snowflake에서도 Delta/Parquet 파일을 직접 읽을 수 있습니다. 이런 아키텍처 덕분에 특정 벤더에 완전히 종속되는 리스크가 크게 줄어듭니다.
 

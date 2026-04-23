@@ -64,7 +64,7 @@ ANALYZE TABLE catalog.schema.orders
 COMPUTE STATISTICS FOR COLUMNS customer_id, order_date, amount;
 ```
 
-> ⚠️ **Gotcha**: CBO는 통계가 **최신 상태일 때만** 효과적입니다. 대량 데이터 적재 후 ANALYZE를 실행하지 않으면, Catalyst가 잘못된 통계로 비효율적인 조인 전략을 선택할 수 있습니다. Delta Lake의 Predictive Optimization은 이를 자동화합니다.
+> ⚠️ **Gotcha**: CBO는 통계가 **최신 상태일 때만** 효과적입니다. 대량 데이터 적재 후 ANALYZE를 실행하지 않으면, Catalyst가 잘못된 통계로 비용이 높은인 조인 전략을 선택할 수 있습니다. Delta Lake의 Predictive Optimization은 이를 자동화합니다.
 
 ---
 

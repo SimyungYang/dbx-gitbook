@@ -1,0 +1,220 @@
+---
+title: "SQL Warehouse와 파이프라인 최적화 — 심화"
+---
+
+## 6. 파이프라인 성능 최적화
+
+### 6.1 SDP(Spark Declarative Pipelines) 처리량 최적화
+
+```python
+# SDP 파이프라인 성능 설정
+import dlt
+
+@dlt.table(
+  comment="최적화된 실버 테이블",
+  table_properties={
+    "pipelines.autoOptimize.managed": "true",      # 자동 최적화
+    "pipelines.autoOptimize.zOrderCols": "user_id"  # 자동 Z-ORDER (레거시)
+  }
+)
+def silver_events():
+    return (
+        dlt.read_stream("bronze_events")
+        .withWatermark("event_time", "1 hour")  # 늦은 데이터 처리 한도
+        .dropDuplicatesWithinWatermark(["event_id"])  # 중복 제거
+    )
+```
+
+| 설정 | 기본값 | 성능 팁 |
+|------|-------|--------|
+| **pipelines.trigger.interval** | `"once"` 또는 연속 | 배치: `"once"`, 실시간: `"5 seconds"` |
+| **Serverless 스케일링** | 자동 | Enhanced Autoscaling이 워크로드에 맞게 자동 조절 |
+| **테이블 속성** | 기본값 | Liquid Clustering 적용 시 읽기 성능 대폭 향상 |
+
+### 6.2 Auto Loader 파일 감지 모드 선택
+
+| 모드 | 동작 방식 | 장점 | 단점 | 적합한 상황 |
+|------|----------|------|------|-----------|
+| **Directory Listing** | 주기적 디렉토리 스캔 | 설정 간단, 추가 인프라 불필요 | 파일 수 증가 시 스캔 비용 증가 | 파일 수 \< 100만, 간단한 구조 |
+| **File Notification** | SNS/SQS 이벤트 기반 | 즉시 감지, 대규모에 효율적 | 클라우드 리소스 설정 필요 | 파일 수 > 100만, 실시간 요구 |
+
+```python
+# Directory Listing 모드 (기본, 간단한 설정)
+df = (spark.readStream
+  .format("cloudFiles")
+  .option("cloudFiles.format", "json")
+  .option("cloudFiles.schemaLocation", "/checkpoints/schema")
+  .load("s3://bucket/incoming/")
+)
+
+# File Notification 모드 (대규모, 실시간)
+df = (spark.readStream
+  .format("cloudFiles")
+  .option("cloudFiles.format", "json")
+  .option("cloudFiles.useNotifications", "true")  # 이벤트 기반
+  .option("cloudFiles.schemaLocation", "/checkpoints/schema")
+  .load("s3://bucket/incoming/")
+)
+```
+
+### 6.3 Structured Streaming 지연시간 최적화
+
+| 지연시간 목표 | 트리거 설정 | 적합한 워크로드 |
+|-------------|-----------|---------------|
+| **\< 1초** | `trigger(processingTime="0 seconds")` | 실시간 대시보드, 알림 |
+| **1~10초** | `trigger(processingTime="5 seconds")` | 준실시간 분석 |
+| **10초~5분** | `trigger(processingTime="1 minute")` | 마이크로 배치 ETL |
+| **5분+** | `trigger(availableNow=True)` | 스케줄 기반 배치 |
+
+```python
+# 지연시간 최적화 설정 조합
+(df.writeStream
+  .trigger(processingTime="5 seconds")
+  .option("checkpointLocation", "/checkpoints/my_stream")
+  .option("maxFilesPerTrigger", "100")        # 트리거당 파일 수 제한
+  .option("maxBytesPerTrigger", "50m")         # 트리거당 데이터량 제한
+  .outputMode("append")
+  .toTable("catalog.schema.realtime_events")
+)
+```
+
+---
+
+## 7. SDP 성능 튜닝 상세
+
+### 7.1 파이프라인 클러스터 사이징
+
+| 파이프라인 유형 | 데이터 규모 | 권장 구성 | 비고 |
+|-------------|-----------|----------|------|
+| **소규모 배치** | \< 10GB/실행 | Serverless (기본) | 관리 불필요 |
+| **중규모 배치** | 10~100GB/실행 | Serverless Enhanced | 자동 스케일링 |
+| **대규모 배치** | 100GB+/실행 | Classic, 8+ workers | Spot 활용 |
+| **실시간 스트리밍** | 연속 | Serverless | 자동 확장/축소 |
+
+```python
+# SDP에서 Liquid Clustering 적용
+import dlt
+
+@dlt.table(
+  comment="클러스터링된 골드 테이블",
+  cluster_by=["order_date", "region"],  # Liquid Clustering
+  table_properties={
+    "quality": "gold"
+  }
+)
+def gold_daily_revenue():
+    return (
+        dlt.read("silver_orders")
+        .groupBy("order_date", "region")
+        .agg(
+            F.sum("amount").alias("total_revenue"),
+            F.countDistinct("customer_id").alias("unique_customers")
+        )
+    )
+```
+
+### 7.2 SDP Expectations 성능 영향
+
+| Expectation 유형 | 성능 영향 | 설명 |
+|----------------|---------|------|
+| **EXPECT** | 낮음 | 위반 행을 기록하되 통과시킴 |
+| **EXPECT OR DROP** | 낮음~중간 | 위반 행을 필터링 (추가 연산) |
+| **EXPECT OR FAIL** | 낮음 | 위반 시 파이프라인 중단 |
+| **복잡한 Expectation** | 중간~높음 | 서브쿼리, JOIN 포함 시 추가 비용 |
+
+```python
+# 성능 친화적 Expectation 패턴
+@dlt.table
+@dlt.expect_or_drop("valid_amount", "amount > 0 AND amount < 1000000")
+@dlt.expect("valid_email", "email RLIKE '^[a-zA-Z0-9._%+-]+@'")
+def silver_orders():
+    return dlt.read_stream("bronze_orders")
+
+# ❌ 성능 비친화적: 외부 테이블 JOIN으로 유효성 검사
+# @dlt.expect("valid_product", "product_id IN (SELECT id FROM dim_products)")
+# → 매 마이크로배치마다 서브쿼리 실행 → 비용 높음
+
+# ✅ 대안: Broadcast 변수로 유효 목록 캐싱
+valid_products = spark.table("dim_products").select("id").collect()
+valid_set = {row.id for row in valid_products}
+# UDF로 검증
+```
+
+---
+
+## 8. 파이프라인 관측 가능성 (Observability)
+
+### 8.1 SDP 이벤트 로그 활용
+
+```sql
+-- SDP 파이프라인 실행 이력 조회
+SELECT
+  id,
+  origin.pipeline_name,
+  event_type,
+  message,
+  timestamp,
+  details
+FROM event_log(TABLE(pipeline_id))
+WHERE event_type IN ('flow_progress', 'planning', 'driver_exception')
+ORDER BY timestamp DESC
+LIMIT 50;
+
+-- 파이프라인 처리량 모니터링
+SELECT
+  origin.pipeline_name,
+  origin.flow_name,
+  details:flow_progress:metrics:num_output_rows AS output_rows,
+  details:flow_progress:metrics:num_output_bytes AS output_bytes,
+  timestamp
+FROM event_log(TABLE(pipeline_id))
+WHERE event_type = 'flow_progress'
+AND timestamp >= current_date() - INTERVAL 7 DAYS
+ORDER BY timestamp DESC;
+```
+
+### 8.2 모니터링 대시보드 구축
+
+| 모니터링 지표 | 데이터 소스 | Alert 조건 |
+|-------------|-----------|-----------|
+| **파이프라인 실행 시간** | Event Log | 평균 대비 2배 초과 |
+| **데이터 품질 위반** | Expectation 결과 | 위반율 > 5% |
+| **파일 수 증가** | DESCRIBE DETAIL | numFiles > 임계값 |
+| **스트리밍 지연** | Streaming Metrics | 처리 지연 > 5분 |
+| **실패/재시도** | Event Log | 실패 발생 시 즉시 알림 |
+
+```python
+# 스트리밍 파이프라인 지연시간 모니터링
+# Structured Streaming의 진행 상황 확인
+query = (
+    df.writeStream
+    .trigger(processingTime="10 seconds")
+    .option("checkpointLocation", "/checkpoints/stream")
+    .queryName("my_stream")
+    .toTable("catalog.schema.events")
+)
+
+# 스트리밍 상태 확인
+progress = query.lastProgress
+if progress:
+    input_rows = progress['numInputRows']
+    processing_time = progress['batchDuration']
+    print(f"입력 행: {input_rows}, 처리 시간: {processing_time}ms")
+```
+
+> **참고**
+**관측 가능성 모범 사례**: AI/BI Dashboard로 파이프라인 모니터링 대시보드를 구축하고, Alert를 설정하여 이상 발생 시 Slack으로 즉시 알림을 받으세요. 시스템 테이블 (`system.query.history`, Event Log)을 데이터 소스로 활용합니다.
+
+
+---
+
+## 참고 링크
+
+- [Databricks: Query Profile](https://docs.databricks.com/aws/en/optimizations/query-profile)
+- [Databricks: Query History](https://docs.databricks.com/aws/en/sql/admin/query-history)
+- [Databricks: SDP Performance](https://docs.databricks.com/aws/en/delta-live-tables/performance)
+- [Databricks: Auto Loader](https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/index)
+- [Databricks: Streaming Metrics](https://docs.databricks.com/aws/en/structured-streaming/stream-monitoring)
+- [Databricks: Event Log](https://docs.databricks.com/aws/en/delta-live-tables/observability)
+
+---

@@ -48,7 +48,7 @@ title: "데이터 아키텍처: 레이크하우스와 모던 데이터 스택"
 데이터 레이크와 데이터 웨어하우스는 각각 상충되는 장단점을 갖고 있습니다. 기업들은 두 가지를 모두 운영하는 경우가 많았는데, 이는 비용 중복, 데이터 복제, 동기화 지연 등의 문제를 야기했습니다.
 
 ```
-기존 아키텍처의 문제점:
+기존 아키텍처의 고려사항:
 
 [소스 시스템] → [데이터 레이크 (S3)] → [ETL] → [데이터 웨어하우스 (Redshift)]
                       ↓ ML팀                              ↓ SQL 분석팀
@@ -138,7 +138,7 @@ CREATE TABLE my_table (id INT, name STRING)
 TBLPROPERTIES ('delta.universalFormat.enabledFormats' = 'iceberg');
 ```
 
-이는 벤더 종속(Vendor Lock-in) 우려를 줄이고, 멀티 엔진 환경에서 동일한 데이터를 공유할 수 있게 합니다.
+이는 플랫폼 의존(Vendor Lock-in) 우려를 줄이고, 멀티 엔진 환경에서 동일한 데이터를 공유할 수 있게 합니다.
 
 참고: [Delta Lake 공식 문서](https://docs.delta.io/latest/index.html) | [Apache Iceberg 공식 문서](https://iceberg.apache.org/docs/latest/) | [Databricks: UniForm](https://docs.databricks.com/en/delta/uniform.html)
 

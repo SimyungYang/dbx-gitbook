@@ -299,7 +299,7 @@ AWS S3는 **prefix 단위로 초당 5,500 GET / 3,500 PUT 요청** 을 처리합
 Auto Loader의 디렉토리 리스팅 모드를 사용할 때, External Location의 경로가 너무 넓으면 파일 리스팅에 시간이 많이 소요됩니다.
 
 ```
-비효율적:
+비용이 높은:
   External Location: s3://bucket/         (수백만 파일 포함)
   Auto Loader가 전체 버킷을 스캔 → 수분 소요
 

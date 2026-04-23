@@ -198,7 +198,7 @@ ML 학습 (GPU)
 | **파티셔닝 대체** | Liquid Clustering이 파티셔닝을 완전 대체 | 마이크로 파티셔닝이 기본 | 파티셔닝 별도 | 파티셔닝 + 클러스터링 병행 |
 
 > **참고**
-**Liquid Clustering의 혁신**: 기존 Hive-style 파티셔닝의 문제점(파티션 키 변경 불가, 소규모 파티션 문제, Z-Order 비용)을 완전히 해결합니다. `ALTER TABLE ... CLUSTER BY (col1, col2)` 한 줄로 적용되며, 기존 데이터는 점진적으로 재배치됩니다.
+**Liquid Clustering의 혁신**: 기존 Hive-style 파티셔닝의 고려사항(파티션 키 변경 불가, 소규모 파티션 문제, Z-Order 비용)을 완전히 해결합니다. `ALTER TABLE ... CLUSTER BY (col1, col2)` 한 줄로 적용되며, 기존 데이터는 점진적으로 재배치됩니다.
 
 
 ---

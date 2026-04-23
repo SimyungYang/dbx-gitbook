@@ -1,0 +1,212 @@
+---
+title: "SDP 파이프라인 설정 — 기초"
+---
+
+> 이 문서는 **[데이터 엔지니어링](/training/05-data-engineering/overview)** 섹션의 일부입니다.
+
+## 왜 파이프라인 설정이 중요한가?
+
+SDP(Spark Declarative Pipelines, 구 Delta Live Tables)는 파이프라인의 **실행 모드, 클러스터 구성, 타겟 카탈로그, 채널** 등을 설정을 통해 제어합니다. 올바른 설정은 개발 생산성, 프로덕션 안정성, 비용 효율성에 직접적인 영향을 미칩니다.
+
+---
+
+## Development vs Production 모드
+
+SDP는 두 가지 실행 모드를 제공하며, 각 모드는 파이프라인의 동작 방식이 크게 다릅니다.
+
+| 비교 항목 | Development 모드 | Production 모드 |
+|-----------|-----------------|----------------|
+| **데이터 재처리** | 전체 데이터가 아닌 **2개 파일만 샘플** 처리합니다 | **전체 데이터** 를 처리합니다 |
+| **클러스터 재사용** | 실행 사이에 클러스터를 유지합니다 (빠른 반복) | 매 실행마다 클러스터를 새로 생성합니다 |
+| **오류 처리** | 오류 발생 시 파이프라인을 즉시 중단합니다 | 재시도 정책에 따라 자동 복구를 시도합니다 |
+| **비용** | 클러스터 유지 비용 발생 | 실행 시에만 비용 발생 |
+| **적합한 용도** | 개발, 디버깅, 테스트 | 프로덕션 운영 |
+
+| 모드 | 특징 | 설명 |
+|------|------|------|
+| **Development 모드** | 샘플 데이터, 클러스터 유지, 빠른 피드백 | 개발 및 테스트에 적합합니다 |
+| **Production 모드** | 전체 데이터, 클러스터 자동 관리, 재시도 정책 | 프로덕션 운영에 적합합니다 |
+
+> Development 모드에서 검증을 완료한 후 Production 모드로 전환합니다.
+
+> 🔥 **현업 사례: Development 모드와 Production 모드를 혼동해서 데이터를 날린 경험**
+>
+> 한 고객사의 데이터 엔지니어가 프로덕션 파이프라인을 수정한 후, **Development 모드인 줄 모르고 "Start" 버튼** 을 눌렀습니다. Development 모드에서는 기존 테이블을 삭제하고 샘플 데이터만으로 재생성하기 때문에, **프로덕션 Gold 테이블 3개의 데이터가 샘플 2개 파일 분량으로 대체** 되었습니다. 마침 BI 대시보드가 이 테이블을 참조하고 있었고, 경영진이 "매출이 갑자기 99% 줄었다"고 보고받는 사태가 벌어졌습니다.
+>
+> **복구 과정**: Delta의 Time Travel 기능(`RESTORE TABLE ... TO VERSION AS OF`)으로 데이터를 복구했지만, 원인 파악과 복구에 약 2시간이 소요되었습니다.
+>
+> **재발 방지책**:
+> 1. **프로덕션 파이프라인은 반드시 `"development": false`로 고정**(UI에서 변경 불가하도록)
+> 2. **개발용과 프로덕션용 파이프라인을 물리적으로 분리**(같은 파이프라인에서 모드 전환 금지)
+> 3. **프로덕션 파이프라인은 Asset Bundles로만 배포**(UI 직접 수정 금지)
+
+### 안전한 개발-프로덕션 분리 패턴
+
+현업에서 권장하는 패턴은 **같은 코드, 다른 파이프라인** 입니다.
+
+```yaml
+# Asset Bundles로 환경별 파이프라인 자동 분리
+# bundle.yml
+targets:
+  dev:
+    default: true
+    resources:
+      pipelines:
+        etl:
+          name: "etl-pipeline-DEV"
+          catalog: "dev_catalog"
+          target: "ecommerce"
+          development: true     # ← 개발 모드
+
+  prod:
+    resources:
+      pipelines:
+        etl:
+          name: "etl-pipeline-PROD"
+          catalog: "production"
+          target: "ecommerce"
+          development: false    # ← 프로덕션 모드
+```
+
+이렇게 하면 `databricks bundle deploy -t dev`와 `databricks bundle deploy -t prod`로 완전히 분리된 파이프라인이 생성되어, 모드 혼동 사고를 원천 차단할 수 있습니다.
+
+---
+
+## 클러스터 설정
+
+### 서버리스 컴퓨트
+
+서버리스를 선택하면 클러스터 구성을 직접 관리할 필요가 없습니다. Databricks가 자동으로 인프라를 프로비저닝합니다.
+
+```json
+{
+    "name": "my-serverless-pipeline",
+    "serverless": true,
+    "catalog": "catalog",
+    "target": "schema"
+}
+```
+
+| 장점 | 고려사항 |
+|------|---------|
+| 클러스터 시작 대기 시간 최소화 | 커스텀 라이브러리 설치 제한 |
+| 인프라 관리 불필요 | 특정 인스턴스 타입 지정 불가 |
+| 자동 스케일링 | 일부 워크로드에서 비용이 다를 수 있음 |
+
+### Job Cluster (클래식)
+
+세밀한 클러스터 제어가 필요한 경우 직접 클러스터를 구성합니다.
+
+```json
+{
+    "name": "my-classic-pipeline",
+    "clusters": [
+        {
+            "label": "default",
+            "num_workers": 4,
+            "node_type_id": "i3.xlarge",
+            "spark_conf": {
+                "spark.databricks.delta.optimizeWrite.enabled": "true"
+            },
+            "aws_attributes": {
+                "availability": "SPOT_WITH_FALLBACK",
+                "first_on_demand": 1
+            }
+        },
+        {
+            "label": "maintenance",
+            "num_workers": 2,
+            "node_type_id": "m5.xlarge"
+        }
+    ]
+}
+```
+
+| 클러스터 레이블 | 용도 |
+|---------------|------|
+| `default` | 파이프라인의 기본 처리에 사용됩니다 |
+| `maintenance` | OPTIMIZE, VACUUM 같은 유지보수 작업에 사용됩니다 |
+
+### Auto Scaling 설정
+
+```json
+{
+    "clusters": [
+        {
+            "label": "default",
+            "autoscale": {
+                "min_workers": 2,
+                "max_workers": 10,
+                "mode": "ENHANCED"
+            }
+        }
+    ]
+}
+```
+
+### Enhanced Autoscaling의 실전 효과
+
+SDP의 **Enhanced Autoscaling** 은 일반 클러스터의 Autoscaling과 다릅니다. 파이프라인의 데이터 흐름 단계를 이해하고, **각 단계에서 필요한 만큼만 노드를 할당** 합니다.
+
+| 비교 항목 | 일반 Autoscaling | Enhanced Autoscaling (SDP) |
+|-----------|:----------------:|:-------------------------:|
+| **스케일 기준** | CPU/메모리 사용률 | 데이터 흐름 단계별 워크로드 |
+| **스케일 속도** | 느림 (메트릭 수집 후 판단) | 빠름 (파이프라인 그래프 분석) |
+| **과잉 프로비저닝** | 빈번함 | 최소화 |
+| **실전 비용 절감** | 10~20% | **30~50%** |
+
+> 💡 **현업 팁**: Enhanced Autoscaling의 효과가 가장 극적인 경우는 **"Bronze에서 대량 수집 → Silver에서 소량 변환 → Gold에서 집계"** 패턴입니다. Bronze 단계에서 10개 노드가 필요해도, Gold 단계에서는 2개면 충분합니다. Enhanced Autoscaling은 이 차이를 자동으로 감지하여 노드를 줄입니다.
+
+```
+[Bronze 수집]     ████████████████████  10 nodes
+[Silver 변환]     ████████████          6 nodes
+[Gold 집계]       ████                  2 nodes
+
+→ 일반 Autoscaling: 전 구간 10 nodes 유지 → 비용 낭비
+→ Enhanced: 단계별 최적화 → 약 40% 절감
+```
+
+---
+
+## Channel (채널) 설정
+
+채널은 SDP 런타임의 **버전** 을 결정합니다. 신기능 테스트와 프로덕션 안정성 사이의 균형을 맞출 수 있습니다.
+
+| 채널 | 설명 | 권장 용도 |
+|------|------|----------|
+| **Current** | 최신 안정 버전의 SDP 런타임입니다 | 프로덕션 환경 |
+| **Preview** | 차기 버전의 기능을 미리 사용할 수 있습니다 | 개발, 신기능 테스트 |
+
+```json
+{
+    "name": "my-pipeline",
+    "channel": "CURRENT"
+}
+```
+
+---
+
+## 타겟 카탈로그/스키마 설정
+
+### Unity Catalog 통합
+
+SDP 파이프라인의 결과 테이블을 Unity Catalog에 저장합니다.
+
+```json
+{
+    "name": "sales-pipeline",
+    "catalog": "production",
+    "target": "sales_data"
+}
+```
+
+| 설정 | 설명 |
+|------|------|
+| `catalog` | 결과 테이블이 저장될 Unity Catalog 카탈로그입니다 |
+| `target` | 결과 테이블이 저장될 스키마(데이터베이스)입니다 |
+
+위 설정으로 파이프라인 내에서 `CREATE STREAMING TABLE orders`를 실행하면 `production.sales_data.orders`로 생성됩니다.
+
+> 💡 **카탈로그/스키마를 파이프라인 레벨에서 설정하면**, 개별 테이블 정의에서 3단계 네임스페이스를 매번 작성할 필요가 없습니다.
+
+---

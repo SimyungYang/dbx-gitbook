@@ -1,0 +1,176 @@
+---
+title: "접근 제어 설계 — 심화"
+---
+
+## 5. 크로스 Workspace 권한 동기화
+
+### 5.1 Account 수준 그룹 관리
+
+```text
+[권한 동기화 아키텍처]
+
+Account Console
+  ├── Account 그룹 (IdP에서 SCIM 동기화)
+  │     ├── data-engineers (Account 수준)
+  │     ├── data-analysts (Account 수준)
+  │     └── platform-admins (Account 수준)
+  │
+  ├── Dev Workspace
+  │     └── Account 그룹 자동 상속
+  │
+  ├── Staging Workspace
+  │     └── Account 그룹 자동 상속
+  │
+  └── Prod Workspace
+        └── Account 그룹 자동 상속 + Workspace 수준 추가 제한
+```
+
+| 그룹 유형 | 생성 위치 | 동기화 | 권장 |
+|----------|---------|-------|------|
+| **Account 그룹** | Account Console | 모든 Workspace에 자동 | ✅ 권장 |
+| **Workspace 로컬 그룹** | 개별 Workspace | 해당 Workspace만 | ⚠️ 특수 경우만 |
+
+```sql
+-- Account 그룹에 Unity Catalog 권한 부여
+-- 이 권한은 Metastore를 공유하는 모든 Workspace에서 유효
+
+-- Dev 카탈로그: 엔지니어에게 전체 접근
+GRANT ALL PRIVILEGES ON CATALOG dev TO `data-engineers`;
+
+-- Prod 카탈로그: 엔지니어에게 읽기만
+GRANT USE CATALOG ON CATALOG prod TO `data-engineers`;
+GRANT USE SCHEMA ON SCHEMA prod.gold TO `data-engineers`;
+GRANT SELECT ON SCHEMA prod.gold TO `data-engineers`;
+
+-- Prod 카탈로그: Service Principal에게 쓰기
+GRANT USE CATALOG ON CATALOG prod TO `svc-prod-etl`;
+GRANT ALL PRIVILEGES ON SCHEMA prod.silver TO `svc-prod-etl`;
+GRANT ALL PRIVILEGES ON SCHEMA prod.gold TO `svc-prod-etl`;
+```
+
+---
+
+## 6. 외부 사용자 접근 제어 (Delta Sharing)
+
+### 6.1 Delta Sharing 권한 모델
+
+```sql
+-- 1. Share 생성 (공유할 데이터 정의)
+CREATE SHARE partner_analytics_share;
+
+-- 2. Share에 테이블 추가 (필요한 테이블만 선택적으로)
+ALTER SHARE partner_analytics_share
+ADD TABLE prod_sales.gold.monthly_summary
+  COMMENT '파트너에게 월별 매출 요약만 공유';
+
+-- Row Filter가 적용된 테이블도 공유 가능
+-- 파트너는 필터링된 결과만 볼 수 있음
+ALTER SHARE partner_analytics_share
+ADD TABLE prod_sales.gold.regional_data
+  PARTITION (region = 'KR');  -- 한국 데이터만 공유
+
+-- 3. Recipient 생성 (외부 조직)
+CREATE RECIPIENT partner_company
+  USING ID 'partner-org-id'
+  COMMENT '파트너사 분석팀';
+
+-- 4. Share를 Recipient에 부여
+GRANT SELECT ON SHARE partner_analytics_share TO RECIPIENT partner_company;
+```
+
+| Delta Sharing 유형 | 수신자 플랫폼 | 인증 방식 | 비고 |
+|------------------|-----------|----------|------|
+| **Databricks-to-Databricks** | Databricks | Unity Catalog 통합 | 가장 간편 |
+| **Open Sharing** | Spark, Pandas, 기타 | Bearer Token | 다양한 플랫폼 지원 |
+
+> **참고**
+**Delta Sharing 거버넌스**: Delta Sharing으로 공유된 데이터는 수신자가 복사할 수 있습니다. 민감한 데이터는 Column Mask가 적용된 View를 공유하거나, 집계된 Gold 테이블만 공유하세요.
+
+
+---
+
+## 7. Audit Log 활용한 권한 감사
+
+### 7.1 시스템 테이블을 활용한 감사
+
+```sql
+-- 최근 30일간 권한 변경 이력 조회
+SELECT
+  event_time,
+  user_identity.email AS changed_by,
+  action_name,
+  request_params.securable_type,
+  request_params.securable_full_name,
+  request_params.principal,
+  request_params.changes
+FROM system.access.audit
+WHERE action_name IN (
+  'grantPermission',
+  'revokePermission',
+  'updatePermissions'
+)
+AND event_time >= current_date() - INTERVAL 30 DAYS
+ORDER BY event_time DESC;
+
+-- 미사용 권한 탐지: 90일간 접근하지 않은 테이블의 SELECT 권한
+SELECT
+  g.principal,
+  g.securable_full_name,
+  g.privilege,
+  MAX(a.event_time) AS last_access
+FROM system.information_schema.table_privileges g
+LEFT JOIN system.access.audit a
+  ON a.request_params.securable_full_name = g.securable_full_name
+  AND a.user_identity.email = g.principal
+  AND a.action_name = 'commandSubmit'
+GROUP BY g.principal, g.securable_full_name, g.privilege
+HAVING MAX(a.event_time) IS NULL
+   OR MAX(a.event_time) < current_date() - INTERVAL 90 DAYS;
+```
+
+### 7.2 정기 감사 체크리스트
+
+| 감사 항목 | 주기 | SQL/방법 | 조치 |
+|----------|------|---------|------|
+| **과도한 권한 보유자** | 월 1회 | ALL PRIVILEGES 보유 사용자 조회 | 최소 권한으로 축소 |
+| **미사용 권한** | 분기 1회 | 90일간 미접근 테이블 권한 | 권한 회수 |
+| **Service Principal 키 순환** | 분기 1회 | 키 생성일 90일 초과 확인 | 새 키 발급, 이전 키 비활성화 |
+| **외부 공유 현황** | 월 1회 | Delta Sharing Recipient 목록 | 불필요한 공유 해제 |
+| **관리자 그룹 멤버** | 월 1회 | platform-admins 그룹 멤버 확인 | 불필요한 멤버 제거 |
+
+```sql
+-- ALL PRIVILEGES 보유자 감사 (최소화해야 함)
+SELECT
+  principal,
+  securable_type,
+  securable_full_name,
+  privilege
+FROM system.information_schema.table_privileges
+WHERE privilege = 'ALL PRIVILEGES'
+ORDER BY principal;
+
+-- Workspace 관리자 목록 확인
+SELECT
+  user_name,
+  groups
+FROM system.information_schema.catalog_privileges
+WHERE privilege = 'ALL PRIVILEGES'
+AND securable_type = 'CATALOG';
+```
+
+> **주의**
+**감사 로그 보존**: 시스템 테이블의 감사 로그는 기본 365일 보존됩니다. 규제 요건에 따라 장기 보존이 필요하면, 감사 로그를 별도 스토리지(S3/ADLS)로 Export하는 파이프라인을 구축하세요.
+
+
+---
+
+## 참고 링크
+
+- [Databricks: Unity Catalog Privileges](https://docs.databricks.com/aws/en/data-governance/unity-catalog/manage-privileges/)
+- [Databricks: Row Filters and Column Masks](https://docs.databricks.com/aws/en/tables/row-and-column-filters)
+- [Databricks: Delta Sharing](https://docs.databricks.com/aws/en/delta-sharing/)
+- [Databricks: Audit Logs](https://docs.databricks.com/aws/en/admin/account-settings/audit-logs)
+- [Databricks: Security Policies](https://docs.databricks.com/aws/en/data-governance/unity-catalog/security-policies)
+- [Databricks: Tags](https://docs.databricks.com/aws/en/data-governance/unity-catalog/tags)
+
+---

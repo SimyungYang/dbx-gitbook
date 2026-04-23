@@ -1,0 +1,160 @@
+---
+title: "Lakebase + Apps CRUD 패턴 — 기초"
+---
+
+<Info>
+Databricks Apps의 기본 구조와 배포 방법은 [Apps 가이드 — 앱 만들기](/blog/guides/apps/create-app)를 먼저 참고하세요.
+Lakebase 리소스 연결과 Service Principal 권한은 [Apps 리소스 관리](/blog/guides/apps/resources)에서 다룹니다.
+</Info>
+
+## Lakebase란?
+
+**Lakebase**는 Databricks가 완전 관리형으로 제공하는 **PostgreSQL 호환** 트랜잭션 데이터베이스입니다.
+AWS Aurora나 Cloud SQL과 달리, Unity Catalog에 통합되어 있어 별도의 네트워크 피어링이나 IAM 설정 없이 바로 사용할 수 있습니다.
+OLTP(온라인 트랜잭션 처리) 워크로드를 Lakebase에서 처리하고, **Data Sync** 기능으로 Delta Lake에 자동 동기화하면 분석까지 하나의 플랫폼에서 해결됩니다.
+
+---
+
+## 사전 준비 체크리스트
+
+시작하기 전에 아래 항목이 모두 준비되어 있는지 확인하세요.
+
+| 항목 | 필요 조건 | 확인 방법 |
+|------|----------|----------|
+| **Databricks Workspace** | Premium 이상 플랜 | 워크스페이스 설정 페이지에서 플랜 확인 |
+| **Unity Catalog** | 카탈로그가 활성화되어 있어야 함 | `SHOW CATALOGS` SQL로 확인 |
+| **Lakebase 인스턴스** | 아래 SQL로 생성 완료 | `SHOW DATABASES IN my_catalog` |
+| **Databricks Apps 배포 환경** | Apps가 활성화된 워크스페이스 | 사이드바에 "Apps" 메뉴 존재 |
+| **Python 패키지** | `fastapi`, `psycopg2-binary`, `databricks-sdk` | `requirements.txt`에 명시 |
+| **권한** | Service Principal에 Lakebase READ_WRITE | `app.yaml`의 `resources` 섹션에서 선언 |
+
+---
+
+## 1. Lakebase 데이터베이스 및 테이블 생성
+
+### Lakebase 데이터베이스 생성
+
+아래 SQL은 Unity Catalog 내에 Lakebase로 관리되는 새 데이터베이스를 생성합니다. `MANAGED LAKEBASE` 키워드가 이 데이터베이스를 PostgreSQL 엔진으로 구동하겠다는 선언입니다.
+
+```sql
+-- Unity Catalog에서 Lakebase DB 생성
+CREATE DATABASE my_catalog.my_app_db
+MANAGED LAKEBASE;
+```
+
+### 테이블 생성
+
+이 SQL은 상품 정보를 저장할 테이블을 만듭니다. PostgreSQL 표준 문법(`SERIAL`, `VARCHAR`, `NUMERIC` 등)을 그대로 사용할 수 있습니다.
+
+```sql
+CREATE TABLE my_catalog.my_app_db.products (
+  id         SERIAL PRIMARY KEY,       -- 자동 증가 기본키
+  name       VARCHAR(200) NOT NULL,    -- 상품명 (필수)
+  price      NUMERIC(10,2) NOT NULL DEFAULT 0,  -- 가격 (소수점 2자리)
+  category   VARCHAR(50),              -- 카테고리 (선택)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- 생성 시각 (자동)
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP   -- 수정 시각 (자동)
+);
+
+-- category 컬럼으로 자주 조회하므로 인덱스 추가
+CREATE INDEX idx_products_category ON my_catalog.my_app_db.products (category);
+```
+
+---
+
+## 2. FastAPI + psycopg2 연결 설정
+
+### app.yaml (리소스 선언)
+
+이 파일은 Databricks Apps에 배포할 앱의 실행 명령, 환경변수, 그리고 Lakebase 리소스 접근 권한을 선언합니다. `resources` 섹션에서 `lakebase_database`를 선언하면, 앱의 Service Principal이 해당 DB에 접근할 수 있는 권한을 자동으로 받습니다.
+
+```yaml
+command:
+  - uvicorn
+  - main:app
+  - --host=0.0.0.0
+  - --port=8000
+env:
+  - name: LAKEBASE_CATALOG
+    value: my_catalog
+  - name: LAKEBASE_SCHEMA
+    value: my_app_db
+resources:
+  - name: lakebase-db
+    lakebase_database:
+      catalog: my_catalog
+      schema: my_app_db
+      permission: READ_WRITE
+```
+
+### requirements.txt
+
+```text
+fastapi>=0.115
+uvicorn>=0.30
+psycopg2-binary>=2.9
+databricks-sdk>=0.40
+```
+
+### 연결 헬퍼 (db.py)
+
+이 코드는 Lakebase에 연결하기 위한 **커넥션 풀**을 관리합니다. 핵심은 `generate_credential()` 함수로 임시 인증 토큰을 발급받는 부분입니다.
+
+#### `generate_credential()`이 왜 필요한가?
+
+Lakebase는 고정된 사용자/비밀번호 대신 **토큰 기반 인증**을 사용합니다. `generate_credential()`은 현재 Service Principal의 권한으로 임시 PostgreSQL 접속 정보(호스트, 포트, 사용자명, 비밀번호)를 발급합니다. 이 토큰은 **1시간** 동안 유효하므로, 프로덕션에서는 만료 전에 풀을 재생성하는 로직이 반드시 필요합니다 (4장에서 다룹니다).
+
+#### `ThreadedConnectionPool` 설정값 의미
+
+| 파라미터 | 값 | 설명 |
+|---------|---|------|
+| `minconn` | 2 | 풀 초기화 시 미리 만들어두는 최소 연결 수. 앱 시작 직후에도 대기 없이 응답 가능 |
+| `maxconn` | 10 | 동시 요청이 많을 때 최대로 열 수 있는 연결 수. 너무 크면 DB에 부하, 너무 작으면 대기 발생 |
+| `sslmode` | `"require"` | Lakebase는 TLS 암호화 연결을 필수로 요구함 |
+
+```python
+import os
+import psycopg2
+from psycopg2 import pool
+from databricks.sdk import WorkspaceClient
+
+_pool = None
+
+def get_pool() -> pool.ThreadedConnectionPool:
+    """Lakebase 커넥션 풀 (싱글턴)"""
+    global _pool
+    if _pool is None or _pool.closed:
+        w = WorkspaceClient()
+        # Lakebase 임시 인증 토큰 발급 (1시간 유효)
+        cred = w.lakebase.generate_credential(
+            catalog=os.environ["LAKEBASE_CATALOG"],
+            schema=os.environ["LAKEBASE_SCHEMA"],
+        )
+        # ThreadedConnectionPool: 멀티스레드 환경(FastAPI)에서 안전한 풀
+        _pool = pool.ThreadedConnectionPool(
+            minconn=2,       # 최소 연결 수
+            maxconn=10,      # 최대 연결 수
+            host=cred.host,
+            port=cred.port,
+            dbname=cred.database,
+            user=cred.username,
+            password=cred.password,
+            sslmode="require",  # TLS 필수
+        )
+    return _pool
+
+def get_conn():
+    """풀에서 커넥션 1개 대여"""
+    return get_pool().getconn()
+
+def put_conn(conn):
+    """커넥션 반납"""
+    get_pool().putconn(conn)
+```
+
+<Warning>
+`generate_credential()`이 반환하는 토큰은 **1시간** 유효합니다.
+프로덕션에서는 만료 전에 풀을 재생성하는 로직을 추가하세요.
+</Warning>
+
+---

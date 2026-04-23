@@ -16,7 +16,7 @@ title: "아키텍처 비교"
 | **데이터 저장 위치** | 고객 클라우드 스토리지 (S3/ADLS/GCS) | Snowflake 관리형 스토리지 | AWS 관리형 + S3 | Google 관리형 | OneLake (ADLS 기반) |
 | **오픈 포맷** | Delta Lake + UniForm(Iceberg 호환) | Iceberg 전환 중 (독점 우선) | Iceberg/Hudi 외부 지원 | BigLake로 제한적 지원 | Delta Lake |
 | **멀티클라우드** | AWS, Azure, GCP 동일 경험 | AWS, Azure, GCP 지원 | AWS Only | GCP Only (Omni 제한적) | Azure 중심 (일부 멀티클라우드) |
-| **벤더 종속 리스크** | 최소 (오픈 포맷 + 고객 소유 스토리지) | 높음 (독점 포맷, 이관 시 COPY 필요) | 중간 (AWS 종속) | 중간-높음 (GCP 종속 + 독점 포맷) | 중간 (Azure/MS 생태계 종속) |
+| **플랫폼 의존 리스크** | 최소 (오픈 포맷 + 고객 소유 스토리지) | 높음 (독점 포맷, 이관 시 COPY 필요) | 중간 (AWS 종속) | 중간-높음 (GCP 종속 + 독점 포맷) | 중간 (Azure/MS 생태계 종속) |
 
 > **성공**
 **Databricks 차별점**: 데이터를 **고객의 클라우드 스토리지에 오픈 포맷(Delta Lake)** 으로 저장하므로, 다른 엔진(Spark, Trino, Flink 등)에서도 직접 읽을 수 있습니다. UniForm을 통해 Iceberg 호환도 자동 보장됩니다.
@@ -43,7 +43,7 @@ title: "아키텍처 비교"
 
 기존 데이터 아키텍처는 **Data Lake** 와 **Data Warehouse** 를 별도로 운영하는 **Two-tier 아키텍처** 였습니다.
 
-| 계층 | 역할 | 기술 | 문제점 |
+| 계층 | 역할 | 기술 | 고려사항 |
 |---|---|---|---|
 | **Data Lake (1계층)** | 원천 데이터 저장 (정형+비정형) | S3/ADLS + Parquet/JSON | ACID 미보장, 품질 관리 불가, "Data Swamp" 화 |
 | **Data Warehouse (2계층)** | 정제 데이터 분석 | Snowflake/Redshift/BigQuery | 데이터 복사 비용, 비정형 미지원, ML 불가 |
