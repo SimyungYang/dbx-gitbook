@@ -1,0 +1,273 @@
+---
+title: "Genie Space 성능 튜닝 가이드"
+---
+
+
+Genie Space의 답변 정확도를 높이기 위한 **실전 튜닝 전략**을 단계별로 정리합니다.
+
+> Genie Space 기본 개념과 생성 방법은 **[Genie Space 운영 가이드](/blog/guides/genie-space/overview)** 를 참고하세요.
+
+---
+
+## 1단계: 데이터 준비 — 골드 테이블 설계
+
+Genie가 정확한 SQL을 생성하려면, **잘 정제된 골드 테이블**이 필요합니다.
+
+### 핵심 원칙
+
+| 원칙 | 설명 |
+|------|------|
+| **작게 시작** | 테이블/뷰 5개 이하로 시작. 너무 많으면 Genie가 혼란 |
+| **비정규화** | 자주 조인하는 테이블은 미리 조인해서 단일 뷰로 제공 |
+| **사람이 읽을 수 있는 값** | 코드값(`1`, `2`, `3`) 대신 실제 이름(`서울`, `부산`, `대전`)으로 변환 |
+| **코드 → 이름 매핑** | 스키마에 없는 비즈니스 용어는 CASE WHEN으로 뷰에 미리 정의 |
+
+### 물리 테이블 → 시맨틱 뷰 전환
+
+원본 물리 테이블을 **주제별 시맨틱 뷰**로 재구성하면 Genie 정확도가 크게 향상됩니다.
+
+```sql
+-- 여러 물리 테이블을 하나의 주제별 뷰로 결합
+CREATE OR REPLACE VIEW gold.customer_360 AS
+SELECT
+    c.customer_id,
+    c.name,
+    c.segment,
+    -- 코드값 → 사람이 읽을 수 있는 이름으로 변환
+    CASE WHEN c.grade_code IN ('1','2','3') THEN 'VIP'
+         WHEN c.grade_code IN ('4','5') THEN '우수'
+         ELSE '일반' END AS customer_grade,
+    -- 지역코드 → 지역명 (우편번호 테이블 조인)
+    z.region_name,
+    -- 상품 보유 정보 비정규화
+    p.product_count,
+    p.total_balance
+FROM gold.customers c
+LEFT JOIN gold.zipcode_regions z ON c.zipcode = z.zipcode
+LEFT JOIN gold.customer_products p ON c.customer_id = p.customer_id;
+```
+
+### Metric View 활용
+
+동일한 메트릭을 여러 차원으로 분석해야 할 때, 뷰를 여러 개 만드는 대신 **Metric View**를 사용하세요.
+
+```sql
+-- 뷰를 여러 개 만드는 대신
+-- CREATE VIEW revenue_by_date AS SELECT SUM(amount)... GROUP BY date
+-- CREATE VIEW revenue_by_region AS SELECT SUM(amount)... GROUP BY region
+-- CREATE VIEW revenue_by_product AS SELECT SUM(amount)... GROUP BY product
+
+-- Metric View 하나로 해결
+CREATE METRIC VIEW order_metrics AS
+SELECT
+    order_date,
+    region,
+    product_line,
+    MEASURE revenue AS SUM(sale_amount),
+    MEASURE order_count AS COUNT(DISTINCT order_id),
+    MEASURE avg_order_value AS SUM(sale_amount) / COUNT(DISTINCT order_id)
+FROM gold.orders;
+
+-- 사용자가 GROUP BY를 자유롭게 선택
+SELECT product_line, MEASURE(revenue) FROM order_metrics GROUP BY 1;
+```
+
+### Dimension 정의
+
+자주 필터로 사용되는 비즈니스 개념은 **Dimension**으로 미리 정의합니다.
+
+```sql
+-- 예: 고객 등급, 상품군, 연령대 등
+-- 이런 Dimension을 뷰에 미리 포함시키면 Genie가 정확하게 필터링
+ALTER VIEW gold.customer_360
+  ALTER COLUMN customer_grade SET TAGS ('dimension' = 'true');
+ALTER VIEW gold.customer_360
+  ALTER COLUMN region_name SET TAGS ('dimension' = 'true');
+```
+
+---
+
+## 2단계: 벤치마크 설정
+
+Genie Space 튜닝의 핵심은 **벤치마크(평가 기준)**입니다.
+
+### 벤치마크 구성 방법
+
+<Steps>
+  <Step title="질문 세트 작성">
+    사용자가 실제로 물어볼 질문 20-30개를 작성합니다. 쉬운 질문부터 복잡한 질문까지 포함.
+  </Step>
+  <Step title="정답 SQL 등록">
+    각 질문에 대한 정확한 SQL을 직접 작성하여 등록합니다.
+  </Step>
+  <Step title="벤치마크 실행">
+    Genie가 생성한 SQL과 정답 SQL을 비교합니다. 자동으로 correct / need review 레이블이 붙습니다.
+  </Step>
+  <Step title="개선 작업">
+    실패한 질문을 분석하여 인스트럭션 추가, 테이블 문서화 보강, 예시 쿼리 등록으로 개선합니다.
+  </Step>
+  <Step title="재실행">
+    개선 후 벤치마크를 다시 실행하여 정확도가 올라갔는지 확인합니다. 이 사이클을 반복합니다.
+  </Step>
+</Steps>
+
+### 벤치마크 질문 설계 팁
+
+| 유형 | 예시 |
+|------|------|
+| **단순 조회** | "이번 달 전체 매출 합계 알려줘" |
+| **필터 + 집계** | "서울 지역 VIP 고객 수 알려줘" |
+| **기간 비교** | "전분기 대비 이번 분기 매출 증가율" |
+| **다중 조건** | "신규 가입자 중 상위 등급으로 진입한 고객의 상품 보유 현황" |
+| **비즈니스 용어** | "우량 고객 세그먼트별 이탈률" (스키마에 없는 용어) |
+
+> **핵심**: 가장 중요한 벤치마크는 **비즈니스 용어가 포함된 질문**입니다. "우량 고객"의 정의가 스키마에 없으면 Genie가 틀릴 수밖에 없습니다.
+
+---
+
+## 3단계: 메타데이터와 인스트럭션 튜닝
+
+### 테이블/컬럼 설명
+
+```sql
+-- 테이블 설명
+COMMENT ON TABLE gold.customer_360 IS 
+  '고객 마스터 뷰. 고객 기본정보, 등급, 지역, 상품 보유 현황을 통합';
+
+-- 컬럼 설명 — Genie가 이 설명을 참고하여 SQL 생성
+COMMENT ON COLUMN gold.customer_360.customer_grade IS 
+  '고객 등급. VIP(1-3등급), 우수(4-5등급), 일반(6등급 이하). 우량 고객은 VIP + 우수를 의미함';
+
+COMMENT ON COLUMN gold.customer_360.region_name IS 
+  '고객 관리 지역명. 서울/부산/대구/인천/광주/대전/울산/세종/경기 등 17개 시도';
+```
+
+> **중요**: Genie Space 내에서 변경한 메타데이터는 **Unity Catalog 원본에 영향을 주지 않습니다.** 따라서 다른 사용자/다른 Space에 영향 없이 자유롭게 설명을 추가할 수 있습니다.
+
+### JOIN 힌트
+
+미리 조인하기 어려운 경우, **Genie Space의 Joins 탭**에서 테이블 간 관계를 명시합니다.
+
+| 설정 항목 | 설명 |
+|---------|------|
+| **관계 정의** | 어떤 컬럼으로 조인하는지 명시 |
+| **조인 유형** | INNER / LEFT / RIGHT 지정 |
+| **조인 조건** | 유효기간 조건 등 추가 조건 가능 |
+
+### 예시 쿼리 등록
+
+Genie가 어려워하는 쿼리 유형을 **예시 쿼리(Sample Query)**로 등록합니다.
+
+```sql
+-- 예시 쿼리: "전분기 대비 VIP 고객 증가율"
+-- 자연어: 전분기 대비 이번 분기 VIP 고객 수 증가율 알려줘
+SELECT
+    current_quarter.vip_count,
+    prev_quarter.vip_count AS prev_vip_count,
+    ROUND((current_quarter.vip_count - prev_quarter.vip_count) 
+          / prev_quarter.vip_count * 100, 1) AS growth_rate_pct
+FROM (
+    SELECT COUNT(*) AS vip_count
+    FROM gold.customer_360
+    WHERE customer_grade = 'VIP'
+      AND base_month = DATE_FORMAT(CURRENT_DATE(), 'yyyyMM')
+) current_quarter
+CROSS JOIN (
+    SELECT COUNT(*) AS vip_count
+    FROM gold.customer_360
+    WHERE customer_grade = 'VIP'
+      AND base_month = DATE_FORMAT(ADD_MONTHS(CURRENT_DATE(), -3), 'yyyyMM')
+) prev_quarter;
+```
+
+### SQL Expression (재사용 가능한 빌딩 블록)
+
+공통 비즈니스 로직을 **SQL Expression**으로 등록하면, Genie가 쿼리 구성 시 자동으로 활용합니다.
+
+| Expression 이름 | SQL | 용도 |
+|---------------|-----|------|
+| 회계연도 | `CASE WHEN MONTH(date) >= 4 THEN YEAR(date) ELSE YEAR(date)-1 END` | 4월 시작 회계연도 |
+| 고객등급 | `CASE WHEN grade IN ('1','2','3') THEN 'VIP' ...` | 등급 코드 → 이름 |
+| 연령대 | `CASE WHEN age < 20 THEN '10대' WHEN age < 30 THEN '20대' ...` | 나이 → 연령대 |
+
+### UDF (사용자 정의 함수) 등록
+
+복잡한 계산은 **Unity Catalog Function**으로 등록하고, Genie가 도구로 사용하게 합니다.
+
+```sql
+-- 고객 이탈 위험도 계산 함수
+CREATE OR REPLACE FUNCTION gold.calc_churn_risk(
+    last_transaction_date DATE,
+    total_transactions INT
+)
+RETURNS STRING
+RETURN CASE
+    WHEN DATEDIFF(CURRENT_DATE(), last_transaction_date) > 180 THEN '높음'
+    WHEN DATEDIFF(CURRENT_DATE(), last_transaction_date) > 90 THEN '중간'
+    ELSE '낮음'
+END;
+```
+
+---
+
+## 4단계: General Instruction 작성
+
+벤치마크에서 반복적으로 실패하는 패턴을 **General Instruction**으로 해결합니다.
+
+### 좋은 인스트럭션 vs 나쁜 인스트럭션
+
+| 구분 | 예시 |
+|------|------|
+| **좋은 예** | "매출을 계산할 때는 반드시 `금액 > 0` 조건을 포함하세요. 취소 건(금액 ≤ 0)은 제외합니다." |
+| **좋은 예** | "'우량 고객'이란 등급이 VIP 또는 우수인 당월 활성 고객을 의미합니다." |
+| **좋은 예** | "날짜 조건에서 '올해'는 현재 회계연도(4월~3월)를 의미합니다." |
+| **나쁜 예** | "정확한 SQL을 생성해주세요" (너무 모호함) |
+| **나쁜 예** | "금융 도메인 전문가처럼 행동하세요" (행동 지침이 아닌 역할 부여) |
+
+### 인스트럭션 작성 원칙
+
+1. **구체적 행동을 지시** — "~할 때는 ~하세요"
+2. **비즈니스 용어를 정의** — 스키마에 없는 용어의 SQL 표현 명시
+3. **예외 처리 명시** — "~의 경우 ~을 제외하세요"
+4. **출력 형식 지정** — "금액은 원 단위로, 비율은 소수점 1자리까지"
+
+---
+
+## 5단계: 모니터링과 지속 개선
+
+### 전문가 피드백 수집
+
+<Steps>
+  <Step title="소수 전문가에게 공개">
+    도메인 전문가 3-5명에게 먼저 접근 권한 부여
+  </Step>
+  <Step title="평가 도구 활용">
+    Genie Space 내 평가(thumbs up/down) 기능으로 피드백 수집
+  </Step>
+  <Step title="피드백 기반 개선">
+    틀린 답변을 분석하여 인스트럭션/예시 쿼리/메타데이터 보강
+  </Step>
+  <Step title="점진적 확대">
+    정확도가 안정되면 사용자 범위를 점진적으로 확대
+  </Step>
+</Steps>
+
+### 일반적인 문제와 해결 방법
+
+| 문제 | 원인 | 해결 |
+|------|------|------|
+| 비즈니스 용어를 이해 못 함 | 스키마에 용어 정의 없음 | 컬럼 설명 + 인스트럭션에 용어 정의 추가 |
+| 잘못된 테이블을 선택 | 테이블 설명 부족 | 테이블 설명에 "언제 이 테이블을 사용해야 하는지" 명시 |
+| JOIN이 틀림 | 테이블 관계 미지정 | Joins 탭에서 관계 명시 |
+| 기간 계산 오류 | 회계연도/분기 기준 모호 | SQL Expression으로 기간 계산 로직 등록 |
+| 복잡한 쿼리 실패 | 단계별 로직이 필요 | 예시 쿼리로 패턴 등록 |
+
+---
+
+## 관련 문서
+
+- [Genie Space 생성](/blog/guides/genie-space/create-space) — Space 초기 설정
+- [데이터 설정](/blog/guides/genie-space/data-config) — 테이블 선택, 컬럼 최적화
+- [인스트럭션](/blog/guides/genie-space/instructions) — 비즈니스 규칙 정의
+- [테스트](/blog/guides/genie-space/testing) — 품질 검증, 반복 개선
+- [Metric Views](/training/08-ai-bi/metric-views) — Metric View 개념과 활용
