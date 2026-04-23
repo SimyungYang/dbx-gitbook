@@ -29,16 +29,12 @@ title: "Module 2: Data Engineering - 스마트TV 데이터 파이프라인"
 
 ## 파이프라인 아키텍처
 
-```
-Bronze (원본 로그)        Silver (정제)          Gold (분석/서빙)
-┌───────────────┐       ┌──────────────────┐      ┌──────────────────┐
-│ devices    │       │ silver_devices  │      │ daily_viewing   │
-│ viewing_logs  │ ──Clean──→ │ silver_viewing  │ ──Agg──→ │ _summary     │
-│ click_events  │  Filter  │ silver_clicks   │  Join   │ user_profiles   │
-│ ad_impressions │  Dedup   │ silver_ads    │  Enrich  │ ad_performance  │
-└───────────────┘       └──────────────────┘      │ content_rankings │
-                               └──────────────────┘
-```
+| Bronze (원본 로그) | 변환 | Silver (정제) | 변환 | Gold (분석/서빙) |
+|---|---|---|---|---|
+| devices | Clean, Filter, Dedup | silver_devices | Agg, Join, Enrich | daily_viewing_summary |
+| viewing_logs | | silver_viewing | | user_profiles |
+| click_events | | silver_clicks | | ad_performance |
+| ad_impressions | | silver_ads | | content_rankings |
 
 ---
 
@@ -314,25 +310,19 @@ Spark Declarative Pipeline (DLT)로 자동화해줘.
 
 ### 핵심 개념: Spark Declarative Pipelines
 
-```
-┌─────────────────────────────────────────────────┐
-│       DLT Pipeline            │
-│                         │
-│ ┌─────────┐  ┌─────────┐  ┌─────────┐   │
-│ │Streaming│  │Streaming│  │Material.│   │
-│ │ Table  │───→│ Table  │───→│ View  │   │
-│ │(Bronze) │  │(Silver) │  │ (Gold) │   │
-│ └─────────┘  └─────────┘  └─────────┘   │
-│    │       │       │      │
-│ ┌────┴────┐  ┌────┴────┐  ┌────┴────┐   │
-│ │Expect: │  │Expect: │  │ Auto  │   │
-│ │NOT NULL │  │Range  │  │ Refresh │   │
-│ └─────────┘  └─────────┘  └─────────┘   │
-│                         │
-│ ✅ 자동 의존성 해결 ✅ 증분 처리        │
-│ ✅ 데이터 품질 관리 ✅ 자동 복구        │
-└─────────────────────────────────────────────────┘
-```
+<Steps>
+  <Step title="Streaming Table (Bronze)">
+    원본 데이터를 수집합니다. **Expectation**: `NOT NULL` (필수 컬럼 검증)
+  </Step>
+  <Step title="Streaming Table (Silver)">
+    Bronze 데이터를 정제합니다. **Expectation**: `Range` (값 범위 검증)
+  </Step>
+  <Step title="Materialized View (Gold)">
+    Silver 데이터를 집계합니다. **Auto Refresh**: 소스 변경 시 자동 갱신
+  </Step>
+</Steps>
+
+DLT Pipeline의 핵심 기능: 자동 의존성 해결, 증분 처리, 데이터 품질 관리, 자동 복구
 
 ---
 

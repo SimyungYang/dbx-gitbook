@@ -23,14 +23,23 @@ title: "Module 4: Structured Streaming — 실시간 데이터 처리"
 
 ## End-to-End 아키텍처
 
-```
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│ Event    │  │ UC Volume  │  │ Auto Loader │  │ SDP Pipeline │  │ Gold MV   │
-│ Generator  │───→│ /landing/  │───→│ cloudFiles  │───→│ Bronze→Silver│───→│ 집계 자동  │
-│ (DB App)   │  │ *.json    │  │ 자동 감지  │  │ 증분 처리  │  │ 갱신     │
-└──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘
-   주기적 생성     파일 저장      스트림 수집     정제+검증      대시보드 반영
-```
+<Steps>
+  <Step title="Event Generator (DB App)">
+    Databricks App이 주기적으로 이벤트 데이터를 생성합니다.
+  </Step>
+  <Step title="UC Volume (/landing/)">
+    생성된 `*.json` 파일이 UC Volume에 저장됩니다.
+  </Step>
+  <Step title="Auto Loader (cloudFiles)">
+    새 파일을 자동 감지하여 스트림으로 수집합니다.
+  </Step>
+  <Step title="SDP Pipeline (Bronze → Silver)">
+    증분 처리로 데이터를 정제하고 검증합니다.
+  </Step>
+  <Step title="Gold Materialized View">
+    집계가 자동 갱신되어 대시보드에 반영됩니다.
+  </Step>
+</Steps>
 
 ### 실무 대응
 

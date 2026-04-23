@@ -26,26 +26,20 @@ title: "에이전트 개발"
 | **Genie Agent** | 데이터 기반 분석 질의 | Gold 테이블 (Genie Space) | "이번 주 시청 시간 추이는?", "에러율이 높은 펌웨어는?" |
 | **Supervisor Agent** | 위 에이전트 오케스트레이션 | 위 에이전트들 | 질문 의도에 따라 적절한 에이전트로 라우팅 |
 
-```
-사용자 질문
-    │
-    ▼
-┌─────────────────┐
-│ Supervisor Agent │  ← "이 질문은 어떤 에이전트가 답할 수 있을까?"
-└─────────────────┘
-    │           │
-    ▼           ▼
-┌────────┐  ┌────────────┐
-│ KA     │  │ Genie      │
-│ (문서) │  │ (데이터)   │
-└────────┘  └────────────┘
-    │           │
-    ▼           ▼
-"OLED 번인     "이번 주
- 예방하려면     Netflix
- 설정에서..."   시청시간은
-               평균 45분..."
-```
+<Steps>
+  <Step title="사용자 질문 수신">
+    사용자가 질문을 입력합니다.
+  </Step>
+  <Step title="Supervisor Agent 라우팅">
+    "이 질문은 어떤 에이전트가 답할 수 있을까?" — 질문 의도를 분석하여 적절한 에이전트로 라우팅합니다.
+  </Step>
+  <Step title="서브 에이전트 실행">
+    | 에이전트 | 입력 예시 | 출력 예시 |
+    |---------|----------|----------|
+    | **KA (문서)** | 사용법/설정 질문 | "OLED 번인 예방하려면 설정에서..." |
+    | **Genie (데이터)** | 데이터/통계 질문 | "이번 주 Netflix 시청시간은 평균 45분..." |
+  </Step>
+</Steps>
 
 ---
 
@@ -548,23 +542,22 @@ AI: [데이터 분석]
 
 이 워크샵을 통해 구축한 것:
 
-```
-┌─────────────────────────────────────────────────────┐
-│                  LG Smart TV 데이터 플랫폼              │
-├─────────────────────────────────────────────────────┤
-│                                                     │
-│  [데이터 생성] 250만건 가상 데이터 (17 테이블)          │
-│       ↓                                             │
-│  [SDP 파이프라인] Bronze → Silver → Gold 자동 처리     │
-│       ↓                                             │
-│  [분석] AI/BI 대시보드 3개 + Genie Space 3개          │
-│       ↓                                             │
-│  [AI] Supervisor Agent                              │
-│       ├─ Knowledge Assistant (100개 FAQ, RAG)        │
-│       └─ Genie Agent (3개 Genie Space)              │
-│       ↓                                             │
-│  [OLTP] Lakebase (대화 이력, 사용자 선호도)             │
-│                                                     │
-│  모든 과정을 Genie Code + AI Dev Kit으로 구축          │
-└─────────────────────────────────────────────────────┘
-```
+<Steps>
+  <Step title="데이터 생성">
+    250만건 가상 데이터 (17 테이블)
+  </Step>
+  <Step title="SDP 파이프라인">
+    Bronze → Silver → Gold 자동 처리
+  </Step>
+  <Step title="분석">
+    AI/BI 대시보드 3개 + Genie Space 3개
+  </Step>
+  <Step title="AI Agent">
+    Supervisor Agent: Knowledge Assistant (100개 FAQ, RAG) + Genie Agent (3개 Genie Space)
+  </Step>
+  <Step title="OLTP">
+    Lakebase (대화 이력, 사용자 선호도)
+  </Step>
+</Steps>
+
+> 모든 과정을 Genie Code + AI Dev Kit으로 구축

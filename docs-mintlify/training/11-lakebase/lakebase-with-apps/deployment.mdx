@@ -28,29 +28,13 @@ title: "배포 및 운영"
 
 ### 전체 구성도
 
-```
-┌─────────────────────────────────────────────────────┐
-│              Databricks Workspace                    │
-│                                                     │
-│  ┌──────────────┐    PostgreSQL    ┌─────────────┐  │
-│  │ Databricks   │◄───────────────►│  Lakebase   │  │
-│  │ Apps         │  psycopg2/       │  (OLTP DB)  │  │
-│  │ (Streamlit / │  SQLAlchemy      └──────┬──────┘  │
-│  │  FastAPI)    │                         │ Data    │
-│  └──────┬───────┘                         │ Sync    │
-│         │ OAuth 2.0                       ▼         │
-│         │                       ┌─────────────────┐ │
-│  ┌──────▼───────┐               │  Delta Lake /   │ │
-│  │  Databricks  │               │  Unity Catalog  │ │
-│  │  Identity    │               │  (분석 레이어)   │ │
-│  │  (SSO)       │               └─────────────────┘ │
-│  └──────────────┘                                   │
-└─────────────────────────────────────────────────────┘
-           ▲
-           │ HTTPS (Databricks 관리형 도메인)
-           │
-     End User / Browser
-```
+| 구성 요소 | 역할 | 연결 방식 |
+|----------|------|----------|
+| **End User / Browser** | 최종 사용자 접근 | HTTPS (Databricks 관리형 도메인) |
+| **Databricks Apps** (Streamlit / FastAPI) | 웹 앱 호스팅 | psycopg2 / SQLAlchemy로 Lakebase 연결 |
+| **Databricks Identity (SSO)** | OAuth 2.0 인증 | 앱 접근 시 자동 인증 처리 |
+| **Lakebase (OLTP DB)** | PostgreSQL 운영 데이터베이스 | Apps에서 읽기/쓰기 |
+| **Delta Lake / Unity Catalog** | 분석 레이어 | Lakebase에서 Data Sync로 자동 반영 |
 
 ### OAuth 인증 흐름 (Authentication Flow)
 

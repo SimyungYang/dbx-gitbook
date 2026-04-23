@@ -24,26 +24,17 @@ title: "Overview — 전체 아키텍처 소개"
 
 ## 아키텍처
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  정형 데이터(AI4I 2020)     비정형 데이터(MVTec AD)               │
-│       │                         │                               │
-│       ▼                         ▼                               │
-│  Feature Eng.(Spark)       Image Proc.(Anomalib)                │
-│       │                         │                               │
-│       ▼                         ▼                               │
-│  XGBoost Train + SHAP      PatchCore Train   ← MLflow Tracking │
-│       │                         │                               │
-│       └────────┬────────────────┘                               │
-│                ▼                                                │
-│       UC Model Registry (Champion / Challenger)                 │
-│          │                  │                                   │
-│    Batch Predict(일4회)  Model Serve(실시간)  Lakehouse Monitor  │
-│                                                                 │
-│    MLOps Agent (드리프트→재학습 자동화)                           │
-│    Databricks Workflows (운영: 주1회 + 일4회 / 개발: 일4회)      │
-└─────────────────────────────────────────────────────────────────┘
-```
+| 단계 | 정형 데이터 (AI4I 2020) | 비정형 데이터 (MVTec AD) |
+|------|------------------------|------------------------|
+| **데이터 입력** | AI4I 2020 Predictive Maintenance Dataset | MVTec AD 산업용 이상탐지 벤치마크 이미지 |
+| **전처리** | Feature Eng. (Spark) | Image Proc. (Anomalib) |
+| **모델 학습** | XGBoost Train + SHAP | PatchCore Train |
+| **실험 관리** | MLflow Tracking | MLflow Tracking |
+| **모델 등록** | UC Model Registry (Champion / Challenger) | UC Model Registry (Champion / Challenger) |
+| **서빙** | Batch Predict (일 4회) | Model Serve (실시간) |
+| **모니터링** | Lakehouse Monitor | Lakehouse Monitor |
+| **자동화** | MLOps Agent (드리프트 → 재학습 자동화) | MLOps Agent (드리프트 → 재학습 자동화) |
+| **스케줄링** | Databricks Workflows (운영: 주 1회 + 일 4회 / 개발: 일 4회) | Databricks Workflows (운영: 주 1회 + 일 4회 / 개발: 일 4회) |
 
 ## Databricks 핵심 기능 매핑
 

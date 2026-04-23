@@ -37,51 +37,33 @@ PKCE는 이 공격을 **암호학적으로 차단** 합니다.
 
 ### 전체 흐름
 
-```
-사용자          CLI/SDK            브라우저          Databricks 인증서버
-  │               │                  │                    │
-  │  명령 실행     │                  │                    │
-  │──────────────▶│                  │                    │
-  │               │                  │                    │
-  │               │ 1. code_verifier │                    │
-  │               │    (43~128자 랜덤 문자열 생성)          │
-  │               │                  │                    │
-  │               │ 2. code_challenge│                    │
-  │               │    = SHA256(code_verifier)            │
-  │               │    → Base64URL 인코딩                  │
-  │               │                  │                    │
-  │               │ 3. 브라우저 오픈   │                    │
-  │               │─────────────────▶│                    │
-  │               │                  │ 4. 인증 요청        │
-  │               │                  │  (code_challenge   │
-  │               │                  │   + client_id)     │
-  │               │                  │───────────────────▶│
-  │               │                  │                    │
-  │  5. 로그인 + 동의                 │◀───────────────────│
-  │◀─────────────────────────────────│   로그인 페이지     │
-  │  ID/PW 입력 + 권한 동의           │                    │
-  │──────────────────────────────────▶                    │
-  │               │                  │                    │
-  │               │                  │ 6. authorization_  │
-  │               │                  │    code 발급       │
-  │               │                  │◀───────────────────│
-  │               │                  │                    │
-  │               │ 7. 토큰 교환 요청 │                    │
-  │               │  (authorization_code                  │
-  │               │   + code_verifier)                    │
-  │               │───────────────────────────────────────▶
-  │               │                  │                    │
-  │               │                  │  8. 서버가 검증:    │
-  │               │                  │  SHA256(code_      │
-  │               │                  │  verifier) ==      │
-  │               │                  │  code_challenge?   │
-  │               │                  │                    │
-  │               │ 9. access_token + refresh_token       │
-  │               │◀───────────────────────────────────────│
-  │               │                  │                    │
-  │  결과 반환     │                  │                    │
-  │◀──────────────│                  │                    │
-```
+<Steps>
+  <Step title="1. CLI/SDK가 PKCE 준비">
+    - `code_verifier` 생성 (43~128자 랜덤 문자열)
+    - `code_challenge` = SHA256(code_verifier) → Base64URL 인코딩
+  </Step>
+  <Step title="2. 브라우저 오픈">
+    CLI/SDK가 브라우저를 열어 Databricks 인증서버에 인증 요청을 전송합니다 (`code_challenge` + `client_id` 포함).
+  </Step>
+  <Step title="3. 사용자 로그인 + 동의">
+    사용자가 로그인 페이지에서 ID/PW 입력 후 권한에 동의합니다.
+  </Step>
+  <Step title="4. authorization_code 발급">
+    인증서버가 브라우저를 통해 `authorization_code`를 CLI/SDK에 전달합니다.
+  </Step>
+  <Step title="5. 토큰 교환 요청">
+    CLI/SDK가 `authorization_code` + `code_verifier`를 인증서버에 전송합니다.
+  </Step>
+  <Step title="6. 서버 검증">
+    인증서버가 `SHA256(code_verifier) == code_challenge?`를 검증합니다.
+  </Step>
+  <Step title="7. 토큰 발급">
+    검증 성공 시 `access_token` + `refresh_token`이 CLI/SDK에 반환됩니다.
+  </Step>
+  <Step title="8. 결과 반환">
+    CLI/SDK가 발급받은 토큰으로 사용자를 대신하여 API를 호출하고 결과를 반환합니다.
+  </Step>
+</Steps>
 
 ### 핵심 보안 메커니즘
 

@@ -25,21 +25,20 @@ title: "Module 5: ML/AI — 개인화 추천 모델"
 
 ## 아키텍처
 
-```
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│ Gold Tables │  │ Feature   │  │ ML Model   │  │ Model    │
-│       │───→│ Engineering │───→│ Training   │───→│ Serving   │
-│ user_profiles│  │ 피처 추출  │  │ ALS + MLflow │  │ 엔드포인트  │
-│ viewing_logs │  │ 학습 데이터  │  │ 실험 관리  │  │ 실시간 추론 │
-│ content_rank │  │       │  │       │  │       │
-└──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘
-                       │
-                   ┌────────┴────────┐
-                   │ MLflow     │
-                   │ Tracking    │
-                   │ Registry (UC) │
-                   └─────────────────┘
-```
+<Steps>
+  <Step title="Gold Tables">
+    `user_profiles`, `viewing_logs`, `content_rank` 테이블에서 데이터를 추출합니다.
+  </Step>
+  <Step title="Feature Engineering">
+    피처 추출 및 학습 데이터를 준비합니다. MLflow Tracking / Registry (UC)로 실험을 관리합니다.
+  </Step>
+  <Step title="ML Model Training">
+    ALS + MLflow로 모델을 학습하고 실험을 관리합니다.
+  </Step>
+  <Step title="Model Serving">
+    엔드포인트를 배포하여 실시간 추론을 수행합니다.
+  </Step>
+</Steps>
 
 ---
 

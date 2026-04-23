@@ -40,27 +40,12 @@ title: "하이브리드 BI 전략"
 
 시각화 도구에 종속되지 않고 **시맨틱 레이어 (Semantic Layer)** 에서 비즈니스 로직을 중앙 관리하는 패턴입니다. 어떤 BI 도구에서 접근하든 동일한 지표 정의를 보장합니다.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│              소비 채널 (Consumption Layer)                │
-│  Genie  │  AI/BI Dashboard  │  Tableau  │  Power BI  │  API  │
-└─────────────────────┬───────────────────────────────────┘
-                      │ SQL / REST
-┌─────────────────────▼───────────────────────────────────┐
-│       시맨틱 레이어 (Semantic Layer)                       │
-│    Unity Catalog + Metric Views (SSOT)                   │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────┐
-│         쿼리 엔진 (Query Engine)                           │
-│    SQL Warehouse (Serverless / Pro / Classic)            │
-└─────────────────────┬───────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────┐
-│              Lakehouse (Delta Lake)                       │
-│    Bronze → Silver → Gold (Medallion Architecture)       │
-└─────────────────────────────────────────────────────────┘
-```
+| 계층 | 구성 요소 | 설명 |
+|------|----------|------|
+| **소비 채널** (Consumption Layer) | Genie, AI/BI Dashboard, Tableau, Power BI, API | 최종 사용자가 접근하는 시각화/분석 도구 |
+| **시맨틱 레이어** (Semantic Layer) | Unity Catalog + Metric Views (SSOT) | 비즈니스 지표 정의 중앙 관리 (SQL / REST로 접근) |
+| **쿼리 엔진** (Query Engine) | SQL Warehouse (Serverless / Pro / Classic) | 모든 소비 채널의 쿼리를 처리 |
+| **데이터 저장소** (Lakehouse) | Delta Lake | Bronze → Silver → Gold (Medallion Architecture) |
 
 ### 2-3. Embedded BI (임베디드 BI) 아키텍처
 
