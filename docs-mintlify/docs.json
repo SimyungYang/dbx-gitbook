@@ -16,7 +16,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "시작하기",
+        "tab": "실전 가이드",
         "groups": [
           {
             "group": "가이드 목록",
@@ -176,179 +176,6 @@
               "blog/guides/lakeflow-incremental/streaming-table",
               "blog/guides/lakeflow-incremental/materialized-view",
               "blog/guides/lakeflow-incremental/cdc-checklist"
-            ]
-          },
-          {
-            "group": "GenAI 핵심 개념",
-            "pages": [
-              "blog/guides/genai-concepts/overview",
-              {
-                "group": "NLP에서 LLM까지",
-                "pages": [
-                  "blog/guides/genai-concepts/nlp-evolution/overview",
-                  "blog/guides/genai-concepts/nlp-evolution/rule-statistical",
-                  "blog/guides/genai-concepts/nlp-evolution/embeddings",
-                  "blog/guides/genai-concepts/nlp-evolution/rnn-lstm",
-                  "blog/guides/genai-concepts/nlp-evolution/attention-transformer",
-                  "blog/guides/genai-concepts/nlp-evolution/pretrain-era",
-                  "blog/guides/genai-concepts/nlp-evolution/insights"
-                ]
-              },
-              {
-                "group": "LLM 기초",
-                "pages": [
-                  "blog/guides/genai-concepts/llm-basics/overview",
-                  "blog/guides/genai-concepts/llm-basics/transformer",
-                  "blog/guides/genai-concepts/llm-basics/core-concepts",
-                  "blog/guides/genai-concepts/llm-basics/training",
-                  "blog/guides/genai-concepts/llm-basics/internals",
-                  "blog/guides/genai-concepts/llm-basics/hallucination",
-                  "blog/guides/genai-concepts/llm-basics/models",
-                  "blog/guides/genai-concepts/llm-basics/practical",
-                  "blog/guides/genai-concepts/llm-basics/reasoning",
-                  "blog/guides/genai-concepts/llm-basics/multimodal"
-                ]
-              },
-              {
-                "group": "AI Agent 아키텍처",
-                "pages": [
-                  "blog/guides/genai-concepts/agent-architecture/overview",
-                  "blog/guides/genai-concepts/agent-architecture/react-planning",
-                  "blog/guides/genai-concepts/agent-architecture/tool-use",
-                  "blog/guides/genai-concepts/agent-architecture/memory",
-                  "blog/guides/genai-concepts/agent-architecture/multi-agent",
-                  "blog/guides/genai-concepts/agent-architecture/frameworks",
-                  "blog/guides/genai-concepts/agent-architecture/production"
-                ]
-              },
-              {
-                "group": "Prompt Engineering",
-                "pages": [
-                  "blog/guides/genai-concepts/prompt-engineering/overview",
-                  "blog/guides/genai-concepts/prompt-engineering/basics",
-                  "blog/guides/genai-concepts/prompt-engineering/advanced",
-                  "blog/guides/genai-concepts/prompt-engineering/korean",
-                  "blog/guides/genai-concepts/prompt-engineering/security",
-                  "blog/guides/genai-concepts/prompt-engineering/practical"
-                ]
-              },
-              {
-                "group": "평가 (Evaluation)",
-                "pages": [
-                  "blog/guides/genai-concepts/evaluation/overview",
-                  "blog/guides/genai-concepts/evaluation/metrics",
-                  "blog/guides/genai-concepts/evaluation/judge",
-                  "blog/guides/genai-concepts/evaluation/pipeline",
-                  "blog/guides/genai-concepts/evaluation/practical"
-                ]
-              },
-              {
-                "group": "Agent 프레임워크",
-                "pages": [
-                  "blog/guides/genai-concepts/agent-frameworks-detail/overview",
-                  "blog/guides/genai-concepts/agent-frameworks-detail/langchain-langgraph",
-                  "blog/guides/genai-concepts/agent-frameworks-detail/crewai-openai-autogen",
-                  "blog/guides/genai-concepts/agent-frameworks-detail/databricks-af",
-                  "blog/guides/genai-concepts/agent-frameworks-detail/comparison"
-                ]
-              },
-              {
-                "group": "A2A 프로토콜",
-                "pages": [
-                  "blog/guides/genai-concepts/a2a-protocol/overview",
-                  "blog/guides/genai-concepts/a2a-protocol/concepts",
-                  "blog/guides/genai-concepts/a2a-protocol/implementation",
-                  "blog/guides/genai-concepts/a2a-protocol/production"
-                ]
-              },
-              {
-                "group": "Agent 생태계",
-                "pages": [
-                  "blog/guides/genai-concepts/agent-landscape/overview",
-                  "blog/guides/genai-concepts/agent-landscape/openai",
-                  "blog/guides/genai-concepts/agent-landscape/anthropic",
-                  "blog/guides/genai-concepts/agent-landscape/google",
-                  "blog/guides/genai-concepts/agent-landscape/aws-others",
-                  "blog/guides/genai-concepts/agent-landscape/databricks",
-                  "blog/guides/genai-concepts/agent-landscape/multi-agent-trends"
-                ]
-              },
-              {
-                "group": "Agent UI",
-                "pages": [
-                  "blog/guides/genai-concepts/agent-ui-detail/overview",
-                  "blog/guides/genai-concepts/agent-ui-detail/streamlit-gradio",
-                  "blog/guides/genai-concepts/agent-ui-detail/chainlit-dash",
-                  "blog/guides/genai-concepts/agent-ui-detail/fastapi-backend",
-                  "blog/guides/genai-concepts/agent-ui-detail/databricks-apps"
-                ]
-              },
-              {
-                "group": "AI 성숙도",
-                "pages": [
-                  "blog/guides/genai-concepts/ai-proficiency/overview",
-                  "blog/guides/genai-concepts/ai-proficiency/levels",
-                  "blog/guides/genai-concepts/ai-proficiency/transition",
-                  "blog/guides/genai-concepts/ai-proficiency/governance",
-                  "blog/guides/genai-concepts/ai-proficiency/regulation"
-                ]
-              }
-            ]
-          },
-          {
-            "group": "RAG (검색 증강 생성)",
-            "pages": [
-              "blog/guides/rag/overview",
-              {
-                "group": "RAG 핵심 개념",
-                "pages": [
-                  "blog/guides/rag/concepts/overview",
-                  "blog/guides/rag/concepts/embedding",
-                  "blog/guides/rag/concepts/similarity",
-                  "blog/guides/rag/concepts/vector-index",
-                  "blog/guides/rag/concepts/bm25",
-                  "blog/guides/rag/concepts/hybrid-search",
-                  "blog/guides/rag/concepts/reranking"
-                ]
-              },
-              "blog/guides/rag/data-preparation",
-              "blog/guides/rag/chunking-strategies",
-              "blog/guides/rag/vector-search",
-              {
-                "group": "고급 검색 전략",
-                "pages": [
-                  "blog/guides/rag/advanced-retrieval/overview",
-                  "blog/guides/rag/advanced-retrieval/hybrid-search",
-                  "blog/guides/rag/advanced-retrieval/preprocessing",
-                  "blog/guides/rag/advanced-retrieval/reranking",
-                  "blog/guides/rag/advanced-retrieval/postprocessing",
-                  "blog/guides/rag/advanced-retrieval/chunking-advanced",
-                  "blog/guides/rag/advanced-retrieval/implementation"
-                ]
-              },
-              "blog/guides/rag/korean-nlp",
-              "blog/guides/rag/chain-building",
-              "blog/guides/rag/evaluation",
-              "blog/guides/rag/deployment"
-            ]
-          },
-          {
-            "group": "MCP (Model Context Protocol)",
-            "pages": [
-              "blog/guides/mcp/overview",
-              "blog/guides/mcp/setup-general",
-              "blog/guides/mcp/popular-servers",
-              "blog/guides/mcp/databricks-mcp",
-              "blog/guides/mcp/best-practices"
-            ]
-          },
-          {
-            "group": "ML 핵심 개념",
-            "pages": [
-              "blog/guides/ml-fundamentals/overview",
-              "blog/guides/ml-fundamentals/databricks-ml-features",
-              "blog/guides/ml-fundamentals/ml-trends",
-              "blog/guides/ml-fundamentals/retraining-strategies"
             ]
           }
         ]
@@ -803,21 +630,204 @@
         ]
       },
       {
+        "tab": "AI/ML 개념",
+        "groups": [
+          {
+            "group": "GenAI 핵심 개념",
+            "pages": [
+              "blog/guides/genai-concepts/overview",
+              {
+                "group": "NLP에서 LLM까지",
+                "pages": [
+                  "blog/guides/genai-concepts/nlp-evolution/overview",
+                  "blog/guides/genai-concepts/nlp-evolution/rule-statistical",
+                  "blog/guides/genai-concepts/nlp-evolution/embeddings",
+                  "blog/guides/genai-concepts/nlp-evolution/rnn-lstm",
+                  "blog/guides/genai-concepts/nlp-evolution/attention-transformer",
+                  "blog/guides/genai-concepts/nlp-evolution/pretrain-era",
+                  "blog/guides/genai-concepts/nlp-evolution/insights"
+                ]
+              },
+              {
+                "group": "LLM 기초",
+                "pages": [
+                  "blog/guides/genai-concepts/llm-basics/overview",
+                  "blog/guides/genai-concepts/llm-basics/transformer",
+                  "blog/guides/genai-concepts/llm-basics/core-concepts",
+                  "blog/guides/genai-concepts/llm-basics/training",
+                  "blog/guides/genai-concepts/llm-basics/internals",
+                  "blog/guides/genai-concepts/llm-basics/hallucination",
+                  "blog/guides/genai-concepts/llm-basics/models",
+                  "blog/guides/genai-concepts/llm-basics/practical",
+                  "blog/guides/genai-concepts/llm-basics/reasoning",
+                  "blog/guides/genai-concepts/llm-basics/multimodal"
+                ]
+              },
+              {
+                "group": "AI Agent 아키텍처",
+                "pages": [
+                  "blog/guides/genai-concepts/agent-architecture/overview",
+                  "blog/guides/genai-concepts/agent-architecture/react-planning",
+                  "blog/guides/genai-concepts/agent-architecture/tool-use",
+                  "blog/guides/genai-concepts/agent-architecture/memory",
+                  "blog/guides/genai-concepts/agent-architecture/multi-agent",
+                  "blog/guides/genai-concepts/agent-architecture/frameworks",
+                  "blog/guides/genai-concepts/agent-architecture/production"
+                ]
+              },
+              {
+                "group": "Prompt Engineering",
+                "pages": [
+                  "blog/guides/genai-concepts/prompt-engineering/overview",
+                  "blog/guides/genai-concepts/prompt-engineering/basics",
+                  "blog/guides/genai-concepts/prompt-engineering/advanced",
+                  "blog/guides/genai-concepts/prompt-engineering/korean",
+                  "blog/guides/genai-concepts/prompt-engineering/security",
+                  "blog/guides/genai-concepts/prompt-engineering/practical"
+                ]
+              },
+              {
+                "group": "평가 (Evaluation)",
+                "pages": [
+                  "blog/guides/genai-concepts/evaluation/overview",
+                  "blog/guides/genai-concepts/evaluation/metrics",
+                  "blog/guides/genai-concepts/evaluation/judge",
+                  "blog/guides/genai-concepts/evaluation/pipeline",
+                  "blog/guides/genai-concepts/evaluation/practical"
+                ]
+              },
+              {
+                "group": "Agent 프레임워크",
+                "pages": [
+                  "blog/guides/genai-concepts/agent-frameworks-detail/overview",
+                  "blog/guides/genai-concepts/agent-frameworks-detail/langchain-langgraph",
+                  "blog/guides/genai-concepts/agent-frameworks-detail/crewai-openai-autogen",
+                  "blog/guides/genai-concepts/agent-frameworks-detail/databricks-af",
+                  "blog/guides/genai-concepts/agent-frameworks-detail/comparison"
+                ]
+              },
+              {
+                "group": "A2A 프로토콜",
+                "pages": [
+                  "blog/guides/genai-concepts/a2a-protocol/overview",
+                  "blog/guides/genai-concepts/a2a-protocol/concepts",
+                  "blog/guides/genai-concepts/a2a-protocol/implementation",
+                  "blog/guides/genai-concepts/a2a-protocol/production"
+                ]
+              },
+              {
+                "group": "Agent 생태계",
+                "pages": [
+                  "blog/guides/genai-concepts/agent-landscape/overview",
+                  "blog/guides/genai-concepts/agent-landscape/openai",
+                  "blog/guides/genai-concepts/agent-landscape/anthropic",
+                  "blog/guides/genai-concepts/agent-landscape/google",
+                  "blog/guides/genai-concepts/agent-landscape/aws-others",
+                  "blog/guides/genai-concepts/agent-landscape/databricks",
+                  "blog/guides/genai-concepts/agent-landscape/multi-agent-trends"
+                ]
+              },
+              {
+                "group": "Agent UI",
+                "pages": [
+                  "blog/guides/genai-concepts/agent-ui-detail/overview",
+                  "blog/guides/genai-concepts/agent-ui-detail/streamlit-gradio",
+                  "blog/guides/genai-concepts/agent-ui-detail/chainlit-dash",
+                  "blog/guides/genai-concepts/agent-ui-detail/fastapi-backend",
+                  "blog/guides/genai-concepts/agent-ui-detail/databricks-apps"
+                ]
+              },
+              {
+                "group": "AI 성숙도",
+                "pages": [
+                  "blog/guides/genai-concepts/ai-proficiency/overview",
+                  "blog/guides/genai-concepts/ai-proficiency/levels",
+                  "blog/guides/genai-concepts/ai-proficiency/transition",
+                  "blog/guides/genai-concepts/ai-proficiency/governance",
+                  "blog/guides/genai-concepts/ai-proficiency/regulation"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "RAG (검색 증강 생성)",
+            "pages": [
+              "blog/guides/rag/overview",
+              {
+                "group": "RAG 핵심 개념",
+                "pages": [
+                  "blog/guides/rag/concepts/overview",
+                  "blog/guides/rag/concepts/embedding",
+                  "blog/guides/rag/concepts/similarity",
+                  "blog/guides/rag/concepts/vector-index",
+                  "blog/guides/rag/concepts/bm25",
+                  "blog/guides/rag/concepts/hybrid-search",
+                  "blog/guides/rag/concepts/reranking"
+                ]
+              },
+              "blog/guides/rag/data-preparation",
+              "blog/guides/rag/chunking-strategies",
+              "blog/guides/rag/vector-search",
+              {
+                "group": "고급 검색 전략",
+                "pages": [
+                  "blog/guides/rag/advanced-retrieval/overview",
+                  "blog/guides/rag/advanced-retrieval/hybrid-search",
+                  "blog/guides/rag/advanced-retrieval/preprocessing",
+                  "blog/guides/rag/advanced-retrieval/reranking",
+                  "blog/guides/rag/advanced-retrieval/postprocessing",
+                  "blog/guides/rag/advanced-retrieval/chunking-advanced",
+                  "blog/guides/rag/advanced-retrieval/implementation"
+                ]
+              },
+              "blog/guides/rag/korean-nlp",
+              "blog/guides/rag/chain-building",
+              "blog/guides/rag/evaluation",
+              "blog/guides/rag/deployment"
+            ]
+          },
+          {
+            "group": "MCP (Model Context Protocol)",
+            "pages": [
+              "blog/guides/mcp/overview",
+              "blog/guides/mcp/setup-general",
+              "blog/guides/mcp/popular-servers",
+              "blog/guides/mcp/databricks-mcp",
+              "blog/guides/mcp/best-practices"
+            ]
+          },
+          {
+            "group": "ML 핵심 개념",
+            "pages": [
+              "blog/guides/ml-fundamentals/overview",
+              "blog/guides/ml-fundamentals/databricks-ml-features",
+              "blog/guides/ml-fundamentals/ml-trends",
+              "blog/guides/ml-fundamentals/retraining-strategies"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "AI 동향",
         "groups": [
           {
-            "group": "AI 시장 트렌드 2026",
+            "group": "개요",
             "pages": [
-              "ai-trends/overview",
-              {
-                "group": "2026년 4월 핫 키워드",
-                "pages": [
-                  "ai-trends/hot-keywords-2026-04",
-                  "ai-trends/keywords/claude-design",
-                  "ai-trends/keywords/harness-engineering",
-                  "ai-trends/keywords/agentic-engineering"
-                ]
-              },
+              "ai-trends/overview"
+            ]
+          },
+          {
+            "group": "2026년 4월 핫 키워드",
+            "pages": [
+              "ai-trends/hot-keywords-2026-04",
+              "ai-trends/keywords/claude-design",
+              "ai-trends/keywords/harness-engineering",
+              "ai-trends/keywords/agentic-engineering"
+            ]
+          },
+          {
+            "group": "기업별 동향 분석",
+            "pages": [
               "ai-trends/anthropic-trends-2026",
               "ai-trends/openai",
               "ai-trends/google",
