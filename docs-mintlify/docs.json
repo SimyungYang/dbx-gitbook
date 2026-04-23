@@ -1953,136 +1953,6 @@
             ]
           },
           {
-            "group": "모범 사례",
-            "pages": [
-              {
-                "group": "비용 최적화",
-                "pages": [
-                  "training/14-best-practices/cost-optimization/overview",
-                  {
-                    "group": "비용 구조 이해",
-                    "pages": [
-                      "training/14-best-practices/cost-optimization/cost-structure",
-                      "training/14-best-practices/cost-optimization/cost-structure-basics",
-                      "training/14-best-practices/cost-optimization/cost-structure-advanced-basics",
-                      "training/14-best-practices/cost-optimization/cost-structure-advanced",
-                      "training/14-best-practices/cost-optimization/cost-structure-advanced-advanced"
-                    ]
-                  },
-                  {
-                    "group": "컴퓨트 최적화",
-                    "pages": [
-                      "training/14-best-practices/cost-optimization/compute-optimization",
-                      "training/14-best-practices/cost-optimization/compute-optimization-basics",
-                      "training/14-best-practices/cost-optimization/compute-optimization-advanced"
-                    ]
-                  },
-                  {
-                    "group": "스토리지와 SQL Warehouse 최적화",
-                    "pages": [
-                      "training/14-best-practices/cost-optimization/storage-and-warehouse",
-                      "training/14-best-practices/cost-optimization/storage-and-warehouse-basics",
-                      "training/14-best-practices/cost-optimization/storage-and-warehouse-advanced"
-                    ]
-                  },
-                  {
-                    "group": "비용 모니터링과 체크리스트",
-                    "pages": [
-                      "training/14-best-practices/cost-optimization/monitoring-and-checklist",
-                      "training/14-best-practices/cost-optimization/monitoring-and-checklist-basics",
-                      "training/14-best-practices/cost-optimization/monitoring-and-checklist-advanced"
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "성능 튜닝",
-                "pages": [
-                  "training/14-best-practices/performance-tuning/overview",
-                  {
-                    "group": "Spark 쿼리 튜닝",
-                    "pages": [
-                      "training/14-best-practices/performance-tuning/spark-query-tuning",
-                      "training/14-best-practices/performance-tuning/spark-query-tuning-basics",
-                      "training/14-best-practices/performance-tuning/spark-query-tuning-advanced"
-                    ]
-                  },
-                  {
-                    "group": "Delta Lake 성능 최적화",
-                    "pages": [
-                      "training/14-best-practices/performance-tuning/delta-lake-optimization",
-                      "training/14-best-practices/performance-tuning/delta-lake-optimization-basics",
-                      "training/14-best-practices/performance-tuning/delta-lake-optimization-advanced"
-                    ]
-                  },
-                  {
-                    "group": "SQL Warehouse와 파이프라인 최적화",
-                    "pages": [
-                      "training/14-best-practices/performance-tuning/sql-warehouse-and-pipeline",
-                      "training/14-best-practices/performance-tuning/sql-warehouse-and-pipeline-basics",
-                      "training/14-best-practices/performance-tuning/sql-warehouse-and-pipeline-advanced"
-                    ]
-                  },
-                  {
-                    "group": "ML 성능 진단",
-                    "pages": [
-                      "training/14-best-practices/performance-tuning/ml-and-diagnostics",
-                      {
-                        "group": "ML/AI 성능 최적화와 GPU 사이징",
-                        "pages": [
-                          "training/14-best-practices/performance-tuning/ml-and-diagnostics-optimization",
-                          "training/14-best-practices/performance-tuning/ml-and-diagnostics-optimization-basics",
-                          "training/14-best-practices/performance-tuning/ml-and-diagnostics-optimization-advanced"
-                        ]
-                      },
-                      {
-                        "group": "OOM 디버깅과 성능 진단 체크리스트",
-                        "pages": [
-                          "training/14-best-practices/performance-tuning/ml-and-diagnostics-debugging",
-                          "training/14-best-practices/performance-tuning/ml-and-diagnostics-debugging-basics",
-                          "training/14-best-practices/performance-tuning/ml-and-diagnostics-debugging-advanced"
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "엔터프라이즈 거버넌스",
-                "pages": [
-                  "training/14-best-practices/enterprise-governance/overview",
-                  {
-                    "group": "플랫폼 설계",
-                    "pages": [
-                      "training/14-best-practices/enterprise-governance/platform-design",
-                      "training/14-best-practices/enterprise-governance/platform-design-basics",
-                      "training/14-best-practices/enterprise-governance/platform-design-advanced-basics",
-                      "training/14-best-practices/enterprise-governance/platform-design-advanced",
-                      "training/14-best-practices/enterprise-governance/platform-design-advanced-advanced"
-                    ]
-                  },
-                  {
-                    "group": "접근 제어 설계",
-                    "pages": [
-                      "training/14-best-practices/enterprise-governance/access-control",
-                      "training/14-best-practices/enterprise-governance/access-control-basics",
-                      "training/14-best-practices/enterprise-governance/access-control-advanced"
-                    ]
-                  },
-                  "training/14-best-practices/enterprise-governance/data-classification",
-                  {
-                    "group": "데이터 품질 관리와 CI/CD",
-                    "pages": [
-                      "training/14-best-practices/enterprise-governance/data-quality-cicd",
-                      "training/14-best-practices/enterprise-governance/data-quality-cicd-basics",
-                      "training/14-best-practices/enterprise-governance/data-quality-cicd-advanced"
-                    ]
-                  }
-                ]
-              }
-            ]
-          },
-          {
             "group": "개발 도구",
             "pages": [
               {
@@ -2343,7 +2213,7 @@
         ]
       },
       {
-        "tab": "실전 팁",
+        "tab": "모범 사례 가이드",
         "groups": [
           {
             "group": "개요",
@@ -2552,6 +2422,136 @@
                   "blog/guides/practical-tips/delta-performance-checklist",
                   "blog/guides/practical-tips/delta-performance-checklist-basics",
                   "blog/guides/practical-tips/delta-performance-checklist-advanced"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "모범 사례",
+            "pages": [
+              {
+                "group": "비용 최적화",
+                "pages": [
+                  "training/14-best-practices/cost-optimization/overview",
+                  {
+                    "group": "비용 구조 이해",
+                    "pages": [
+                      "training/14-best-practices/cost-optimization/cost-structure",
+                      "training/14-best-practices/cost-optimization/cost-structure-basics",
+                      "training/14-best-practices/cost-optimization/cost-structure-advanced-basics",
+                      "training/14-best-practices/cost-optimization/cost-structure-advanced",
+                      "training/14-best-practices/cost-optimization/cost-structure-advanced-advanced"
+                    ]
+                  },
+                  {
+                    "group": "컴퓨트 최적화",
+                    "pages": [
+                      "training/14-best-practices/cost-optimization/compute-optimization",
+                      "training/14-best-practices/cost-optimization/compute-optimization-basics",
+                      "training/14-best-practices/cost-optimization/compute-optimization-advanced"
+                    ]
+                  },
+                  {
+                    "group": "스토리지와 SQL Warehouse 최적화",
+                    "pages": [
+                      "training/14-best-practices/cost-optimization/storage-and-warehouse",
+                      "training/14-best-practices/cost-optimization/storage-and-warehouse-basics",
+                      "training/14-best-practices/cost-optimization/storage-and-warehouse-advanced"
+                    ]
+                  },
+                  {
+                    "group": "비용 모니터링과 체크리스트",
+                    "pages": [
+                      "training/14-best-practices/cost-optimization/monitoring-and-checklist",
+                      "training/14-best-practices/cost-optimization/monitoring-and-checklist-basics",
+                      "training/14-best-practices/cost-optimization/monitoring-and-checklist-advanced"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "성능 튜닝",
+                "pages": [
+                  "training/14-best-practices/performance-tuning/overview",
+                  {
+                    "group": "Spark 쿼리 튜닝",
+                    "pages": [
+                      "training/14-best-practices/performance-tuning/spark-query-tuning",
+                      "training/14-best-practices/performance-tuning/spark-query-tuning-basics",
+                      "training/14-best-practices/performance-tuning/spark-query-tuning-advanced"
+                    ]
+                  },
+                  {
+                    "group": "Delta Lake 성능 최적화",
+                    "pages": [
+                      "training/14-best-practices/performance-tuning/delta-lake-optimization",
+                      "training/14-best-practices/performance-tuning/delta-lake-optimization-basics",
+                      "training/14-best-practices/performance-tuning/delta-lake-optimization-advanced"
+                    ]
+                  },
+                  {
+                    "group": "SQL Warehouse와 파이프라인 최적화",
+                    "pages": [
+                      "training/14-best-practices/performance-tuning/sql-warehouse-and-pipeline",
+                      "training/14-best-practices/performance-tuning/sql-warehouse-and-pipeline-basics",
+                      "training/14-best-practices/performance-tuning/sql-warehouse-and-pipeline-advanced"
+                    ]
+                  },
+                  {
+                    "group": "ML 성능 진단",
+                    "pages": [
+                      "training/14-best-practices/performance-tuning/ml-and-diagnostics",
+                      {
+                        "group": "ML/AI 성능 최적화와 GPU 사이징",
+                        "pages": [
+                          "training/14-best-practices/performance-tuning/ml-and-diagnostics-optimization",
+                          "training/14-best-practices/performance-tuning/ml-and-diagnostics-optimization-basics",
+                          "training/14-best-practices/performance-tuning/ml-and-diagnostics-optimization-advanced"
+                        ]
+                      },
+                      {
+                        "group": "OOM 디버깅과 성능 진단 체크리스트",
+                        "pages": [
+                          "training/14-best-practices/performance-tuning/ml-and-diagnostics-debugging",
+                          "training/14-best-practices/performance-tuning/ml-and-diagnostics-debugging-basics",
+                          "training/14-best-practices/performance-tuning/ml-and-diagnostics-debugging-advanced"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "엔터프라이즈 거버넌스",
+                "pages": [
+                  "training/14-best-practices/enterprise-governance/overview",
+                  {
+                    "group": "플랫폼 설계",
+                    "pages": [
+                      "training/14-best-practices/enterprise-governance/platform-design",
+                      "training/14-best-practices/enterprise-governance/platform-design-basics",
+                      "training/14-best-practices/enterprise-governance/platform-design-advanced-basics",
+                      "training/14-best-practices/enterprise-governance/platform-design-advanced",
+                      "training/14-best-practices/enterprise-governance/platform-design-advanced-advanced"
+                    ]
+                  },
+                  {
+                    "group": "접근 제어 설계",
+                    "pages": [
+                      "training/14-best-practices/enterprise-governance/access-control",
+                      "training/14-best-practices/enterprise-governance/access-control-basics",
+                      "training/14-best-practices/enterprise-governance/access-control-advanced"
+                    ]
+                  },
+                  "training/14-best-practices/enterprise-governance/data-classification",
+                  {
+                    "group": "데이터 품질 관리와 CI/CD",
+                    "pages": [
+                      "training/14-best-practices/enterprise-governance/data-quality-cicd",
+                      "training/14-best-practices/enterprise-governance/data-quality-cicd-basics",
+                      "training/14-best-practices/enterprise-governance/data-quality-cicd-advanced"
+                    ]
+                  }
                 ]
               }
             ]
