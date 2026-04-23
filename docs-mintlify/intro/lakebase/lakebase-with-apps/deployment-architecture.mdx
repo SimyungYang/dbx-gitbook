@@ -1,0 +1,249 @@
+---
+title: "배포 아키텍처와 방법"
+---
+
+> 이 문서는 **[Lakebase](/intro/lakebase/overview)** 섹션의 일부입니다.
+
+
+
+## 1. 왜 Lakebase + Apps 배포가 중요한가
+
+기존 OLTP 웹 애플리케이션은 RDS, Cloud SQL 등 외부 데이터베이스를 사용하고, 분석이 필요할 때마다 별도의 ETL 파이프라인으로 데이터를 Lakehouse로 이동시켜야 했습니다. 이 방식은 다음과 같은 문제를 야기합니다.
+
+- **데이터 사일로 (Data Silo)**: 운영 DB와 분석 플랫폼이 분리되어 실시간 분석이 어렵습니다.
+- **ETL 복잡도**: 데이터 이동 파이프라인 유지·관리 비용이 발생합니다.
+- **보안 경계 분산**: 별도 DB의 IAM/시크릿 관리가 추가됩니다.
+- **거버넌스 공백**: Unity Catalog 혜택(데이터 계보, 접근 제어)을 운영 DB 데이터에 적용하기 어렵습니다.
+
+**Databricks Apps + Lakebase** 조합은 이 문제를 근본적으로 해결합니다.
+
+| 이점 | 설명 |
+|------|------|
+| **단일 플랫폼** | 앱 서빙, OLTP 스토리지, 분석이 하나의 Databricks 워크스페이스에서 처리됩니다 |
+| **자동 동기화 (Data Sync)** | Lakebase 트랜잭션 데이터가 Delta Lake로 자동 반영됩니다 |
+| **통합 거버넌스** | Unity Catalog로 운영 데이터에도 행/열 수준 접근 제어가 적용됩니다 |
+| **OAuth 통합 인증** | 별도 인증 서버 없이 Databricks OAuth 2.0으로 앱과 DB를 함께 보호합니다 |
+| **비용 단순화** | 외부 DB 인스턴스 비용 없이 Databricks DBU 기반으로 과금이 통합됩니다 |
+
+---
+
+## 2. 배포 아키텍처
+
+### 전체 구성도
+
+```
+┌─────────────────────────────────────────────────────┐
+│              Databricks Workspace                    │
+│                                                     │
+│  ┌──────────────┐    PostgreSQL    ┌─────────────┐  │
+│  │ Databricks   │◄───────────────►│  Lakebase   │  │
+│  │ Apps         │  psycopg2/       │  (OLTP DB)  │  │
+│  │ (Streamlit / │  SQLAlchemy      └──────┬──────┘  │
+│  │  FastAPI)    │                         │ Data    │
+│  └──────┬───────┘                         │ Sync    │
+│         │ OAuth 2.0                       ▼         │
+│         │                       ┌─────────────────┐ │
+│  ┌──────▼───────┐               │  Delta Lake /   │ │
+│  │  Databricks  │               │  Unity Catalog  │ │
+│  │  Identity    │               │  (분석 레이어)   │ │
+│  │  (SSO)       │               └─────────────────┘ │
+│  └──────────────┘                                   │
+└─────────────────────────────────────────────────────┘
+           ▲
+           │ HTTPS (Databricks 관리형 도메인)
+           │
+     End User / Browser
+```
+
+### OAuth 인증 흐름 (Authentication Flow)
+
+1. 사용자가 앱 URL(`https://<workspace>.azuredatabricks.net/apps/<app-name>`)에 접근합니다.
+2. Databricks Apps 런타임이 Databricks OAuth 2.0으로 사용자를 인증합니다.
+3. 앱 컨테이너 내부에서 `DATABRICKS_TOKEN` 환경 변수가 자동 주입됩니다.
+4. 앱 코드가 해당 토큰을 사용해 Lakebase에 연결합니다 (`generate_lakebase_credential()` API 활용).
+5. 모든 DB 접근이 사용자 신원과 연결된 단기 자격증명 (Short-lived Credential)으로 이루어집니다.
+
+> **핵심**: 앱 코드에 장기 비밀번호(Long-lived Password)를 하드코딩할 필요가 없습니다. Databricks가 자격증명 생명주기를 전적으로 관리합니다.
+
+---
+
+## 3. app.yaml 설정
+
+`app.yaml`은 Databricks Apps의 배포 명세 파일입니다. 앱 실행 명령, 환경 변수, 필요 리소스를 선언합니다.
+
+### 기본 구조 예시 (Streamlit + Lakebase)
+
+```yaml
+# app.yaml — Databricks Apps 배포 설정
+command:
+  - "streamlit"
+  - "run"
+  - "app.py"
+  - "--server.port=8501"
+  - "--server.address=0.0.0.0"
+
+# 리소스 선언 — Databricks가 자동으로 자격증명을 주입합니다
+resources:
+  - name: "lakebase-instance"
+    description: "운영 Lakebase PostgreSQL 인스턴스"
+    databricks_resource_type: "databricks-lakebase-database"
+    # Lakebase 인스턴스 이름 (Databricks Console에서 확인)
+    instance_id: "${var.lakebase_instance_id}"
+
+  - name: "sql-warehouse"
+    description: "분석용 SQL Warehouse"
+    databricks_resource_type: "databricks-sql-warehouse"
+    warehouse_id: "${var.warehouse_id}"
+
+# 환경 변수 설정
+env:
+  - name: LAKEBASE_HOST
+    valueFrom:
+      resourceRef:
+        resourceName: "lakebase-instance"
+        fieldPath: "host"
+  - name: LAKEBASE_PORT
+    value: "5432"
+  - name: LAKEBASE_DBNAME
+    value: "shop_db"
+  - name: APP_ENV
+    value: "production"
+  - name: LOG_LEVEL
+    value: "INFO"
+  # 시크릿은 Databricks Secrets에서 참조합니다
+  - name: APP_SECRET_KEY
+    valueFrom:
+      secretRef:
+        secretName: "app-secrets"
+        key: "secret_key"
+```
+
+### FastAPI를 사용하는 경우
+
+```yaml
+# app.yaml — FastAPI 배포
+command:
+  - "uvicorn"
+  - "main:app"
+  - "--host=0.0.0.0"
+  - "--port=8000"
+  - "--workers=2"
+
+resources:
+  - name: "lakebase-instance"
+    databricks_resource_type: "databricks-lakebase-database"
+    instance_id: "${var.lakebase_instance_id}"
+
+env:
+  - name: DATABASE_URL
+    value: "postgresql://${LAKEBASE_USER}:${LAKEBASE_PASSWORD}@${LAKEBASE_HOST}:5432/app_db"
+  - name: POOL_SIZE
+    value: "10"
+  - name: MAX_OVERFLOW
+    value: "20"
+```
+
+---
+
+## 4. 배포 방법
+
+### 4-1. Databricks CLI를 사용한 직접 배포
+
+```bash
+# Databricks CLI 설치
+pip install databricks-cli
+
+# 워크스페이스 인증 설정
+databricks configure --token
+
+# 앱 생성 (최초 1회)
+databricks apps create my-lakebase-app \
+  --description "Lakebase 기반 쇼핑몰 앱"
+
+# 앱 배포 (소스 디렉터리 기준)
+databricks apps deploy my-lakebase-app \
+  --source-code-path ./my-app
+
+# 배포 상태 확인
+databricks apps get my-lakebase-app
+
+# 앱 로그 실시간 확인
+databricks apps logs my-lakebase-app --follow
+```
+
+### 4-2. Databricks Asset Bundles (DAB) 를 사용한 배포
+
+Asset Bundles는 앱, Job, Pipeline 등 Databricks 리소스를 코드로 관리(IaC)하는 방식입니다.
+
+```yaml
+# databricks.yml — Asset Bundle 설정
+bundle:
+  name: lakebase-app-bundle
+
+variables:
+  lakebase_instance_id:
+    description: "Lakebase 인스턴스 ID"
+  warehouse_id:
+    description: "SQL Warehouse ID"
+
+targets:
+  dev:
+    mode: development
+    workspace:
+      host: https://adb-xxxx.azuredatabricks.net
+    variables:
+      lakebase_instance_id: "dev-instance-id"
+      warehouse_id: "dev-warehouse-id"
+
+  prod:
+    mode: production
+    workspace:
+      host: https://adb-yyyy.azuredatabricks.net
+    variables:
+      lakebase_instance_id: "prod-instance-id"
+      warehouse_id: "prod-warehouse-id"
+
+resources:
+  apps:
+    lakebase_app:
+      name: "my-lakebase-app"
+      description: "Lakebase 기반 운영 앱"
+      source_code_path: ./app
+```
+
+```bash
+# 개발 환경 배포
+databricks bundle deploy --target dev
+
+# 프로덕션 환경 배포
+databricks bundle deploy --target prod
+```
+
+### 4-3. GitHub Actions CI/CD 연동
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy Databricks App
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        run: pip install databricks-cli
+
+      - name: Deploy to Production
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: |
+          databricks bundle deploy --target prod
+```

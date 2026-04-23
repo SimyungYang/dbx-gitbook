@@ -1,0 +1,101 @@
+---
+title: "Anthropic 전략 개요 & MCP"
+---
+
+> 이 문서는 **[GenAI 개념](/ai-ml/genai/overview)** 섹션의 일부입니다.
+
+
+
+Anthropic은 "AI 안전성 연구 기업"이라는 정체성 위에 **세계에서 가장 실용적인 AI Agent 생태계** 를 구축하고 있습니다. 모델 성능 경쟁을 넘어, MCP(Model Context Protocol)라는 개방형 표준으로 Agent가 세상과 소통하는 방식 자체를 정의하고, Claude Code와 Agent SDK로 개발자가 Agent를 만들고 배포하는 전체 라이프사이클을 지원합니다.
+
+> **참고**
+**학습 목표**
+- Anthropic의 AI Agent 전략과 제품 포트폴리오의 전체 그림을 이해한다
+- MCP가 AI Agent 생태계에서 차지하는 위치와 AAIF 기부의 의미를 설명할 수 있다
+- Claude Code, Agent SDK, Computer Use 등 핵심 제품의 아키텍처와 차별점을 파악한다
+- 5가지 멀티에이전트 패턴을 이해하고 적절한 상황에 적용할 수 있다
+- Databricks 환경에서 Claude를 활용하는 실전 방법을 파악한다
+
+
+---
+
+## 1. 전략 개요 -- "도구를 든 지능"
+
+Anthropic의 Agent 전략은 세 가지 축으로 구성됩니다.
+
+| 축 | 핵심 질문 | 대응 제품 |
+|---|---------|---------|
+| **모델** | Agent가 얼마나 똑똑한가? | Claude 4 Family (Opus, Sonnet), Extended Thinking |
+| **연결** | Agent가 세상과 어떻게 소통하는가? | MCP, Computer Use, Advanced Tool Use |
+| **실행** | Agent를 어떻게 만들고 배포하는가? | Claude Code, Agent SDK, Claude Cowork |
+
+> **성공**
+**Anthropic의 차별화 철학**: OpenAI가 "만능 AI 비서"를, Google이 "검색 + AI 통합"을 추구한다면, Anthropic은 **"개발자가 통제할 수 있는 안전한 Agent"** 를 지향합니다. 모든 제품 설계에 "사람이 루프에 있다(Human-in-the-Loop)"는 원칙이 관통합니다.
+
+
+### 타임라인
+
+| 시기 | 제품/이벤트 | 의미 |
+|------|-----------|------|
+| 2024.10 | **Computer Use**(Beta) | 최초의 프론티어 모델 데스크톱 제어 |
+| 2024.11 | **MCP** 표준 공개 | Agent 도구 연결의 개방형 프로토콜 |
+| 2024.12 | **멀티에이전트 패턴** 블로그 | "단순하게 시작하라" 설계 철학 공유 |
+| 2025.02 | **Claude Code**(GA), **Extended Thinking** | 터미널 기반 코딩 Agent + 사고 과정 가시화 |
+| 2025.05 | **Claude Opus 4** | 7시간 자율 작업, 최강 코딩 모델 |
+| 2025.09 | **Agent SDK**(Beta) | Claude Code의 능력을 프로그래밍 가능하게 |
+| 2025.12 | **MCP를 AAIF에 기부** | OpenAI, Block과 함께 Linux Foundation 산하 표준화 |
+| 2026.01 | **Claude Cowork**(Preview) | 지식 노동자를 위한 Agent |
+
+---
+
+## 2. MCP (Model Context Protocol) & AAIF
+
+### MCP란 무엇인가?
+
+MCP는 **"AI Agent를 위한 USB-C"** 입니다. LLM이 외부 데이터 소스, 도구, 서비스에 접근하는 방식을 하나의 표준 프로토콜로 통합합니다.
+
+> **참고**
+**비유**: USB-C가 등장하기 전, 노트북마다 충전기가 달랐습니다. MCP가 등장하기 전, 각 AI 모델마다 도구 연결 방식이 달랐습니다. MCP는 "어떤 LLM이든, 어떤 도구든" 하나의 방식으로 연결할 수 있게 합니다.
+
+
+### 아키텍처
+
+| 구성 요소 | 역할 | 통신 방식 |
+|----------|------|----------|
+| **MCP Host**(Claude, VS Code, 커스텀 앱) | AI 애플리케이션 — MCP Client를 내장 | — |
+| **MCP Client**(내장 또는 SDK) | Host 안에서 Server와 1:1 연결 유지 | JSON-RPC (stdio / SSE / Streamable HTTP) |
+| **MCP Server**(DB, API, 파일 등) | Resources, Tools, Prompts를 노출 | 외부 서비스 호출 |
+| **외부 서비스**(Slack, DB, GitHub 등) | 실제 데이터/기능 제공 | MCP Server가 래핑 |
+
+### 핵심 개념
+
+| 구성 요소 | 역할 | 예시 |
+|----------|------|------|
+| **Host** | MCP 클라이언트를 내장한 AI 애플리케이션 | Claude Desktop, VS Code, Genie Code |
+| **Client** | Host 안에서 MCP 서버와 1:1 통신 | claude-code의 MCP 클라이언트 |
+| **Server** | 특정 기능을 MCP 프로토콜로 노출 | Databricks MCP Server, GitHub MCP Server |
+| **Resources** | 읽기 전용 데이터 (LLM의 컨텍스트) | 파일 내용, DB 스키마, 문서 |
+| **Tools** | 모델이 호출할 수 있는 함수 | `execute_sql`, `create_issue`, `send_message` |
+| **Prompts** | 재사용 가능한 프롬프트 템플릿 | "코드 리뷰해줘", "SQL 작성해줘" |
+
+### 성장 지표 (2025.12 기준)
+
+| 지표 | 수치 |
+|------|------|
+| 월간 SDK 다운로드 | **9,700만+** |
+| 등록된 MCP 서버 | **10,000+** |
+| 지원 호스트 | Claude Desktop, VS Code, JetBrains, Cursor, Windsurf, Genie Code 등 |
+
+### AAIF (AI Alliance Interop Framework) 기부
+
+2025년 12월, Anthropic은 MCP를 **Linux Foundation 산하 AAIF** 에 기부했습니다. 이는 단일 기업의 프로토콜에서 **산업 표준** 으로의 전환을 의미합니다.
+
+| 항목 | 내용 |
+|------|------|
+| **공동 기부자** | Anthropic, **OpenAI**, Block (Square) |
+| **거버넌스** | Linux Foundation의 오픈 거버넌스 모델 |
+| **의미** | OpenAI가 합류함으로써 사실상 업계 표준 확정 |
+| **호환성** | OpenAI Agents SDK도 MCP 네이티브 지원 |
+
+> **주의**
+**핵심 인사이트**: MCP가 AAIF로 갔다는 것은, 앞으로 AI Agent 도구 연결 방식이 **벤더 중립적 표준** 이 된다는 뜻입니다. Databricks도 공식 MCP Server를 제공하고 있으며, Genie Code가 MCP Host 역할을 합니다. MCP를 이해하는 것은 선택이 아니라 필수입니다.

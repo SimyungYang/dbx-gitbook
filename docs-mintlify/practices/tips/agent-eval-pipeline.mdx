@@ -1,0 +1,110 @@
+---
+title: "Agent Bricks 평가 파이프라인"
+---
+
+<Info>
+Agent Bricks의 기본 개념과 Knowledge Assistant 구축 방법은 [Agent Bricks 개요](/practices/agent-bricks/overview)를 참고하세요.
+MLflow 평가 스코어러의 상세 설명은 [평가 기초](/blog/guides/agent-bricks/evaluation-basics)에서 다룹니다.
+</Info>
+
+## Agent Bricks란?
+
+**Agent Bricks**는 Databricks에서 AI 에이전트를 빌드·배포·관리하기 위한 통합 프레임워크입니다.
+Knowledge Assistant(KA), Genie Agent, Supervisor Agent 등 다양한 유형의 에이전트를 코드 몇 줄로 만들고, Serving Endpoint로 즉시 배포할 수 있습니다.
+하지만 배포만으로는 부족합니다. 에이전트가 실제로 정확한 답변을 하는지 **정량적으로** 측정해야 합니다.
+
+## MLflow Evaluate란?
+
+**MLflow 3**의 `mlflow.genai.evaluate()`는 LLM 애플리케이션의 품질을 자동으로 측정하는 평가 프레임워크입니다.
+평가 데이터셋과 에이전트 호출 함수를 넘기면, 내장 스코어러(Correctness, Relevance, Safety 등)가 각 응답을 채점하고 결과를 MLflow UI에 기록합니다.
+수동으로 답변을 하나하나 확인하는 대신, 수십~수백 건을 한 번에 자동 평가할 수 있어 프롬프트 개선이나 A/B 비교에 필수적입니다.
+
+---
+
+## 사전 준비 체크리스트
+
+| 항목 | 필요 조건 | 확인 방법 |
+|------|----------|----------|
+| **Serving Endpoint** | KA가 배포되어 "Ready" 상태 | Workspace > Serving > 엔드포인트 상태 확인 |
+| **MLflow 버전** | MLflow 3.x (genai 모듈 포함) | `python -c "import mlflow; print(mlflow.__version__)"` |
+| **databricks-sdk** | 0.40 이상 | `pip show databricks-sdk` |
+| **Workspace 접근** | 노트북 또는 로컬에서 Workspace에 인증 가능 | `WorkspaceClient()` 생성이 에러 없이 통과 |
+| **평가 데이터셋** | 최소 20~30건 (질문 + 기대 답변) | 아래 2장에서 준비 |
+| **MLflow Experiment** | 결과를 기록할 실험이 존재 | `mlflow.set_experiment()` 또는 노트북 기본 실험 사용 |
+
+---
+
+## 1. 전체 흐름
+
+```
+평가 데이터셋 작성
+  → mlflow.genai.evaluate() 실행
+    → 내장 스코어러 (Correctness, Faithfulness, Relevance)
+      → MLflow UI에서 결과 확인
+        → Lakeflow Job으로 주기적 자동화
+```
+
+---
+
+## 2. 평가 데이터셋 준비
+
+### 방법 A: Python dict로 직접 작성
+
+가장 간단한 방법입니다. 각 항목은 `inputs`(질문)와 `expectations`(기대 답변)로 구성됩니다. `expected_response`는 스코어러가 에이전트 응답의 정확성을 판단하는 기준이 됩니다.
+
+```python
+eval_dataset = [
+    {
+        "inputs": {"query": "Unity Catalog에서 테이블 권한을 부여하는 SQL은?"},
+        "expectations": {
+            "expected_response": "GRANT SELECT ON TABLE catalog.schema.table TO `user@company.com` 형태의 SQL을 사용합니다."
+        },
+    },
+    {
+        "inputs": {"query": "Databricks Apps에서 환경변수를 설정하는 방법은?"},
+        "expectations": {
+            "expected_response": "app.yaml의 env 섹션에 name/value 쌍으로 선언하거나, Databricks Secret을 valueFrom으로 참조합니다."
+        },
+    },
+    {
+        "inputs": {"query": "Delta Lake VACUUM의 기본 보존 기간은?"},
+        "expectations": {
+            "expected_response": "기본값은 7일(168시간)이며, delta.deletedFileRetentionDuration 속성으로 변경할 수 있습니다."
+        },
+    },
+]
+```
+
+### 방법 B: Delta 테이블에서 로드
+
+대규모 평가 셋은 Delta 테이블에 저장해두고 불러오는 것이 관리가 편합니다. 아래 코드는 Spark DataFrame을 Pandas로 변환한 뒤 평가용 dict 목록으로 재구성합니다.
+
+```python
+import pandas as pd
+
+df = spark.table("my_catalog.eval.ka_eval_dataset").toPandas()
+
+eval_dataset = [
+    {
+        "inputs": {"query": row["question"]},
+        "expectations": {"expected_response": row["expected_answer"]},
+    }
+    for _, row in df.iterrows()
+]
+```
+
+<Tip>
+평가 데이터셋은 **최소 20~30건**을 권장합니다.
+실제 고객 질문 로그에서 추출하면 현실적인 평가가 됩니다.
+</Tip>
+
+---
+
+<CardGroup cols={1}>
+  <Card title="Agent Bricks 평가 파이프라인 — 심화 — 기초" href="agent-eval-pipeline-advanced-basics">
+    기본 개념과 핵심 기능
+  </Card>
+  <Card title="Agent Bricks 평가 파이프라인 — 심화 — 심화" href="agent-eval-pipeline-advanced-advanced">
+    고급 패턴과 실전 활용
+  </Card>
+</CardGroup>

@@ -1,0 +1,13 @@
+/* 사이트 이름 "Databricks 가이드" 줄바꿈 방지 */
+nav-logo {
+  white-space: nowrap;
+}
+
+sidebar-title {
+  white-space: nowrap;
+}
+
+/* 사이드바 로고/타이틀 영역의 텍스트 줄바꿈 방지 (폴백) */
+#sidebar a[href="/"] {
+  white-space: nowrap;
+}

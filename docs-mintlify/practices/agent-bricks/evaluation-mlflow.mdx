@@ -1,0 +1,102 @@
+---
+title: "평가 & 배포 — MLflow 평가·배포·모니터링"
+---
+
+> 이 문서는 **[Agent Bricks](/practices/agent-bricks/overview)** 섹션의 일부입니다.
+
+
+
+MLflow 기반 평가(Tracing, AI Judge, Synthetic Tasks), 평가 워크플로우, 프로덕션 모니터링, 배포 절차, 아키텍처, 마이그레이션, 평가의 중요성을 다룹니다.
+
+---
+
+## MLflow 기반 평가
+
+Agent Bricks는 MLflow와 긴밀하게 통합되어 에이전트 품질을 체계적으로 평가합니다.
+
+---
+
+## MLflow Tracing으로 에이전트 동작 추적
+
+1. **Production Monitoring for MLflow** 활성화
+2. Build 탭에서 질문 입력 후 **View Trace** 클릭
+
+Trace에서 Retrieval, LLM Call, Tool Execution, Routing Decision, Latency를 확인할 수 있습니다.
+
+---
+
+## AI Judge (LLM-as-Judge) 설정
+
+| 메트릭 | 설명 |
+|--------|------|
+| **Correctness** | 기대 답변과 일치하는지 |
+| **Groundedness** | 검색된 문서에 근거하는지 |
+| **Relevance** | 질문에 대한 관련성 |
+| **Safety** | 유해/부적절 내용 여부 |
+| **Chunk Relevance** | 검색된 청크의 관련성 |
+
+---
+
+## Synthetic Task Generation
+
+Examples 탭에서 **Generate synthetic tasks** 클릭하여 자동 질문-답변 쌍을 생성합니다.
+
+> **주의**
+Synthetic Task는 출발점일 뿐입니다. 반드시 SME가 검토하고 보완해야 합니다.
+
+
+---
+
+## 평가 워크플로우
+
+```
+수동 테스트 (5~10개) → View Trace → 라벨링 (20개+) → Synthetic Task (50개+)
+→ AI Judge 평가 → SME 피드백 → 조정/재테스트 → 목표 점수 달성 시 배포
+```
+
+---
+
+## 프로덕션 모니터링 포인트
+
+| 카테고리 | 모니터링 항목 | 기준 |
+|----------|-------------|------|
+| **품질** | AI Judge 점수 추이 | Correctness 80% 이상 |
+| **사용자** | 좋아요/싫어요 비율 | 부정 피드백 20% 초과 시 개선 |
+| **성능** | 응답 지연 | P95 기준 10초 이내 |
+| **비용** | 토큰 사용량 | 일별 DBU 추적 |
+
+---
+
+## 배포 절차: Review App → Model Serving → REST API
+
+### Step 1: Review App으로 SME 검증
+### Step 2: Model Serving 엔드포인트 배포
+### Step 3: REST API로 연동
+
+```python
+from databricks.sdk import WorkspaceClient
+w = WorkspaceClient()
+response = w.serving_endpoints.query(
+    name="<endpoint-name>",
+    messages=[{"role": "user", "content": "이번 달 매출 현황 알려줘"}]
+)
+```
+
+---
+
+## 워크스페이스 간 마이그레이션
+
+1. 타겟 워크스페이스에 리소스 생성
+2. 소스에서 SDK로 설정 조회
+3. 타겟에서 API로 재생성
+4. Instructions, Examples 데이터 Export/Import
+5. AI Judge로 품질 검증
+
+---
+
+## 평가가 Agent Bricks에서 특히 중요한 이유
+
+AI 에이전트는 **비결정적 시스템** 이므로, 동일 입력에도 다른 출력이 나올 수 있습니다.
+
+> **위험**
+**평가 없이 배포하는 것은 테스트 없이 코드를 프로덕션에 배포하는 것과 같습니다.** 최소 50개 이상의 테스트 케이스로 평가한 후 배포하세요.

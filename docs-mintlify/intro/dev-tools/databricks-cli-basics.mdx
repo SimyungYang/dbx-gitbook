@@ -1,0 +1,120 @@
+---
+title: "Databricks CLI — 개념과 설치"
+---
+
+
+## 개념
+
+> 💡 **Databricks CLI** 는 터미널(명령줄)에서 Databricks를 관리하고 조작할 수 있는 커맨드라인 도구입니다. Workspace, 클러스터, Job, SQL, Asset Bundles 등 대부분의 Databricks 기능을 CLI로 사용할 수 있습니다.
+
+GUI(웹 UI)만으로도 Databricks를 사용할 수 있지만, CLI를 활용하면 **반복 작업 자동화, CI/CD 파이프라인 구축, 스크립트 기반 관리** 등 더 효율적인 운영이 가능합니다. 특히 여러 Workspace를 관리하거나 배포 파이프라인을 구축할 때 CLI는 필수적인 도구입니다.
+
+---
+
+## 설치
+
+Databricks CLI는 OS에 따라 다양한 방법으로 설치할 수 있습니다. 설치 후 `databricks --version`으로 설치를 확인합니다.
+
+```bash
+# macOS (Homebrew) — 가장 권장
+brew install databricks/tap/databricks
+
+# Linux / Windows (curl)
+curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+
+# 버전 확인
+databricks --version
+# Databricks CLI v0.237.0
+
+# CLI 업데이트
+brew upgrade databricks/tap/databricks    # macOS
+curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh  # Linux
+```
+
+> ⚠️ **주의**: Databricks CLI v2 (현재 버전)와 레거시 CLI (Python 패키지 `databricks-cli`)는 완전히 다른 도구입니다. 레거시 CLI는 더 이상 권장되지 않습니다. `pip install databricks-cli`로 설치한 것이 있다면 제거하고 새 CLI를 사용하세요.
+
+---
+
+## 인증 설정
+
+Databricks CLI를 사용하려면 먼저 인증을 설정해야 합니다. OAuth 기반 인증이 권장되며, 여러 Workspace를 프로필로 관리할 수 있습니다.
+
+### OAuth 인증 (권장)
+
+```bash
+# 대화형 인증 설정 — 브라우저가 열리며 OAuth 로그인을 수행합니다
+databricks configure
+
+# 입력 항목:
+# Databricks Host: https://dbc-abc123.cloud.databricks.com
+# (브라우저에서 OAuth 로그인 완료)
+```
+
+### Personal Access Token (PAT) 인증
+
+```bash
+# PAT 토큰 기반 인증 — OAuth가 어려운 환경(CI/CD 등)에서 사용합니다
+databricks configure --token
+
+# 입력 항목:
+# Databricks Host: https://dbc-abc123.cloud.databricks.com
+# Personal Access Token: dapi...
+```
+
+### 환경 변수 인증 (CI/CD)
+
+CI/CD 파이프라인에서는 환경 변수로 인증 정보를 전달합니다. 별도의 설정 파일이 필요 없어 자동화에 적합합니다.
+
+```bash
+# 환경 변수로 인증 (CI/CD에서 사용)
+export DATABRICKS_HOST="https://dbc-abc123.cloud.databricks.com"
+export DATABRICKS_TOKEN="dapi..."
+
+# 환경 변수가 설정되면 별도 프로필 없이 바로 명령 실행 가능
+databricks clusters list
+```
+
+---
+
+## 프로필 관리
+
+여러 Workspace를 사용하는 경우, **프로필** 을 통해 각 Workspace의 인증 정보를 관리합니다. 프로필은 `~/.databrickscfg` 파일에 저장됩니다.
+
+```bash
+# 프로필 목록 확인
+databricks auth profiles
+
+# 출력 예시:
+# Name          Host                                        Valid
+# DEFAULT       https://dbc-abc123.cloud.databricks.com     YES
+# staging       https://dbc-def456.cloud.databricks.com     YES
+# production    https://dbc-ghi789.cloud.databricks.com     YES
+
+# 특정 프로필로 명령 실행
+databricks clusters list --profile production
+
+# 인증 상태 확인
+databricks auth token --profile production
+
+# 새 프로필 추가
+databricks configure --profile staging
+```
+
+### 프로필 설정 파일 구조
+
+```ini
+# ~/.databrickscfg
+[DEFAULT]
+host = https://dbc-abc123.cloud.databricks.com
+auth_type = databricks-cli
+
+[staging]
+host = https://dbc-def456.cloud.databricks.com
+auth_type = databricks-cli
+
+[production]
+host = https://dbc-ghi789.cloud.databricks.com
+token = dapi...
+```
+
+---

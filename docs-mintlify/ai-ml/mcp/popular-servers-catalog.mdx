@@ -1,0 +1,116 @@
+---
+title: "인기 MCP 서버 — 서버 디렉토리 & 실전 시나리오"
+---
+
+> 이 문서는 **[MCP](/ai-ml/mcp/overview)** 섹션의 일부입니다.
+
+
+
+카테고리별 인기 MCP 서버 목록과 10가지 실전 자동화 시나리오를 다룹니다.
+
+> **참고**
+**학습 목표**: 카테고리별 인기 MCP 서버와 주요 기능을 파악하고, 여러 서버를 조합한 실전 자동화 시나리오를 설계할 수 있다.
+
+
+---
+
+## MCP 서버 디렉토리
+
+| 디렉토리 | URL | 특징 |
+|----------|-----|------|
+| **공식 레퍼런스 서버** | [github.com/modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) | Anthropic 직접 관리, 품질 보장 |
+| **Smithery** | [smithery.ai](https://smithery.ai) | 가장 큰 커뮤니티 마켓플레이스 |
+| **MCP.so** | [mcp.so](https://mcp.so) | 서버 검색 및 비교 |
+| **Awesome MCP Servers** | [github.com/punkpeye/awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) | 커뮤니티 큐레이션 |
+
+---
+
+## 카테고리별 인기 MCP 서버
+
+### 커뮤니케이션 & 협업
+
+| 서버 | 주요 Tool | 활용 사례 |
+|------|-----------|----------|
+| **Slack** | `send_message`, `search_messages`, `list_channels` | 채널 메시지 전송, 대화 검색 |
+| **Microsoft Teams** | `send_message`, `list_teams` | Teams 채널 알림 |
+| **Gmail** | `search_emails`, `send_email`, `draft_email` | 이메일 초안 작성 |
+| **Google Calendar** | `list_events`, `create_event` | 일정 확인, 미팅 생성 |
+
+### 개발 & DevOps
+
+| 서버 | 주요 Tool | 활용 사례 |
+|------|-----------|----------|
+| **GitHub** | `search_repositories`, `create_issue`, `list_pull_requests` | PR 리뷰, 코드 검색 |
+| **JIRA** | `search_issues`, `create_issue`, `update_issue` | 이슈 생성, 스프린트 관리 |
+| **Sentry** | `list_issues`, `get_issue_details` | 에러 모니터링 |
+
+### 데이터베이스
+
+| 서버 | 주요 Tool | 활용 사례 |
+|------|-----------|----------|
+| **PostgreSQL** | `query`, `list_tables`, `describe_table` | SQL 쿼리, 스키마 탐색 |
+| **MySQL** | `query`, `list_databases` | DB 조회 |
+| **MongoDB** | `find`, `aggregate` | 문서 검색 |
+
+### 클라우드 & 인프라
+
+| 서버 | 주요 Tool | 활용 사례 |
+|------|-----------|----------|
+| **AWS** (공식) | `s3_list`, `cloudwatch_query`, `lambda_invoke` | S3 파일 관리, 로그 분석 |
+| **Kubernetes** | `get_pods`, `get_logs` | 클러스터 상태, 파드 로그 |
+
+### 문서 & 생산성
+
+| 서버 | 주요 Tool | 활용 사례 |
+|------|-----------|----------|
+| **Notion** (공식) | `search`, `create_page`, `query_database` | 위키 관리, DB 조회 |
+| **Confluence** | `search_pages`, `create_page` | 문서 검색 |
+| **Google Drive** | `search_files`, `read_file` | 문서 검색 |
+
+### 웹 & 검색
+
+| 서버 | 주요 Tool | 활용 사례 |
+|------|-----------|----------|
+| **Brave Search** | `web_search` | 웹 검색 |
+| **Puppeteer** | `navigate`, `screenshot` | 웹 스크래핑 |
+
+### 모니터링 & 관측
+
+| 서버 | 주요 Tool | 활용 사례 |
+|------|-----------|----------|
+| **Datadog** | `query_metrics`, `list_monitors` | 메트릭 조회 |
+| **PagerDuty** | `list_incidents`, `resolve_incident` | 인시던트 관리 |
+
+---
+
+## 실전 자동화 시나리오
+
+### 시나리오 1: 데이터 파이프라인 모니터링 → 장애 알림
+**MCP**: Databricks SQL + Slack + JIRA
+
+### 시나리오 2: PR 리뷰 → 코드 품질 보고
+**MCP**: GitHub + Slack
+
+### 시나리오 3: 고객 문의 → 자동 응답 초안
+**MCP**: Gmail + PostgreSQL + Slack
+
+### 시나리오 4: 인시던트 대응 자동화
+**MCP**: PagerDuty/Datadog + Kubernetes + Slack
+
+### 시나리오 5: 스프린트 보고서 자동 생성
+**MCP**: JIRA + GitHub + Notion
+
+### 시나리오 6: 일일 업무 브리핑
+**MCP**: Google Calendar + Gmail + JIRA + Slack
+
+### 시나리오 7: 데이터 품질 모니터링 → 보고
+**MCP**: Databricks SQL + Google Sheets + Slack
+
+### 시나리오 8: 경쟁사 모니터링
+**MCP**: Brave Search + Notion + Slack
+
+### 시나리오 9: 코드 변경 → 문서 자동 업데이트
+**MCP**: GitHub + Confluence
+
+### 시나리오 10: 주간 팀 성과 대시보드
+**MCP**: GitHub + JIRA + Slack + Google Sheets

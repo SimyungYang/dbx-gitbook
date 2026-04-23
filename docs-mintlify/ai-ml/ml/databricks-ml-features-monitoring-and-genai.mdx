@@ -1,0 +1,190 @@
+---
+title: "모니터링 & GenAI/Agent"
+---
+
+> 이 문서는 **[ML 핵심 개념](/ai-ml/ml/overview)** 섹션의 일부입니다.
+
+
+## 6. 모델 모니터링
+
+### Lakehouse Monitoring
+
+**왜 필요한가**: 프로덕션에 배포된 모델은 시간이 지남에 따라 성능이 저하됩니다. 입력 데이터의 분포가 변하거나(Data Drift), 입력과 출력 간의 관계가 변하면(Concept Drift) 모델의 예측 정확도가 떨어집니다.
+
+Databricks **Lakehouse Monitoring** 은 테이블 단위의 모니터링 솔루션으로, 데이터 품질과 모델 성능을 자동으로 추적합니다.
+
+| 모니터링 유형 | 대상 | 감지 항목 |
+|--------------|------|----------|
+| **Snapshot** | 정적 테이블 (현재 상태) | 프로필 통계, 컬럼별 분포 |
+| **TimeSeries** | 시계열 데이터 | 시간에 따른 분포 변화 (Drift) |
+| **InferenceLog** | 모델 추론 결과 테이블 | 예측 분포 변화, 입력 드리프트, 모델 성능 지표 |
+
+**드리프트 감지 메커니즘**: Lakehouse Monitoring은 단순 통계 비교를 넘어, 통계적 검정(statistical test)에 기반한 체계적인 드리프트 감지를 수행합니다.
+
+| 데이터 유형 | 검정 방법 | 의미 |
+|------------|----------|------|
+| **수치형** | KS 검정 (Kolmogorov-Smirnov) | 두 분포 간 최대 차이를 측정. p-value \< 0.05이면 분포가 유의하게 변화 |
+| **범주형** | 카이제곱 검정 (Chi-squared) | 범주별 빈도 분포의 차이를 측정 |
+| **공통** | Jensen-Shannon Divergence | 두 확률 분포 간 거리를 0~1 사이 값으로 수치화 |
+
+Lakehouse Monitoring이 생성하는 **두 개의 출력 테이블** 을 이해하는 것이 중요합니다.
+
+| 출력 테이블 | 내용 | 활용 |
+|-----------|------|------|
+| **Profile Metrics Table** | 각 윈도우(시간 구간)별 컬럼 프로파일 (평균, 분산, null 비율, 분포 등) | 시간에 따른 데이터 품질 추이 확인 |
+| **Drift Metrics Table** | 현재 윈도우 vs 기준(baseline) 윈도우 간 드리프트 통계량 | 알림 설정, 재학습 트리거 조건으로 활용 |
+
+이 테이블들은 일반 Delta 테이블이므로, SQL로 쿼리하거나 Databricks Jobs에서 드리프트 임계값을 확인하여 **재학습 파이프라인을 자동 트리거** 하는 것이 가능합니다.
+
+Lakehouse Monitoring이 생성하는 **자동 대시보드** 에서는 다음을 확인할 수 있습니다.
+
+- 각 컬럼의 분포 변화를 시각화한 히스토그램
+- 드리프트 감지 통계량과 p-value
+- 모델 성능 지표의 시간별 추이 (InferenceLog 프로필)
+
+### Inference Table (추론 테이블)
+
+Model Serving Endpoint에 **Inference Table** 을 활성화하면, 모든 요청(입력)과 응답(출력)이 자동으로 Delta 테이블에 기록됩니다.
+
+| 기록 항목 | 설명 |
+|-----------|------|
+| **요청 본문** | 입력 피처 값 |
+| **응답 본문** | 모델 예측 결과 |
+| **타임스탬프** | 요청 시각 |
+| **레이턴시** | 응답 시간 |
+| **모델 버전** | 어떤 모델 버전이 응답했는지 |
+| **상태 코드** | 성공/실패 여부 |
+
+이 테이블에 Lakehouse Monitoring의 InferenceLog 프로필을 연결하면, **실시간 추론 모니터링 파이프라인** 이 완성됩니다.
+
+> **참고**
+Inference Table의 데이터는 **Ground Truth 라벨링** 에도 활용됩니다. 시간이 지나 실제 결과가 확인되면, Inference Table에 라벨을 조인하여 모델의 실제 성능을 계산할 수 있습니다.
+
+
+---
+
+## 7. GenAI & Agent 기능
+
+### Foundation Model APIs
+
+앞서 5장에서 설명한 Foundation Model APIs는 GenAI 워크로드의 기반이 됩니다. 추가로 GenAI 특화 기능을 정리합니다.
+
+| 기능 | 설명 |
+|------|------|
+| **Chat Completions** | 대화형 LLM 호출 (system/user/assistant 메시지) |
+| **Embeddings** | 텍스트를 벡터로 변환 (RAG, 유사도 검색용) |
+| **Completions** | 텍스트 생성 (레거시 API) |
+
+### Vector Search
+
+**왜 필요한가**: RAG(검색 증강 생성) 파이프라인에서 관련 문서를 빠르게 검색하려면 벡터 유사도 검색이 필수입니다. 별도의 벡터 DB(Pinecone, Weaviate 등)를 운영하면 **데이터 이중 관리** 문제가 발생합니다 -- 원본 문서가 업데이트되면 벡터 DB도 수동으로 동기화해야 하고, 삭제된 문서의 임베딩이 남아 "유령 검색 결과"를 반환하는 문제가 생깁니다.
+
+Databricks **Vector Search** 는 Delta 테이블을 **Single Source of Truth** 로 유지하면서 자동 동기화되는 벡터 인덱스를 제공합니다. 원본 Delta 테이블에서 행이 추가/수정/삭제되면 인덱스가 자동으로 반영되므로, 데이터 정합성이 보장됩니다.
+
+| 인덱스 유형 | 설명 |
+|-------------|------|
+| **Delta Sync Index** | Delta 테이블의 변경 사항을 자동으로 임베딩하고 인덱싱. 소스 테이블이 업데이트되면 인덱스도 자동 업데이트 |
+| **Direct Vector Access Index** | 사전 계산된 임베딩 벡터를 직접 업로드. 커스텀 임베딩 파이프라인 사용 시 적합 |
+
+Delta Sync Index는 두 가지 모드를 지원합니다.
+
+| 모드 | 동작 |
+|------|------|
+| **Managed Embeddings** | 소스 텍스트 컬럼을 지정하면 Databricks가 자동으로 임베딩 생성 |
+| **Self-managed Embeddings** | 사용자가 미리 계산한 임베딩 컬럼을 사용 |
+
+### Agent Framework (ChatAgent)
+
+Databricks **Agent Framework** 는 LLM 기반 AI Agent를 개발, 테스트, 배포하기 위한 통합 프레임워크입니다.
+
+**ChatAgent 인터페이스가 왜 중요한가**: MLflow 3.0에서 도입된 `ChatAgent`는 Agent 생태계의 **표준 계약(contract)** 역할을 합니다. 기존에는 LangChain으로 만든 Agent, LlamaIndex로 만든 Agent, 순수 Python Agent가 각각 다른 입출력 형식을 가져서, 배포/평가/모니터링 도구를 프레임워크별로 따로 만들어야 했습니다.
+
+ChatAgent는 **OpenAI Chat Completions 형식** (`messages` 리스트, `role`/`content` 구조)을 표준으로 채택하여, 어떤 프레임워크로 내부를 구현하든 동일한 인터페이스로 배포하고 평가할 수 있게 합니다. 이 덕분에 다음이 가능해집니다.
+
+- **프레임워크 교체 투명성**: LangChain에서 순수 Python으로 Agent 내부를 교체해도 배포 엔드포인트, 평가 코드, UI가 변경 없이 동작
+- **통합 평가**: `mlflow.evaluate()`가 모든 ChatAgent에 동일하게 적용
+- **AI Playground 호환**: ChatAgent 인터페이스를 구현한 Agent는 AI Playground에서 즉시 테스트 가능
+- **Streaming 지원**: `predict_stream()` 메서드를 구현하면 토큰 단위 스트리밍 응답 자동 지원
+
+| 구성 요소 | 역할 |
+|-----------|------|
+| **ChatAgent 인터페이스** | Agent의 표준 입출력 인터페이스. `predict(messages)` + `predict_stream(messages)` 메서드 구현 |
+| **Agent 도구 (Tools)** | Vector Search 검색, SQL 실행, Genie Space 질의 등 Agent가 사용하는 도구. UC Function으로도 정의 가능 |
+| **MLflow를 통한 로깅** | Agent를 MLflow 모델로 기록하여 버전 관리 및 배포 |
+| **Model Serving 배포** | Agent를 REST API 엔드포인트로 배포. Review App으로 SME 피드백 수집 가능 |
+
+```python
+import mlflow
+from databricks.agents import ChatAgent
+
+class MyRAGAgent(ChatAgent):
+    def predict(self, messages, context=None):
+        # 1. 사용자 질문에서 검색 쿼리 추출
+        query = messages[-1]["content"]
+
+        # 2. Vector Search로 관련 문서 검색
+        docs = vector_search.similarity_search(query, num_results=5)
+
+        # 3. LLM에 컨텍스트와 함께 질문
+        response = llm.chat(
+            system="검색된 문서를 기반으로 답변하세요.",
+            context=docs,
+            question=query
+        )
+        return response
+
+# Agent를 MLflow에 기록
+with mlflow.start_run():
+    mlflow.pyfunc.log_model("agent", python_model=MyRAGAgent())
+```
+
+### Agent Evaluation (MLflow 기반)
+
+Agent의 품질을 객관적으로 측정하기 위한 **mlflow.evaluate()** 기반 평가 프레임워크입니다. 단순히 메트릭 숫자를 보여주는 것을 넘어, **어떤 기준으로 왜 그 점수가 나왔는지** 를 추적할 수 있는 체계적인 Scorer 시스템을 제공합니다.
+
+**Scorer 시스템**: Agent Evaluation은 **내장 Scorer(Built-in Scorer)** 와 **커스텀 Scorer** 를 조합하여 평가합니다. 각 Scorer는 독립적으로 동작하여, 필요한 평가 항목만 선택적으로 사용할 수 있습니다.
+
+아래 표는 주요 내장 Scorer의 역할과 평가 방식을 정리한 것입니다.
+
+| Scorer | 평가 대상 | 방식 | Ground Truth 필요 여부 |
+|--------|----------|------|---------------------|
+| **Correctness** | 답변이 정답(expected_response)과 의미적으로 일치하는지 | LLM Judge | 필요 |
+| **Groundedness** | 답변이 검색된 문서(retrieved_context)에 근거하는지 | LLM Judge | 불필요 |
+| **Relevance** | 검색된 문서가 질문과 관련 있는지 | LLM Judge | 불필요 |
+| **Safety** | 답변에 유해하거나 부적절한 내용이 포함되었는지 | LLM Judge | 불필요 |
+| **Chunk Relevance** | 검색된 각 청크(chunk)가 개별적으로 관련 있는지 | LLM Judge | 불필요 |
+| **Latency** | 응답 시간 (초 단위) | 측정 | 불필요 |
+| **Token Count** | 입출력 토큰 사용량 | 측정 | 불필요 |
+
+평가는 **LLM-as-a-Judge** 방식으로 자동화됩니다. Databricks가 제공하는 강력한 Judge LLM이 Agent의 답변을 채점하며, 각 점수에 대한 **이유(rationale)** 도 함께 반환하여 디버깅이 가능합니다.
+
+```python
+import mlflow
+
+results = mlflow.evaluate(
+    model="runs:/abc123/agent",
+    data=eval_dataset,            # 질문 + (선택) 정답 + (선택) 검색 문서
+    model_type="databricks-agent"  # Agent 전용 평가 모드 활성화
+)
+
+# 전체 메트릭 확인
+print(results.metrics)
+
+# 개별 행 단위 상세 결과 (점수 + 이유)
+display(results.tables["eval_results"])
+```
+
+> **참고**
+Ground Truth가 없는 초기 단계에서도 **Groundedness, Relevance, Safety** 는 평가 가능합니다. 이후 사용자 피드백이나 SME 리뷰를 통해 Ground Truth를 점진적으로 구축하면 Correctness 평가를 추가할 수 있습니다.
+
+
+### AI Playground
+
+**AI Playground** 는 Databricks UI에서 다양한 LLM을 즉시 테스트할 수 있는 대화형 인터페이스입니다. Foundation Model APIs, External Models, 파인튜닝한 커스텀 모델 등 Model Serving에 배포된 모든 모델을 별도 코드 없이 비교 테스트할 수 있습니다.
+
+| 활용 시나리오 | 설명 |
+|--------------|------|
+| **모델 비교** | 동일 프롬프트로 여러 모델의 응답 품질을 나란히 비교 |
+| **프롬프트 튜닝** | System prompt, temperature 등을 실시간으로 조정하며 최적 설정 탐색 |
+| **Tool Use 테스트** | Agent 도구(Function) 호출 동작 확인 |
+| **프로토타이핑** | 코드 없이 빠르게 PoC 수준의 대화 흐름 검증 |

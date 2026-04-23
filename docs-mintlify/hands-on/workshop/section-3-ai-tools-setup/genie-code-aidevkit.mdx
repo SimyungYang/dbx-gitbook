@@ -1,0 +1,276 @@
+---
+title: "Genie Code에 AI Dev Kit 구성하기"
+---
+
+
+> **소요 시간**: ~5분
+>
+> **참조**: [AI Dev Kit GitHub](https://github.com/databricks-solutions/ai-dev-kit)
+
+---
+
+## 왜 이 구성이 필요한가?
+
+Genie Code는 **각 제품 영역 안에서는** 강력하지만, **여러 제품에 걸친 작업(크로스 프로덕트)**은 할 수 없습니다.
+
+| 요청 | Genie Code 단독 | + AI Dev Kit |
+|------|----------------|-------------|
+| "Genie Space 만들어줘" | ❌ 질의만 가능 | ✅ `manage_genie` |
+| "대시보드 + Job 동시에" | ❌ 각각 다른 UI | ✅ 한 대화에서 |
+| "Knowledge Assistant" | ❌ | ✅ `manage_ka` |
+| "Supervisor Agent" | ❌ | ✅ `manage_mas` |
+| "Lakebase DB" | ❌ | ✅ `manage_lakebase_database` |
+
+---
+
+## 구성 방식: AI Builder App + `--enable-mcp`
+
+AI Dev Kit의 **Builder App**을 `--enable-mcp` 옵션으로 배포하면, **웹 UI + MCP 서버**가 한 앱에서 동시에 제공됩니다. Genie Code는 이 앱의 `/mcp` 엔드포인트에 연결하여 75+ 도구를 사용합니다.
+
+```
+┌─────────────────────────────────────────┐
+│   Builder App (mcp-builder-app)         │
+│                                          │
+│   ┌──────────┐   ┌───────────────────┐  │
+│   │ Builder  │   │ MCP Server (/mcp) │  │
+│   │ Web UI   │   │ 75+ 도구 제공     │  │
+│   └──────────┘   └───────────────────┘  │
+│                          ↑               │
+└──────────────────────────│───────────────┘
+                           │
+                  ┌────────┴────────┐
+                  │   Genie Code    │
+                  │ (MCP Client)    │
+                  └─────────────────┘
+```
+
+---
+
+## 전제조건
+
+| 항목 | 요구사항 | 설치/확인 |
+|------|---------|----------|
+| **Databricks CLI** | v0.230+ | `brew install databricks` 또는 `pip install databricks-cli` |
+| **CLI 인증** | OAuth 완료 | `databricks auth login --host <워크스페이스 URL>` → `databricks current-user me` |
+| **Python 3.9+** | deploy.sh에서 사용 | `python3 --version` |
+| **jq** | JSON 파서 | `brew install jq` (macOS) |
+| **Git** | 리포 클론용 | `git --version` |
+| **Workspace 권한** | Apps 생성, Serverless, UC 관리자 | 관리자에게 문의 |
+
+---
+
+## Step 1: AI Dev Kit 클론 & Builder App 배포
+
+```bash
+# AI Dev Kit 메인 레포 클론
+git clone https://github.com/databricks-solutions/ai-dev-kit.git
+cd ai-dev-kit/databricks-builder-app
+
+# Builder App + MCP 서버 배포 (앱 이름은 반드시 mcp- 접두사!)
+./scripts/deploy.sh mcp-builder-app --enable-mcp --profile <PROFILE>
+```
+
+> `<PROFILE>`은 Databricks CLI 프로필명입니다. `databricks auth profiles`로 확인하세요.
+
+deploy.sh가 자동으로 처리하는 것:
+1. **앱 생성** (`mcp-builder-app`) — `mcp-` 접두사로 Genie Code에서 인식
+2. **소스 코드 업로드 및 배포** — Builder UI + MCP 서버
+3. **서비스 프린시펄(SP) 권한 부여** — Workspace, SQL Warehouse
+4. **Skills 배포** — Genie Code에서 도메인 지식 자동 참조
+5. **MCP 엔드포인트 활성화** — `/mcp` 경로로 도구 노출
+
+> **참고**
+**`--enable-mcp` 옵션**: 이 플래그를 추가하면 Builder App이 **듀얼 모드**로 동작합니다. 웹 브라우저에서는 Builder UI로, Genie Code에서는 MCP 서버로 사용됩니다. 플래그 없이 배포하면 Builder UI만 제공됩니다.
+
+---
+
+## Step 2: 카탈로그 GRANT 실행
+
+deploy.sh 완료 시 출력된 SQL을 Databricks **노트북**에서 실행합니다:
+
+```sql
+-- deploy.sh 출력에서 복사 (SP Client ID는 자동으로 채워져 있음)
+GRANT USE CATALOG ON CATALOG lge_smart_tv TO `<SP_CLIENT_ID>`;
+GRANT USE SCHEMA ON CATALOG lge_smart_tv TO `<SP_CLIENT_ID>`;
+GRANT SELECT ON CATALOG lge_smart_tv TO `<SP_CLIENT_ID>`;
+GRANT CREATE TABLE ON CATALOG lge_smart_tv TO `<SP_CLIENT_ID>`;
+GRANT CREATE SCHEMA ON CATALOG lge_smart_tv TO `<SP_CLIENT_ID>`;
+```
+
+> `<SP_CLIENT_ID>`는 deploy.sh 출력 마지막에 표시됩니다. 그대로 복사하세요.
+
+---
+
+## Step 3: Genie Code에서 MCP 서버 연결
+
+1. Databricks Workspace 접속 → 아무 **노트북** 열기
+2. 우측 상단 **Genie Code 아이콘**(✨) 클릭
+3. 하단에서 **Agent Mode** 선택
+4. 하단 ⚙️ **Settings** 클릭
+5. **MCP Servers** → **"+ Add Server"**
+6. 드롭다운에서 **`mcp-builder-app`** 선택 → **Save**
+
+> `mcp-builder-app`이 안 보이면: 앱 상태가 RUNNING인지 확인 (`databricks apps get mcp-builder-app`)
+
+> **주의**
+**`mcp-` 접두사 필수**: 앱 이름이 `mcp-`로 시작해야 Genie Code Settings에서 MCP 서버로 인식됩니다. 이 접두사 없이 생성된 앱은 드롭다운에 나타나지 않습니다.
+
+---
+
+## Step 4: 도구 선택 — 필요한 것만 켜기
+
+AI Dev Kit은 75+ 도구를 제공하지만, Genie Code는 **전체 MCP 서버에 걸쳐 최대 20개**만 활성화 가능합니다.
+
+> Genie Code가 **이미 잘 하는 것은 OFF**, AI Dev Kit **고유 기능만 ON**
+
+### 워크샵 권장: 올라운드 15개
+
+Settings → mcp-builder-app에서 아래 15개만 ON, 나머지는 OFF:
+
+| # | 도구 | 용도 |
+|---|------|------|
+| 1 | `manage_genie` | Genie Space 생성/수정/테이블 연결 |
+| 2 | `manage_mas` | Supervisor Agent 생성/관리 |
+| 3 | `manage_ka` | Knowledge Assistant 생성/관리 |
+| 4 | `manage_dashboard` | 대시보드 생성 (크로스 프로덕트) |
+| 5 | `manage_jobs` | Job 생성/스케줄/관리 |
+| 6 | `manage_job_runs` | Job 실행/모니터링 |
+| 7 | `manage_pipeline` | SDP 파이프라인 관리 |
+| 8 | `manage_app` | Databricks App 관리 |
+| 9 | `manage_lakebase_database` | Lakebase DB 생성/관리 |
+| 10 | `manage_serving_endpoint` | Model Serving 배포 |
+| 11 | `execute_code` | 클러스터에서 Python/Scala 실행 |
+| 12 | `manage_uc_objects` | 카탈로그/스키마/테이블 CRUD |
+| 13 | `manage_uc_grants` | 권한 GRANT/REVOKE |
+| 14 | `manage_vs_index` | Vector Search 인덱스 생성 |
+| 15 | `manage_workspace_files` | 워크스페이스 파일 관리 |
+
+### OFF 권장 (Genie Code OOB와 중복)
+
+| 도구 | 이유 |
+|------|------|
+| `ask_genie` | Genie Code OOB Genie Space MCP가 처리 |
+| `query_vs_index` | Genie Code OOB Vector Search MCP가 처리 |
+| `execute_sql` | Genie Code OOB DBSQL MCP가 처리 |
+
+---
+
+## Step 5: 테스트
+
+### 테스트 1: Skills 자동 로딩 확인
+
+```
+Spark Declarative Pipeline으로 medallion 아키텍처를 구성하려면 어떻게 해야 돼?
+```
+
+> Genie Code가 SDP 관련 Skill을 자동으로 참조하여 답변하면 성공
+
+### 테스트 2: MCP 도구 — Genie Space 생성
+
+```
+gold 스키마의 테이블 2개로 테스트용 Genie Space를 만들어줘.
+이름은 "테스트 분석 공간"으로 해줘.
+```
+
+> Genie Code가 `manage_genie` MCP 도구를 호출하여 Genie Space를 생성하면 성공
+
+### 테스트 3: 크로스 프로덕트 오케스트레이션
+
+```
+다음 3가지를 한번에 해줘:
+1. gold 스키마 테이블들로 Genie Space 생성
+2. 같은 데이터로 대시보드 만들기
+3. 매일 오전 6시에 데이터를 리프레시하는 Job 설정
+```
+
+> 한 대화에서 Genie Space + 대시보드 + Job이 모두 생성되면 성공
+
+### 테스트 4: Builder App 웹 UI (선택)
+
+Builder App의 웹 UI에 직접 접속하여 Vibe Coding을 테스트할 수도 있습니다:
+
+```bash
+# Builder App URL 확인
+databricks apps get mcp-builder-app -o json | jq -r .url
+```
+
+> 브라우저에서 URL을 열면 Builder UI가 표시됩니다. 자연어로 앱을 만들 수 있습니다.
+
+---
+
+## (선택) Genie Space 접근 권한 부여
+
+핸즈온에서 Genie Agent를 구성할 때, MCP 서버의 SP가 Genie Space에 접근해야 합니다. Genie Space를 생성한 후에 아래 명령을 실행합니다:
+
+```bash
+SPACE_ID="<genie_space_id>"
+TOKEN=$(databricks auth token | jq -r .access_token)
+HOST=$(databricks auth env | jq -r .env.DATABRICKS_HOST)
+SP_CLIENT_ID=$(databricks apps get mcp-builder-app -o json | jq -r .service_principal_client_id)
+
+curl -X PATCH "$HOST/api/2.0/permissions/genie/$SPACE_ID" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"access_control_list\": [{
+    \"service_principal_name\": \"$SP_CLIENT_ID\",
+    \"permission_level\": \"CAN_RUN\"
+  }]}"
+```
+
+> **`<genie_space_id>` 찾는 법**: Genie Space URL에서 `/genie/spaces/` 뒤의 문자열이 ID입니다. 또는 Genie Code에 `현재 워크스페이스의 Genie Space 목록과 각 ID를 알려줘`라고 물어보세요.
+
+---
+
+## 트러블슈팅
+
+### 구성 시 문제
+
+| 문제 | 원인 | 해결 |
+|------|------|------|
+| MCP 서버가 Settings에 안 보임 | 앱 이름이 `mcp-`로 시작 안 함 | 앱 이름 확인, `mcp-` 접두사 필수 |
+| "도구 제한 초과" 경고 | 20개 초과 활성화 | 불필요한 도구 OFF |
+| `manage_genie` 호출 실패 | 서비스 프린시펄 권한 부족 | Step 2 카탈로그 GRANT 재확인 |
+| Skills가 로딩 안 됨 | 경로가 틀림 | `/Workspace/.assistant/skills/` 확인 |
+| Agent Mode가 아님 | Chat Mode 선택됨 | MCP/Skills는 Agent Mode에서만 동작 |
+
+### 워크샵 실습 중 MCP 도구 문제
+
+| 증상 | 즉시 대응 | 근본 해결 |
+|------|----------|----------|
+| "Using tool: manage_genie" 후 응답 없음 | 30초 대기 후 재시도. 안 되면 새 대화 시작 | `databricks apps stop mcp-builder-app && databricks apps start mcp-builder-app` |
+| "Tool execution failed" 에러 | Settings에서 MCP 서버 연결 해제 후 다시 추가 | SP 권한 재확인 (Step 2) |
+| MCP 도구를 호출하지 않음 | Settings → MCP에서 해당 도구 ON 확인 + Agent Mode 확인 | 도구 프로필 재설정 (Step 4) |
+| Genie Space 생성됐는데 테이블 비어있음 | Genie Space UI에서 수동으로 테이블 추가 | SP에 `GRANT SELECT ON SCHEMA` |
+| 여러 명 동시 사용 시 느려짐 | 순서대로 사용, 실패 시 재시도 | 앱 스케일업 검토 |
+
+### MCP 문제 발생 시 대안 경로
+
+MCP가 작동하지 않을 때 **Databricks UI에서 수동으로** 같은 작업 가능:
+
+| MCP 도구 | 대안 (Databricks UI) |
+|----------|---------------------|
+| `manage_genie` | 사이드바 → Genie → "+ New" |
+| `manage_dashboard` | 사이드바 → Dashboards → "+ Create" |
+| `manage_jobs` | 사이드바 → Workflows → Jobs → "Create job" |
+| `manage_ka` | 사이드바 → Agent Bricks → Knowledge → "+ Create" |
+| `manage_mas` | 사이드바 → Agent Bricks → Supervisor → "+ Create" |
+
+> 워크샵의 핵심은 **Genie Code로 코드를 생성하는 것**이고, MCP는 편의 기능입니다.
+
+---
+
+## 핵심 정리
+
+| 구성 요소 | 역할 | 설정 방식 |
+|----------|------|----------|
+| **Genie Code OOB** | SQL 실행, Genie 질의, Vector Search | 설정 불필요 |
+| **Builder App + MCP** | 크로스 프로덕트 작업 75+ 도구 + Builder 웹 UI | `deploy.sh --enable-mcp` |
+| **Skills** | 도메인 전문 지식 자동 로딩 | deploy.sh가 자동 배포 |
+
+---
+
+## 다음 단계
+
+구성이 완료되었으면 핸즈온 케이스를 선택하여 진행합니다:
+- **[Section 4: Smart TV E2E](../section-4-smart-tv-handson/01-setup)**
+- **[Section 5: 가전 IoT E2E](../section-5-appliance-handson/01-setup)**
