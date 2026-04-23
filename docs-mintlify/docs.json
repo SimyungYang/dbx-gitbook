@@ -916,8 +916,7 @@
                   "blog/guides/apps/examples/lakebase",
                   "blog/guides/apps/examples/troubleshooting"
                 ]
-              },
-              "blog/guides/apps/obo-user-tracking"
+              }
             ]
           },
           {
@@ -1247,6 +1246,7 @@
                     ]
                   },
                   "training/14-best-practices/enterprise-governance/access-control",
+                  "blog/guides/apps/obo-user-tracking",
                   "training/14-best-practices/enterprise-governance/data-classification",
                   "training/14-best-practices/enterprise-governance/data-quality-cicd"
                 ]
