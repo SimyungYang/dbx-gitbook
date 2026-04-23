@@ -557,24 +557,6 @@
             ]
           },
           {
-            "group": "Genie Space 운영",
-            "pages": [
-              {
-                "group": "AI/BI 대시보드",
-                "pages": []
-              },
-              {
-                "group": "Metric Views",
-                "pages": [
-                  {
-                    "group": "Metric Views — 비즈니스 시맨틱 레이어",
-                    "pages": []
-                  }
-                ]
-              }
-            ]
-          },
-          {
             "group": "머신러닝",
             "pages": [
               "training/09-machine-learning/overview",
@@ -1195,6 +1177,25 @@
               "blog/guides/rag/advanced-retrieval/postprocessing",
               "blog/guides/rag/advanced-retrieval/chunking-advanced",
               "blog/guides/rag/advanced-retrieval/implementation"
+            ]
+          },
+          {
+            "group": "Genie Space 운영",
+            "pages": [
+              {
+                "group": "AI/BI 대시보드",
+                "pages": []
+              },
+              {
+                "group": "Metric Views",
+                "pages": [
+                  {
+                    "group": "Metric Views — 비즈니스 시맨틱 레이어",
+                    "pages": []
+                  }
+                ]
+              },
+              "blog/guides/genie-space/performance-tuning"
             ]
           },
           {
