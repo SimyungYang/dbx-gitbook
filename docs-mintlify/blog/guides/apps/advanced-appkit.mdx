@@ -1,0 +1,313 @@
+---
+title: "AppKit & Node.js/React 앱"
+---
+
+
+Databricks가 공식으로 제공하는 **AppKit** (React + TypeScript 프레임워크)과, AppKit을 사용하지 않는 **수동 Node.js/React** 구성 방법을 다룹니다.
+
+---
+
+## AppKit (React + TypeScript 프레임워크)
+
+**AppKit** 은 Databricks가 공식으로 제공하는 React + TypeScript 기반 풀스택 프레임워크입니다. 타입 안전한 SQL 쿼리, 내장 차트/테이블 컴포넌트, tRPC 기반 API를 제공합니다.
+
+### AppKit vs 다른 프레임워크
+
+| 비교 항목 | Streamlit | AppKit (React) |
+|-----------|-----------|---------------|
+| **언어** | Python | TypeScript/React |
+| **UI 커스터마이징** | 제한적 (위젯 기반) | 완전한 자유도 (컴포넌트 기반) |
+| **타입 안전성** | 없음 | SQL 쿼리 결과까지 타입 자동 생성 |
+| **차트** | Streamlit 내장 | ECharts 기반 (고성능) |
+| **API 레이어** | 없음 | tRPC (타입 안전 RPC) |
+| **빌드** | 불필요 | Vite 기반 빌드 |
+| **학습 곡선** | 낮음 | 중간~높음 |
+| **적합 대상** | 빠른 프로토타입, 데이터 앱 | 프로덕션 SPA, 복잡한 UI |
+
+### AppKit 프로젝트 생성
+
+```bash
+# 1. 매니페스트 확인 (사용 가능한 플러그인과 리소스 확인)
+databricks apps manifest --profile <PROFILE>
+
+# 2. 프로젝트 생성
+databricks apps init \
+  --name my-analytics-app \
+  --features analytics \
+  --set analytics.sql-warehouse.id=<WAREHOUSE_ID> \
+  --description "매출 분석 대시보드" \
+  --run none \
+  --profile <PROFILE>
+
+# 3. 의존성 설치 및 개발 서버 실행
+cd my-analytics-app
+npm install
+npm run dev
+```
+
+### AppKit 프로젝트 구조
+
+```
+my-analytics-app/
+├── client/
+│   ├── src/
+│   │   ├── App.tsx              # 메인 React 컴포넌트
+│   │   ├── appKitTypes.d.ts     # 자동 생성된 SQL 쿼리 타입
+│   │   └── main.tsx
+│   └── vite.config.ts
+├── server/
+│   └── server.ts                # tRPC 라우터 (백엔드)
+├── config/
+│   └── queries/
+│       └── sales_by_region.sql  # SQL 쿼리 파일
+├── tests/
+│   └── smoke.spec.ts            # 스모크 테스트
+├── app.yaml                     # 배포 설정
+└── package.json
+```
+
+### SQL 쿼리 + 차트 연동
+
+**1. SQL 쿼리 파일 작성:**
+
+```sql
+-- config/queries/sales_by_region.sql
+SELECT
+  region,
+  SUM(revenue) as total_revenue,
+  COUNT(*) as order_count
+FROM catalog.schema.sales
+WHERE order_date >= :start_date
+  AND order_date <= :end_date
+GROUP BY region
+ORDER BY total_revenue DESC
+```
+
+**2. 타입 생성:**
+
+```bash
+npm run typegen
+# ✓ sales_by_region — 타입 생성 완료
+```
+
+**3. React 컴포넌트에서 사용:**
+
+```tsx
+// client/src/App.tsx
+import { BarChart, DataTable } from '@databricks/appkit-ui/react';
+import { useAnalyticsQuery } from '@databricks/appkit-ui/react';
+import { sql } from '@databricks/appkit-ui/js';
+import { useState } from 'react';
+
+function App() {
+  const [startDate, setStartDate] = useState('2024-01-01');
+  const [endDate, setEndDate] = useState('2024-12-31');
+
+  const params = {
+    start_date: sql.date(startDate),
+    end_date: sql.date(endDate),
+  };
+
+  // KPI 카드용 데이터 조회
+  const { data } = useAnalyticsQuery('sales_by_region', params);
+
+  const totalRevenue = data
+    ? data.reduce((sum, row) => sum + Number(row.total_revenue), 0)
+    : 0;
+
+  return (
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">매출 분석 대시보드</h1>
+
+      {/* KPI 카드 */}
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="p-4 border rounded">
+          <p className="text-sm text-gray-500">총 매출</p>
+          <p className="text-2xl font-bold">
+            ${Number(totalRevenue).toLocaleString()}
+          </p>
+        </div>
+      </div>
+
+      {/* 지역별 매출 차트 */}
+      <BarChart
+        queryKey="sales_by_region"
+        parameters={params}
+        xKey="region"
+        yKey="total_revenue"
+        colors={['#FF3621']}
+        height={400}
+      />
+
+      {/* 데이터 테이블 */}
+      <DataTable
+        queryKey="sales_by_region"
+        parameters={params}
+      />
+    </div>
+  );
+}
+
+export default App;
+```
+
+### tRPC로 Model Serving 호출
+
+```typescript
+// server/server.ts
+import { initTRPC } from '@trpc/server';
+import { getExecutionContext } from '@databricks/appkit';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+export const appRouter = t.router({
+  askAgent: t.procedure
+    .input(z.object({ question: z.string() }))
+    .mutation(async ({ input }) => {
+      const { serviceDatabricksClient: client } = getExecutionContext();
+
+      const response = await client.servingEndpoints.query({
+        name: 'my-agent-endpoint',
+        messages: [{ role: 'user', content: input.question }],
+      });
+
+      return {
+        answer: response.choices[0].message.content,
+      };
+    }),
+});
+```
+
+### AppKit 배포
+
+```bash
+# 유효성 검사
+databricks apps validate --profile <PROFILE>
+
+# 배포
+databricks apps deploy --profile <PROFILE>
+```
+
+> **주의**
+**AppKit 개발 워크플로우**: 반드시 `SQL 파일 작성 → npm run typegen → App.tsx 작성` 순서를 지켜야 합니다. 타입 생성 전에 UI 코드를 작성하면 컴파일 에러가 발생합니다.
+
+
+---
+
+## Node.js/React 앱 (수동 구성)
+
+AppKit을 사용하지 않고 Node.js/React 앱을 직접 구성할 수도 있습니다.
+
+### 프로젝트 구조
+
+```bash
+my-react-app/
+├── app.yaml
+├── package.json
+├── server.js                 # Express/Node.js 서버
+├── build/                    # React 빌드 결과물
+│   ├── index.html
+│   └── static/
+└── src/                      # React 소스 (빌드 전)
+    ├── App.jsx
+    └── index.js
+```
+
+### app.yaml (Node.js)
+
+```yaml
+command: ['npm', 'run', 'start']
+env:
+  - name: DATABRICKS_WAREHOUSE_ID
+    valueFrom: sql_warehouse
+  - name: NODE_ENV
+    value: 'production'
+resources:
+  - name: sql_warehouse
+    type: sql-warehouse
+```
+
+### package.json
+
+```json
+{
+  "name": "my-react-app",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node server.js",
+    "build": "react-scripts build"
+  },
+  "dependencies": {
+    "@databricks/sql": "^1.8.0",
+    "express": "^4.18.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
+```
+
+### server.js (Express)
+
+```javascript
+const express = require('express');
+const path = require('path');
+const { DBSQLClient } = require('@databricks/sql');
+
+const app = express();
+const port = process.env.DATABRICKS_APP_PORT || 3000;
+
+// React 빌드 결과물 서빙
+app.use(express.static(path.join(__dirname, 'build')));
+app.use(express.json());
+
+// API 엔드포인트
+app.get('/api/data', async (req, res) => {
+  try {
+    const client = new DBSQLClient();
+    const connection = await client.connect({
+      authType: 'databricks-oauth',
+      host: process.env.DATABRICKS_HOST,
+      path: `/sql/1.0/warehouses/${process.env.DATABRICKS_WAREHOUSE_ID}`,
+      oauthClientId: process.env.DATABRICKS_CLIENT_ID,
+      oauthClientSecret: process.env.DATABRICKS_CLIENT_SECRET,
+    });
+
+    const session = await connection.openSession();
+    const result = await session.executeStatement(
+      'SELECT * FROM catalog.schema.table LIMIT 100'
+    );
+    const rows = await result.fetchAll();
+
+    await result.close();
+    await session.close();
+    await connection.close();
+
+    res.json({ data: rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// SPA fallback
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
+
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server running on port ${port}`);
+});
+```
+
+> **참고**
+**AppKit vs 수동 구성**: AppKit은 SQL 타입 생성, 내장 차트, tRPC 등을 제공하므로 새 프로젝트에서는 AppKit을 권장합니다. 기존 React 앱을 마이그레이션하거나 특수한 요구사항이 있는 경우에만 수동 구성을 사용하세요.
+
+
+---
+
+## 참고 자료
+
+- [Databricks Apps 컴퓨트 사이즈](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/compute-size)
+- [Databricks Asset Bundles](https://docs.databricks.com/aws/en/dev-tools/bundles/)
+- [Lakebase 개요](https://docs.databricks.com/aws/en/lakebase/)
+- [AppKit 공식 문서](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/appkit)

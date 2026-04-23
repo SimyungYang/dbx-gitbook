@@ -1,0 +1,135 @@
+---
+title: "인기 MCP 서버 & 실전 활용 시나리오 — 기초"
+---
+
+
+업계에서 가장 많이 사용되는 MCP 서버들과, 이들을 조합하여 실무 자동화를 구현하는 시나리오를 정리합니다.
+
+> **참고**
+**학습 목표**
+- 카테고리별 인기 MCP 서버와 주요 기능을 파악한다
+- 여러 MCP 서버를 조합한 실전 자동화 시나리오를 설계할 수 있다
+- Genie Code / Claude Code에 MCP 서버를 추가하는 방법을 이해한다
+- MCP 서버 디렉토리에서 필요한 서버를 찾고 평가할 수 있다
+
+
+---
+
+
+## MCP 서버 디렉토리
+
+MCP 서버를 찾을 수 있는 주요 사이트입니다:
+
+| 디렉토리 | URL | 특징 |
+|----------|-----|------|
+| **공식 레퍼런스 서버** | [github.com/modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) | Anthropic이 직접 관리하는 공식 서버. 품질과 안정성 보장 |
+| **Smithery** | [smithery.ai](https://smithery.ai) | 가장 큰 커뮤니티 마켓플레이스. 원클릭 설치, 인기순 정렬 |
+| **MCP.so** | [mcp.so](https://mcp.so) | 서버 검색 및 비교. 카테고리별 분류 |
+| **Glama** | [glama.ai/mcp/servers](https://glama.ai/mcp/servers) | 서버 평가 및 리뷰 |
+| **Awesome MCP Servers** | [github.com/punkpeye/awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) | GitHub Awesome 리스트. 커뮤니티 큐레이션 |
+| **Cursor Directory** | [cursor.directory](https://cursor.directory) | Cursor IDE 중심의 MCP 서버 목록 |
+
+> **팁**
+**서버 선택 기준**: GitHub Star 수, 최근 커밋 활동, 이슈 응답 속도, 공식(Anthropic/벤더) 여부를 확인하세요. 커뮤니티 서버는 품질 편차가 큽니다.
+
+
+---
+
+
+## 카테고리별 인기 MCP 서버
+
+각 카테고리별로 왜 해당 MCP 서버들이 중요한지, 실무에서 어떤 가치를 제공하는지 맥락과 함께 설명합니다.
+
+### 커뮤니케이션 & 협업
+
+**왜 이 카테고리가 중요한가**: AI 에이전트의 분석 결과나 작업 완료 알림을 사람에게 전달하려면, 커뮤니케이션 도구와의 연동이 필수입니다. 특히 Slack은 MCP 생태계에서 **가장 많이 사용되는 출력 채널** 입니다. 분석 결과를 Slack으로 전송하면, 별도의 대시보드를 열지 않아도 팀 전체가 즉시 인사이트를 공유할 수 있습니다.
+
+| 서버 | 패키지 / 리포 | 주요 Tool | 활용 사례 |
+|------|-------------|-----------|----------|
+| **Slack** | `@modelcontextprotocol/server-slack` | `send_message`, `search_messages`, `list_channels`, `get_channel_history` | 채널 메시지 전송, 대화 검색, 스레드 요약 |
+| **Microsoft Teams** | `mcp-server-microsoft-teams` (커뮤니티) | `send_message`, `list_teams`, `search_messages` | Teams 채널 알림, 회의 요약 전송 |
+| **Discord** | `@modelcontextprotocol/server-discord` (커뮤니티) | `send_message`, `read_messages`, `manage_channels` | 커뮤니티 관리, 봇 응답 |
+| **Gmail** | `@anthropic/gmail-mcp-server` | `search_emails`, `send_email`, `draft_email`, `read_email` | 이메일 초안 작성, 수신함 분석 |
+| **Google Calendar** | `@anthropic/google-calendar-mcp` | `list_events`, `create_event`, `check_availability` | 일정 확인, 미팅 생성, 빈 시간 검색 |
+
+### 개발 & DevOps
+
+**왜 이 카테고리가 중요한가**: 개발 도구와의 연동은 "코드 검색 → 이슈 생성 → PR 확인"이라는 개발 워크플로를 AI 에이전트가 자율적으로 수행할 수 있게 합니다. 특히 GitHub MCP는 Genie Code와 조합하면 "Databricks에서 데이터 분석 → GitHub에서 관련 코드 검색 → 코드 변경의 데이터 영향 분석"이라는 **데이터와 코드를 넘나드는 워크플로** 가 가능합니다.
+
+| 서버 | 패키지 / 리포 | 주요 Tool | 활용 사례 |
+|------|-------------|-----------|----------|
+| **GitHub** | `@modelcontextprotocol/server-github` | `search_repositories`, `create_issue`, `list_pull_requests`, `get_file_contents` | PR 리뷰, 이슈 관리, 코드 검색 |
+| **GitLab** | `@modelcontextprotocol/server-gitlab` | `create_issue`, `list_merge_requests`, `search_code` | MR 관리, 파이프라인 모니터링 |
+| **JIRA** | `mcp-server-atlassian` (커뮤니티) | `search_issues`, `create_issue`, `update_issue`, `add_comment` | 이슈 생성, 스프린트 관리, 상태 업데이트 |
+| **Linear** | `mcp-server-linear` (커뮤니티) | `create_issue`, `list_issues`, `update_issue` | 이슈 트래킹, 프로젝트 관리 |
+| **Sentry** | `mcp-server-sentry` (커뮤니티) | `list_issues`, `get_issue_details`, `resolve_issue` | 에러 모니터링, 이슈 분석 |
+
+### 데이터베이스
+
+**왜 이 카테고리가 중요한가**: 데이터베이스 MCP 서버는 AI 에이전트가 **실제 데이터에 직접 접근** 할 수 있게 합니다. 특히 Claude Desktop이나 Claude Code 같은 로컬 AI 클라이언트에서 PostgreSQL/MySQL MCP를 연결하면, 별도의 DB 클라이언트 없이 자연어로 데이터를 조회하고 분석할 수 있습니다. Databricks 환경에서는 Managed MCP(Databricks SQL)가 이 역할을 대신합니다.
+
+| 서버 | 패키지 / 리포 | 주요 Tool | 활용 사례 |
+|------|-------------|-----------|----------|
+| **PostgreSQL** | `@modelcontextprotocol/server-postgres` | `query`, `list_tables`, `describe_table` | SQL 쿼리 실행, 스키마 탐색, 데이터 분석 |
+| **MySQL** | `@benborla29/mcp-server-mysql` (커뮤니티) | `query`, `list_databases`, `describe_table` | DB 조회, 데이터 검증 |
+| **MongoDB** | `mcp-server-mongodb` (커뮤니티) | `find`, `aggregate`, `list_collections` | 문서 검색, 집계 쿼리 |
+| **SQLite** | `@modelcontextprotocol/server-sqlite` | `query`, `list_tables`, `describe_table` | 로컬 DB 분석, 프로토타이핑 |
+| **Redis** | `mcp-server-redis` (커뮤니티) | `get`, `set`, `keys`, `info` | 캐시 관리, 세션 데이터 조회 |
+
+### 클라우드 & 인프라
+
+**왜 이 카테고리가 중요한가**: 클라우드 인프라 MCP 서버는 DevOps/SRE 팀에게 특히 유용합니다. 인시던트 발생 시 "S3에서 관련 로그 파일 확인 → CloudWatch 메트릭 조회 → Lambda 함수 실행"을 AI 에이전트가 자율적으로 수행하여 초기 진단 시간을 크게 단축할 수 있습니다. AWS MCP는 AWS 공식 지원이므로 프로덕션 사용에도 안정적입니다.
+
+| 서버 | 패키지 / 리포 | 주요 Tool | 활용 사례 |
+|------|-------------|-----------|----------|
+| **AWS** | `@aws/mcp` (AWS 공식) | `s3_list`, `s3_get`, `cloudwatch_query`, `lambda_invoke` | S3 파일 관리, 로그 분석, Lambda 실행 |
+| **GCP** | `@anthropic/gcp-mcp-server` | `bigquery_query`, `gcs_list`, `gcs_read` | BigQuery 분석, GCS 파일 관리 |
+| **Azure** | `mcp-server-azure` (커뮤니티) | `blob_list`, `cosmos_query` | Blob Storage, CosmosDB 연동 |
+| **Kubernetes** | `mcp-server-kubernetes` (커뮤니티) | `get_pods`, `get_logs`, `describe_resource` | 클러스터 상태 확인, 파드 로그 조회 |
+| **Docker** | `mcp-server-docker` (커뮤니티) | `list_containers`, `get_logs`, `exec_command` | 컨테이너 관리, 로그 분석 |
+
+### 문서 & 생산성
+
+**왜 이 카테고리가 중요한가**: 분석 결과를 문서화하고 팀과 공유하는 것은 데이터 작업의 마지막 단계이자 가장 소홀히 되는 단계입니다. Notion/Confluence MCP를 연동하면 "분석 → 문서화"를 하나의 워크플로로 자동화할 수 있습니다. "이 분석 결과를 Notion에 보고서로 작성해줘"라는 한 마디로 구조화된 문서가 자동 생성됩니다.
+
+| 서버 | 패키지 / 리포 | 주요 Tool | 활용 사례 |
+|------|-------------|-----------|----------|
+| **Google Drive** | `@modelcontextprotocol/server-gdrive` | `search_files`, `read_file`, `list_files` | 문서 검색, 파일 내용 읽기 |
+| **Notion** | `@notionhq/notion-mcp-server` (Notion 공식) | `search`, `read_page`, `create_page`, `update_page`, `query_database` | 위키 관리, DB 조회, 문서 생성 |
+| **Confluence** | `mcp-server-confluence` (커뮤니티) | `search_pages`, `get_page`, `create_page` | 문서 검색, 페이지 생성 |
+| **Google Sheets** | `mcp-server-google-sheets` (커뮤니티) | `read_sheet`, `write_cells`, `create_sheet` | 스프레드시트 자동화 |
+| **Obsidian** | `mcp-server-obsidian` (커뮤니티) | `search_notes`, `read_note`, `create_note` | 노트 관리, 지식베이스 검색 |
+
+### 웹 & 검색
+
+**왜 이 카테고리가 중요한가**: LLM의 지식에는 학습 시점(cutoff) 이후의 정보가 없습니다. 웹 검색 MCP를 연동하면 AI 에이전트가 **최신 정보** 에 접근할 수 있습니다. 경쟁사 분석, 기술 동향 조사, 최신 문서 참조 등에 필수적입니다. Brave Search는 API 무료 티어가 있어 개인 사용에 적합합니다.
+
+| 서버 | 패키지 / 리포 | 주요 Tool | 활용 사례 |
+|------|-------------|-----------|----------|
+| **Brave Search** | `@modelcontextprotocol/server-brave-search` | `web_search`, `local_search` | 웹 검색, 로컬 비즈니스 검색 |
+| **Puppeteer** | `@modelcontextprotocol/server-puppeteer` | `navigate`, `screenshot`, `click`, `evaluate` | 웹 스크래핑, UI 테스트, 스크린샷 |
+| **Playwright** | `@anthropic/playwright-mcp` | `navigate`, `click`, `fill`, `screenshot` | 브라우저 자동화, E2E 테스트 |
+| **Fetch** | `@modelcontextprotocol/server-fetch` | `fetch` | URL 내용 가져오기, API 호출 |
+
+### 파일 & 스토리지
+
+**왜 이 카테고리가 중요한가**: 파일 시스템 MCP는 로컬 개발 환경에서 AI가 프로젝트 파일을 직접 읽고 수정할 수 있게 합니다. Claude Code는 자체적으로 파일 접근이 가능하지만, 다른 MCP 클라이언트에서는 Filesystem MCP가 필요합니다. S3/GCS MCP는 클라우드 스토리지의 파일을 AI가 직접 관리할 수 있게 하여, 데이터 레이크 운영을 자동화합니다.
+
+| 서버 | 패키지 / 리포 | 주요 Tool | 활용 사례 |
+|------|-------------|-----------|----------|
+| **Filesystem** | `@modelcontextprotocol/server-filesystem` | `read_file`, `write_file`, `search_files`, `list_directory` | 로컬 파일 관리, 코드 탐색 |
+| **S3** | `@aws/s3-mcp-server` | `list_objects`, `get_object`, `put_object` | S3 파일 관리 |
+| **Google Cloud Storage** | `mcp-server-gcs` (커뮤니티) | `list_blobs`, `read_blob`, `upload_blob` | GCS 파일 관리 |
+
+### 모니터링 & 관측
+
+**왜 이 카테고리가 중요한가**: 인시던트 대응은 시간이 생명입니다. 모니터링 MCP를 연동하면 "현재 Critical 알림 확인 → 관련 메트릭 조회 → 로그 분석 → 원인 추론 → 팀에 보고"라는 전체 대응 프로세스를 AI가 몇 분 만에 수행합니다. 특히 야간이나 주말에 온콜 엔지니어의 초기 대응 속도를 크게 높일 수 있습니다.
+
+| 서버 | 패키지 / 리포 | 주요 Tool | 활용 사례 |
+|------|-------------|-----------|----------|
+| **Datadog** | `mcp-server-datadog` (커뮤니티) | `query_metrics`, `list_monitors`, `get_events` | 메트릭 조회, 알림 관리 |
+| **Grafana** | `mcp-server-grafana` (커뮤니티) | `query_dashboard`, `list_alerts`, `search_dashboards` | 대시보드 조회, 알림 확인 |
+| **PagerDuty** | `mcp-server-pagerduty` (커뮤니티) | `list_incidents`, `acknowledge_incident`, `resolve_incident` | 인시던트 관리 |
+| **Prometheus** | `mcp-server-prometheus` (커뮤니티) | `query`, `query_range`, `list_alerts` | 메트릭 쿼리, 알림 조회 |
+
+---

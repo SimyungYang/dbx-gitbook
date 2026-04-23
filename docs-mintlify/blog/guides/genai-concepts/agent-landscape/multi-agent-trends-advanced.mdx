@@ -1,0 +1,315 @@
+---
+title: "멀티에이전트 트렌드 — 심화"
+---
+
+
+## 5. Agent 안전성 & 거버넌스
+
+멀티에이전트 시스템은 **자율적으로 도구를 호출하고, 데이터에 접근하며, 다른 Agent와 협업** 합니다. 이는 기존 소프트웨어와는 차원이 다른 보안/거버넌스 과제를 제기합니다.
+
+### 5.1 Forrester AEGIS 프레임워크
+
+Forrester Research가 2025년 발표한 **AEGIS (Agentic Enterprise Governance and Intelligence Standards)** 프레임워크는 엔터프라이즈 Agent 거버넌스의 표준 참조 모델입니다.
+
+**AEGIS의 5대 축**:
+
+| 축 | 영문 | 핵심 질문 |
+|----|------|----------|
+| **인증/권한** | Authorization | Agent가 무엇을 할 수 있는가? |
+| **감사** | Audit | Agent가 무엇을 했는가? |
+| **격리** | Isolation | Agent의 영향 범위를 제한할 수 있는가? |
+| **품질** | Quality | Agent의 출력을 신뢰할 수 있는가? |
+| **사람 개입** | Human Oversight | 언제 사람이 개입해야 하는가? |
+
+### 5.2 Zero Trust for Agents
+
+기존 Zero Trust 보안 모델을 Agent에 적용합니다. **"어떤 Agent도 기본적으로 신뢰하지 않는다"** 는 원칙입니다.
+
+| 원칙 | Agent 적용 |
+|------|-----------|
+| **최소 권한** | Agent는 태스크에 필요한 최소한의 도구/데이터에만 접근 |
+| **지속적 검증** | 매 Tool Call마다 권한 재검증 |
+| **세그멘테이션** | Agent 간 네트워크/데이터 격리 |
+| **암호화** | Agent 간 통신 암호화 (MCP/A2A 모두 TLS) |
+| **모니터링** | 모든 Agent 활동 실시간 감시 |
+
+### 5.3 Risk-Tiered HITL (Human-In-The-Loop)
+
+모든 Agent 행동에 사람이 개입하면 Agent의 의미가 없고, 모든 행동을 자율에 맡기면 위험합니다. **리스크 기반 3단계 HITL** 모델을 적용합니다.
+
+| 등급 | 이름 | 인간 개입 | 예시 |
+|------|------|----------|------|
+| **Tier 1** | Autonomous | 개입 없음. 사후 감사만 | 정보 조회, FAQ 답변, 데이터 조회 |
+| **Tier 2** | Step-up | 특정 조건 충족 시 승인 요청 | 데이터 수정, 비용 발생 API 호출, 외부 시스템 연동 |
+| **Tier 3** | Prohibited | Agent 실행 금지. 반드시 인간이 수행 | PII 삭제, 금융 거래, 인사 결정, 법적 결정 |
+
+> **주의**
+**핵심 원칙**: Tier 분류는 **"되돌릴 수 있는가(reversibility)"** 를 기준으로 합니다. 되돌릴 수 있는 행동은 Tier 1~2, 되돌릴 수 없는 행동은 반드시 Tier 2~3으로 분류하세요.
+
+
+### 5.4 권한 부여 모델 비교
+
+| 모델 | 설명 | 적합 시나리오 |
+|------|------|-------------|
+| **RBAC**(Role-Based) | 역할 기반 권한. "CS Agent는 고객 정보 읽기 가능" | 역할이 고정된 시스템 |
+| **ABAC**(Attribute-Based) | 속성 기반 동적 권한. "근무시간 + 부서 + 데이터 분류 등급" 조합 | 복잡한 규칙 기반 시스템 |
+| **IBAC**(Intent-Based) | 의도 기반 권한. Agent의 의도를 분석하여 동적 권한 부여 | 차세대 Agent 보안. 2025년 신규 개념 |
+
+**IBAC 예시**:
+- Agent가 "고객 전화번호 조회" 의도 → 허용
+- Agent가 "고객 전화번호를 외부 API로 전송" 의도 → 차단 (데이터 유출 위험)
+- 동일한 데이터 접근이지만, **의도에 따라 권한이 달라짐**
+
+### 5.5 전체 감사 추적 (Full Audit Trail)
+
+**필수 기록 항목**:
+
+| 항목 | 설명 |
+|------|------|
+| `timestamp` | 행동 발생 시각 (밀리초 단위) |
+| `agent_id` | 행동 주체 Agent 식별자 |
+| `action_type` | tool_call, llm_inference, handoff, human_escalation |
+| `input` | 입력 데이터 (PII 마스킹 적용) |
+| `output` | 출력 데이터 (PII 마스킹 적용) |
+| `decision_rationale` | Agent가 이 행동을 선택한 이유 (Chain of Thought) |
+| `authorization_check` | 권한 검증 결과 |
+| `token_usage` | 해당 행동의 토큰 소비 |
+| `latency_ms` | 행동 소요 시간 |
+
+> **참고**
+**Databricks 장점**: Unity Catalog의 **감사 로그(Audit Log)** 와 **데이터 계보(Lineage)** 기능을 Agent 거버넌스에 활용할 수 있습니다. Agent가 어떤 테이블에 접근했는지, 어떤 쿼리를 실행했는지가 자동으로 추적됩니다.
+
+
+---
+
+
+## 6. 시장 동향 & 전망
+
+### 6.1 시장 규모
+
+| 지표 | 수치 |
+|------|------|
+| **2025년 시장 규모** | $7.6B (약 10조원) |
+| **2030년 예상** | $52B ~ $100B (기관별 편차) |
+| **CAGR** | 약 46% |
+| **임원 88%** | AI 예산 증가 계획 |
+
+### 6.2 Gartner 예측
+
+| 시점 | 예측 |
+|------|------|
+| **2026년** | 엔터프라이즈 애플리케이션의 **40%** 가 Agentic AI 포함 |
+| **2028년** | 소프트웨어의 **33%** 가 Agent 컴포넌트 포함 |
+
+### 6.3 "Agentic AI" vs "AI Agent" -- 용어의 차이
+
+| 용어 | 의미 | 범위 |
+|------|------|------|
+| **Agentic AI** | 자율적으로 목표를 달성하는 **AI 시스템 전체** | 시스템, 아키텍처, 패러다임 |
+| **AI Agent** | Agentic AI를 구성하는 **개별 컴포넌트** | 단일 Agent, 실행 단위 |
+
+이 구분이 중요한 이유: 고객과 대화할 때 "AI Agent를 도입하겠다"와 "Agentic AI로 전환하겠다"는 전혀 다른 수준의 프로젝트입니다. 전자는 챗봇 하나를 만드는 것이고, 후자는 조직의 업무 프로세스를 AI 중심으로 재설계하는 것입니다.
+
+### 6.4 산업별 채택 현황
+
+| 산업 | 주요 유스케이스 | 성숙도 |
+|------|--------------|--------|
+| **금융** | 리스크 분석, 규정 준수 모니터링, 고객 상담 자동화 | 높음 |
+| **제조** | 예지보전, 품질 관리, 공급망 최적화 | 중간 |
+| **헬스케어** | 임상 문서 자동화, 약물 상호작용 분석 | 초기 |
+| **리테일** | 개인화 추천, 재고 관리, CS 자동화 | 중간 |
+| **공공** | 민원 처리, 정책 분석, 문서 관리 | 초기 |
+
+---
+
+
+## 7. Vibe Coding & Agentic Engineering
+
+### 7.1 Vibe Coding이란?
+
+**Vibe Coding** 은 2025년 2월 Andrej Karpathy (OpenAI 공동 창립자, 전 Tesla AI 디렉터)가 제안한 개념으로, **"코드를 직접 작성하지 않고 AI와의 대화로 소프트웨어를 만드는"** 새로운 프로그래밍 패러다임입니다.
+
+> "I just see stuff, say stuff, run stuff, and copy paste stuff, and it mostly works." -- Andrej Karpathy
+
+### 7.2 주요 도구 생태계
+
+| 도구 | 유형 | 특징 | 채택 현황 |
+|------|------|------|----------|
+| **Claude Code** | CLI Agent | 터미널 네이티브. MCP 통합. 코드베이스 전체 이해 | **"가장 사랑받는 도구" 46%**(LangSmith 조사) |
+| **Cursor** | IDE | AI-first IDE. Tab 자동완성 + Agent Mode | 개발자 인기 1위 AI IDE |
+| **GitHub Copilot** | IDE 플러그인 | Agent Mode (2025). 멀티파일 편집. PR 자동 생성 | 가장 넓은 설치 기반 |
+| **Windsurf** | IDE | Cascade 기능. 컨텍스트 연속성 | 빠른 성장 |
+| **Replit Agent** | 클라우드 IDE | 완전 자동 배포. 비개발자 대상 | 교육/프로토타이핑 |
+
+### 7.3 생산성 논쟁 -- 체감 vs 실제
+
+> **주의**
+**주목할 연구 결과**: METR(Model Evaluation and Threat Research)의 2025년 연구에 따르면, 숙련된 오픈소스 개발자들이 AI 코딩 도구를 사용했을 때 **체감 생산성은 20% 향상** 되었지만, **실제 작업 완료 시간은 19% 더 길었습니다**. 이 역설적 결과는 다음을 시사합니다:
+
+1. **코드 리뷰 시간 증가**: AI가 생성한 코드를 검증하는 데 추가 시간 소요
+2. **맥락 전환 비용**: AI와의 대화 ↔ 코드 검토를 오가는 오버헤드
+3. **과도한 위임**: AI에 맡기는 것이 나을 것 같지만, 결국 수정이 필요한 경우
+
+
+**그러나** 이것이 Vibe Coding의 무용론을 의미하지는 않습니다. 해당 연구는 "이미 익숙한 코드베이스에서 숙련 개발자가 사용한 경우"의 결과이며, 다음 경우에는 생산성이 확실히 향상됩니다:
+
+- **새로운 기술 스택** 학습 시 (보일러플레이트 생성)
+- **프로토타이핑** 단계 (아이디어 → 동작하는 코드)
+- **문서화, 테스트 작성**(반복적 작업)
+- **비개발자** 의 코딩 접근성 확대
+
+### 7.4 Vibe Coding에서 Agentic Engineering으로
+
+2025년 하반기, Vibe Coding의 한계가 드러나면서 **Agentic Engineering** 이라는 더 성숙한 개념으로 진화하고 있습니다.
+
+| 비교 | Vibe Coding | Agentic Engineering |
+|------|------------|-------------------|
+| **접근 방식** | "AI에게 말하면 코드가 나온다" | "AI Agent를 체계적으로 엔지니어링한다" |
+| **품질 보증** | 수동 검토에 의존 | 자동화된 테스트, CI/CD 통합 |
+| **거버넌스** | 없음 | 코드 리뷰 Agent, 보안 스캔 Agent |
+| **확장성** | 개인 생산성 도구 | 팀/조직 수준의 개발 프로세스 |
+| **대상** | 개인 개발자, 프로토타이핑 | 엔터프라이즈 소프트웨어 개발 |
+
+> **참고**
+**Databricks에서의 Vibe Coding**: Databricks 환경에서는 **Genie Code**(자연어 → SQL/Python), **AI Dev Kit**(Builder App 개발), **MCP 연동 Claude Code/Cursor**(Databricks 리소스 접근)가 Vibe Coding을 지원합니다. 특히 데이터 엔지니어가 SQL만 알아도 Python UDF를 작성하거나, 비즈니스 분석가가 대시보드 자동 생성을 할 수 있게 합니다.
+
+
+---
+
+
+## 8. Databricks 포지셔닝
+
+Databricks는 "Agent를 만드는 프레임워크"가 아닌, **"Agent를 엔터프라이즈에서 안전하게 운영하는 플랫폼"** 으로 포지셔닝합니다. 이 차이가 중요합니다.
+
+### 8.1 Databricks Agent 스택
+
+| 계층 | 구성 요소 | 설명 |
+|------|----------|------|
+| **사용자 인터페이스** | Genie Space, Genie Code, Databricks Apps | 사용자 접점 |
+| **Agent Bricks (No-Code)** | Knowledge Assistant, Genie Agent, Supervisor Agent | 노코드 Agent 구축 |
+| **Agent Framework (Pro-Code)** | LangGraph / OpenAI SDK / 커스텀 Agent 코드 + MLflow Tracing 자동 추적 | 코드 기반 Agent 개발 |
+| **AI Dev Kit (Builder App)** | 로컬 개발 → Databricks Apps 배포 | 개발 도구 |
+| **Foundation Layer** | Unity Catalog, Vector Search, Model Serving, MCP, Mosaic AI Gateway, Lakehouse Monitoring | 인프라 |
+
+### 8.2 경쟁 플랫폼 대비 Databricks 강점
+
+| 비교 축 | Databricks | AWS Bedrock | Azure AI Studio | Google Vertex AI |
+|---------|-----------|-------------|-----------------|-----------------|
+| **데이터 거버넌스** | Unity Catalog (통합) | IAM + Glue (분산) | Purview (별도) | Dataplex (별도) |
+| **Agent 추적** | MLflow Tracing (내장) | CloudWatch (범용) | App Insights (범용) | Cloud Trace (범용) |
+| **No-Code Agent** | Agent Bricks | Bedrock Agents | AI Studio Agents | Agent Builder |
+| **Pro-Code 자유도** | LangGraph, OpenAI 등 자유 선택 | Bedrock 종속적 | Semantic Kernel 중심 | ADK + Vertex |
+| **멀티클라우드** | AWS, Azure, GCP 모두 지원 | AWS 전용 | Azure 전용 | GCP 전용 |
+| **데이터와의 거리** | 제로 (Lakehouse 위에 Agent) | ETL 필요 | ETL 필요 | ETL 필요 |
+
+> **성공**
+**핵심 차별점**: Databricks의 가장 큰 강점은 **"Agent가 데이터 바로 위에 앉는다"** 는 것입니다. 다른 플랫폼에서는 Agent가 데이터를 가져오기 위해 ETL 파이프라인을 거쳐야 하지만, Databricks에서는 Agent가 Unity Catalog를 통해 **원본 데이터에 직접 접근** 하며, 동일한 거버넌스 정책이 적용됩니다.
+
+
+### 8.3 구현 시나리오별 권장 아키텍처
+
+| 시나리오 | 권장 스택 | 이유 |
+|---------|---------|------|
+| **사내 Q&A 봇** | Agent Bricks (Knowledge Assistant) | No-Code, 빠른 배포, RAG 자동 구성 |
+| **데이터 질의 Agent** | Agent Bricks (Genie Agent) | Genie Space + 자연어 SQL |
+| **멀티도메인 포탈** | Agent Bricks (Supervisor) + 전문 Agent들 | Supervisor 패턴. No-Code 구성 |
+| **커스텀 워크플로** | LangGraph + Databricks Agent Framework | 복잡한 분기/루프. Pro-Code 필요 |
+| **외부 서비스 연동 앱** | AI Dev Kit (Builder App) → Databricks Apps 배포 | 로컬 개발 + 원클릭 배포 |
+| **대규모 배치 Agent** | Databricks Jobs + Model Serving | 스케줄링, 재시도, 모니터링 |
+
+---
+
+
+## 9. 고객 FAQ
+
+### Q1. "멀티에이전트가 단일 Agent보다 항상 좋은가요?"
+
+아닙니다. 멀티에이전트는 **복잡성 비용** 이 있습니다. 다음 기준으로 판단하세요:
+
+| 기준 | 단일 Agent 적합 | 멀티에이전트 적합 |
+|------|----------------|-----------------|
+| 도메인 수 | 1~2개 | 3개 이상 |
+| 도구 수 | 5개 이하 | 10개 이상 |
+| 프로세스 복잡도 | 선형 | 분기/병렬 필요 |
+| 전문성 요구 | 범용 | 도메인별 전문 프롬프트 필요 |
+| 장애 격리 | 전체 재시도 가능 | 부분 실패 허용 필요 |
+
+### Q2. "MCP 도입은 지금 해야 하나요, 더 기다려야 하나요?"
+
+**지금 하세요.** MCP는 이미 사실상 표준(de facto standard)입니다. 9,700만+ 다운로드가 이를 증명합니다. 기다릴 이유가 없습니다. Databricks MCP Server도 공식 지원되고 있으므로, 기존 Databricks 환경에 바로 연동 가능합니다.
+
+### Q3. "Agent의 비용을 어떻게 관리하나요?"
+
+1. **라우팅 최적화**: Supervisor에서 소형 모델 사용 (GPT-4o-mini, DBRX)
+2. **캐싱**: 반복적인 Tool Call 결과 캐싱
+3. **토큰 예산**: Agent별 토큰 상한선 설정
+4. **Trajectory 분석**: 불필요한 Tool Call 패턴 식별 및 제거
+5. **모니터링**: MLflow Tracing으로 실시간 비용 추적
+
+### Q4. "Agent 보안이 걱정됩니다. 어떻게 시작해야 하나요?"
+
+단계적 접근을 권장합니다:
+
+1. **1단계**: 읽기 전용 Agent부터 시작 (정보 조회, FAQ)
+2. **2단계**: Risk-Tiered HITL 적용 (Tier 1만 자동화)
+3. **3단계**: RBAC 기반 Agent 권한 체계 구축
+4. **4단계**: 감사 로그 + 이상 탐지 구축
+5. **5단계**: 점진적으로 Tier 2 자동화 범위 확대
+
+### Q5. "A2A가 MCP를 대체하나요?"
+
+아닙니다. **역할이 다릅니다.** MCP는 Agent → Tool (USB 포트), A2A는 Agent ↔ Agent (HTTP 프로토콜)입니다. 둘은 상호보완적이며, 성숙한 멀티에이전트 시스템에서는 둘 다 필요합니다.
+
+### Q6. "Databricks 없이 멀티에이전트를 구축할 수 있나요?"
+
+기술적으로 가능합니다. 하지만 다음을 직접 구축해야 합니다:
+- 데이터 거버넌스 (Unity Catalog 대체)
+- Agent 추적 (MLflow Tracing 대체)
+- 벡터 검색 인프라 (Vector Search 대체)
+- 모델 서빙 인프라 (Model Serving 대체)
+- 배포 인프라 (Databricks Apps 대체)
+
+이 모든 것을 조합하면 **6~12개월의 추가 인프라 구축 시간** 이 필요합니다.
+
+---
+
+
+## 10. 참고 자료
+
+### 프로토콜 & 표준
+- [Anthropic MCP 공식 문서](https://modelcontextprotocol.io/)
+- [Google A2A 프로토콜](https://google.github.io/A2A/)
+- [AAIF (Linux Foundation)](https://www.linuxfoundation.org/press/linux-foundation-launches-agentic-ai-forum)
+
+### 프레임워크
+- [LangGraph 공식 문서](https://langchain-ai.github.io/langgraph/)
+- [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/)
+- [CrewAI 공식 문서](https://docs.crewai.com/)
+- [AutoGen (Microsoft)](https://microsoft.github.io/autogen/)
+- [AWS Strands](https://strandsagents.com/)
+- [Google Agent Development Kit](https://google.github.io/adk-docs/)
+
+### 관측성
+- [MLflow Tracing](https://mlflow.org/docs/latest/llms/tracing/index.html)
+- [LangSmith](https://docs.smith.langchain.com/)
+- [Arize Phoenix](https://docs.arize.com/phoenix)
+
+### Databricks
+- [Databricks Agent Bricks](https://docs.databricks.com/en/generative-ai/agent-bricks/index.html)
+- [Databricks AI Dev Kit](https://docs.databricks.com/en/dev-tools/ai-dev-kit.html)
+- [Databricks MCP Server](https://docs.databricks.com/en/dev-tools/mcp.html)
+
+### 시장 분석
+- Gartner, "Predicts 2025: Agentic AI" (2024)
+- Forrester, "The AEGIS Framework for Agentic AI Governance" (2025)
+- McKinsey, "The State of AI in 2025" (2025)
+
+### Vibe Coding
+- Andrej Karpathy, "Vibe Coding" (2025.02)
+- METR, "Measuring the Impact of AI Coding Tools on Developer Productivity" (2025)
+- LangSmith, "State of AI Coding Tools" (2025)
+
+---
+
+> **참고**
+**이 문서는 2025년 Q1 기준으로 작성되었습니다.** Agentic AI 분야는 매우 빠르게 변화하고 있으므로, 분기별 업데이트를 권장합니다. 최신 정보는 [Databricks 블로그](https://www.databricks.com/blog)와 [AAIF 공지](https://www.linuxfoundation.org/press)를 참조하세요.

@@ -1,0 +1,382 @@
+---
+title: "멀티에이전트 트렌드 — 기초"
+---
+
+
+2025년은 AI Agent가 "데모 단계"에서 "프로덕션 단계"로 전환되는 변곡점입니다. 단일 Agent의 한계가 명확해지면서, 멀티에이전트 시스템(MAS)이 엔터프라이즈 AI의 핵심 아키텍처로 부상하고 있습니다. 이 가이드는 오케스트레이션 패턴, 프로토콜 표준화, 관측성, 메모리 아키텍처, 안전성, 시장 동향, 그리고 Vibe Coding까지 -- 2025년 Agentic AI 지형의 전체 그림을 제공합니다.
+
+> **참고**
+**학습 목표**
+- 멀티에이전트 오케스트레이션 5대 패턴의 설계 원리와 적용 기준을 설명할 수 있다
+- MCP와 A2A 프로토콜의 역할 분담과 상호보완 관계를 이해한다
+- Agent 관측성(Observability)의 핵심 메트릭과 도구 생태계를 파악한다
+- Agent Memory의 유형별 설계 전략을 수립할 수 있다
+- 엔터프라이즈 Agent 거버넌스 프레임워크를 적용할 수 있다
+- Databricks 플랫폼에서의 멀티에이전트 구현 전략을 수립할 수 있다
+
+
+> **주의**
+**용어 정리**: 이 문서에서 "Agentic AI"는 **복수의 Agent가 협업하는 시스템 전체** 를, "AI Agent"는 **그 시스템을 구성하는 개별 컴포넌트** 를 지칭합니다. 이 구분은 Gartner, Forrester 등 주요 애널리스트 기관에서도 채택한 표준 용법입니다.
+
+
+---
+
+
+## 1. 멀티에이전트 오케스트레이션 패턴 -- 5종 심층 비교
+
+멀티에이전트 시스템의 성패는 "Agent를 어떻게 조율하는가"에 달려 있습니다. 2025년 현재 프로덕션에서 검증된 5가지 핵심 패턴을 비교합니다.
+
+### 1.1 패턴 총괄 비교
+
+| 패턴 | 핵심 원리 | Agent 수 | 적합 시나리오 | 대표 프레임워크 | 토큰 효율 |
+|------|-----------|----------|--------------|----------------|-----------|
+| **Supervisor/Router** | 중앙 라우터가 의도 분류 후 전문 Agent에 위임 | 3~15 | CS 봇, 사내 포탈 | LangGraph, Databricks | 높음 |
+| **Swarm/Handoff** | Agent 간 직접 핸드오프, 공유 블랙보드 | 5~20 | 탐색적 리서치, 브레인스토밍 | OpenAI Agents SDK | 중간 |
+| **Hierarchical** | 다단계 관리자 체인, 트리 구조 | 50+ | 대규모 엔터프라이즈 워크플로 | CrewAI, IBM Research | 낮음 |
+| **Collaborative/Debate** | 에이전트 간 다회전 토론, 합의 도출 | 2~5 | 의사결정, 코드 리뷰 | AutoGen (MS) | 낮음 |
+| **Pipeline** | 순차적 처리, 각 단계가 전문화 | 3~10 | 콘텐츠 생성, 데이터 처리 | LangGraph, AWS Strands | 높음 |
+
+### 1.2 Supervisor/Router 패턴 (프로덕션 최다 채택)
+
+**원리**: 하나의 Supervisor Agent가 사용자 입력의 **의도(intent)를 분류** 한 뒤, 해당 도메인의 전문 Agent에게 작업을 위임합니다. 전문 Agent의 결과를 수집하여 최종 응답을 생성합니다.
+
+| 역할 | 구성 요소 | 설명 |
+|------|----------|------|
+| **오케스트레이터** | Supervisor (Router) | 사용자 요청의 의도를 분류 (routing) |
+| **전문 Agent** | HR Agent | 인사 관련 질의 처리 |
+| | IT Agent | IT 지원 질의 처리 |
+| | 재무 Agent | 재무/회계 관련 질의 처리 |
+| | 법무 Agent | 법률/규정 관련 질의 처리 |
+
+**왜 프로덕션에서 가장 많이 쓰이는가?**
+
+1. **토큰 효율성**: 라우팅 단계에서 소형 모델(예: GPT-4o-mini, DBRX)을 사용하고, 전문 Agent에서만 대형 모델을 호출하면 **토큰 비용을 60~80% 절감** 가능
+2. **장애 격리**: 한 전문 Agent가 실패해도 다른 Agent에 영향 없음
+3. **점진적 확장**: 새 도메인 추가 시 전문 Agent만 추가하면 됨
+4. **디버깅 용이**: 라우팅 로그만 보면 어떤 Agent가 호출되었는지 즉시 파악
+
+> **성공**
+**Databricks 매핑**: Databricks의 **Supervisor Agent**(Agent Bricks)가 정확히 이 패턴입니다. Knowledge Assistant, Genie Agent 등을 하위 Agent로 등록하고, Supervisor가 라우팅합니다.
+
+
+### 1.3 Swarm/Handoff 패턴
+
+**원리**: OpenAI가 제안한 패턴으로, Agent들이 **공유 블랙보드(shared context)** 를 통해 상태를 공유하며, 한 Agent가 작업을 완료하면 다음 Agent에게 직접 **핸드오프** 합니다. 중앙 제어자 없이 Agent 간 자율적 협업이 이루어집니다.
+
+**흐름:** Agent A → (handoff) → Agent B → (handoff) → Agent C
+- 모든 Agent가 **공유 블랙보드 (Shared State)** 를 통해 상태를 공유
+
+**장점**:
+- 탐색적 작업에 강함 (각 Agent가 자율적으로 경로 결정)
+- 중앙 병목 없음
+- OpenAI Agents SDK에서 네이티브 지원 (`handoff()` 함수)
+
+**단점**:
+- 무한 루프 위험 (Agent A → B → A → B...)
+- 디버깅 난이도 높음 (제어 흐름이 분산)
+- 토큰 소비 예측 어려움
+
+> **주의**
+**주의**: Swarm 패턴은 **탐색적 리서치, 브레인스토밍** 등에 적합하지만, **결정론적 비즈니스 프로세스**(예: 결재, 주문 처리)에는 부적합합니다. 이런 경우 Supervisor 또는 Pipeline 패턴을 사용하세요.
+
+
+### 1.4 Hierarchical 패턴 (대규모 시스템)
+
+**원리**: IBM Research에서 검증한 패턴으로, **50개 이상의 Agent** 를 관리해야 하는 대규모 시스템에 적합합니다. Supervisor 패턴을 재귀적으로 중첩하여 트리 구조를 형성합니다.
+
+```
+              CEO Agent
+             /    |    \
+        영업팀   기술팀   운영팀
+        /  \     / \     / \
+      A1  A2   A3  A4  A5  A6   ← 실행 Agent
+```
+
+**핵심 설계 원칙**:
+- **Span of Control**: 한 관리자 Agent가 관할하는 하위 Agent는 **5~7개** 이내 (인간 조직론과 동일)
+- **Escalation Path**: 하위 Agent가 해결 못한 문제는 상위로 에스컬레이션
+- **Context Compression**: 상위로 올릴 때 컨텍스트를 요약하여 토큰 절약
+
+**대표 사례**: CrewAI의 `hierarchical` process 모드
+
+### 1.5 Collaborative/Debate 패턴
+
+**원리**: Microsoft AutoGen이 대표하는 패턴으로, 2개 이상의 Agent가 **다회전 대화(multi-turn conversation)** 를 통해 문제를 해결합니다. "토론을 통한 합의" 메커니즘입니다.
+
+**흐름:** Agent A (찬성 측) ↔ Agent B (반대 측) — 다회전 토론 → 합의 도출 / 최종 판단
+
+**적합 시나리오**:
+- 코드 리뷰 (작성자 Agent vs 리뷰어 Agent)
+- 투자 의사결정 (낙관론 Agent vs 비관론 Agent)
+- 법률 검토 (규정 준수 Agent vs 비즈니스 Agent)
+
+**주의점**: 토론 라운드가 늘어날수록 토큰 소비가 **기하급수적** 으로 증가합니다. 반드시 **최대 라운드 수(max_turns)** 를 설정하세요.
+
+### 1.6 Pipeline 패턴 (순차 처리)
+
+**원리**: 공장의 조립 라인처럼 각 Agent가 **하나의 전문 단계** 를 담당하고, 결과물을 다음 Agent에게 넘깁니다.
+
+```
+Researcher → Writer → Editor → Fact-Checker → Publisher
+```
+
+**장점**:
+- 각 단계를 독립적으로 최적화 가능 (모델, 프롬프트, 도구 각각 튜닝)
+- 결정론적 실행 흐름 (디버깅 용이)
+- 중간 결과물 캐싱으로 재실행 비용 절감
+
+**Databricks에서의 구현**: Databricks Jobs의 **Task Dependencies** 를 활용하면 각 단계를 별도 Task로 관리하고, 실패 시 해당 단계만 재실행 가능
+
+### 1.7 프레임워크별 패턴 매핑
+
+| 프레임워크 | 기본 패턴 | 지원 패턴 | 특징 |
+|-----------|----------|----------|------|
+| **LangGraph** | Supervisor/Router | 모든 패턴 | 그래프 기반으로 어떤 패턴이든 구현 가능. 가장 유연 |
+| **CrewAI** | Hierarchical | Pipeline, Collaborative | 역할(Role) 기반 설계. YAML로 Agent 정의 |
+| **OpenAI Agents SDK** | Swarm/Handoff | Supervisor | `handoff()` 네이티브 지원. 가드레일 내장 |
+| **AWS Strands** | Pipeline | Supervisor | 프로덕션 우선 설계. AWS 서비스 네이티브 통합 |
+| **Google ADK** | 멀티패턴 | 모든 패턴 | A2A 프로토콜 네이티브. Google Cloud 통합 |
+| **Databricks Agent Framework** | Supervisor | Pipeline | MLflow 통합 추적. Unity Catalog 거버넌스 |
+
+> **참고**
+**실전 권장 조합**: 대부분의 엔터프라이즈 프로젝트에서는 **LangGraph(오케스트레이션) + Databricks Agent Framework(거버넌스/배포/모니터링)** 조합이 최적입니다. LangGraph로 복잡한 흐름을 설계하고, Databricks로 프로덕션 운영을 관리하세요.
+
+
+---
+
+
+## 2. 프로토콜 표준화 -- MCP, A2A, 그리고 AAIF
+
+2025년 멀티에이전트 생태계의 가장 중요한 변화는 **상호운용성 프로토콜의 표준화** 입니다. 더 이상 특정 프레임워크에 종속되지 않고, Agent와 도구, Agent와 Agent가 표준 프로토콜로 통신하는 시대가 열리고 있습니다.
+
+### 2.1 프로토콜 스택 개요
+
+| 계층 | 프로토콜 / 기술 | 역할 |
+|------|---------------|------|
+| **Application Layer** | LangGraph, CrewAI, Databricks... | Agent 프레임워크 |
+| **Agent-to-Agent (A2A)** | Agent Cards, Task Lifecycle, Streaming | Agent 간 통신 |
+| **Model Context Protocol (MCP)** | Resources, Tools, Prompts, Sampling | Agent → Tool 연결 |
+| **Transport Layer** | HTTP/SSE, WebSocket, stdio | 전송 계층 |
+
+### 2.2 MCP (Model Context Protocol) -- Agent-to-Tool 표준
+
+| 항목 | 내용 |
+|------|------|
+| **발표** | Anthropic, 2024년 11월 |
+| **역할** | Agent가 외부 도구/데이터 소스에 접근하는 표준 인터페이스 |
+| **채택 규모** | npm 기준 **9,700만+ 다운로드**(2025 Q1) |
+| **거버넌스** | AAIF (Agentic AI Forum, Linux Foundation 산하) |
+| **핵심 개념** | Resources (데이터), Tools (함수 호출), Prompts (템플릿), Sampling (LLM 호출) |
+
+**MCP가 해결하는 문제**:
+- Agent 프레임워크마다 Tool 연결 방식이 달랐음 → **N x M 통합 문제**
+- MCP 도입 후 → Agent는 MCP Client, Tool은 MCP Server → **N + M** 으로 축소
+
+**MCP 아키텍처**:
+
+| 구성 요소 | 역할 | 통신 방식 |
+|----------|------|----------|
+| **MCP Host**(Agent) | AI 애플리케이션, MCP Client 내장 | JSON-RPC over stdio / HTTP+SSE |
+| **MCP Server**(Tool/Data) | 도구/데이터를 MCP 프로토콜로 노출 | — |
+
+**주요 MCP Server 예시:** Databricks MCP Server (SQL, Unity Catalog, Vector Search), GitHub MCP Server, Slack MCP Server 등 수천 개
+
+> **성공**
+**Databricks MCP**: Databricks는 공식 MCP Server를 제공합니다. SQL 실행, Unity Catalog 탐색, Vector Search 쿼리, Genie 질의 등을 MCP 프로토콜로 통합할 수 있습니다. Claude Desktop, Cursor 등에서 바로 연결 가능합니다.
+
+
+### 2.3 A2A (Agent-to-Agent) -- Agent 간 통신 표준
+
+| 항목 | 내용 |
+|------|------|
+| **발표** | Google, 2025년 3월 |
+| **역할** | 서로 다른 프레임워크/벤더의 Agent가 상호 통신하는 표준 |
+| **채택 규모** | **150개+ 조직** 참여 (Salesforce, SAP, Databricks 등) |
+| **현재 버전** | v0.3 (2025 Q1) |
+| **거버넌스** | Linux Foundation |
+
+**A2A의 핵심 개념**:
+
+| 개념 | 설명 |
+|------|------|
+| **Agent Card** | Agent의 능력, 엔드포인트, 인증 정보를 기술하는 JSON 메타데이터 (`/.well-known/agent.json`) |
+| **Task** | Agent 간 작업 단위. `submitted` → `working` → `completed/failed` 라이프사이클 |
+| **Message** | Agent 간 주고받는 메시지. 텍스트, 파일, 구조화 데이터 포함 가능 |
+| **Artifact** | Task 실행 결과물 (보고서, 이미지, 데이터셋 등) |
+| **Streaming** | SSE 기반 실시간 진행 상황 전달 |
+
+**MCP vs A2A -- 역할이 다르다**:
+
+| 비교 항목 | MCP | A2A |
+|----------|-----|-----|
+| **통신 방향** | Agent → Tool (단방향) | Agent ↔ Agent (양방향) |
+| **역할** | 도구 접근 표준화 | Agent 간 협업 표준화 |
+| **비유** | USB 포트 (기기 연결) | HTTP 프로토콜 (서버 간 통신) |
+| **성숙도** | 사실상 표준 (de facto) | 초기 채택 단계 |
+| **채택 속도** | 매우 빠름 | 상대적으로 느림 |
+| **상호 관계** | A2A와 상호보완 | MCP와 상호보완 |
+
+> **주의**
+**A2A 채택이 느린 이유**: A2A는 "Agent가 다른 Agent를 발견하고 협업하는" 시나리오를 전제합니다. 하지만 2025년 현재 대부분의 엔터프라이즈는 **단일 벤더 스택** 내에서 Agent를 운영하고 있어, 크로스 벤더 Agent 협업 수요가 아직 제한적입니다. 2026~2027년에 본격적으로 채택될 것으로 전망됩니다.
+
+
+### 2.4 AAIF (Agentic AI Forum) -- 표준화 거버넌스
+
+2025년, Linux Foundation 산하에 **AAIF (Agentic AI Forum)** 가 설립되었습니다. MCP와 A2A를 포함한 Agentic AI 관련 표준을 통합 관리하는 것이 목표입니다.
+
+**참여 조직**: Anthropic, Google, Microsoft, Databricks, Salesforce, SAP, AWS, Meta 등
+
+**AAIF의 표준화 스택**:
+
+| 레이어 | 프로토콜 | 상태 |
+|--------|---------|------|
+| Agent-to-Tool | MCP | 사실상 표준 |
+| Agent-to-Agent | A2A | v0.3, 초기 채택 |
+| Agent Communication Protocol | ACP | 신규, 설계 단계 |
+| Agent Network Protocol | ANP | 신규, 설계 단계 |
+
+### 2.5 실전 권장사항
+
+1. **지금 당장**: MCP를 적극 도입하세요. 도구 통합의 표준이 이미 확정되었습니다.
+2. **2025년 하반기**: A2A Agent Card를 설계해두세요. 멀티벤더 Agent 협업이 시작될 때 대비할 수 있습니다.
+3. **ACP/ANP**: 아직 설계 단계이므로 관망하되, AAIF 발표를 모니터링하세요.
+
+---
+
+
+## 3. Agent Observability -- 관측성과 모니터링
+
+멀티에이전트 시스템의 가장 큰 운영 과제는 **"무엇이 잘못되었는지 알기 어렵다"** 는 것입니다. 단일 LLM 호출은 입력/출력만 보면 되지만, 멀티에이전트 시스템은 **Agent 간 상호작용, 도구 호출 체인, 컨텍스트 전달** 등 추적해야 할 대상이 기하급수적으로 늘어납니다.
+
+### 3.1 핵심 메트릭 체계
+
+| 카테고리 | 메트릭 | 설명 | 허용 범위 (참고) |
+|----------|--------|------|-----------------|
+| **비용** | 토큰 사용량 | 에이전트별, 태스크별 토큰 소비 | 동일 태스크 대비 **50x 편차** 발생 가능! |
+| **비용** | 달러/태스크 | 태스크 1건 처리 비용 | 비즈니스 가치 대비 ROI 계산 |
+| **지연** | E2E Latency | 사용자 요청~최종 응답 시간 | 대화형: \< 5s, 배치: SLA 기준 |
+| **지연** | TTFT | Time to First Token | \< 2s (사용자 체감 기준) |
+| **신뢰성** | Tool Call 성공률 | 도구 호출 성공/실패 비율 | > 95% (이하면 프롬프트 튜닝 필요) |
+| **신뢰성** | Task 완료율 | 태스크 정상 완료 비율 | > 90% |
+| **품질** | Trajectory 분석 | Agent의 행동 경로가 최적이었는지 | 불필요한 Tool Call 3회 이상이면 비효율 |
+| **품질** | 환각(Hallucination) 비율 | 사실과 다른 응답 비율 | \< 5% |
+
+> **주의**
+**토큰 비용의 50x 편차**: 동일한 질문에 대해 Agent의 경로 선택에 따라 토큰 소비가 **최대 50배** 차이날 수 있습니다. 예를 들어, 단순 질문에 불필요하게 여러 Tool을 호출하거나, 대규모 컨텍스트를 반복 전달하는 경우입니다. **Trajectory 분석** 을 통해 이런 비효율을 탐지하고 최적화해야 합니다.
+
+
+### 3.2 Tool Calling Accuracy -- 지배적 신뢰성 이슈
+
+2025년 프로덕션 Agent 시스템의 **가장 빈번한 실패 원인** 은 Tool Calling 오류입니다.
+
+| 실패 유형 | 설명 | 대응 방안 |
+|-----------|------|----------|
+| **잘못된 도구 선택** | 의도와 다른 도구 호출 | 도구 설명(description) 정밀화, Few-shot 예시 추가 |
+| **잘못된 파라미터** | 필수 파라미터 누락/오류 | JSON Schema 검증 강화, 파라미터 기본값 설정 |
+| **불필요한 호출** | 이미 답을 알지만 도구를 호출 | 프롬프트에 "도구 없이 답할 수 있으면 직접 답하라" 지시 |
+| **호출 실패 후 무한 재시도** | 같은 오류를 반복 | 최대 재시도 횟수 설정, 폴백 전략 |
+
+### 3.3 Observability 도구 비교
+
+| 도구 | 유형 | 강점 | Databricks 통합 | 가격 모델 |
+|------|------|------|-----------------|----------|
+| **MLflow Tracing** | 오픈소스 | Databricks 네이티브. 자동 추적. Unity Catalog 연동 | 네이티브 | 무료 (Databricks 내) |
+| **LangSmith** | SaaS | LangGraph 심층 통합. Playground. 데이터셋 관리 | API 연동 | 프리미엄 $39+/월 |
+| **Arize Phoenix** | 오픈소스/SaaS | LLM 관측성 특화. Embedding 시각화 | 별도 연동 | 오픈소스 무료 |
+| **Braintrust** | SaaS | 평가(Eval) 중심. CI/CD 통합 | API 연동 | 사용량 기반 |
+| **Langfuse** | 오픈소스/SaaS | 자체 호스팅 가능. 비용 추적 우수 | 별도 연동 | 오픈소스 무료 |
+| **AgentOps** | SaaS | Agent 전용. 세션 리플레이 | 별도 연동 | 프리미엄 |
+
+> **성공**
+**Databricks 고객 권장**: **MLflow Tracing** 을 1차 관측 도구로 사용하세요. Databricks 환경에서 자동으로 trace가 수집되며, Unity Catalog의 거버넌스와 통합됩니다. LangGraph를 사용하는 경우 LangSmith를 보조 도구로 추가하면 개발 단계에서의 디버깅이 수월합니다.
+
+
+### 3.4 관측성 구현 체크리스트
+
+- [ ] 모든 Agent 호출에 **trace ID** 부여 (분산 추적)
+- [ ] Tool Call별 **성공/실패, 지연시간, 토큰 수** 기록
+- [ ] 태스크별 **총 비용** 자동 계산 및 대시보드 표시
+- [ ] **이상 탐지 알림**: 평균 대비 3x 이상 토큰 소비 시 알림
+- [ ] 주간 **Trajectory 분석** 리뷰: 비효율적 경로 패턴 식별
+- [ ] A/B 테스트: 프롬프트/모델 변경의 영향을 정량적으로 측정
+
+---
+
+
+## 4. Agent Memory 아키텍처
+
+Agent의 "기억"은 사용자 경험과 태스크 품질을 결정하는 핵심 요소입니다. 2025년에는 단순한 대화 히스토리를 넘어, **구조화된 장기 기억과 집단 기억** 이 중요해지고 있습니다.
+
+### 4.1 메모리 유형 분류
+
+| 유형 | 저장 위치 | 수명 | 용도 | 비유 |
+|------|----------|------|------|------|
+| **단기 기억 (Short-term)** | 컨텍스트 윈도우 | 세션 내 | 현재 대화 맥락 유지 | 작업 기억 (Working Memory) |
+| **장기 기억 (Long-term)** | 벡터 DB / 관계형 DB | 영구 | 사용자 선호, 과거 상호작용 | 장기 기억 (Long-term Memory) |
+| **공유/집단 기억 (Shared)** | 공유 저장소 | 영구 | Agent 간 지식 공유 | 조직의 공유 지식 (Institutional Knowledge) |
+
+### 4.2 단기 기억 -- 컨텍스트 윈도우 관리
+
+컨텍스트 윈도우는 유한합니다. 대화가 길어지면 초기 맥락이 잘려나가면서 Agent의 성능이 저하됩니다.
+
+**최적화 전략**:
+
+| 전략 | 설명 | 적용 시점 |
+|------|------|----------|
+| **Sliding Window** | 최근 N 턴만 유지 | 범용적. 단순하지만 효과적 |
+| **요약 압축 (Summarization)** | 이전 대화를 요약하여 축소 | 장기 대화. 비용 절감 |
+| **선택적 망각 (Selective Forgetting)** | 중요도 낮은 턴 제거 | 토큰 제약이 심한 경우 |
+| **스코핑 (Scoping)** | 태스크에 관련된 컨텍스트만 포함 | 멀티에이전트 핸드오프 시 |
+
+### 4.3 장기 기억 -- 벡터 DB + 구조화 검색
+
+**하이브리드 검색 (Hybrid Retrieval)** 이 2025년의 표준 패턴입니다.
+
+| 단계 | 검색 방식 | 설명 |
+|------|----------|------|
+| **메모리 검색 요청** | — | Agent가 관련 기억을 요청 |
+| **병렬 검색 1** | 벡터 검색 (Semantic) | "비슷한 맥락 찾기" — 의미 기반 유사도 검색 |
+| **병렬 검색 2** | 구조화 검색 (Structured) | `user_id=123 AND topic='billing'` — 메타데이터 필터링 |
+| **결과 통합** | RRF / 가중 합산 | 두 검색 결과를 병합하여 최종 결과 반환 |
+
+**벡터 검색만으로는 부족한 이유**:
+- "지난주 화요일에 논의한 예산 건" → **시간 필터링** 필요
+- "김 과장과의 대화에서 언급된 API 키" → **메타데이터 필터링** 필요
+- 의미적 유사도만으로는 **정확한 사실(fact)** 검색이 어려움
+
+### 4.4 기술 스택 비교
+
+| 기술 | 유형 | 강점 | Databricks 통합 |
+|------|------|------|-----------------|
+| **Databricks Vector Search** | 벡터 DB (관리형) | Unity Catalog 네이티브. Delta 자동 동기화 | 네이티브 |
+| **pgvector** | PostgreSQL 확장 | 기존 PostgreSQL 인프라 활용 | 외부 연동 |
+| **Redis** | 인메모리 | 초저지연. 세션 기반 단기 기억에 최적 | 외부 연동 |
+| **Azure Cosmos DB** | 멀티모델 DB | 글로벌 분산. 벡터 + 문서 + 그래프 | Azure 네이티브 |
+| **Bedrock AgentCore Memory** | 관리형 | AWS Agent 생태계 통합 | 외부 연동 |
+
+> **참고**
+**Databricks 고객 권장**: **Databricks Vector Search** 를 장기 기억의 핵심 저장소로 사용하세요. Delta 테이블과 자동 동기화되므로, 기존 데이터 파이프라인에 자연스럽게 통합됩니다. 구조화 검색은 Unity Catalog의 SQL 인터페이스를 활용하여 하이브리드 검색을 구현할 수 있습니다.
+
+
+### 4.5 공유 기억 (Shared/Collective Memory) 패턴
+
+멀티에이전트 시스템에서 각 Agent가 학습한 지식을 **다른 Agent와 공유** 하는 패턴입니다.
+
+**구현 패턴**:
+
+| 패턴 | 설명 | 예시 |
+|------|------|------|
+| **중앙 지식 저장소** | 모든 Agent가 읽기/쓰기하는 공유 DB | FAQ DB: CS Agent가 답변한 내용을 다른 Agent도 참조 |
+| **이벤트 기반 동기화** | Agent의 학습 결과를 이벤트로 발행 | Agent A가 새로운 패턴 발견 → 이벤트 발행 → Agent B가 구독 |
+| **Consolidation** | 주기적으로 개별 기억을 통합/정제 | 매일 밤 배치로 Agent별 기억을 병합하고 중복 제거 |
+
+### 4.6 메모리 설계 반패턴 (Anti-patterns)
+
+| 반패턴 | 문제점 | 해결책 |
+|--------|--------|--------|
+| **무한 축적** | 벡터 DB 크기 무한 증가, 검색 성능 저하 | TTL 설정, 주기적 정리 |
+| **비구조적 저장** | "모든 것을 벡터로" → 정확한 사실 검색 실패 | 구조화 메타데이터 + 벡터 하이브리드 |
+| **Agent 간 기억 격리** | 같은 사용자에 대해 Agent마다 다른 기억 | 공유 사용자 프로필 저장소 |
+| **과도한 컨텍스트 주입** | 기억을 너무 많이 컨텍스트에 넣어 성능 저하 | Top-K 제한, 관련성 임계값 |
+
+---

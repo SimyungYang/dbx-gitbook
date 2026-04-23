@@ -16,6 +16,567 @@
   "navigation": {
     "tabs": [
       {
+        "tab": "교육자료",
+        "groups": [
+          {
+            "group": "Databricks 플랫폼",
+            "pages": [
+              "training/02-databricks-overview/overview",
+              "training/02-databricks-overview/what-is-databricks",
+              "training/02-databricks-overview/databricks-architecture",
+              "training/02-databricks-overview/getting-started-trial",
+              "training/02-databricks-overview/workspace-ui-tour",
+              "training/02-databricks-overview/notebooks-basics",
+              "training/02-databricks-overview/notebooks-basics-advanced",
+              "training/02-databricks-overview/notebooks-basics-intro",
+              "training/02-databricks-overview/notebooks-advanced",
+              "training/02-databricks-overview/databricks-pricing",
+              "training/02-databricks-overview/databricks-competitive"
+            ]
+          },
+          {
+            "group": "레이크하우스 아키텍처",
+            "pages": [
+              "training/03-lakehouse-architecture/overview",
+              "training/03-lakehouse-architecture/what-is-lakehouse",
+              "training/03-lakehouse-architecture/medallion-architecture",
+              {
+                "group": "Delta Lake",
+                "pages": [
+                  "training/03-lakehouse-architecture/delta-lake-fundamentals",
+                  "training/03-lakehouse-architecture/delta-lake-fundamentals-basics",
+                  "training/03-lakehouse-architecture/delta-lake-fundamentals-internals",
+                  "training/03-lakehouse-architecture/managed-vs-external-tables",
+                  "training/03-lakehouse-architecture/time-travel",
+                  "training/03-lakehouse-architecture/schema-evolution",
+                  "training/03-lakehouse-architecture/schema-evolution-advanced",
+                  "training/03-lakehouse-architecture/schema-evolution-basics",
+                  "training/03-lakehouse-architecture/delta-lake-operations",
+                  "training/03-lakehouse-architecture/liquid-clustering",
+                  "training/03-lakehouse-architecture/vacuum-and-optimize",
+                  "training/03-lakehouse-architecture/deletion-vectors",
+                  "training/03-lakehouse-architecture/predictive-optimization"
+                ]
+              },
+              {
+                "group": "Iceberg & UniForm",
+                "pages": [
+                  "training/03-lakehouse-architecture/delta-and-iceberg",
+                  "training/03-lakehouse-architecture/uniform"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "컴퓨트",
+            "pages": [
+              "training/04-compute-and-workspace/overview",
+              "training/04-compute-and-workspace/spark-basics",
+              "training/04-compute-and-workspace/spark-basics-core",
+              "training/04-compute-and-workspace/spark-basics-optimization",
+              {
+                "group": "클러스터 설정",
+                "pages": [
+                  "training/04-compute-and-workspace/cluster-types",
+                  "training/04-compute-and-workspace/cluster-configuration",
+                  "training/04-compute-and-workspace/instance-pools",
+                  "training/04-compute-and-workspace/photon-engine",
+                  "training/04-compute-and-workspace/spot-instances"
+                ]
+              },
+              {
+                "group": "클러스터 정책",
+                "pages": [
+                  "training/04-compute-and-workspace/cluster-policies/overview",
+                  "training/04-compute-and-workspace/cluster-policies/basics-and-patterns",
+                  "training/04-compute-and-workspace/cluster-policies/permissions-and-design",
+                  "training/04-compute-and-workspace/cluster-policies/templates-and-monitoring"
+                ]
+              },
+              "training/04-compute-and-workspace/sql-warehouse",
+              "training/04-compute-and-workspace/serverless-compute",
+              "training/04-compute-and-workspace/serverless-compute-cost",
+              "training/04-compute-and-workspace/serverless-compute-overview"
+            ]
+          },
+          {
+            "group": "데이터 엔지니어링",
+            "pages": [
+              "training/05-data-engineering/overview",
+              "training/05-data-engineering/data-engineering-overview",
+              "training/05-data-engineering/pipeline-orchestration-patterns",
+              "training/05-data-engineering/choosing-ingestion-method",
+              {
+                "group": "Auto Loader",
+                "pages": [
+                  "training/05-data-engineering/auto-loader/overview",
+                  "training/05-data-engineering/auto-loader/what-is-auto-loader",
+                  "training/05-data-engineering/auto-loader/file-notification-vs-directory-listing",
+                  "training/05-data-engineering/auto-loader/schema-inference",
+                  "training/05-data-engineering/auto-loader/schema-inference-basics",
+                  "training/05-data-engineering/auto-loader/schema-inference-patterns",
+                  "training/05-data-engineering/auto-loader/auto-loader-options",
+                  {
+                    "group": "Auto Loader 실습",
+                    "pages": [
+                      "training/05-data-engineering/auto-loader/auto-loader-hands-on/overview",
+                      "training/05-data-engineering/auto-loader/auto-loader-hands-on/setup-and-csv",
+                      "training/05-data-engineering/auto-loader/auto-loader-hands-on/json-and-schema-evolution",
+                      "training/05-data-engineering/auto-loader/auto-loader-hands-on/sdp-integration",
+                      "training/05-data-engineering/auto-loader/auto-loader-hands-on/validation-and-troubleshooting"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Spark Structured Streaming",
+                "pages": [
+                  "training/05-data-engineering/structured-streaming",
+                  "training/05-data-engineering/streaming-advanced"
+                ]
+              },
+              {
+                "group": "Spark Declarative Pipelines (SDP)",
+                "pages": [
+                  "training/05-data-engineering/spark-declarative-pipelines/overview",
+                  "training/05-data-engineering/spark-declarative-pipelines/what-is-sdp",
+                  "training/05-data-engineering/spark-declarative-pipelines/streaming-tables-and-mvs",
+                  "training/05-data-engineering/spark-declarative-pipelines/expectations",
+                  "training/05-data-engineering/spark-declarative-pipelines/pipeline-configuration",
+                  "training/05-data-engineering/spark-declarative-pipelines/event-log",
+                  "training/05-data-engineering/spark-declarative-pipelines/event-log-basics",
+                  "training/05-data-engineering/spark-declarative-pipelines/event-log-patterns",
+                  "training/05-data-engineering/spark-declarative-pipelines/cdc-and-scd",
+                  "training/05-data-engineering/spark-declarative-pipelines/sdp-hands-on"
+                ]
+              },
+              {
+                "group": "Lakeflow Connect",
+                "pages": [
+                  "training/05-data-engineering/lakeflow-connect/overview",
+                  "training/05-data-engineering/lakeflow-connect/what-is-lakeflow-connect",
+                  "training/05-data-engineering/lakeflow-connect/ingestion-pipeline-setup",
+                  "training/05-data-engineering/lakeflow-connect/ingestion-pipeline-setup-advanced",
+                  "training/05-data-engineering/lakeflow-connect/ingestion-pipeline-setup-basics",
+                  "training/05-data-engineering/lakeflow-connect/lakeflow-connect-hands-on"
+                ]
+              },
+              {
+                "group": "Lakeflow Jobs",
+                "pages": [
+                  "training/05-data-engineering/lakeflow-jobs/overview",
+                  "training/05-data-engineering/lakeflow-jobs/what-is-lakeflow-jobs",
+                  {
+                    "group": "Job 설정",
+                    "pages": [
+                      "training/05-data-engineering/lakeflow-jobs/job-configuration/overview",
+                      "training/05-data-engineering/lakeflow-jobs/job-configuration/tasks-and-dependencies",
+                      "training/05-data-engineering/lakeflow-jobs/job-configuration/tasks-and-dependencies-advanced",
+                      "training/05-data-engineering/lakeflow-jobs/job-configuration/tasks-and-dependencies-core",
+                      "training/05-data-engineering/lakeflow-jobs/job-configuration/retry-and-alerts",
+                      "training/05-data-engineering/lakeflow-jobs/job-configuration/cluster-and-parameters",
+                      "training/05-data-engineering/lakeflow-jobs/job-configuration/hands-on-and-optimization"
+                    ]
+                  },
+                  "training/05-data-engineering/lakeflow-jobs/task-types",
+                  "training/05-data-engineering/lakeflow-jobs/conditional-tasks",
+                  "training/05-data-engineering/lakeflow-jobs/scheduling-and-triggers",
+                  "training/05-data-engineering/lakeflow-jobs/scheduling-and-triggers-operations",
+                  "training/05-data-engineering/lakeflow-jobs/scheduling-and-triggers-types",
+                  "training/05-data-engineering/lakeflow-jobs/monitoring-and-alerting"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "데이터 웨어하우징",
+            "pages": [
+              "training/06-data-warehousing/overview",
+              "training/06-data-warehousing/databricks-sql-overview",
+              "training/06-data-warehousing/tables-and-views",
+              {
+                "group": "SQL 기능",
+                "pages": [
+                  "training/06-data-warehousing/sql-language-features",
+                  "training/06-data-warehousing/window-functions",
+                  "training/06-data-warehousing/sql-scripting"
+                ]
+              },
+              "training/06-data-warehousing/materialized-views",
+              {
+                "group": "Pivot & Unpivot",
+                "pages": [
+                  "training/06-data-warehousing/pivot-unpivot/overview",
+                  "training/06-data-warehousing/pivot-unpivot/pivot-basics",
+                  "training/06-data-warehousing/pivot-unpivot/advanced-patterns",
+                  "training/06-data-warehousing/pivot-unpivot/practical-examples"
+                ]
+              },
+              "training/06-data-warehousing/ai-functions",
+              "training/06-data-warehousing/ai-functions-advanced",
+              "training/06-data-warehousing/ai-functions-core",
+              "training/06-data-warehousing/query-optimization"
+            ]
+          },
+          {
+            "group": "Lakebase",
+            "pages": [
+              "training/11-lakebase/overview",
+              "training/11-lakebase/what-is-lakebase",
+              "training/11-lakebase/lakebase-setup",
+              "training/11-lakebase/lakebase-setup-creation",
+              "training/11-lakebase/lakebase-setup-operations",
+              "training/11-lakebase/data-sync",
+              "training/11-lakebase/lakebase-with-apps/overview",
+              "training/11-lakebase/lakebase-with-apps/auth-and-connection",
+              "training/11-lakebase/lakebase-with-apps/framework-examples",
+              "training/11-lakebase/lakebase-with-apps/optimization-and-crud",
+              "training/11-lakebase/lakebase-with-apps/optimization-and-crud-advanced",
+              "training/11-lakebase/lakebase-with-apps/optimization-and-crud-basics",
+              "training/11-lakebase/lakebase-with-apps/deployment",
+              "training/11-lakebase/lakebase-with-apps/deployment-architecture",
+              "training/11-lakebase/lakebase-with-apps/deployment-operations"
+            ]
+          },
+          {
+            "group": "Unity Catalog",
+            "pages": [
+              "training/07-unity-catalog/overview",
+              "training/07-unity-catalog/what-is-unity-catalog",
+              "training/07-unity-catalog/what-is-unity-catalog-multiregion",
+              "training/07-unity-catalog/what-is-unity-catalog-overview",
+              "training/07-unity-catalog/namespace-and-objects",
+              {
+                "group": "Volumes",
+                "pages": [
+                  "training/07-unity-catalog/volumes/overview",
+                  "training/07-unity-catalog/volumes/basics-and-types",
+                  "training/07-unity-catalog/volumes/managed-vs-external",
+                  "training/07-unity-catalog/volumes/advanced-usage"
+                ]
+              },
+              {
+                "group": "스토리지 & 외부 연결",
+                "pages": [
+                  "training/07-unity-catalog/external-locations",
+                  "training/07-unity-catalog/storage-credentials"
+                ]
+              },
+              "training/07-unity-catalog/functions",
+              {
+                "group": "접근 제어",
+                "pages": [
+                  "training/07-unity-catalog/access-control",
+                  "training/07-unity-catalog/access-control-basics",
+                  "training/07-unity-catalog/access-control-patterns",
+                  "training/07-unity-catalog/row-filters",
+                  "training/07-unity-catalog/column-masks",
+                  "training/07-unity-catalog/tags"
+                ]
+              },
+              {
+                "group": "데이터 리니지",
+                "pages": [
+                  "training/07-unity-catalog/data-lineage/overview",
+                  "training/07-unity-catalog/data-lineage/basics-and-visualization",
+                  "training/07-unity-catalog/data-lineage/use-cases-and-internals",
+                  "training/07-unity-catalog/data-lineage/impact-analysis-and-governance"
+                ]
+              },
+              {
+                "group": "데이터 공유",
+                "pages": [
+                  "training/07-unity-catalog/delta-sharing",
+                  "training/07-unity-catalog/marketplace",
+                  "training/07-unity-catalog/clean-rooms"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "AI/BI",
+            "pages": [
+              "training/08-ai-bi/overview",
+              "training/08-ai-bi/aibi-overview",
+              "training/08-ai-bi/aibi-overview-concepts",
+              "training/08-ai-bi/aibi-overview-details",
+              "training/08-ai-bi/aibi-overview-concepts",
+              "training/08-ai-bi/aibi-overview-details",
+              "training/08-ai-bi/aibi-architecture",
+              "training/08-ai-bi/lakeview-dashboards",
+              "training/08-ai-bi/genie",
+              "training/08-ai-bi/alerts-and-scheduling",
+              "training/08-ai-bi/metric-views",
+              "training/08-ai-bi/metric-views-advanced",
+              "training/08-ai-bi/metric-views-basics",
+              "training/08-ai-bi/metric-views-basics",
+              "training/08-ai-bi/metric-views-advanced",
+              "training/08-ai-bi/hybrid-bi-strategy"
+            ]
+          },
+          {
+            "group": "머신러닝",
+            "pages": [
+              "training/09-machine-learning/overview",
+              "training/09-machine-learning/ml-on-databricks-overview",
+              "training/09-machine-learning/ml-runtime",
+              {
+                "group": "Feature Engineering",
+                "pages": [
+                  "training/09-machine-learning/feature-engineering/overview",
+                  "training/09-machine-learning/feature-engineering/feature-engineering-overview",
+                  "training/09-machine-learning/feature-engineering/feature-table-management",
+                  "training/09-machine-learning/feature-engineering/online-serving"
+                ]
+              },
+              "training/09-machine-learning/automl",
+              "training/09-machine-learning/automl-basics",
+              "training/09-machine-learning/automl-production",
+              "training/09-machine-learning/distributed-training",
+              {
+                "group": "하이퍼파라미터 튜닝",
+                "pages": [
+                  "training/09-machine-learning/hyperparameter-tuning/overview",
+                  "training/09-machine-learning/hyperparameter-tuning/hyperopt-basics",
+                  "training/09-machine-learning/hyperparameter-tuning/tpe-and-sparktrials",
+                  "training/09-machine-learning/hyperparameter-tuning/optuna-and-mlflow",
+                  "training/09-machine-learning/hyperparameter-tuning/early-stopping-and-strategies"
+                ]
+              },
+              {
+                "group": "MLflow",
+                "pages": [
+                  "training/09-machine-learning/mlflow/overview",
+                  "training/09-machine-learning/mlflow/what-is-mlflow",
+                  "training/09-machine-learning/mlflow/experiment-tracking",
+                  {
+                    "group": "Model Registry",
+                    "pages": [
+                      "training/09-machine-learning/mlflow/model-registry/overview",
+                      "training/09-machine-learning/mlflow/model-registry/basics-and-registration",
+                      "training/09-machine-learning/mlflow/model-registry/permissions-and-serving",
+                      "training/09-machine-learning/mlflow/model-registry/permissions-and-serving-access",
+                      "training/09-machine-learning/mlflow/model-registry/permissions-and-serving-automation",
+                      "training/09-machine-learning/mlflow/model-registry/permissions-and-serving-access",
+                      "training/09-machine-learning/mlflow/model-registry/permissions-and-serving-automation",
+                      "training/09-machine-learning/mlflow/model-registry/cicd-and-governance"
+                    ]
+                  },
+                  {
+                    "group": "MLflow Tracing",
+                    "pages": [
+                      "training/09-machine-learning/mlflow/mlflow-tracing/overview",
+                      "training/09-machine-learning/mlflow/mlflow-tracing/basics-and-autolog",
+                      "training/09-machine-learning/mlflow/mlflow-tracing/instrumentation-and-integration",
+                      "training/09-machine-learning/mlflow/mlflow-tracing/query-and-monitoring",
+                      "training/09-machine-learning/mlflow/mlflow-tracing/analysis-and-evaluation",
+                      "training/09-machine-learning/mlflow/mlflow-tracing/analysis-and-evaluation-scoring",
+                      "training/09-machine-learning/mlflow/mlflow-tracing/analysis-and-evaluation-trace",
+                      "training/09-machine-learning/mlflow/mlflow-tracing/analysis-and-evaluation-trace",
+                      "training/09-machine-learning/mlflow/mlflow-tracing/analysis-and-evaluation-scoring"
+                    ]
+                  },
+                  "training/09-machine-learning/mlflow/mlflow-evaluation",
+                  "training/09-machine-learning/mlflow/mlflow-evaluation-advanced",
+                  "training/09-machine-learning/mlflow/mlflow-evaluation-basics"
+                ]
+              },
+              {
+                "group": "Model Serving",
+                "pages": [
+                  "training/09-machine-learning/model-serving/overview",
+                  "training/09-machine-learning/model-serving/model-serving-overview",
+                  "training/09-machine-learning/model-serving/model-serving-overview-endpoints",
+                  "training/09-machine-learning/model-serving/model-serving-overview-production",
+                  "training/09-machine-learning/model-serving/foundation-model-api",
+                  "training/09-machine-learning/model-serving/custom-model-deployment",
+                  "training/09-machine-learning/model-serving/custom-model-deployment-basics",
+                  "training/09-machine-learning/model-serving/custom-model-deployment-operations",
+                  "training/09-machine-learning/model-serving/custom-model-deployment-patterns",
+                  "training/09-machine-learning/model-serving/custom-model-deployment-basics",
+                  "training/09-machine-learning/model-serving/custom-model-deployment-patterns",
+                  "training/09-machine-learning/model-serving/custom-model-deployment-operations",
+                  "training/09-machine-learning/model-serving/ai-gateway",
+                  "training/09-machine-learning/model-serving/endpoint-monitoring",
+                  "training/09-machine-learning/model-serving/endpoint-monitoring-alerting",
+                  "training/09-machine-learning/model-serving/endpoint-monitoring-drift",
+                  "training/09-machine-learning/model-serving/endpoint-monitoring-metrics",
+                  "training/09-machine-learning/model-serving/endpoint-monitoring-metrics",
+                  "training/09-machine-learning/model-serving/endpoint-monitoring-drift",
+                  "training/09-machine-learning/model-serving/endpoint-monitoring-alerting"
+                ]
+              },
+              "training/09-machine-learning/lakehouse-monitoring"
+            ]
+          },
+          {
+            "group": "AI 에이전트",
+            "pages": [
+              "training/10-agent-development/overview",
+              "training/10-agent-development/what-is-ai-agent",
+              "training/10-agent-development/what-is-ai-agent-concepts",
+              "training/10-agent-development/what-is-ai-agent-operations",
+              "training/10-agent-development/agent-bricks",
+              "training/10-agent-development/vector-search",
+              "training/10-agent-development/vector-search-advanced",
+              "training/10-agent-development/vector-search-basics",
+              "training/10-agent-development/rag-pipeline",
+              "training/10-agent-development/building-agents",
+              "training/10-agent-development/building-agents-fundamentals",
+              "training/10-agent-development/building-agents-patterns",
+              "training/10-agent-development/tools-and-functions",
+              "training/10-agent-development/agent-evaluation",
+              "training/10-agent-development/review-app",
+              "training/10-agent-development/guardrails",
+              {
+                "group": "에이전트 배포",
+                "pages": [
+                  "training/10-agent-development/agent-deployment/overview",
+                  "training/10-agent-development/agent-deployment/logging-and-registration",
+                  "training/10-agent-development/agent-deployment/endpoint-and-review",
+                  "training/10-agent-development/agent-deployment/versioning-and-monitoring",
+                  "training/10-agent-development/agent-deployment/versioning-and-monitoring-observability",
+                  "training/10-agent-development/agent-deployment/versioning-and-monitoring-versioning",
+                  "training/10-agent-development/agent-deployment/guardrails-and-troubleshooting"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "보안과 거버넌스",
+            "pages": [
+              "training/12-security-and-governance/overview",
+              "training/12-security-and-governance/security-overview",
+              {
+                "group": "ID & 접근 관리",
+                "pages": [
+                  "training/12-security-and-governance/identity-and-access",
+                  "training/12-security-and-governance/sso-setup",
+                  "training/12-security-and-governance/sso-setup-advanced",
+                  "training/12-security-and-governance/sso-setup-guide",
+                  "training/12-security-and-governance/scim-provisioning",
+                  "training/12-security-and-governance/service-principals"
+                ]
+              },
+              "training/12-security-and-governance/network-security",
+              "training/12-security-and-governance/secret-management",
+              "training/12-security-and-governance/cmk-encryption",
+              "training/12-security-and-governance/audit-logs",
+              {
+                "group": "System Tables",
+                "pages": [
+                  "training/12-security-and-governance/system-tables/overview",
+                  "training/12-security-and-governance/system-tables/overview-and-tables-advanced",
+                  "training/12-security-and-governance/system-tables/overview-and-tables-intro",
+                  "training/12-security-and-governance/system-tables/overview-and-tables",
+                  "training/12-security-and-governance/system-tables/overview-and-tables",
+                  "training/12-security-and-governance/system-tables/overview-and-tables-advanced",
+                  "training/12-security-and-governance/system-tables/overview-and-tables-intro",
+                  "training/12-security-and-governance/system-tables/overview-and-tables-intro",
+                  "training/12-security-and-governance/system-tables/overview-and-tables-advanced",
+                  "training/12-security-and-governance/system-tables/practical-queries",
+                  "training/12-security-and-governance/system-tables/dashboard-and-setup"
+                ]
+              },
+              "training/12-security-and-governance/workspace-admin"
+            ]
+          },
+          {
+            "group": "모범 사례",
+            "pages": [
+              {
+                "group": "비용 최적화",
+                "pages": [
+                  "training/14-best-practices/cost-optimization/overview",
+                  "training/14-best-practices/cost-optimization/cost-structure",
+                  "training/14-best-practices/cost-optimization/compute-optimization",
+                  "training/14-best-practices/cost-optimization/storage-and-warehouse",
+                  "training/14-best-practices/cost-optimization/monitoring-and-checklist"
+                ]
+              },
+              {
+                "group": "성능 튜닝",
+                "pages": [
+                  "training/14-best-practices/performance-tuning/overview",
+                  "training/14-best-practices/performance-tuning/spark-query-tuning",
+                  "training/14-best-practices/performance-tuning/delta-lake-optimization",
+                  "training/14-best-practices/performance-tuning/sql-warehouse-and-pipeline",
+                  "training/14-best-practices/performance-tuning/ml-and-diagnostics",
+                  "training/14-best-practices/performance-tuning/ml-and-diagnostics-debugging",
+                  "training/14-best-practices/performance-tuning/ml-and-diagnostics-optimization",
+                  "training/14-best-practices/performance-tuning/ml-and-diagnostics-optimization",
+                  "training/14-best-practices/performance-tuning/ml-and-diagnostics-debugging"
+                ]
+              },
+              {
+                "group": "엔터프라이즈 거버넌스",
+                "pages": [
+                  "training/14-best-practices/enterprise-governance/overview",
+                  "training/14-best-practices/enterprise-governance/platform-design",
+                  "training/14-best-practices/enterprise-governance/access-control",
+                  "training/14-best-practices/enterprise-governance/data-classification",
+                  "training/14-best-practices/enterprise-governance/data-quality-cicd"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "개발 도구",
+            "pages": [
+              "training/13-appendix/databricks-cli",
+              "training/13-appendix/databricks-sdk",
+              "training/13-appendix/rest-api",
+              "training/13-appendix/databricks-connect",
+              "training/13-appendix/databricks-asset-bundles",
+              "training/13-appendix/databricks-asset-bundles-basics",
+              "training/13-appendix/databricks-asset-bundles-deployment",
+              "training/13-appendix/databricks-asset-bundles-basics",
+              "training/13-appendix/databricks-asset-bundles-deployment",
+              "training/13-appendix/databricks-apps",
+              "training/13-appendix/databricks-apps-handson",
+              "training/13-appendix/databricks-apps-overview",
+              "training/13-appendix/genie-code",
+              "training/13-appendix/ai-dev-kit"
+            ]
+          },
+          {
+            "group": "부록 — 선행 지식",
+            "pages": [
+              "training/00-prerequisites/overview",
+              "training/00-prerequisites/rdb-fundamentals",
+              "training/00-prerequisites/schema-design-patterns",
+              "training/00-prerequisites/bigdata-history",
+              "training/00-prerequisites/bigdata-ecosystem",
+              "training/00-prerequisites/bigdata-ecosystem-architecture",
+              "training/00-prerequisites/bigdata-ecosystem-foundations",
+              "training/00-prerequisites/bigdata-ecosystem-landscape",
+              "training/00-prerequisites/bigdata-ecosystem-foundations",
+              "training/00-prerequisites/bigdata-ecosystem-architecture",
+              "training/00-prerequisites/bigdata-ecosystem-landscape",
+              "training/00-prerequisites/realtime-processing"
+            ]
+          },
+          {
+            "group": "부록 — 데이터 기초",
+            "pages": [
+              "training/01-data-fundamentals/overview",
+              "training/01-data-fundamentals/what-is-data-engineering",
+              "training/01-data-fundamentals/data-warehouse-vs-data-lake",
+              "training/01-data-fundamentals/etl-elt-basics",
+              "training/01-data-fundamentals/batch-vs-streaming",
+              "training/01-data-fundamentals/structured-semi-unstructured"
+            ]
+          },
+          {
+            "group": "부록 — 참고",
+            "pages": [
+              "training/13-appendix/glossary",
+              "training/13-appendix/learning-path"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "실전 가이드",
         "groups": [
           {
@@ -73,8 +634,18 @@
             ]
           },
           {
-            "group": "AI/BI & Analytics",
+            "group": "Data Engineering",
             "pages": [
+              "blog/guides/lakeflow-incremental/overview",
+              "blog/guides/lakeflow-incremental/streaming-table",
+              "blog/guides/lakeflow-incremental/materialized-view",
+              "blog/guides/lakeflow-incremental/cdc-checklist"
+            ]
+          },
+          {
+            "group": "AI/BI",
+            "pages": [
+              "blog/guides/genie-selection/overview",
               {
                 "group": "Genie Space 운영 가이드",
                 "pages": [
@@ -86,20 +657,6 @@
                   "blog/guides/genie-space/sharing",
                   "blog/guides/genie-space/monitoring",
                   "blog/guides/genie-space/mcp"
-                ]
-              },
-              "blog/guides/genie-selection/overview",
-              {
-                "group": "플랫폼 비교",
-                "pages": [
-                  "blog/guides/platform-comparison/overview",
-                  "blog/guides/platform-comparison/architecture",
-                  "blog/guides/platform-comparison/compute",
-                  "blog/guides/platform-comparison/data-engineering",
-                  "blog/guides/platform-comparison/sql-analytics",
-                  "blog/guides/platform-comparison/ml-ai",
-                  "blog/guides/platform-comparison/governance",
-                  "blog/guides/platform-comparison/pricing"
                 ]
               }
             ]
@@ -114,8 +671,20 @@
                   "blog/guides/genie-code/usage",
                   "blog/guides/genie-code/scenarios",
                   "blog/guides/genie-code/prompt-cookbook",
+                  "blog/guides/genie-code/prompt-cookbook-advanced",
+                  "blog/guides/genie-code/prompt-cookbook-core",
+                  "blog/guides/genie-code/prompt-cookbook-details",
+                  "blog/guides/genie-code/prompt-cookbook-foundations",
                   "blog/guides/genie-code/mcp",
+                  "blog/guides/genie-code/mcp-advanced",
+                  "blog/guides/genie-code/mcp-basics",
+                  "blog/guides/genie-code/mcp-capabilities",
+                  "blog/guides/genie-code/mcp-setup",
                   "blog/guides/genie-code/settings-best-practices",
+                  "blog/guides/genie-code/settings-best-practices-advanced",
+                  "blog/guides/genie-code/settings-best-practices-basics",
+                  "blog/guides/genie-code/settings-best-practices-config",
+                  "blog/guides/genie-code/settings-best-practices-skills-agent",
                   "blog/guides/genie-code/ai-dev-kit-skills"
                 ]
               },
@@ -126,7 +695,14 @@
                   "blog/guides/agent-bricks/knowledge-assistant",
                   "blog/guides/agent-bricks/genie-agent",
                   "blog/guides/agent-bricks/supervisor",
+                  "blog/guides/agent-bricks/supervisor-advanced",
+                  "blog/guides/agent-bricks/supervisor-basics",
+                  "blog/guides/agent-bricks/supervisor-deep-dive",
                   "blog/guides/agent-bricks/evaluation",
+                  "blog/guides/agent-bricks/evaluation-advanced",
+                  "blog/guides/agent-bricks/evaluation-basics",
+                  "blog/guides/agent-bricks/evaluation-datasets",
+                  "blog/guides/agent-bricks/evaluation-mlflow",
                   "blog/guides/agent-bricks/best-practices"
                 ]
               },
@@ -156,475 +732,57 @@
             ]
           },
           {
-            "group": "Compute & Apps",
+            "group": "Databricks Apps",
             "pages": [
               "blog/guides/apps/overview",
               "blog/guides/apps/create-app",
               "blog/guides/apps/app-yaml",
               "blog/guides/apps/authentication",
+              "blog/guides/apps/service-principals",
               "blog/guides/apps/resources",
               "blog/guides/apps/deployment",
+              "blog/guides/apps/deployment-advanced",
+              "blog/guides/apps/deployment-basics",
+              "blog/guides/apps/deployment-dev-and-deploy",
+              "blog/guides/apps/deployment-dev-deploy",
+              "blog/guides/apps/deployment-operations",
+              "blog/guides/apps/updating",
               "blog/guides/apps/networking",
               "blog/guides/apps/advanced",
-              "blog/guides/apps/examples"
-            ]
-          },
-          {
-            "group": "Data Engineering",
-            "pages": [
-              "blog/guides/lakeflow-incremental/overview",
-              "blog/guides/lakeflow-incremental/streaming-table",
-              "blog/guides/lakeflow-incremental/materialized-view",
-              "blog/guides/lakeflow-incremental/cdc-checklist"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "교육자료",
-        "groups": [
-          {
-            "group": "Databricks 플랫폼",
-            "pages": [
-              "training/02-databricks-overview/what-is-databricks",
-              "training/02-databricks-overview/databricks-competitive",
-              "training/02-databricks-overview/databricks-pricing",
-              "training/02-databricks-overview/databricks-architecture",
-              "training/02-databricks-overview/workspace-ui-tour",
-              "training/02-databricks-overview/notebooks-basics",
-              "training/02-databricks-overview/notebooks-advanced",
-              "training/02-databricks-overview/getting-started-trial"
-            ]
-          },
-          {
-            "group": "레이크하우스 아키텍처",
-            "pages": [
-              "training/03-lakehouse-architecture/what-is-lakehouse",
+              "blog/guides/apps/advanced-advanced",
+              "blog/guides/apps/advanced-appkit",
+              "blog/guides/apps/advanced-dabs",
+              "blog/guides/apps/advanced-details",
+              "blog/guides/apps/advanced-foundations",
+              "blog/guides/apps/advanced-frameworks",
+              "blog/guides/apps/advanced-infrastructure",
+              "blog/guides/apps/advanced-lakebase",
+              "blog/guides/apps/advanced-scaling",
               {
-                "group": "Delta Lake",
+                "group": "예제",
                 "pages": [
-                  "training/03-lakehouse-architecture/delta-lake-fundamentals",
-                  "training/03-lakehouse-architecture/managed-vs-external-tables",
-                  "training/03-lakehouse-architecture/time-travel",
-                  "training/03-lakehouse-architecture/schema-evolution",
-                  "training/03-lakehouse-architecture/delta-lake-operations",
-                  "training/03-lakehouse-architecture/liquid-clustering",
-                  "training/03-lakehouse-architecture/vacuum-and-optimize",
-                  "training/03-lakehouse-architecture/deletion-vectors",
-                  "training/03-lakehouse-architecture/predictive-optimization"
-                ]
-              },
-              "training/03-lakehouse-architecture/medallion-architecture",
-              {
-                "group": "Iceberg & UniForm",
-                "pages": [
-                  "training/03-lakehouse-architecture/delta-and-iceberg",
-                  "training/03-lakehouse-architecture/uniform"
+                  "blog/guides/apps/examples/streamlit",
+                  "blog/guides/apps/examples/fastapi",
+                  "blog/guides/apps/examples/agent-ui",
+                  "blog/guides/apps/examples/gradio",
+                  "blog/guides/apps/examples/appkit",
+                  "blog/guides/apps/examples/lakebase",
+                  "blog/guides/apps/examples/troubleshooting"
                 ]
               }
             ]
           },
           {
-            "group": "컴퓨트",
+            "group": "플랫폼 비교",
             "pages": [
-              "training/04-compute-and-workspace/spark-basics",
-              {
-                "group": "클러스터 설정",
-                "pages": [
-                  "training/04-compute-and-workspace/cluster-types",
-                  "training/04-compute-and-workspace/cluster-configuration",
-                  "training/04-compute-and-workspace/instance-pools",
-                  "training/04-compute-and-workspace/photon-engine",
-                  "training/04-compute-and-workspace/spot-instances"
-                ]
-              },
-              {
-                "group": "클러스터 정책",
-                "pages": [
-                  "training/04-compute-and-workspace/cluster-policies/overview",
-                  "training/04-compute-and-workspace/cluster-policies/basics-and-patterns",
-                  "training/04-compute-and-workspace/cluster-policies/permissions-and-design",
-                  "training/04-compute-and-workspace/cluster-policies/templates-and-monitoring"
-                ]
-              },
-              "training/04-compute-and-workspace/sql-warehouse",
-              "training/04-compute-and-workspace/serverless-compute"
-            ]
-          },
-          {
-            "group": "데이터 엔지니어링",
-            "pages": [
-              "training/05-data-engineering/data-engineering-overview",
-              "training/05-data-engineering/pipeline-orchestration-patterns",
-              "training/05-data-engineering/choosing-ingestion-method",
-              {
-                "group": "Auto Loader",
-                "pages": [
-                  "training/05-data-engineering/auto-loader/overview",
-                  "training/05-data-engineering/auto-loader/what-is-auto-loader",
-                  "training/05-data-engineering/auto-loader/file-notification-vs-directory-listing",
-                  "training/05-data-engineering/auto-loader/schema-inference",
-                  "training/05-data-engineering/auto-loader/auto-loader-options",
-                  {
-                    "group": "Auto Loader 실습",
-                    "pages": [
-                      "training/05-data-engineering/auto-loader/auto-loader-hands-on/overview",
-                      "training/05-data-engineering/auto-loader/auto-loader-hands-on/setup-and-csv",
-                      "training/05-data-engineering/auto-loader/auto-loader-hands-on/json-and-schema-evolution",
-                      "training/05-data-engineering/auto-loader/auto-loader-hands-on/sdp-integration",
-                      "training/05-data-engineering/auto-loader/auto-loader-hands-on/validation-and-troubleshooting"
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "Spark Structured Streaming",
-                "pages": [
-                  "training/05-data-engineering/structured-streaming",
-                  "training/05-data-engineering/streaming-advanced"
-                ]
-              },
-              {
-                "group": "Spark Declarative Pipelines (SDP)",
-                "pages": [
-                  "training/05-data-engineering/spark-declarative-pipelines/overview",
-                  "training/05-data-engineering/spark-declarative-pipelines/what-is-sdp",
-                  "training/05-data-engineering/spark-declarative-pipelines/streaming-tables-and-mvs",
-                  "training/05-data-engineering/spark-declarative-pipelines/expectations",
-                  "training/05-data-engineering/spark-declarative-pipelines/pipeline-configuration",
-                  "training/05-data-engineering/spark-declarative-pipelines/event-log",
-                  "training/05-data-engineering/spark-declarative-pipelines/cdc-and-scd",
-                  "training/05-data-engineering/spark-declarative-pipelines/sdp-hands-on"
-                ]
-              },
-              {
-                "group": "Lakeflow Connect",
-                "pages": [
-                  "training/05-data-engineering/lakeflow-connect/overview",
-                  "training/05-data-engineering/lakeflow-connect/what-is-lakeflow-connect",
-                  "training/05-data-engineering/lakeflow-connect/ingestion-pipeline-setup",
-                  "training/05-data-engineering/lakeflow-connect/lakeflow-connect-hands-on"
-                ]
-              },
-              {
-                "group": "Lakeflow Jobs",
-                "pages": [
-                  "training/05-data-engineering/lakeflow-jobs/overview",
-                  "training/05-data-engineering/lakeflow-jobs/what-is-lakeflow-jobs",
-                  {
-                    "group": "Job 설정",
-                    "pages": [
-                      "training/05-data-engineering/lakeflow-jobs/job-configuration/overview",
-                      "training/05-data-engineering/lakeflow-jobs/job-configuration/tasks-and-dependencies",
-                      "training/05-data-engineering/lakeflow-jobs/job-configuration/retry-and-alerts",
-                      "training/05-data-engineering/lakeflow-jobs/job-configuration/cluster-and-parameters",
-                      "training/05-data-engineering/lakeflow-jobs/job-configuration/hands-on-and-optimization"
-                    ]
-                  },
-                  "training/05-data-engineering/lakeflow-jobs/task-types",
-                  "training/05-data-engineering/lakeflow-jobs/conditional-tasks",
-                  "training/05-data-engineering/lakeflow-jobs/scheduling-and-triggers",
-                  "training/05-data-engineering/lakeflow-jobs/monitoring-and-alerting"
-                ]
-              }
-            ]
-          },
-          {
-            "group": "데이터 웨어하우징",
-            "pages": [
-              "training/06-data-warehousing/databricks-sql-overview",
-              {
-                "group": "SQL 기능",
-                "pages": [
-                  "training/06-data-warehousing/sql-language-features",
-                  "training/06-data-warehousing/window-functions",
-                  "training/06-data-warehousing/sql-scripting"
-                ]
-              },
-              {
-                "group": "Pivot & Unpivot",
-                "pages": [
-                  "training/06-data-warehousing/pivot-unpivot/overview",
-                  "training/06-data-warehousing/pivot-unpivot/pivot-basics",
-                  "training/06-data-warehousing/pivot-unpivot/advanced-patterns",
-                  "training/06-data-warehousing/pivot-unpivot/practical-examples"
-                ]
-              },
-              "training/06-data-warehousing/tables-and-views",
-              "training/06-data-warehousing/materialized-views",
-              "training/06-data-warehousing/ai-functions",
-              "training/06-data-warehousing/query-optimization"
-            ]
-          },
-          {
-            "group": "Unity Catalog",
-            "pages": [
-              "training/07-unity-catalog/what-is-unity-catalog",
-              "training/07-unity-catalog/namespace-and-objects",
-              {
-                "group": "스토리지 & 외부 연결",
-                "pages": [
-                  "training/07-unity-catalog/external-locations",
-                  "training/07-unity-catalog/storage-credentials"
-                ]
-              },
-              "training/07-unity-catalog/functions",
-              {
-                "group": "접근 제어",
-                "pages": [
-                  "training/07-unity-catalog/access-control",
-                  "training/07-unity-catalog/row-filters",
-                  "training/07-unity-catalog/column-masks",
-                  "training/07-unity-catalog/tags"
-                ]
-              },
-              {
-                "group": "데이터 리니지",
-                "pages": [
-                  "training/07-unity-catalog/data-lineage/overview",
-                  "training/07-unity-catalog/data-lineage/basics-and-visualization",
-                  "training/07-unity-catalog/data-lineage/use-cases-and-internals",
-                  "training/07-unity-catalog/data-lineage/impact-analysis-and-governance"
-                ]
-              },
-              {
-                "group": "데이터 공유",
-                "pages": [
-                  "training/07-unity-catalog/delta-sharing",
-                  "training/07-unity-catalog/marketplace",
-                  "training/07-unity-catalog/clean-rooms"
-                ]
-              },
-              {
-                "group": "Volumes",
-                "pages": [
-                  "training/07-unity-catalog/volumes/overview",
-                  "training/07-unity-catalog/volumes/basics-and-types",
-                  "training/07-unity-catalog/volumes/managed-vs-external",
-                  "training/07-unity-catalog/volumes/advanced-usage"
-                ]
-              },
-              "training/08-ai-bi/metric-views"
-            ]
-          },
-          {
-            "group": "AI/BI",
-            "pages": [
-              "training/08-ai-bi/aibi-overview",
-              "training/08-ai-bi/lakeview-dashboards",
-              "training/08-ai-bi/genie",
-              "training/08-ai-bi/alerts-and-scheduling",
-              "training/08-ai-bi/aibi-architecture",
-              "training/08-ai-bi/hybrid-bi-strategy"
-            ]
-          },
-          {
-            "group": "머신러닝",
-            "pages": [
-              "training/09-machine-learning/ml-on-databricks-overview",
-              "training/09-machine-learning/ml-runtime",
-              "training/09-machine-learning/automl",
-              "training/09-machine-learning/distributed-training",
-              {
-                "group": "하이퍼파라미터 튜닝",
-                "pages": [
-                  "training/09-machine-learning/hyperparameter-tuning/overview",
-                  "training/09-machine-learning/hyperparameter-tuning/hyperopt-basics",
-                  "training/09-machine-learning/hyperparameter-tuning/tpe-and-sparktrials",
-                  "training/09-machine-learning/hyperparameter-tuning/optuna-and-mlflow",
-                  "training/09-machine-learning/hyperparameter-tuning/early-stopping-and-strategies"
-                ]
-              },
-              {
-                "group": "MLflow",
-                "pages": [
-                  "training/09-machine-learning/mlflow/overview",
-                  "training/09-machine-learning/mlflow/what-is-mlflow",
-                  "training/09-machine-learning/mlflow/experiment-tracking",
-                  {
-                    "group": "Model Registry",
-                    "pages": [
-                      "training/09-machine-learning/mlflow/model-registry/overview",
-                      "training/09-machine-learning/mlflow/model-registry/basics-and-registration",
-                      "training/09-machine-learning/mlflow/model-registry/permissions-and-serving",
-                      "training/09-machine-learning/mlflow/model-registry/cicd-and-governance"
-                    ]
-                  },
-                  {
-                    "group": "MLflow Tracing",
-                    "pages": [
-                      "training/09-machine-learning/mlflow/mlflow-tracing/overview",
-                      "training/09-machine-learning/mlflow/mlflow-tracing/basics-and-autolog",
-                      "training/09-machine-learning/mlflow/mlflow-tracing/instrumentation-and-integration",
-                      "training/09-machine-learning/mlflow/mlflow-tracing/query-and-monitoring",
-                      "training/09-machine-learning/mlflow/mlflow-tracing/analysis-and-evaluation"
-                    ]
-                  },
-                  "training/09-machine-learning/mlflow/mlflow-evaluation"
-                ]
-              },
-              {
-                "group": "Model Serving",
-                "pages": [
-                  "training/09-machine-learning/model-serving/overview",
-                  "training/09-machine-learning/model-serving/model-serving-overview",
-                  "training/09-machine-learning/model-serving/foundation-model-api",
-                  "training/09-machine-learning/model-serving/custom-model-deployment",
-                  "training/09-machine-learning/model-serving/ai-gateway",
-                  "training/09-machine-learning/model-serving/endpoint-monitoring"
-                ]
-              },
-              {
-                "group": "Feature Engineering",
-                "pages": [
-                  "training/09-machine-learning/feature-engineering/overview",
-                  "training/09-machine-learning/feature-engineering/feature-engineering-overview",
-                  "training/09-machine-learning/feature-engineering/feature-table-management",
-                  "training/09-machine-learning/feature-engineering/online-serving"
-                ]
-              },
-              "training/09-machine-learning/lakehouse-monitoring"
-            ]
-          },
-          {
-            "group": "AI 에이전트",
-            "pages": [
-              "training/10-agent-development/what-is-ai-agent",
-              "training/10-agent-development/vector-search",
-              "training/10-agent-development/rag-pipeline",
-              "training/10-agent-development/building-agents",
-              "training/10-agent-development/tools-and-functions",
-              "training/10-agent-development/agent-evaluation",
-              "training/10-agent-development/review-app",
-              "training/10-agent-development/guardrails",
-              {
-                "group": "에이전트 배포",
-                "pages": [
-                  "training/10-agent-development/agent-deployment/overview",
-                  "training/10-agent-development/agent-deployment/logging-and-registration",
-                  "training/10-agent-development/agent-deployment/endpoint-and-review",
-                  "training/10-agent-development/agent-deployment/versioning-and-monitoring",
-                  "training/10-agent-development/agent-deployment/guardrails-and-troubleshooting"
-                ]
-              },
-              "training/10-agent-development/agent-bricks"
-            ]
-          },
-          {
-            "group": "Lakebase",
-            "pages": [
-              "training/11-lakebase/what-is-lakebase",
-              "training/11-lakebase/lakebase-setup",
-              "training/11-lakebase/data-sync",
-              "training/11-lakebase/lakebase-with-apps/overview",
-              "training/11-lakebase/lakebase-with-apps/auth-and-connection",
-              "training/11-lakebase/lakebase-with-apps/framework-examples",
-              "training/11-lakebase/lakebase-with-apps/optimization-and-crud",
-              "training/11-lakebase/lakebase-with-apps/deployment"
-            ]
-          },
-          {
-            "group": "보안과 거버넌스",
-            "pages": [
-              "training/12-security-and-governance/security-overview",
-              "training/12-security-and-governance/cmk-encryption",
-              "training/12-security-and-governance/secret-management",
-              "training/12-security-and-governance/audit-logs",
-              {
-                "group": "ID & 접근 관리",
-                "pages": [
-                  "training/12-security-and-governance/identity-and-access",
-                  "training/12-security-and-governance/sso-setup",
-                  "training/12-security-and-governance/scim-provisioning",
-                  "training/12-security-and-governance/service-principals"
-                ]
-              },
-              "training/12-security-and-governance/network-security",
-              {
-                "group": "System Tables",
-                "pages": [
-                  "training/12-security-and-governance/system-tables/overview",
-                  "training/12-security-and-governance/system-tables/overview-and-tables",
-                  "training/12-security-and-governance/system-tables/practical-queries",
-                  "training/12-security-and-governance/system-tables/dashboard-and-setup"
-                ]
-              },
-              "training/12-security-and-governance/workspace-admin"
-            ]
-          },
-          {
-            "group": "모범 사례",
-            "pages": [
-              {
-                "group": "비용 최적화",
-                "pages": [
-                  "training/14-best-practices/cost-optimization/overview",
-                  "training/14-best-practices/cost-optimization/cost-structure",
-                  "training/14-best-practices/cost-optimization/compute-optimization",
-                  "training/14-best-practices/cost-optimization/storage-and-warehouse",
-                  "training/14-best-practices/cost-optimization/monitoring-and-checklist"
-                ]
-              },
-              {
-                "group": "성능 튜닝",
-                "pages": [
-                  "training/14-best-practices/performance-tuning/overview",
-                  "training/14-best-practices/performance-tuning/spark-query-tuning",
-                  "training/14-best-practices/performance-tuning/delta-lake-optimization",
-                  "training/14-best-practices/performance-tuning/sql-warehouse-and-pipeline",
-                  "training/14-best-practices/performance-tuning/ml-and-diagnostics"
-                ]
-              },
-              {
-                "group": "엔터프라이즈 거버넌스",
-                "pages": [
-                  "training/14-best-practices/enterprise-governance/overview",
-                  "training/14-best-practices/enterprise-governance/platform-design",
-                  "training/14-best-practices/enterprise-governance/access-control",
-                  "training/14-best-practices/enterprise-governance/data-classification",
-                  "training/14-best-practices/enterprise-governance/data-quality-cicd"
-                ]
-              }
-            ]
-          },
-          {
-            "group": "개발 도구",
-            "pages": [
-              "training/13-appendix/databricks-cli",
-              "training/13-appendix/databricks-asset-bundles",
-              "training/13-appendix/databricks-apps",
-              "training/13-appendix/databricks-sdk",
-              "training/13-appendix/databricks-connect",
-              "training/13-appendix/rest-api",
-              "training/13-appendix/ai-dev-kit",
-              "training/13-appendix/genie-code"
-            ]
-          },
-          {
-            "group": "부록 — 선행 지식",
-            "pages": [
-              "training/00-prerequisites/rdb-fundamentals",
-              "training/00-prerequisites/schema-design-patterns",
-              "training/00-prerequisites/bigdata-history",
-              "training/00-prerequisites/bigdata-ecosystem",
-              "training/00-prerequisites/realtime-processing"
-            ]
-          },
-          {
-            "group": "부록 — 데이터 기초",
-            "pages": [
-              "training/01-data-fundamentals/what-is-data-engineering",
-              "training/01-data-fundamentals/data-warehouse-vs-data-lake",
-              "training/01-data-fundamentals/etl-elt-basics",
-              "training/01-data-fundamentals/batch-vs-streaming",
-              "training/01-data-fundamentals/structured-semi-unstructured"
-            ]
-          },
-          {
-            "group": "부록 — 참고",
-            "pages": [
-              "training/13-appendix/glossary",
-              "training/13-appendix/learning-path"
+              "blog/guides/platform-comparison/overview",
+              "blog/guides/platform-comparison/architecture",
+              "blog/guides/platform-comparison/compute",
+              "blog/guides/platform-comparison/data-engineering",
+              "blog/guides/platform-comparison/sql-analytics",
+              "blog/guides/platform-comparison/ml-ai",
+              "blog/guides/platform-comparison/governance",
+              "blog/guides/platform-comparison/pricing"
             ]
           }
         ]
@@ -664,18 +822,6 @@
                 ]
               },
               {
-                "group": "AI Agent 아키텍처",
-                "pages": [
-                  "blog/guides/genai-concepts/agent-architecture/overview",
-                  "blog/guides/genai-concepts/agent-architecture/react-planning",
-                  "blog/guides/genai-concepts/agent-architecture/tool-use",
-                  "blog/guides/genai-concepts/agent-architecture/memory",
-                  "blog/guides/genai-concepts/agent-architecture/multi-agent",
-                  "blog/guides/genai-concepts/agent-architecture/frameworks",
-                  "blog/guides/genai-concepts/agent-architecture/production"
-                ]
-              },
-              {
                 "group": "Prompt Engineering",
                 "pages": [
                   "blog/guides/genai-concepts/prompt-engineering/overview",
@@ -683,17 +829,24 @@
                   "blog/guides/genai-concepts/prompt-engineering/advanced",
                   "blog/guides/genai-concepts/prompt-engineering/korean",
                   "blog/guides/genai-concepts/prompt-engineering/security",
+                  "blog/guides/genai-concepts/prompt-engineering/security-advanced",
+                  "blog/guides/genai-concepts/prompt-engineering/security-basics",
                   "blog/guides/genai-concepts/prompt-engineering/practical"
                 ]
               },
               {
-                "group": "평가 (Evaluation)",
+                "group": "AI Agent 아키텍처",
                 "pages": [
-                  "blog/guides/genai-concepts/evaluation/overview",
-                  "blog/guides/genai-concepts/evaluation/metrics",
-                  "blog/guides/genai-concepts/evaluation/judge",
-                  "blog/guides/genai-concepts/evaluation/pipeline",
-                  "blog/guides/genai-concepts/evaluation/practical"
+                  "blog/guides/genai-concepts/agent-architecture/overview",
+                  "blog/guides/genai-concepts/agent-architecture/react-planning",
+                  "blog/guides/genai-concepts/agent-architecture/tool-use",
+                  "blog/guides/genai-concepts/agent-architecture/memory",
+                  "blog/guides/genai-concepts/agent-architecture/memory-advanced",
+                  "blog/guides/genai-concepts/agent-architecture/memory-details",
+                  "blog/guides/genai-concepts/agent-architecture/memory-foundations",
+                  "blog/guides/genai-concepts/agent-architecture/memory-overview",
+                  "blog/guides/genai-concepts/agent-architecture/multi-agent",
+                  "blog/guides/genai-concepts/agent-architecture/production"
                 ]
               },
               {
@@ -720,11 +873,31 @@
                 "pages": [
                   "blog/guides/genai-concepts/agent-landscape/overview",
                   "blog/guides/genai-concepts/agent-landscape/openai",
+                  "blog/guides/genai-concepts/agent-landscape/openai-sdk-api",
+                  "blog/guides/genai-concepts/agent-landscape/openai-models-databricks",
+                  "blog/guides/genai-concepts/agent-landscape/openai-models-databricks",
+                  "blog/guides/genai-concepts/agent-landscape/openai-sdk-api",
                   "blog/guides/genai-concepts/agent-landscape/anthropic",
+                  "blog/guides/genai-concepts/agent-landscape/anthropic-strategy-mcp",
+                  "blog/guides/genai-concepts/agent-landscape/anthropic-products",
+                  "blog/guides/genai-concepts/agent-landscape/anthropic-patterns-databricks",
+                  "blog/guides/genai-concepts/agent-landscape/anthropic-patterns-databricks",
+                  "blog/guides/genai-concepts/agent-landscape/anthropic-products",
+                  "blog/guides/genai-concepts/agent-landscape/anthropic-strategy-mcp",
                   "blog/guides/genai-concepts/agent-landscape/google",
+                  "blog/guides/genai-concepts/agent-landscape/google-strategy-a2a",
+                  "blog/guides/genai-concepts/agent-landscape/google-adk-products",
+                  "blog/guides/genai-concepts/agent-landscape/google-adk-products",
+                  "blog/guides/genai-concepts/agent-landscape/google-strategy-a2a",
                   "blog/guides/genai-concepts/agent-landscape/aws-others",
+                  "blog/guides/genai-concepts/agent-landscape/aws-others-advanced",
+                  "blog/guides/genai-concepts/agent-landscape/aws-others-aws-microsoft",
+                  "blog/guides/genai-concepts/agent-landscape/aws-others-basics",
+                  "blog/guides/genai-concepts/agent-landscape/aws-others-meta-comparison",
                   "blog/guides/genai-concepts/agent-landscape/databricks",
-                  "blog/guides/genai-concepts/agent-landscape/multi-agent-trends"
+                  "blog/guides/genai-concepts/agent-landscape/multi-agent-trends",
+                  "blog/guides/genai-concepts/agent-landscape/multi-agent-trends-basics",
+                  "blog/guides/genai-concepts/agent-landscape/multi-agent-trends-advanced"
                 ]
               },
               {
@@ -734,7 +907,19 @@
                   "blog/guides/genai-concepts/agent-ui-detail/streamlit-gradio",
                   "blog/guides/genai-concepts/agent-ui-detail/chainlit-dash",
                   "blog/guides/genai-concepts/agent-ui-detail/fastapi-backend",
-                  "blog/guides/genai-concepts/agent-ui-detail/databricks-apps"
+                  "blog/guides/genai-concepts/agent-ui-detail/databricks-apps",
+                  "blog/guides/genai-concepts/agent-ui-detail/databricks-apps-advanced",
+                  "blog/guides/genai-concepts/agent-ui-detail/databricks-apps-basics"
+                ]
+              },
+              {
+                "group": "평가 (Evaluation)",
+                "pages": [
+                  "blog/guides/genai-concepts/evaluation/overview",
+                  "blog/guides/genai-concepts/evaluation/metrics",
+                  "blog/guides/genai-concepts/evaluation/judge",
+                  "blog/guides/genai-concepts/evaluation/pipeline",
+                  "blog/guides/genai-concepts/evaluation/practical"
                 ]
               },
               {
@@ -781,9 +966,37 @@
                 ]
               },
               "blog/guides/rag/korean-nlp",
+              "blog/guides/rag/korean-nlp-advanced",
+              "blog/guides/rag/korean-nlp-basics",
+              "blog/guides/rag/korean-nlp-embedding",
+              "blog/guides/rag/korean-nlp-fundamentals",
+              "blog/guides/rag/korean-nlp-morphology",
               "blog/guides/rag/chain-building",
               "blog/guides/rag/evaluation",
               "blog/guides/rag/deployment"
+            ]
+          },
+          {
+            "group": "ML 핵심 개념",
+            "pages": [
+              "blog/guides/ml-fundamentals/overview",
+              "blog/guides/ml-fundamentals/databricks-ml-features",
+              "blog/guides/ml-fundamentals/databricks-ml-features-advanced",
+              "blog/guides/ml-fundamentals/databricks-ml-features-details",
+              "blog/guides/ml-fundamentals/databricks-ml-features-foundations",
+              "blog/guides/ml-fundamentals/databricks-ml-features-mlops-and-reference",
+              "blog/guides/ml-fundamentals/databricks-ml-features-monitoring-and-genai",
+              "blog/guides/ml-fundamentals/databricks-ml-features-platform-and-features",
+              "blog/guides/ml-fundamentals/databricks-ml-features-serving",
+              "blog/guides/ml-fundamentals/databricks-ml-features-training-and-registry",
+              "blog/guides/ml-fundamentals/ml-trends",
+              "blog/guides/ml-fundamentals/ml-trends-advanced",
+              "blog/guides/ml-fundamentals/ml-trends-algorithms",
+              "blog/guides/ml-fundamentals/ml-trends-automl-ops",
+              "blog/guides/ml-fundamentals/ml-trends-basics",
+              "blog/guides/ml-fundamentals/retraining-strategies",
+              "blog/guides/ml-fundamentals/retraining-strategies-advanced",
+              "blog/guides/ml-fundamentals/retraining-strategies-basics"
             ]
           },
           {
@@ -792,17 +1005,14 @@
               "blog/guides/mcp/overview",
               "blog/guides/mcp/setup-general",
               "blog/guides/mcp/popular-servers",
+              "blog/guides/mcp/popular-servers-advanced",
+              "blog/guides/mcp/popular-servers-basics",
+              "blog/guides/mcp/popular-servers-catalog",
+              "blog/guides/mcp/popular-servers-directory",
+              "blog/guides/mcp/popular-servers-scenarios",
+              "blog/guides/mcp/popular-servers-setup",
               "blog/guides/mcp/databricks-mcp",
               "blog/guides/mcp/best-practices"
-            ]
-          },
-          {
-            "group": "ML 핵심 개념",
-            "pages": [
-              "blog/guides/ml-fundamentals/overview",
-              "blog/guides/ml-fundamentals/databricks-ml-features",
-              "blog/guides/ml-fundamentals/ml-trends",
-              "blog/guides/ml-fundamentals/retraining-strategies"
             ]
           }
         ]
@@ -829,6 +1039,9 @@
             "group": "기업별 동향 분석",
             "pages": [
               "ai-trends/anthropic-trends-2026",
+              "ai-trends/anthropic-trends-2026-advanced",
+              "ai-trends/anthropic-trends-2026-details",
+              "ai-trends/anthropic-trends-2026-foundations",
               "ai-trends/openai",
               "ai-trends/google",
               "ai-trends/meta",
@@ -935,11 +1148,18 @@
             "pages": [
               "releases/regions/overview"
             ]
+          },
+          {
+            "group": "변경 이력",
+            "pages": [
+              "changelog/2026-04-22",
+              "changelog/2026-04-15"
+            ]
           }
         ]
       },
       {
-        "tab": "Genie Code 핸즈온",
+        "tab": "워크샵",
         "groups": [
           {
             "group": "워크샵 개요",
@@ -1011,14 +1231,9 @@
               "workshop/section-5-appliance-handson/05-dashboard-genie",
               "workshop/section-5-appliance-handson/06-agent-development"
             ]
-          }
-        ]
-      },
-      {
-        "tab": "MLOps 핸즈온",
-        "groups": [
+          },
           {
-            "group": "예지보전 MLOps",
+            "group": "MLOps 핸즈온: 예지보전",
             "pages": [
               "blog/hands-on/predictive-maintenance/overview",
               "blog/hands-on/predictive-maintenance/getting-started",

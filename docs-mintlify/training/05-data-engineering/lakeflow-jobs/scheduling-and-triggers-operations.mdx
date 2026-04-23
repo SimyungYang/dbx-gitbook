@@ -1,0 +1,232 @@
+---
+title: "타임존, 동시 실행, SLA 관리"
+---
+
+
+## 타임존 설정
+
+스케줄의 타임존을 올바르게 설정하지 않으면 예상과 다른 시간에 Job이 실행될 수 있습니다.
+
+| 설정 | 설명 |
+|------|------|
+| `timezone_id` | IANA 타임존 문자열입니다 (예: `Asia/Seoul`, `UTC`, `US/Eastern`) |
+| **서머타임(DST)** | 서머타임이 적용되는 타임존에서는 시간이 자동 조정됩니다 |
+
+```yaml
+schedule:
+  quartz_cron_expression: "0 0 2 * * ?"
+  timezone_id: "Asia/Seoul"        # KST (UTC+9)
+```
+
+> 💡 **권장사항**: 한국에서 운영하는 경우 `Asia/Seoul`을 사용하세요. 글로벌 팀이라면 `UTC`로 통일하고, 각 팀에서 로컬 시간으로 변환하는 것이 관리하기 쉽습니다.
+
+---
+
+## 동시 실행 제어
+
+### max_concurrent_runs
+
+같은 Job이 동시에 여러 번 실행되는 것을 제어합니다.
+
+| 값 | 동작 |
+|----|------|
+| `1` (기본값) | 이전 실행이 완료될 때까지 새 실행을 대기열에 넣습니다 |
+| `2 이상` | 지정 수까지 동시 실행을 허용합니다 |
+| `0` | 동시 실행 수 제한이 없습니다 |
+
+```yaml
+max_concurrent_runs: 1    # 동시에 하나만 실행
+
+# 큐 설정 (동시 실행 초과 시 동작)
+queue:
+  enabled: true           # 대기열에 넣음 (false면 스킵)
+```
+
+> ⚠️ **데이터 정합성 주의**: `max_concurrent_runs`가 2 이상이면 같은 데이터를 동시에 처리하여 충돌이 발생할 수 있습니다. 멱등성이 보장되지 않는 Job에는 반드시 `1`로 설정하세요.
+
+### 대기열(Queue) 동작
+
+| 조건 | 상태 | 동작 |
+|------|------|------|
+| 새 트리거 발생 + 현재 미실행 | 즉시 실행 | Job을 바로 실행합니다 |
+| 새 트리거 발생 + 현재 실행 중 + `queue.enabled=true` | 대기열에 추가 | 순서대로 실행합니다 |
+| 새 트리거 발생 + 현재 실행 중 + `queue.enabled=false` | 실행 스킵 | 알림을 발송합니다 |
+
+---
+
+## 스케줄 일시 중지 / 재개
+
+유지보수, 장애 대응, 휴일 등의 상황에서 스케줄을 일시 중지할 수 있습니다.
+
+### UI 방식
+Workflows → Job → Schedule 탭 → **Pause** 버튼 클릭
+
+### API 방식
+
+```python
+from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+
+# 스케줄 일시 중지
+w.jobs.update(
+    job_id=12345,
+    new_settings={
+        "schedule": {
+            "quartz_cron_expression": "0 0 2 * * ?",
+            "timezone_id": "Asia/Seoul",
+            "pause_status": "PAUSED"
+        }
+    }
+)
+
+# 스케줄 재개
+w.jobs.update(
+    job_id=12345,
+    new_settings={
+        "schedule": {
+            "quartz_cron_expression": "0 0 2 * * ?",
+            "timezone_id": "Asia/Seoul",
+            "pause_status": "UNPAUSED"
+        }
+    }
+)
+```
+
+---
+
+## SLA 관리 전략
+
+서비스 수준 협약(SLA)을 준수하기 위한 스케줄링 전략을 수립해야 합니다.
+
+### SLA 관리 체크리스트
+
+| 전략 | 구현 방법 | 설명 |
+|------|-----------|------|
+| **충분한 버퍼 확보** | SLA 마감 2~3시간 전에 실행 시작 | 재시도, 지연 등에 대비합니다 |
+| **Duration Warning 설정** | `health` 규칙으로 실행 시간 모니터링 | 예상보다 오래 걸리면 사전 경고합니다 |
+| **다운스트림 트리거** | 테이블 트리거로 파이프라인 체이닝 | 불필요한 대기 시간을 제거합니다 |
+| **장애 알림 즉시 발송** | Slack/PagerDuty Webhook 연동 | 장애 발생 시 빠르게 대응합니다 |
+| **백필(Backfill) 계획** | 파라미터화된 Job으로 날짜 범위 지정 | 누락된 데이터를 신속하게 복구합니다 |
+
+### SLA 관리 예제
+
+```yaml
+# SLA: 매일 오전 8시까지 Gold 테이블 갱신 완료
+schedule:
+  quartz_cron_expression: "0 0 2 * * ?"  # 새벽 2시 시작 (6시간 버퍼)
+  timezone_id: "Asia/Seoul"
+
+# 3시간 초과 시 경고
+health:
+  rules:
+    - metric: "RUN_DURATION_SECONDS"
+      op: "GREATER_THAN"
+      value: 10800
+
+# 실패 시 즉시 재시도 (최대 2회)
+tasks:
+  - task_key: "main_etl"
+    max_retries: 2
+    min_retry_interval_millis: 120000
+    timeout_seconds: 14400    # 4시간 타임아웃
+
+# 알림 설정
+email_notifications:
+  on_failure:
+    - "oncall@company.com"
+  on_duration_warning_threshold_exceeded:
+    - "data-team@company.com"
+
+webhook_notifications:
+  on_failure:
+    - id: "${var.pagerduty_webhook_id}"
+```
+
+---
+
+## 실습: 다양한 트리거 설정 예제
+
+### 시나리오 1: 일별 배치 파이프라인
+
+```yaml
+# 매일 새벽 2시 KST 실행, 동시 실행 방지
+resources:
+  jobs:
+    daily_etl:
+      name: "daily-sales-etl"
+      schedule:
+        quartz_cron_expression: "0 0 2 * * ?"
+        timezone_id: "Asia/Seoul"
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
+      tasks:
+        - task_key: "etl_main"
+          notebook_task:
+            notebook_path: "/Workspace/etl/daily_sales"
+```
+
+### 시나리오 2: 파일 도착 기반 수집
+
+```yaml
+# S3에 파일이 도착하면 5분 간격으로 감지
+resources:
+  jobs:
+    file_ingestion:
+      name: "vendor-data-ingestion"
+      trigger:
+        file_arrival:
+          url: "s3://data-lake/incoming/vendor-a/"
+          min_time_between_triggers_seconds: 300
+          wait_after_last_change_seconds: 120
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: "ingest"
+          notebook_task:
+            notebook_path: "/Workspace/ingest/vendor_a"
+```
+
+### 시나리오 3: 테이블 갱신 기반 체이닝
+
+```yaml
+# bronze 테이블이 갱신되면 silver 변환 자동 실행
+resources:
+  jobs:
+    silver_transform:
+      name: "silver-orders-transform"
+      trigger:
+        table:
+          condition: "ALL_UPDATED"
+          table_names:
+            - "catalog.bronze.orders"
+            - "catalog.bronze.customers"
+          min_time_between_triggers_seconds: 600
+          wait_after_last_change_seconds: 180
+      tasks:
+        - task_key: "transform"
+          notebook_task:
+            notebook_path: "/Workspace/etl/silver_orders"
+```
+
+---
+
+## 정리
+
+| 트리거 방식 | 최적 시나리오 | 핵심 설정 |
+|-------------|---------------|-----------|
+| **Cron 스케줄** | 정기 배치 처리 | `quartz_cron_expression`, `timezone_id` |
+| **파일 도착** | 외부 데이터 수집 | `url`, `min_time_between_triggers_seconds` |
+| **테이블 트리거** | 파이프라인 체이닝 | `table_names`, `condition` |
+| **연속 실행** | 스트리밍 워크로드 | `continuous.pause_status` |
+| **API 호출** | 외부 오케스트레이션 | `run-now`, `runs/submit` |
+
+---
+
+## 참고 링크
+
+- [Databricks: Schedule jobs](https://docs.databricks.com/aws/en/jobs/schedule.html)
+- [Databricks: File arrival triggers](https://docs.databricks.com/aws/en/jobs/file-arrival-triggers.html)
+- [Databricks: Table triggers](https://docs.databricks.com/aws/en/jobs/triggers.html)
+- [Databricks: Continuous jobs](https://docs.databricks.com/aws/en/jobs/continuous.html)
+- [Databricks: Jobs API 2.1](https://docs.databricks.com/api/workspace/jobs)

@@ -1,0 +1,225 @@
+---
+title: "Genie Code 프롬프트 쿡북 — 심화"
+---
+
+
+## 15. 코드 마이그레이션 & 변환
+
+레거시 코드를 Databricks 환경에 최적화된 코드로 변환합니다. Chat 모드에서 사용하는 것이 안전합니다.
+
+### 시나리오별 프롬프트 (Chat 모드 권장)
+
+| 시나리오 | 프롬프트 |
+|----------|---------|
+| **Pandas → PySpark** | "이 pandas 코드를 PySpark로 변환해줘. 분산 처리에 최적화하고, apply() 대신 내장 함수를 사용해줘." |
+| **SAS → PySpark** | "이 SAS PROC SQL을 PySpark SQL로 변환해줘." |
+| **Hive → Unity Catalog** | "이 Hive DDL을 Unity Catalog 호환 DDL로 변환해줘. Managed Table 형태로 바꾸고, Delta 포맷을 적용해줘." |
+| **레거시 SQL** | "이 Oracle PL/SQL을 Databricks SQL로 변환해줘. 구문 차이를 설명하고, 최적화도 적용해줘." |
+| **R → PySpark** | "이 R dplyr 코드를 PySpark DataFrame API로 변환해줘." |
+| **Spark 2 → Spark 3** | "이 Spark 2.x 코드를 Spark 3.x + Databricks 런타임 15.x에 맞게 업그레이드해줘. deprecated API가 있으면 대체 API를 사용해줘." |
+
+---
+
+
+## 16. 디버깅 & 오류 진단
+
+Genie Code의 **가장 즉각적인 생산성 향상** 기능입니다. 복잡한 오류를 자동으로 분석하고 수정 방안을 제시합니다.
+
+### 시나리오별 프롬프트
+
+| 시나리오 | 프롬프트 |
+|----------|---------|
+| **Quick Fix** | (오류 발생 시 자동으로 표시되는 Quick Fix 버튼 클릭) |
+| **오류 진단** | "Diagnose with Genie" 버튼 클릭 또는 "/fix" |
+| **OOM 분석** | "이 코드가 OutOfMemoryError를 일으키는 이유를 분석하고, 메모리 사용을 줄이는 방법을 제안해줘." |
+| **성능 분석** | (느린 코드 선택 후) "/optimize" |
+| **환경 오류** | "/repairEnvironment" |
+| **권한 오류** | "이 AccessDenied 오류를 해결하려면 어떤 권한이 필요한지 알려줘." |
+| **Spark 오류** | "이 AnalysisException의 원인을 분석하고 수정해줘." |
+
+---
+
+
+## 17. MCP 외부 도구 연동
+
+Agent 모드에서 MCP 서버를 통해 외부 도구를 호출할 수 있습니다. 코딩 작업과 커뮤니케이션/문서화를 한 공간에서 처리합니다.
+
+### 지원되는 MCP 서버 유형
+
+| 서버 유형 | 용도 | 예시 |
+|-----------|------|------|
+| **Unity Catalog Functions** | 사전 정의된 SQL 함수 실행 | 비즈니스 로직 캡슐화 |
+| **Vector Search Indexes** | 문서 검색 | RAG 체인에서 관련 문서 조회 |
+| **Genie Spaces** | 자연어 데이터 질의 | 분석 중 비즈니스 지표 확인 |
+| **UC Connections** | 외부 MCP 서버 연동 | Jira, GitHub, Slack, Confluence |
+| **Databricks Apps** | 커스텀 도구 | 내부 API, 자체 개발 도구 |
+
+### 시나리오별 프롬프트
+
+| 시나리오 | 프롬프트 |
+|----------|---------|
+| **Slack 알림** | "이 분석 결과를 요약해서 #data-team Slack 채널에 보내줘." |
+| **Jira 티켓** | "이 데이터 품질 이슈로 Jira ES 티켓을 생성해줘. 심각도는 High, 재현 단계와 영향 범위를 포함해줘." |
+| **GitHub 코드** | "GitHub 리포지토리에서 이 함수의 최신 버전을 가져와줘." |
+| **Confluence 문서** | "이 분석 결과를 Confluence 페이지로 작성해줘." |
+| **Vector Search** | "Vector Search에서 '반품 정책'과 관련된 문서를 검색해줘." |
+
+> **참고**
+MCP 서버는 **최대 20개 도구** 까지 연동할 수 있으며, **Agent 모드에서만** 작동합니다. Genie Code 설정(톱니바퀴 아이콘) → MCP Servers에서 서버를 추가하고 개별 도구를 활성화/비활성화할 수 있습니다.
+
+
+---
+
+
+## 18. Agent Skills (도메인 확장)
+
+Agent Skills를 통해 조직 고유의 워크플로를 Genie Code에 학습시킬 수 있습니다. SKILL.md 파일로 정의하면, 관련 작업 시 자동으로 로드됩니다.
+
+### Skill 활용 예시
+
+| Skill 예시 | 설명 | 프롬프트 |
+|------------|------|---------|
+| **PII 마스킹** | 개인정보 처리 표준 | "이 테이블의 PII를 마스킹해줘"` → Skill이 자동 로드되어 조직 표준에 맞게 처리 |
+| **데이터 품질 표준** | 회사별 검증 규칙 | "이 테이블의 품질을 검사해줘"` → 조직의 품질 기준이 자동 적용 |
+| **ML 워크플로** | 팀의 모델 학습 절차 | "새 모델을 학습해줘"` → 표준 실험 설정, 로깅 규칙이 적용 |
+| **ETL 패턴** | 조직의 파이프라인 템플릿 | "수집 파이프라인을 만들어줘"` → 회사 표준 패턴(명명규칙, 품질규칙)이 적용 |
+
+### Skill 구성 방법
+
+```
+# Workspace Skill (전체 공유)
+Workspace/.assistant/skills/pii-masking/
+├── SKILL.md          # 스킬 정의 (이름, 설명, 단계별 가이드)
+├── patterns.md       # PII 패턴 목록
+└── scripts/
+    └── mask_pii.py   # 실행 스크립트
+
+# User Skill (개인용)
+/Users/user@company.com/.assistant/skills/my-etl/
+├── SKILL.md
+└── etl-template.py
+```
+
+> **팁**
+Skills는 Agent 모드에서만 작동합니다. `@skill-name` 으로 수동 호출하거나, 관련 작업 시 자동으로 로드됩니다. 조직의 코딩 컨벤션, 거버넌스 정책, 도메인 지식을 Skill로 정의하면 모든 팀원이 일관된 품질의 코드를 생성할 수 있습니다.
+
+
+---
+
+
+## 19. Custom Instructions로 기본 행동 설정
+
+모든 프롬프트에 매번 반복해야 하는 지시사항은 Custom Instructions에 한 번만 설정하면 됩니다.
+
+### 권장 Custom Instructions 예시
+
+```markdown
+# 코딩 규칙
+- 코드에 한국어 주석을 포함해주세요
+- PySpark DataFrame API를 기본으로 사용하세요 (pandas 변환 최소화)
+- 변수명은 snake_case, 클래스명은 PascalCase
+- 차트는 plotly를 기본으로 사용하세요
+
+# 데이터 규칙
+- 결과 테이블은 항상 dev.sandbox 카탈로그에 저장하세요
+- 프로덕션 테이블을 수정하지 마세요
+- 쿼리 실행 전 LIMIT 1000으로 먼저 테스트하세요
+
+# 응답 형식
+- 각 분석 단계마다 마크다운 요약을 포함하세요
+- MLflow에 모든 실험을 기록하세요
+```
+
+Custom Instructions는 두 가지 수준으로 설정됩니다:
+
+| 수준 | 파일 위치 | 관리 주체 |
+|------|-----------|----------|
+| **사용자 수준** | `/Users/<username>/.assistant_instructions.md` | 개인 |
+| **워크스페이스 수준** | `Workspace/.assistant_workspace_instructions.md` | 관리자 |
+
+워크스페이스 수준 설정이 사용자 수준보다 우선합니다. 각 파일의 최대 크기는 20,000자입니다.
+
+---
+
+
+## 20. Slash Commands 전체 레퍼런스
+
+빠른 작업을 위한 전체 Slash Command 목록입니다. 채팅 입력란에 `/` 를 입력하면 목록이 나타납니다.
+
+| 명령어 | 기능 | 사용 시점 |
+|--------|------|----------|
+| `/explain` | 선택한 코드를 자연어로 설명 | 동료 코드 리뷰, 레거시 코드 이해 |
+| `/fix` | 코드 오류 분석 및 수정 제안 | 실행 오류 발생 시 |
+| `/optimize` | 코드 성능 최적화 제안 | 쿼리/코드가 느릴 때 |
+| `/test` | 단위 테스트 자동 생성 | 함수 작성 후 |
+| `/doc` | 문서/주석(docstring) 자동 생성 | 코드 문서화 시 |
+| `/findTables` | Unity Catalog 테이블 검색 | 데이터 탐색 시 |
+| `/findQueries` | Unity Catalog 쿼리 검색 | 기존 쿼리 재활용 시 |
+| `/prettify` | 코드 가독성 포맷팅 | 코드 정리 시 |
+| `/rename` | 셀/요소 이름 제안 | 노트북 정리 시 |
+| `/settings` | 노트북 설정 조정 | 환경 설정 변경 시 |
+| `/repairEnvironment` | 라이브러리 설치 오류 해결 | 환경 오류 발생 시 |
+| `/diagnose` | 복잡한 오류 심층 진단 | 모델 서빙 오류 시 |
+
+---
+
+
+## 기능 지원 매트릭스
+
+각 Databricks 제품 영역에서 Genie Code가 지원하는 기능을 한눈에 정리합니다. 제품 영역에 따라 사용 가능한 모드와 기능이 다릅니다.
+
+| 기능 영역 | Notebooks | SQL Editor | Dashboards | Pipelines | MLflow | Model Serving |
+|-----------|:---------:|:----------:|:----------:|:---------:|:------:|:-------------:|
+| **Chat 모드** | O | O | O | O | O | O |
+| **Agent 모드** | O | O | O | O | - | O |
+| **인라인 자동완성** | O | O | - | O | - | - |
+| **Quick Fix** | O | O | - | - | - | - |
+| **Diagnose Error** | O | O | - | O | - | O |
+| **MCP 연동** | O | - | - | - | - | - |
+| **Slash 명령어** | O | O | - | - | - | O |
+| **이미지 첨부** | O | - | O | - | - | - |
+| **Agent Skills** | O | - | - | - | - | - |
+
+> **참고**
+이 매트릭스에서 **가장 풍부한 기능** 을 제공하는 영역은 **Notebooks** 입니다. Chat/Agent 모드, 인라인 자동완성, MCP 연동, Skills, 이미지 첨부까지 모든 기능을 사용할 수 있습니다. Genie Code를 최대한 활용하려면 Notebook을 중심으로 작업하세요.
+
+
+---
+
+
+## 프로덕션 운영 팁
+
+실전에서 Genie Code를 효과적으로 사용하기 위한 핵심 원칙들입니다:
+
+| 원칙 | 설명 | 이유 |
+|------|------|------|
+| **세션 분리** | 서로 다른 작업(재무 분석 vs 로그 파이프라인)은 New Chat으로 분리 | Agent는 대화 내 결정 트리를 구축하므로, 주제 혼합 시 컨텍스트 혼란 발생 |
+| **데이터 제한 우선** | "먼저 1,000행으로 제한해서 로직을 테스트해줘" | 전체 데이터셋 실행 전 로직 검증으로 컴퓨팅 비용 절약 |
+| **프로덕션 보호** | "프로덕션 테이블을 수정하지 말고 sandbox에만 저장해줘" | Agent의 자동 실행이 프로덕션 데이터를 변경하는 것을 방지 |
+| **루프 감시** | Agent가 같은 접근을 반복하면 즉시 중단 | 실패한 접근을 반복하면 비용만 소모 |
+| **탭 유지** | Agent 작업 중 다른 탭으로 전환하지 않기 | 탭 전환 시 Agent가 일시 정지됨 |
+| **메타데이터가 핵심** | Unity Catalog의 테이블/컬럼 COMMENT 품질이 응답 품질을 결정 | COMMENT가 없으면 Genie Code가 컬럼 의미를 추측해야 하므로 정확도 하락 |
+
+---
+
+
+## 참고 자료
+
+### 공식 문서
+* [Genie Code 개요](https://docs.databricks.com/aws/en/genie-code/)
+* [Genie Code 사용법](https://docs.databricks.com/aws/en/genie-code/use-genie-code)
+* [응답 개선 팁](https://docs.databricks.com/aws/en/genie-code/tips)
+* [데이터 사이언스용 Agent](https://docs.databricks.com/aws/en/notebooks/ds-agent)
+* [파이프라인용 Agent](https://docs.databricks.com/aws/en/ldp/de-agent)
+* [대시보드 Agent](https://docs.databricks.com/aws/en/dashboards/manage/dashboard-agent)
+* [Agent Observability](https://docs.databricks.com/aws/en/mlflow3/genai/getting-started/genie-code)
+* [모델 서빙 Observability](https://docs.databricks.com/aws/en/machine-learning/model-serving/model-serving-genie-code)
+* [Agent Skills](https://docs.databricks.com/aws/en/genie-code/skills)
+* [MCP 연동](https://docs.databricks.com/aws/en/genie-code/mcp)
+* [Custom Instructions](https://docs.databricks.com/aws/en/genie-code/instructions)
+
+### 블로그 & 실전 가이드
+* [Genie Code Full Practice Guide (Medium)](https://medium.com/dbsql-sme-engineering/databricks-genie-code-full-practice-guide-f3bcb13596f2)
+* [Genie Code Pricing (Medium)](https://medium.com/dbsql-sme-engineering/genie-code-databricks-agentic-ai-the-price-of-intelligence-32a7bc477cba)
+* [Two Weeks in Production (SunnyData)](https://www.sunnydata.ai/blog/databricks-genie-code-production-review)
+* [Get to Know Genie Code (데모 영상)](https://www.databricks.com/resources/demos/videos/get-know-genie-code)

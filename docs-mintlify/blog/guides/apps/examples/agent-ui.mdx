@@ -1,0 +1,116 @@
+---
+title: "Agent UI 예제 (Streamlit + Model Serving)"
+---
+
+
+## Agent UI (Streamlit + Model Serving)
+
+Databricks Model Serving 엔드포인트를 호출하는 AI 챗봇 UI입니다. 이 예제는 **Foundation Model API 또는 커스텀 Agent를 웹 인터페이스로 노출** 하는 가장 일반적인 패턴을 보여줍니다.
+
+### 왜 Agent UI인가?
+
+Databricks에서 AI Agent를 개발하면 Model Serving Endpoint로 배포할 수 있습니다. 하지만 엔드포인트 자체는 REST API일 뿐, **사용자가 직접 대화할 수 있는 UI가 없습니다**. Databricks Apps로 Agent UI를 만들면:
+- 비기술 사용자도 Agent와 대화할 수 있습니다
+- 워크스페이스 SSO로 인증이 자동 처리됩니다
+- 대화 이력, 피드백 등 부가 기능을 추가할 수 있습니다
+
+### requirements.txt
+
+```
+databricks-sdk
+streamlit
+```
+
+Agent UI는 최소한의 패키지만 필요합니다. `databricks-sdk`가 Model Serving 호출과 인증을 모두 처리합니다. SQL 연결이 필요하면 `databricks-sql-connector`와 `pandas`를 추가하세요.
+
+### app.yaml
+
+```yaml
+command: ['streamlit', 'run', 'app.py']
+env:
+  - name: SERVING_ENDPOINT
+    valueFrom: serving_endpoint
+resources:
+  - name: serving_endpoint
+    type: serving-endpoint
+```
+
+`serving-endpoint` 리소스를 선언하고, `SERVING_ENDPOINT` 환경변수로 엔드포인트 이름을 주입합니다. 앱의 SP에 해당 엔드포인트에 대한 `CAN QUERY` 권한을 부여해야 합니다.
+
+### app.py
+
+```python
+import os
+import streamlit as st
+from databricks.sdk import WorkspaceClient
+
+# Databricks 클라이언트 초기화 (인증 자동 처리)
+w = WorkspaceClient()
+endpoint_name = os.getenv("SERVING_ENDPOINT")
+
+st.title("AI Assistant")
+st.caption("Databricks Model Serving 기반 AI 챗봇")
+
+# 세션 상태에 대화 이력 저장
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# 기존 대화 이력 표시
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# 사용자 입력 처리
+if prompt := st.chat_input("질문을 입력하세요..."):
+    # 사용자 메시지 추가
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # AI 응답 생성
+    with st.chat_message("assistant"):
+        with st.spinner("생각 중..."):
+            try:
+                response = w.serving_endpoints.query(
+                    name=endpoint_name,
+                    messages=[
+                        {"role": m["role"], "content": m["content"]}
+                        for m in st.session_state.messages
+                    ],
+                )
+                assistant_message = response.choices[0].message.content
+                st.markdown(assistant_message)
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": assistant_message}
+                )
+            except Exception as e:
+                st.error(f"오류 발생: {str(e)}")
+```
+
+이 코드의 핵심 패턴을 설명합니다.
+
+**`WorkspaceClient()`**: `Config()`와 마찬가지로 환경변수에서 인증 정보를 자동으로 읽습니다. Model Serving 호출 시 SP의 OAuth 토큰이 자동으로 사용됩니다.
+
+**`st.session_state.messages`**: Streamlit의 세션 상태에 대화 이력을 저장합니다. 이 상태는 사용자의 브라우저 세션에 귀속되므로, 다른 사용자의 대화와 섞이지 않습니다. 단, 앱이 재시작되면 초기화됩니다.
+
+**`w.serving_endpoints.query()`**: Databricks SDK를 통해 Model Serving Endpoint에 ChatCompletion 형식의 요청을 보냅니다. `messages` 배열에 전체 대화 이력을 전달하여 문맥을 유지합니다.
+
+**`response.choices[0].message.content`**: OpenAI ChatCompletion API와 동일한 응답 형식입니다. Databricks Model Serving은 이 형식을 표준으로 사용합니다.
+
+> **참고**
+**Agent 앱 확장 아이디어**:
+- **대화 이력 저장**: UC 테이블에 대화 이력을 저장하면 세션 간 대화가 유지됩니다
+- **피드백 수집**: 각 응답에 좋아요/싫어요 버튼을 추가하여 모델 품질 개선에 활용
+- **파일 업로드**: `st.file_uploader()`로 문서를 업로드하고 RAG에 활용
+- **스트리밍 응답**: `stream=True`로 토큰 단위 스트리밍 지원 (UX 개선)
+
+
+### 프로덕션 전환 시 고려사항
+
+| 항목 | 현재 예제 | 프로덕션 권장 |
+|------|----------|-------------|
+| **대화 이력** | 세션 상태(메모리)에만 저장 | UC 테이블 또는 Lakebase에 영속 저장 |
+| **에러 핸들링** | 기본 에러 메시지 | 에러 유형별 사용자 친화적 메시지 |
+| **토큰 제한** | 전체 대화 이력 전송 | 최근 N개 메시지만 전송, 또는 요약 |
+| **동시 사용** | 기본 Streamlit | `st.cache_resource`로 클라이언트 재사용 |
+| **사용자 인증** | SP 인증 (모든 사용자 동일 권한) | 사용자 인증으로 개인화된 응답 |

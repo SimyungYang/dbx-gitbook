@@ -1,0 +1,261 @@
+---
+title: "Meta의 AI Agent 전략 & 종합 비교"
+---
+
+
+## 3. Meta -- "오픈소스 Agent 민주화"
+
+### 3.1 전략 개요
+
+Meta의 전략은 명확합니다: **"최고 수준의 오픈소스 모델과 도구를 제공하여, Agent 생태계의 표준이 된다."** 클라우드 서비스 매출이 아닌, 오픈소스를 통한 생태계 장악과 자사 서비스(Instagram, WhatsApp, Workplace) 연동이 핵심 수익 모델입니다.
+
+> **성공**
+**핵심 메시지**: "가장 좋은 AI 모델은 누구나 사용할 수 있어야 한다. 오픈소스는 선의가 아니라 전략이다 -- 개발자 생태계를 장악하면 플랫폼이 된다."
+
+
+### 3.2 핵심 제품 스택
+
+#### Llama 4 모델 패밀리
+
+Llama 4는 Meta의 최신 오픈소스 LLM 패밀리로, **Mixture of Experts (MoE)** 아키텍처를 전면 채택했습니다.
+
+| 모델 | 전체 파라미터 | 활성 파라미터 | 컨텍스트 | 특징 |
+|------|------------|------------|---------|------|
+| **Llama 4 Scout** | 109B | 17B | **10M 토큰** | 초대용량 컨텍스트, 효율적 추론 |
+| **Llama 4 Maverick** | 400B | 약 100B | **1M 토큰** | GPT-4o 급 성능, 오픈소스 최강 |
+
+> **참고**
+**MoE(Mixture of Experts) 아키텍처의 의미**:
+
+Scout의 경우 전체 109B 파라미터 중 매 토큰마다 17B만 활성화됩니다. 이는 다음을 의미합니다:
+- **추론 비용**: 17B 모델 수준의 GPU 요구량으로 109B 수준의 지식을 활용
+- **Agent 시나리오**: 비용 효율이 극도로 중요한 대규모 Agent 배포에 적합
+- **10M 컨텍스트**: 전체 코드베이스나 수백 페이지 문서를 한 번에 처리 가능
+
+Maverick은 반대로 최고 성능을 추구합니다. 400B 규모로 GPT-4o와 직접 경쟁하며, 1M 컨텍스트로 복잡한 Agent 추론을 지원합니다.
+
+
+#### Llama Stack
+
+Llama Stack은 Meta가 제공하는 **Agent 빌딩을 위한 통합 API 레이어** 입니다. 모델만 오픈소스하는 것이 아니라, Agent 구축에 필요한 전체 스택을 표준화합니다.
+
+| API 카테고리 | 포함 기능 |
+|-------------|----------|
+| **Inference** | 텍스트 생성, Tool Calling, Structured Output |
+| **Safety** | 입력/출력 필터링, Llama Guard 통합 |
+| **Memory** | 벡터 스토어, 대화 히스토리, 장기 기억 |
+| **Agents** | Agent 루프, 도구 실행, 멀티턴 관리 |
+| **Evaluation** | 자동 평가, 벤치마크 실행 |
+| **Post-training** | Fine-tuning, RLHF, DPO |
+
+```python
+# Llama Stack Agent 예시
+from llama_stack_client import LlamaStackClient
+
+client = LlamaStackClient(base_url="http://localhost:5000")
+
+# Agent 생성
+agent = client.agents.create(
+    agent_config={
+        "model": "Llama4-Scout-109B-MoE",
+        "instructions": "당신은 데이터 분석 전문가입니다.",
+        "tools": [
+            {"type": "code_interpreter"},
+            {"type": "brave_search"},
+            {"type": "function", "function": custom_tool}
+        ],
+        "tool_choice": "auto",
+        "max_infer_iters": 10  # 최대 추론 반복 횟수
+    }
+)
+```
+
+#### 오픈소스 전략의 의미
+
+Meta의 오픈소스 전략은 단순한 모델 공개가 아닙니다.
+
+| 계층 | 오픈소스 여부 | 설명 |
+|------|-------------|------|
+| **모델 가중치** | 공개 (Llama License) | 상업적 사용 가능, 7억 MAU 이상 시 라이선스 필요 |
+| **학습 코드** | 일부 공개 | 학습 레시피, 데이터 처리 파이프라인 |
+| **평가 프레임워크** | 공개 | Llama Stack Evals |
+| **안전 도구** | 공개 | Llama Guard, CyberSecEval, Purple Llama |
+| **Agent 프레임워크** | 공개 | Llama Stack |
+
+> **주의**
+**Llama 라이선스 주의사항**: Llama 4는 "오픈소스"로 불리지만, 엄밀히는 **오픈 웨이트(Open Weight)** 모델입니다. 월간 활성 사용자 7억 명 이상인 서비스에서 사용하려면 별도 라이선스가 필요합니다. 또한, Llama 출력으로 다른 LLM을 학습시키는 것은 라이선스 위반입니다.
+
+
+### 3.3 멀티에이전트 아키텍처
+
+Meta는 AWS나 Microsoft처럼 자체 관리형 오케스트레이션 서비스를 제공하지 않습니다. 대신 Llama Stack의 Agent API를 통해 **프레임워크 수준의 멀티에이전트** 를 지원합니다.
+
+실제 프로덕션 멀티에이전트 배포는 다음 조합으로 이루어집니다:
+
+- **Llama 4 모델**+ **LangGraph/CrewAI/Strands**(오케스트레이션) + **클라우드 서비스**(인프라)
+- 즉, Meta는 "두뇌(모델)"를 제공하고, "몸(인프라)"은 클라우드 벤더가 제공하는 구조
+
+### 3.4 차별점 요약
+
+- **오픈 웨이트 최강 모델**: Llama 4 Maverick은 오픈소스 모델 중 최고 성능
+- **극한 비용 효율**: Scout의 MoE 아키텍처로 17B 활성 파라미터에 109B 지식 활용
+- **10M 컨텍스트**: 오픈소스 모델 중 최대 컨텍스트 윈도우
+- **벤더 종속 없음**: 어떤 클라우드, 어떤 프레임워크에서든 사용 가능
+- **자체 호스팅 가능**: 민감 데이터를 클라우드 밖에서 처리해야 하는 규제 환경에 적합
+
+### 3.5 Databricks 연동 시사점
+
+> **참고**
+**Databricks에서 Llama 4를 활용하려면**:
+- **Mosaic AI Gateway**: Llama 4 모델을 Databricks Model Serving에 배포하고, Gateway에서 통합 관리. 자체 호스팅으로 데이터 주권 확보
+- **Foundation Model API**: Databricks가 관리하는 Llama 4 엔드포인트를 바로 사용 (Pay-per-token)
+- **Fine-tuning**: Databricks에서 Llama 4를 도메인 특화 데이터로 Fine-tuning 가능 (PEFT, QLoRA)
+- **Agent Bricks + Llama 4**: Agent Bricks에서 Serving Endpoint로 배포된 Llama 4를 백엔드 모델로 사용
+- **비용 최적화**: Scout 모델을 고빈도/저복잡도 Agent에, Maverick을 저빈도/고복잡도 Agent에 배치하는 티어드 전략
+
+
+---
+
+## 4. 종합 비교
+
+> **참고**
+Databricks의 Agent 전략은 별도 페이지에서 심층적으로 다룹니다: [Databricks의 AI Agent 전략](databricks)
+
+
+### 4.1 벤더별 전략 비교 테이블
+
+| 비교 항목 | AWS | Microsoft | Meta | Databricks |
+|----------|-----|-----------|------|-----------|
+| **전략 키워드** | 풀스택 빌딩 블록 | 오픈 에이전틱 웹 | 오픈소스 민주화 | 데이터 중심 Agent |
+| **자체 모델** | Nova 2 (Pro/Lite/Sonic) | 없음 (OpenAI 파트너십) | Llama 4 (Scout/Maverick) | DBRX (보조), 외부 모델 중심 |
+| **Agent 빌더** | Bedrock Agents | Azure AI Foundry Agent | Llama Stack | Agent Bricks |
+| **오케스트레이션** | Supervisor/Routing Mode | Copilot Studio | 프레임워크 위임 | Supervisor Agent |
+| **운영 플랫폼** | AgentCore | Azure AI Foundry | 없음 (클라우드 위임) | Model Serving + Gateway |
+| **안전장치** | Guardrails (Automated Reasoning) | Prompt Shields + Content Safety | Llama Guard | Unity Catalog Guardrails |
+| **정책 엔진** | Cedar (선언적) | Azure RBAC | 없음 | Unity Catalog ACL |
+| **코딩 도구** | Q Developer, Kiro IDE | GitHub Copilot | 없음 | Genie Code, AI Dev Kit |
+| **프레임워크** | Strands SDK (오픈소스) | Agent Framework (AutoGen+SK) | Llama Stack (오픈소스) | Agent Framework (MLflow 통합) |
+| **프로토콜** | MCP 지원 | A2A + MCP | 표준 따름 | MCP 지원 |
+| **멀티클라우드** | AWS only | Azure 중심 | 클라우드 무관 | AWS, Azure, GCP |
+| **데이터 거버넌스** | Lake Formation | Purview | 없음 | Unity Catalog |
+| **비용 모델** | Pay-per-use | Pay-per-use | 자체 호스팅 가능 | DBU 기반 |
+| **주요 타겟** | AWS 올인 고객 | Microsoft 365 + Azure 고객 | 오픈소스 선호, 자체 인프라 보유 | 데이터 레이크하우스 고객 |
+
+### 4.2 시나리오별 최적 조합
+
+| 시나리오 | 권장 조합 | 이유 |
+|---------|----------|------|
+| **AWS 기반 엔터프라이즈** | Bedrock Agents + Databricks Agent Bricks + MLflow | AWS 인프라 활용 + 데이터 거버넌스 통합 |
+| **Azure 기반 엔터프라이즈** | Azure AI Foundry + Databricks + Copilot Studio | Microsoft 365 연동 + 데이터 레이크하우스 |
+| **비용 최적화 우선** | Llama 4 Scout (Databricks 호스팅) + Agent Bricks | MoE로 추론 비용 절감 + 자체 호스팅 |
+| **최고 성능 우선** | Claude/GPT-4o (Gateway 경유) + Agent Bricks | 최고 모델 + 자동 Fallback |
+| **데이터 규제 환경** | Llama 4 (온프레미스) + Databricks (VPC 내) | 데이터 주권 + 모델 자체 호스팅 |
+| **멀티클라우드** | Databricks (멀티클라우드) + Mosaic AI Gateway | 클라우드 간 일관된 Agent 경험 |
+
+### 4.3 기능 계층별 비교
+
+| 계층 | AWS | Microsoft | Meta | Databricks |
+|------|-----|-----------|------|-----------|
+| **모델 접근** | Bedrock (멀티모델) | AI Foundry (1,800+) | Llama 직접 | Gateway (무제한) |
+| **RAG/검색** | Knowledge Bases, GraphRAG | AI Search | Llama Stack Memory | Vector Search, UC 함수 |
+| **멀티에이전트** | Supervisor/Routing | Copilot Studio 오케스트레이션 | 프레임워크 의존 | Supervisor Agent |
+| **평가** | AgentCore Evaluations | AI Foundry Evaluation | Llama Stack Evals | MLflow 3.0 GenAI Metrics |
+| **모니터링** | CloudWatch + AgentCore | Azure Monitor + Foundry | 자체 구축 필요 | MLflow Trace + Lakehouse Monitor |
+| **거버넌스** | IAM + Cedar | Entra ID + Purview | 자체 구축 필요 | Unity Catalog (데이터+모델+Agent) |
+
+---
+
+## 5. 고객 FAQ
+
+### Q1: "우리는 AWS를 쓰는데, Bedrock Agents만으로 충분한가요?"
+
+> **참고**
+Bedrock Agents는 Agent 오케스트레이션에 우수하지만, **데이터 거버넌스와 평가 자동화** 에서 한계가 있습니다. 권장 조합:
+- **Agent 빌드/오케스트레이션**: Bedrock Agents 또는 Databricks Agent Bricks
+- **데이터 거버넌스**: Databricks Unity Catalog
+- **모니터링/평가**: MLflow 3.0
+- **모델 관리**: Mosaic AI Gateway (Bedrock 모델 포함)
+
+
+### Q2: "Llama 4를 자체 호스팅하면 비용이 정말 절감되나요?"
+
+> **참고**
+**상황에 따라 다릅니다.**
+- **고빈도 호출**(일 100만+ 요청): 자체 호스팅이 API 비용 대비 50-70% 절감 가능
+- **저빈도 호출**(일 1만 이하): API(Pay-per-token)가 더 경제적. GPU 유휴 비용 발생
+- **권장**: Databricks Model Serving에 Llama 4를 배포하면 서버리스 스케일링으로 유휴 비용을 최소화할 수 있습니다. Scout(17B 활성)은 단일 A100에서도 추론 가능합니다.
+
+
+### Q3: "Microsoft Copilot Studio와 Databricks Agent Bricks 중 무엇을 써야 하나요?"
+
+> **참고**
+**타겟 사용자가 다릅니다.**
+- **Copilot Studio**: 비개발자가 Microsoft 365 워크플로 내에서 간단한 Agent를 만들 때
+- **Agent Bricks**: 데이터 팀이 데이터 레이크하우스의 데이터를 활용하는 Agent를 만들 때
+
+가장 좋은 전략은 **양쪽 모두 사용** 하고, Copilot Studio의 Agent가 Databricks Genie Agent를 A2A/MCP로 호출하는 구조입니다.
+
+
+### Q4: "A2A vs MCP -- 우리에게 어떤 프로토콜이 필요한가요?"
+
+> **참고**
+둘은 **경쟁이 아니라 보완 관계** 입니다.
+- **MCP**: Agent가 **도구/데이터** 에 접근하는 프로토콜 (Agent → Tool)
+- **A2A**: Agent가 **다른 Agent** 와 통신하는 프로토콜 (Agent → Agent)
+
+대부분의 엔터프라이즈 Agent에는 **MCP가 먼저 필요** 합니다. A2A는 조직 간 Agent 연동이 필요할 때 도입하세요.
+
+
+### Q5: "AWS Guardrails의 Automated Reasoning이 정말 99% 정확한가요?"
+
+> **참고**
+AWS가 발표한 99% 수치는 **형식 검증(Formal Verification)** 이 적용 가능한 도메인(수학, 논리, 정책 규칙)에서의 정확도입니다. 자연어 추론 전반에 대한 수치가 아닙니다.
+
+- **적합**: 보험 약관 해석, 대출 적격 여부 판단, 세금 계산 등 규칙 기반 추론
+- **한계**: 창의적 글쓰기, 감정 분석, 주관적 판단 등에는 적용 불가
+
+Databricks 환경에서는 MLflow 3.0의 GenAI Metrics + Bedrock Guardrails를 **조합** 하여 다층적 안전장치를 구축하는 것을 권장합니다.
+
+
+### Q6: "멀티클라우드 환경에서 Agent를 어떻게 통합 관리하나요?"
+
+> **참고**
+Databricks의 멀티클라우드 아키텍처가 핵심입니다:
+
+1. **Mosaic AI Gateway**: AWS Bedrock, Azure OpenAI, 자체 호스팅 모델을 하나의 엔드포인트로 통합
+2. **Unity Catalog**: 클라우드 간 데이터 거버넌스 일관성 유지
+3. **MLflow 3.0**: 클라우드 무관하게 Agent 추적/평가 통합
+4. **Agent Bricks**: 동일한 Agent 정의를 AWS/Azure/GCP 어디서든 배포
+
+
+---
+
+## 6. 참고 자료
+
+### AWS
+- [Amazon Bedrock Agents 공식 문서](https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html)
+- [Amazon AgentCore 소개](https://aws.amazon.com/agentcore/)
+- [Strands Agents SDK GitHub](https://github.com/strands-agents/sdk-python)
+- [Amazon Nova 모델 카드](https://aws.amazon.com/ai/generative-ai/nova/)
+- [Guardrails for Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html)
+
+### Microsoft
+- [Azure AI Foundry Agent Service](https://learn.microsoft.com/azure/ai-services/agents/)
+- [Microsoft Copilot Studio](https://www.microsoft.com/copilot/copilot-studio)
+- [AutoGen GitHub](https://github.com/microsoft/autogen)
+- [Semantic Kernel GitHub](https://github.com/microsoft/semantic-kernel)
+
+### Meta
+- [Llama 4 모델 카드](https://ai.meta.com/llama/)
+- [Llama Stack GitHub](https://github.com/meta-llama/llama-stack)
+- [Llama Guard](https://ai.meta.com/research/publications/llama-guard/)
+
+### Databricks
+- [Agent Bricks 문서](https://docs.databricks.com/en/generative-ai/agent-bricks/index.html)
+- [Mosaic AI Gateway](https://docs.databricks.com/en/generative-ai/external-models/index.html)
+- [MLflow 3.0 GenAI](https://mlflow.org/docs/latest/genai/index.html)
+- [Unity Catalog](https://docs.databricks.com/en/data-governance/unity-catalog/index.html)
+
+### 프로토콜 & 표준
+- [A2A (Agent-to-Agent) 프로토콜](https://google.github.io/A2A/)
+- [MCP (Model Context Protocol)](https://modelcontextprotocol.io/)

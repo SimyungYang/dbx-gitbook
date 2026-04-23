@@ -1,0 +1,72 @@
+---
+title: "Agent Memory 시스템 — 상세"
+---
+
+
+## 메모리 유형별 비교
+
+| 메모리 유형 | 저장 메커니즘 | Databricks 도구 | 예시 |
+|------------|-------------|----------------|------|
+| **Short-term** | LLM Context Window (메시지 리스트) | ChatAgent messages 파라미터 | 현재 대화의 이전 질문/답변 참조 |
+| **Long-term** | Vector DB / 외부 DB | Vector Search, Lakebase (PostgreSQL) | 3개월 전 고객 문의 내역 검색 |
+| **Episodic** | 구조화된 로그 저장소 | MLflow Tracking, Delta Table | "지난번 ETL 실패는 스키마 변경 때문이었음" |
+| **Working** | Agent State (인메모리) | LangGraph State, ChatAgent context | 현재 5단계 중 3단계 진행 중, 중간 계산 결과 |
+
+> **성공**
+**예시**: 고객 지원 Agent가 "지난번에 문의하신 환불 건은 어떻게 되셨나요?"라고 물을 수 있으려면 **Long-term Memory** 가 필요합니다. 현재 세션의 대화만으로는 이전 세션의 맥락을 알 수 없기 때문입니다.
+
+
+> **주의**
+현재 대부분의 Agent는 **Short-term Memory만** 가집니다. Long-term Memory는 Vector Search나 Lakebase(PostgreSQL)를 활용하여 별도 구현해야 합니다. Agent 프레임워크가 자동으로 제공하는 것이 아닙니다.
+
+
+---
+
+
+## 현업에서의 Agent Memory 구현 패턴
+
+실제 기업들이 운영 환경에서 채택하는 메모리 패턴은 다음과 같이 분류됩니다:
+
+| 패턴 | 설명 | 적합한 사용 사례 | 복잡도 |
+|------|------|---------------|--------|
+| **Session Memory** | 대화 세션 동안만 유지, 세션 종료 시 소멸 | FAQ 챗봇, 단순 Q&A | 낮음 |
+| **User Profile Memory** | 사용자별 선호/이력을 영속적으로 저장 | 개인화 서비스, CRM 연동 Agent | 중간 |
+| **Knowledge Memory** | Agent가 학습한 도메인 지식을 축적 | 도메인 전문 Agent, 사내 정책 Agent | 높음 |
+| **Team Memory** | 여러 Agent가 공유하는 공동 기억 | Multi-Agent 시스템, Supervisor 패턴 | 매우 높음 |
+
+### Session Memory
+
+가장 기본적인 패턴으로, ChatAgent의 `messages` 파라미터가 이에 해당합니다. 별도 인프라 없이 구현 가능하며, 대부분의 Agent 프레임워크에서 기본 제공합니다.
+
+### User Profile Memory
+
+사용자가 처음 접속했을 때 프로필 정보를 로드하여 System Prompt에 주입합니다. 대화 중 새롭게 파악된 정보(직책 변경, 새로운 선호 등)를 자동 갱신합니다.
+
+### Knowledge Memory
+
+Agent가 업무를 수행하면서 새로 학습한 지식을 축적합니다. 예를 들어, "이 회사의 환불 정책은 구매 후 30일 이내"라는 정보를 한 번 확인하면 메모리에 저장하여, 이후 같은 질문에 즉시 답변합니다.
+
+### Team Memory
+
+Multi-Agent 시스템에서 Supervisor Agent와 Worker Agent들이 공유하는 메모리입니다. 한 Agent가 발견한 정보를 다른 Agent가 활용할 수 있어, 중복 작업을 방지합니다.
+
+---
+
+
+## Memory 솔루션 비교
+
+| 솔루션 | 유형 | 특징 | Databricks 연동 |
+|--------|------|------|---------------|
+| **Databricks Vector Search** | 벡터 기반 | Unity Catalog 통합, 권한 자동 적용, 서버리스 | 네이티브 |
+| **Databricks Lakebase** | 구조화 DB | PostgreSQL 호환, 서버리스, ACID 트랜잭션 | 네이티브 |
+| **Redis** | 인메모리 KV | 초고속 읽기/쓰기, TTL 자동 만료 지원 | External 연결 필요 |
+| **Mem0** | AI 메모리 전용 | 자동 메모리 추출/정리/검색, LLM 기반 | External 연결 필요 |
+| **LangGraph Checkpointer** | 상태 관리 | 대화 상태 자동 저장/복구, thread 기반 | MLflow 통합 가능 |
+| **Amazon Bedrock AgentCore Memory** | AWS 관리형 | Bedrock Agent 전용 메모리 서비스 | External 연결 필요 |
+| **Azure Cosmos DB Agent Memory** | Azure 관리형 | 글로벌 분산 DB 기반, 낮은 레이턴시 | External 연결 필요 |
+
+> **참고**
+**Databricks 환경에서의 권장 조합**: **Vector Search**(의미 검색용 Long-term Memory) + **Lakebase**(구조화 프로필 데이터) + **LangGraph Checkpointer**(세션 관리). 이 조합은 별도 외부 서비스 없이 Databricks 플랫폼 내에서 완결됩니다.
+
+
+---

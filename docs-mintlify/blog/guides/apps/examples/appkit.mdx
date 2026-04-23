@@ -1,0 +1,219 @@
+---
+title: "AppKit 대시보드 예제 (React + TypeScript)"
+---
+
+
+## AppKit (React + TypeScript 대시보드)
+
+**AppKit** 프레임워크를 사용한 타입 안전한 매출 분석 대시보드입니다. SQL 쿼리 결과의 TypeScript 타입이 자동 생성되고, 내장 차트 컴포넌트를 사용합니다.
+
+### 프로젝트 생성
+
+```bash
+# 매니페스트 확인
+databricks apps manifest --profile <PROFILE>
+
+# 프로젝트 생성
+databricks apps init \
+  --name sales-dashboard \
+  --features analytics \
+  --set analytics.sql-warehouse.id=<WAREHOUSE_ID> \
+  --description "매출 분석 대시보드" \
+  --run none \
+  --profile <PROFILE>
+
+cd sales-dashboard && npm install
+```
+
+### SQL 쿼리 파일
+
+**config/queries/monthly_revenue.sql:**
+
+```sql
+SELECT
+  DATE_FORMAT(order_date, 'yyyy-MM') AS month,
+  SUM(total_amount) AS revenue,
+  COUNT(*) AS order_count,
+  AVG(total_amount) AS avg_order_value
+FROM catalog.schema.orders
+WHERE order_date >= :start_date
+  AND order_date <= :end_date
+GROUP BY DATE_FORMAT(order_date, 'yyyy-MM')
+ORDER BY month
+```
+
+**config/queries/top_products.sql:**
+
+```sql
+SELECT
+  product_name,
+  SUM(quantity) AS total_sold,
+  SUM(total_amount) AS total_revenue
+FROM catalog.schema.order_items
+WHERE order_date >= :start_date
+  AND order_date <= :end_date
+GROUP BY product_name
+ORDER BY total_revenue DESC
+LIMIT 10
+```
+
+### 타입 생성
+
+```bash
+npm run typegen
+# ✓ monthly_revenue
+# ✓ top_products
+```
+
+### client/src/App.tsx
+
+```tsx
+import { useState } from 'react';
+import {
+  BarChart,
+  LineChart,
+  DataTable,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from '@databricks/appkit-ui/react';
+import { useAnalyticsQuery } from '@databricks/appkit-ui/react';
+import { sql } from '@databricks/appkit-ui/js';
+
+function App() {
+  const [startDate, setStartDate] = useState('2024-01-01');
+  const [endDate, setEndDate] = useState('2024-12-31');
+
+  const params = {
+    start_date: sql.date(startDate),
+    end_date: sql.date(endDate),
+  };
+
+  // KPI 데이터 조회
+  const { data: monthlyData } = useAnalyticsQuery('monthly_revenue', params);
+
+  // KPI 계산
+  const totalRevenue = monthlyData
+    ? monthlyData.reduce((sum, row) => sum + Number(row.revenue), 0)
+    : 0;
+  const totalOrders = monthlyData
+    ? monthlyData.reduce((sum, row) => sum + Number(row.order_count), 0)
+    : 0;
+  const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+  return (
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">매출 분석 대시보드</h1>
+
+      {/* 날짜 필터 */}
+      <div className="flex gap-4 mb-6">
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="border rounded p-2"
+        />
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="border rounded p-2"
+        />
+      </div>
+
+      {/* KPI 카드 */}
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        <Card>
+          <CardHeader><CardTitle>총 매출</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              ${Number(totalRevenue).toLocaleString()}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle>총 주문 수</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              {Number(totalOrders).toLocaleString()}건
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle>평균 주문 금액</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">
+              ${Number(avgOrderValue).toFixed(2)}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 월별 매출 추이 (라인 차트) */}
+      <Card className="mb-8">
+        <CardHeader><CardTitle>월별 매출 추이</CardTitle></CardHeader>
+        <CardContent>
+          <LineChart
+            queryKey="monthly_revenue"
+            parameters={params}
+            xKey="month"
+            yKey={["revenue", "order_count"]}
+            colors={['#FF3621', '#4462c9']}
+            height={400}
+          />
+        </CardContent>
+      </Card>
+
+      {/* TOP 10 상품 (바 차트 + 테이블) */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardHeader><CardTitle>TOP 10 상품 매출</CardTitle></CardHeader>
+          <CardContent>
+            <BarChart
+              queryKey="top_products"
+              parameters={params}
+              xKey="product_name"
+              yKey="total_revenue"
+              colors={['#40d1f5']}
+              height={400}
+            />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle>상세 데이터</CardTitle></CardHeader>
+          <CardContent>
+            <DataTable
+              queryKey="top_products"
+              parameters={params}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+export default App;
+```
+
+### 배포
+
+```bash
+# 스모크 테스트 업데이트 (tests/smoke.spec.ts에서 heading 수정)
+# 유효성 검사
+databricks apps validate --profile <PROFILE>
+
+# 배포
+databricks apps deploy --profile <PROFILE>
+```
+
+### AppKit 핵심 규칙
+
+| 규칙 | 설명 |
+|------|------|
+| **SQL은 반드시 `config/queries/`에** | tRPC로 SELECT 쿼리를 실행하지 마세요 |
+| **`parameters={{}}`는 필수** | 파라미터가 없어도 빈 객체를 전달해야 합니다 |
+| **숫자는 `Number()`로 변환** | SQL 결과가 문자열로 올 수 있으므로 항상 변환 |
+| **typegen 먼저 실행** | UI 코드 작성 전에 반드시 `npm run typegen` 실행 |
+| **tRPC는 Mutation과 외부 API 전용** | 데이터 조회는 항상 SQL 쿼리 + 차트/훅 사용 |

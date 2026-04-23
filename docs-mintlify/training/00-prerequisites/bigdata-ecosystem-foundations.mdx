@@ -1,0 +1,211 @@
+---
+title: "빅데이터 기초: Hadoop에서 Spark까지"
+---
+
+
+## 현재 빅데이터 생태계의 전체 그림
+
+빅데이터 생태계는 매우 넓고 다양한 도구들이 존재합니다. 이 문서에서는 각 영역별로 어떤 솔루션이 있고, 주요 벤더들이 어떤 포지션을 차지하고 있는지 정리해 드리겠습니다.
+
+> 💡 **왜 생태계를 알아야 하나요?** Databricks를 사용하더라도 주변 도구들과 연동하는 경우가 많습니다. "우리 팀은 이미 Kafka를 쓰고 있는데, Databricks와 어떻게 연결하나요?" "기존 Tableau 대시보드를 Databricks SQL과 연결할 수 있나요?" 같은 질문에 답하려면, 전체 생태계를 알아야 합니다. 또한 기술 선택 회의에서 "왜 Databricks인가?"를 설명하려면, 경쟁 도구들의 강점과 약점을 이해하고 있어야 합니다.
+
+---
+
+## 빅데이터의 등장 배경
+
+### 전통 RDBMS의 한계
+
+관계형 데이터베이스(RDBMS, Relational Database Management System)는 수십 년간 기업 데이터를 관리해온 핵심 기술입니다. Oracle, MySQL, PostgreSQL 같은 시스템은 엄격한 스키마(Schema), ACID 트랜잭션, SQL 기반 조회를 제공하며 OLTP(Online Transaction Processing) 워크로드에 최적화되어 있습니다.
+
+그러나 인터넷이 확산되고 모바일 기기가 폭발적으로 증가하면서, 전통 RDBMS가 처리하기 어려운 새로운 데이터 특성이 등장했습니다.
+
+| 한계 | 설명 |
+|------|------|
+| **수직 확장(Scale-Up) 의존** | CPU와 RAM을 더 강력한 서버로 교체하는 방식은 비용이 기하급수적으로 증가하고, 물리적 한계가 명확합니다 |
+| **정형 데이터만 처리** | 로그 파일, 이미지, JSON, XML 같은 반정형/비정형 데이터를 저장하고 분석하기 어렵습니다 |
+| **배치 분석에 부적합** | 수 TB의 데이터를 전체 스캔하는 분석 쿼리는 OLTP 데이터베이스에 큰 부하를 줍니다 |
+| **고비용** | Oracle 등 상용 RDBMS의 라이선스 비용은 매우 높습니다 |
+
+### 3V: 빅데이터를 정의하는 세 가지 특성
+
+2001년 Gartner의 애널리스트 Doug Laney가 제안한 **3V** 프레임워크는 빅데이터를 정의하는 가장 널리 사용되는 모델입니다.
+
+| V | 의미 | 예시 |
+|---|------|------|
+| **Volume (규모)** | 데이터의 절대적인 크기가 전통적인 방법으로 처리하기 어려운 수준 | 하루 수십 TB의 클릭 로그, 연간 수 PB의 센서 데이터 |
+| **Velocity (속도)** | 데이터가 생성되고 처리되는 속도가 매우 빠름 | 초당 수백만 건의 IoT 센서 이벤트, 실시간 금융 거래 |
+| **Variety (다양성)** | 정형, 반정형, 비정형 등 다양한 형태의 데이터 | 구조화된 거래 내역 + 비구조화된 SNS 텍스트 + 이미지/동영상 |
+
+이후 **Veracity (정확성)**, **Value (가치)** 를 추가한 5V 모델로 발전했지만, 핵심은 동일합니다. 기존 RDBMS로는 이 특성들을 모두 만족시키기 어려웠고, 이를 해결하기 위한 새로운 기술들이 등장했습니다.
+
+> 💡 **실무에서의 관점**: "우리 데이터가 빅데이터인가요?"라는 질문을 자주 받습니다. 절대적인 크기보다 **"현재 도구로 처리하기 어려운가?"** 가 더 실용적인 기준입니다. 수십 GB라도 초당 처리해야 한다면 빅데이터 기술이 필요하고, 수 TB라도 월 1회 배치 처리라면 기존 도구로 충분할 수 있습니다.
+
+---
+
+## Hadoop 생태계
+
+### Hadoop의 등장
+
+2004년 Google이 발표한 두 편의 논문이 분산 처리의 패러다임을 바꿨습니다.
+
+- **GFS (Google File System)**: 수천 대의 범용 서버에 데이터를 분산 저장하는 방법
+- **MapReduce**: 분산된 데이터를 병렬로 처리하는 프로그래밍 모델
+
+Yahoo!의 Doug Cutting과 Mike Cafarella는 이 논문을 기반으로 오픈소스 구현체인 **Apache Hadoop** 을 만들었습니다(2006년). 이후 Facebook, LinkedIn, Twitter 등 주요 인터넷 기업들이 Hadoop을 채택하면서 빅데이터 시대가 열렸습니다.
+
+### Hadoop의 핵심 컴포넌트
+
+```
+Hadoop 클러스터 구조
+
+┌────────────────────────────────────────────┐
+│                YARN                        │
+│       (리소스 관리 / 작업 스케줄링)           │
+├───────────────┬────────────────────────────┤
+│  MapReduce    │  Hive / Pig / Spark 등      │
+│  (배치 처리)   │  (상위 레이어 처리 도구)     │
+├───────────────┴────────────────────────────┤
+│                 HDFS                       │
+│          (분산 파일 시스템)                  │
+└────────────────────────────────────────────┘
+```
+
+**HDFS (Hadoop Distributed File System)**
+
+HDFS는 데이터를 128MB 단위의 블록(Block)으로 나누어 여러 DataNode에 분산 저장합니다. 기본적으로 각 블록을 3개 노드에 복제(Replication Factor=3)하여 내결함성(Fault Tolerance)을 확보합니다.
+
+- **NameNode**: 파일 시스템의 메타데이터(어떤 블록이 어느 노드에 있는지)를 관리하는 마스터 노드
+- **DataNode**: 실제 데이터 블록을 저장하는 워커 노드
+- **한계**: NameNode가 단일 장애점(SPOF, Single Point of Failure)이며, 소규모 파일을 많이 저장하면 메타데이터 과부하가 발생합니다
+
+**MapReduce**
+
+MapReduce는 두 단계로 데이터를 처리합니다.
+
+| 단계 | 역할 | 예시 (단어 세기) |
+|------|------|----------------|
+| **Map** | 입력 데이터를 키-값 쌍으로 변환 | "hello world" → (hello,1), (world,1) |
+| **Shuffle & Sort** | 같은 키를 가진 데이터를 모아 정렬 | (hello,[1,1,1]), (world,[1,1]) |
+| **Reduce** | 같은 키의 값들을 집계 | (hello,3), (world,2) |
+
+**YARN (Yet Another Resource Negotiator)**
+
+YARN은 Hadoop 2.0에서 도입된 리소스 관리 레이어입니다. 클러스터의 CPU와 메모리 자원을 관리하고, MapReduce 외의 다른 처리 프레임워크(Spark, Tez 등)도 Hadoop 위에서 실행할 수 있게 합니다.
+
+### Hadoop의 한계 — 왜 Spark로 넘어갔는가
+
+Hadoop은 혁신적이었지만, 실무에서는 심각한 단점이 있었습니다.
+
+| 한계 | 구체적인 문제 |
+|------|-------------|
+| **디스크 I/O 집중** | MapReduce의 모든 중간 결과를 HDFS 디스크에 기록합니다. Map 결과 → 디스크 저장 → Shuffle → 디스크 저장 → Reduce 순서로, I/O가 매우 많습니다 |
+| **반복 처리 비효율** | ML 알고리즘처럼 같은 데이터를 여러 번 반복해서 처리할 때, 매번 디스크에서 읽어야 합니다. 100번 반복하면 100번 디스크 I/O가 발생합니다 |
+| **실시간 처리 불가** | MapReduce는 배치 처리 전용입니다. 분~시간 단위의 지연이 기본입니다 |
+| **복잡한 프로그래밍** | 간단한 집계도 Map 함수와 Reduce 함수를 별도로 작성해야 합니다. 코드가 길고 직관적이지 않습니다 |
+| **운영 복잡성** | NameNode, DataNode, ResourceManager, NodeManager, ZooKeeper, Hive Metastore 등 수십 개의 컴포넌트를 개별 설정해야 합니다 |
+
+> 💡 **역사적 맥락**: 2010년대 초 Hadoop을 운영한 엔지니어라면 "Container killed by YARN for exceeding memory limits" 에러를 수도 없이 보았을 것입니다. 또한 Hive에서 간단한 JOIN 쿼리를 실행하면 수십 분이 걸리는 것이 당연했습니다. 이런 고통이 Spark의 등장을 환영받게 만들었습니다.
+
+---
+
+## Apache Spark — 왜 100배 빠른가
+
+### Spark의 탄생
+
+Apache Spark는 2009년 UC Berkeley AMPLab에서 Matei Zaharia가 박사 연구 프로젝트로 시작했습니다. "MapReduce의 반복 처리 문제를 인메모리(In-Memory) 처리로 해결하자"는 아이디어가 출발점이었습니다.
+
+2014년 Apache Top-Level 프로젝트로 승격되었고, 같은 해 Matei Zaharia를 포함한 창업자들이 **Databricks** 를 설립하여 Spark의 상용 플랫폼을 만들었습니다.
+
+### MapReduce 대비 100배 빠른 이유
+
+**1. 인메모리 처리 (In-Memory Processing)**
+
+Spark의 가장 큰 혁신은 중간 결과를 메모리(RAM)에 저장한다는 점입니다. MapReduce는 모든 중간 결과를 디스크에 기록하지만, Spark는 가능한 한 메모리에 유지합니다.
+
+```
+MapReduce 처리 흐름:
+HDFS → Map → [디스크 저장] → Shuffle → [디스크 저장] → Reduce → [디스크 저장]
+(각 단계마다 디스크 I/O 발생)
+
+Spark 처리 흐름:
+HDFS → [메모리 로드] → 변환1 → 변환2 → 변환3 → [최종 결과만 저장]
+(메모리에서 연속 처리, 필요시에만 디스크 사용)
+```
+
+메모리 접근 속도는 디스크 대비 수십~수백 배 빠릅니다. ML처럼 같은 데이터를 100번 반복하는 작업에서는 이 차이가 더욱 극명하게 나타납니다.
+
+**2. DAG (Directed Acyclic Graph) 실행 계획**
+
+Spark는 작업 전체를 **DAG** 로 표현하고, Catalyst Optimizer가 최적의 실행 계획을 수립한 뒤 한 번에 실행합니다.
+
+```
+예시: filter → groupBy → sort → limit
+
+Spark의 최적화:
+- 불필요한 컬럼 제거 (Predicate Pushdown)
+- filter를 최대한 앞으로 당겨 처리할 데이터 최소화
+- 여러 변환을 하나의 Stage로 묶어 Shuffle 최소화 (Pipelining)
+```
+
+반면 MapReduce는 작업을 독립된 Map-Reduce 쌍으로 표현하기 때문에, 복잡한 쿼리를 여러 개의 MapReduce 잡으로 나눠야 하고 각각 디스크를 경유해야 합니다.
+
+**3. Lazy Evaluation (지연 실행)**
+
+Spark는 변환(Transformation) 명령을 즉시 실행하지 않고, 실제 결과가 필요한 액션(Action)이 호출될 때 한 번에 처리합니다. 이를 통해 불필요한 연산을 최소화하고 최적화 기회를 극대화합니다.
+
+```python
+# 아래 코드는 즉시 실행되지 않음 (Transformation)
+df_filtered = df.filter(col("age") > 25)
+df_grouped = df_filtered.groupBy("city").count()
+
+# collect()를 호출하는 순간 전체 계획을 최적화하여 실행 (Action)
+result = df_grouped.collect()
+```
+
+### RDD → DataFrame → Dataset 진화
+
+Spark의 API는 세 단계를 거쳐 발전했습니다.
+
+**RDD (Resilient Distributed Dataset) — Spark 1.0**
+
+RDD는 Spark의 가장 기본적인 데이터 구조입니다. 분산된 불변(Immutable) 데이터 컬렉션으로, 파티션 단위로 클러스터 노드에 분산됩니다.
+
+- **장점**: 완전한 제어권, 타입 안전성(Type Safety), 복잡한 커스텀 로직 구현 가능
+- **단점**: 최적화를 개발자가 수동으로 해야 함, verbose한 코드, SQL과 연동 어려움
+
+```python
+# RDD API 예시
+rdd = sc.textFile("data.txt")
+counts = rdd.flatMap(lambda line: line.split(" ")) \
+            .map(lambda word: (word, 1)) \
+            .reduceByKey(lambda a, b: a + b)
+```
+
+**DataFrame — Spark 1.3 (2015년)**
+
+DataFrame은 이름이 있는 컬럼으로 구성된 분산 데이터셋입니다. pandas DataFrame과 유사한 개념이지만, 클러스터에서 분산 처리됩니다. **Catalyst Optimizer** 가 자동으로 실행 계획을 최적화하여 RDD보다 빠른 경우도 많습니다.
+
+- **장점**: SQL과 완벽하게 통합, 자동 최적화, 직관적인 API
+- **단점**: 컴파일 타임 타입 체크 없음 (Python/R에서는 런타임에 오류 발견)
+
+```python
+# DataFrame API 예시
+df = spark.read.parquet("data.parquet")
+result = df.filter(col("age") > 25) \
+           .groupBy("city") \
+           .agg(avg("salary").alias("avg_salary"))
+```
+
+**Dataset — Spark 1.6 (Scala/Java 전용)**
+
+Dataset은 DataFrame의 타입 안전성 버전입니다. Scala/Java에서 사용 가능하며, 컴파일 타임에 타입 오류를 잡을 수 있습니다. Python에서는 DataFrame이 사실상 Dataset과 동일하게 동작합니다.
+
+| API | 타입 안전성 | 언어 | 최적화 |
+|-----|-----------|------|--------|
+| **RDD** | 있음 | 모든 언어 | 수동 |
+| **DataFrame** | 없음 | 모든 언어 | 자동 (Catalyst) |
+| **Dataset** | 있음 | Scala/Java | 자동 (Catalyst) |
+
+> 💡 **현업에서의 선택**: 현재 대부분의 Spark 코드는 **DataFrame API** (Python/SQL)를 사용합니다. RDD는 DataFrame으로 표현하기 어려운 복잡한 커스텀 로직에만 제한적으로 사용합니다. Databricks에서는 대부분의 작업을 SQL이나 PySpark DataFrame으로 처리할 수 있습니다.
+
+참고: [Apache Spark 공식 문서](https://spark.apache.org/docs/latest/) | [Databricks: Apache Spark 최적화 가이드](https://docs.databricks.com/en/optimizations/index.html)

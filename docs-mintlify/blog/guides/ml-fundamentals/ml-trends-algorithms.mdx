@@ -1,0 +1,110 @@
+---
+title: "ML 트렌드 — 알고리즘·불균형 처리·HPO"
+---
+
+
+제조업 ML의 필요성, 알고리즘 진화(70년의 여정), Gradient Boosting & Foundation Models, 불균형 데이터 처리, 하이퍼파라미터 최적화(HPO)를 다룹니다.
+
+> **전체 노트북 코드**: [03a\_ml\_trends\_and\_techniques.py](https://github.com/SimyungYang/databricks-enablement-blog/blob/main/hands-on/predictive-maintenance/notebooks/03a_ml_trends_and_techniques.py)
+
+---
+
+## 왜 제조업에 ML이 필요한가?
+
+ML은 온도, 회전수, 토크, 공구 마모량 등 **수십 개 센서의 상호작용 패턴** 을 자동으로 학습하여, 사람이 발견하기 어려운 **고장 전조 징후** 를 포착합니다.
+
+---
+
+## 1. ML 알고리즘의 진화 — 70년의 여정
+
+| 시대 | 핵심 발전 |
+|------|----------|
+| **1950s** | Perceptron (최초의 학습 가능한 모델) |
+| **1990s** | SVM, Random Forest |
+| **2014** | XGBoost — 산업 표준으로 자리잡음 |
+| **2017** | LightGBM, CatBoost |
+| **2020s** | AutoML, Foundation Models |
+| **2024~** | TabPFN, CARTE — 정형 데이터용 Foundation Model |
+
+### 제조업에서 알고리즘을 고르는 기준
+
+| 제조 상황 | 추천 알고리즘 |
+|----------|-------------|
+| 센서 데이터 기반 고장 예측 | **XGBoost / LightGBM** |
+| 범주형 변수 다수 | **CatBoost** |
+| 이미지 기반 외관 검사 | **CNN / Vision Transformer** |
+| 데이터 부족한 초기 PoC | **AutoML + TabPFN** |
+
+---
+
+## 2. 최신 구조화 데이터 기법
+
+### Gradient Boosting 앙상블 계열
+
+| 알고리즘 | 핵심 혁신 | 장점 |
+|----------|----------|------|
+| **XGBoost** | L1/L2 정규화 + 병렬 트리 | 안정적 성능, 산업 표준 |
+| **LightGBM** | Leaf-wise 성장, GOSS | 2~10배 빠른 학습 |
+| **CatBoost** | 범주형 자동 인코딩 | 전처리 불필요, 과적합 방지 |
+
+### 정형 데이터용 Foundation Model (2024~)
+
+| 기술 | 제조 적용 가능성 |
+|------|----------------|
+| **TabPFN** | 소량 데이터에서 XGBoost를 능가 |
+| **CARTE** | 유사 설비 데이터를 전이 학습으로 활용 |
+
+---
+
+## 3. 불균형 데이터 처리
+
+제조 예지보전 데이터는 고장률 **약 3.4%** 의 극심한 클래스 불균형이 특징입니다.
+
+### 데이터 레벨 기법
+
+| 기법 | 원리 |
+|------|------|
+| **SMOTE** | 소수 클래스 사이에 합성 데이터 생성 |
+| **SMOTE-ENN** | SMOTE 후 모호한 샘플 제거 |
+| **BorderlineSMOTE** | 결정 경계 근처만 오버샘플링 |
+
+### 권장 전략
+
+```
+1순위: SMOTE-ENN
+2순위: scale_pos_weight
+3순위: BorderlineSMOTE
+```
+
+> **주의**
+제조 예지보전에서는 **Recall(고장 탐지율)** 이 가장 중요합니다.
+
+
+---
+
+## 4. HPO 최신 기법
+
+| 기법 | 장점 | Databricks 지원 |
+|------|------|----------------|
+| **Grid Search** | 확실한 최적화 | scikit-learn 내장 |
+| **Optuna** | 적은 시행으로 최적화, 시각화 내장 | MLflow 자동 연동 |
+| **Hyperopt** | Spark 클러스터 분산 HPO | SparkTrials 네이티브 |
+| **FLAML** | 알고리즘까지 자동 선택 | pip install |
+
+### Optuna의 핵심 기능 — Pruning
+
+학습 도중 가망 없는 조합을 즉시 중단하여 HPO 시간을 **50~80% 절감** 합니다.
+
+```python
+import optuna
+
+def objective(trial):
+    params = {
+        "max_depth": trial.suggest_int("max_depth", 3, 10),
+        "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
+    }
+    return train_and_evaluate(params)
+
+study = optuna.create_study(direction="maximize")
+study.optimize(objective, n_trials=50)
+```

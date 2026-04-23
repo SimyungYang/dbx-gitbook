@@ -1,0 +1,154 @@
+---
+title: "인기 MCP 서버 — 설정 가이드 & 조합 전략"
+---
+
+
+Genie Code와 Claude Code에 MCP 서버를 추가하는 방법, 역할별 권장 조합, 심화 전략, 서버 선택 체크리스트, 도입 우선순위를 다룹니다.
+
+---
+
+## Genie Code에 외부 MCP 서버 추가하기
+
+### 방법 1: Managed OAuth (권장)
+
+| 서비스 | 연결 방법 |
+|--------|----------|
+| **GitHub** | Workspace Settings → Connections → GitHub (OAuth) |
+| **Slack** | Workspace Settings → Connections → Slack (OAuth) |
+| **Google Drive** | Workspace Settings → Connections → Google Drive (OAuth) |
+| **JIRA** | Workspace Settings → Connections → Jira (OAuth) |
+
+### 방법 2: Custom HTTP Connection
+
+```sql
+CREATE CONNECTION my_mcp_server
+TYPE mcp
+OPTIONS (
+  url = 'https://my-mcp-server.example.com/mcp',
+  auth_type = 'bearer',
+  token = secret('scope', 'my-mcp-token')
+);
+```
+
+### 방법 3: Databricks Apps로 커스텀 MCP 호스팅
+
+자체 MCP 서버를 Databricks App으로 배포합니다.
+
+> **주의**
+**Genie Code 제한**: 전체 MCP 서버에 걸쳐 **최대 20개 Tool** 만 사용할 수 있습니다.
+
+
+---
+
+## Claude Code에 MCP 서버 추가하기
+
+```bash
+# Slack
+claude mcp add slack -e SLACK_BOT_TOKEN=xoxb-your-token -- npx -y @modelcontextprotocol/server-slack
+
+# GitHub
+claude mcp add github -e GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxx -- npx -y @modelcontextprotocol/server-github
+
+# PostgreSQL
+claude mcp add postgres -- npx -y @modelcontextprotocol/server-postgres "postgresql://user:pass@localhost:5432/mydb"
+
+# Notion
+claude mcp add notion -e NOTION_API_KEY=ntn_xxx -- npx -y @notionhq/notion-mcp-server
+
+# 등록된 서버 확인
+claude mcp list
+```
+
+### 프로젝트 설정 파일 (.mcp.json)
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {"GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"}
+    },
+    "slack": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-slack"],
+      "env": {"SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}"}
+    }
+  }
+}
+```
+
+> **팁**
+`${ENV_VAR}` 구문으로 환경변수를 참조하면, `.mcp.json`을 git에 커밋해도 토큰이 노출되지 않습니다.
+
+
+---
+
+## 시나리오별 권장 MCP 조합
+
+| 역할/업무 | 권장 MCP 서버 | 핵심 활용 |
+|----------|-------------|----------|
+| **데이터 엔지니어** | Databricks SQL + Slack + GitHub | 파이프라인 모니터링, 장애 알림 |
+| **데이터 분석가** | Databricks SQL + Google Sheets + Slack | 보고서 자동화, 결과 공유 |
+| **백엔드 개발자** | GitHub + JIRA + PostgreSQL + Slack | 코드 리뷰, DB 디버깅 |
+| **DevOps/SRE** | Kubernetes + Datadog + PagerDuty + Slack | 인시던트 대응 |
+| **SA/SE** | Databricks MCP + GitHub + Slack + Brave Search | 고객 지원, 기술 리서치 |
+
+---
+
+## 실전 조합 전략 심화
+
+### 전략 1: 데이터 팀의 "아침 자동 브리핑" 시스템
+
+매일 아침: ETL 잡 결과 확인 → 품질 체크 → 미해결 이슈 확인 → PR 목록 → 종합 브리핑 → Slack 전송
+
+### 전략 2: "데이터 이슈 자동 에스컬레이션" 파이프라인
+
+이상 감지 시: 상세 분석 → 관련 코드 변경 확인 → 원인 추정 → JIRA 티켓 생성 → Slack 알림
+
+### 전략 3: 역할별 MCP 조합 최적화
+
+| 역할 | 필수 MCP | 선택 MCP | 도구 수 목표 |
+|------|---------|---------|------------|
+| **데이터 엔지니어** | Databricks SQL, GitHub, Slack | JIRA, Kubernetes | 8-12개 |
+| **데이터 분석가** | Databricks SQL, Google Sheets, Slack | Notion | 6-10개 |
+
+> **팁**
+처음에는 Slack + 핵심 데이터 소스 2개만 연결하세요. 이 조합만으로도 "분석 → 결과 공유" 워크플로가 가능합니다.
+
+
+---
+
+## MCP 서버 선택 시 체크리스트
+
+| 항목 | 확인 사항 |
+|------|----------|
+| **공식 여부** | Anthropic/벤더 공식 vs 커뮤니티 |
+| **활성도** | GitHub Star, 최근 커밋, 이슈 응답 속도 |
+| **전송 방식** | Streamable HTTP 지원? (Databricks 연동 시 필수) |
+| **Tool 수** | 너무 많으면 LLM 선택 정확도 하락 |
+
+---
+
+## MCP 서버 도입 우선순위 가이드
+
+**1순위 (즉시 도입)**: Slack + 핵심 데이터 소스
+
+**2순위 (2-4주 내)**: GitHub, JIRA/Linear, Brave Search
+
+**3순위 (1-2개월 내)**: Notion/Confluence, Google Sheets, AWS/GCP
+
+**4순위 (성숙 단계)**: Datadog/Grafana, PagerDuty, Custom MCP
+
+> **팁**
+처음 2개 MCP 서버로 80%의 가치를 얻을 수 있습니다.
+
+
+---
+
+## 다음 단계
+
+- [MCP 개요](README): 기본 개념
+- [일반 MCP 설정](setup-general): 클라이언트별 상세 설정
+- [Databricks MCP 활용](databricks-mcp): Managed/External/Custom MCP
+- [베스트 프랙티스](best-practices): 보안, Tool 설계, 비용 최적화

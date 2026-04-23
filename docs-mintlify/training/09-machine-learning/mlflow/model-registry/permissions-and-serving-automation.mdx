@@ -1,0 +1,269 @@
+---
+title: "CI/CD 자동화와 감사 컴플라이언스"
+---
+
+
+### 서비스 프린시펄 기반 자동 배포 패턴
+
+수동 배포 대신 CI/CD 파이프라인으로 모델 배포를 자동화하면 일관성과 추적성이 향상됩니다.
+
+```
+[GitHub PR 머지]
+    ↓
+[GitHub Actions: 모델 학습 & 평가]
+    ↓ (평가 통과 시)
+[MLflow: UC Registry에 새 버전 등록]
+    ↓
+[GitHub Actions: Alias "champion" 업데이트]
+    ↓
+[Model Serving 엔드포인트: 자동 전환]
+```
+
+### GitHub Actions 연동 예시
+
+```yaml
+# .github/workflows/deploy-model.yml
+name: Deploy ML Model
+
+on:
+  push:
+    branches: [main]
+    paths: ['models/**']
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install databricks-sdk mlflow
+
+      - name: Train and register model
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_SP_CLIENT_ID }}
+          DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_SP_CLIENT_SECRET }}
+        run: |
+          python scripts/train_and_register.py \
+            --model-name "ml_catalog.production_models.fraud_detection" \
+            --experiment-name "/Shared/fraud-detection-experiment"
+
+      - name: Promote to champion
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_SP_CLIENT_ID }}
+          DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_SP_CLIENT_SECRET }}
+        run: |
+          python scripts/promote_model.py \
+            --model-name "ml_catalog.production_models.fraud_detection" \
+            --alias "champion"
+```
+
+```python
+# scripts/promote_model.py
+import mlflow
+import argparse
+from databricks.sdk import WorkspaceClient
+
+def promote_model(model_name: str, alias: str):
+    """평가를 통과한 최신 모델 버전에 Alias를 설정합니다."""
+    client = mlflow.MlflowClient()
+
+    # 최신 버전 조회
+    versions = client.search_model_versions(f"name='{model_name}'")
+    latest_version = sorted(versions, key=lambda v: int(v.version))[-1]
+
+    # 메트릭 검증 (예: F1-score > 0.85)
+    run = mlflow.get_run(latest_version.run_id)
+    f1_score = run.data.metrics.get("f1_score", 0)
+
+    if f1_score < 0.85:
+        raise ValueError(f"F1 score {f1_score:.3f} is below threshold 0.85. Deployment aborted.")
+
+    # Alias 업데이트 → Model Serving 엔드포인트 자동 전환
+    client.set_registered_model_alias(
+        name=model_name,
+        alias=alias,
+        version=latest_version.version
+    )
+    print(f"Promoted version {latest_version.version} to '{alias}' (F1: {f1_score:.3f})")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model-name", required=True)
+    parser.add_argument("--alias", default="champion")
+    args = parser.parse_args()
+    promote_model(args.model_name, args.alias)
+```
+
+> **보안 주의**: GitHub Actions Secret에 `DATABRICKS_SP_CLIENT_SECRET`을 저장하고, 서비스 프린시펄에는 배포에 필요한 최소 권한만 부여합니다.
+
+---
+
+## 감사와 컴플라이언스
+
+### system.access.audit 활용
+
+Unity Catalog는 모든 모델 접근 이벤트를 `system.access.audit` 테이블에 자동으로 기록합니다. 별도의 로깅 코드 없이 감사 추적이 가능합니다.
+
+```sql
+-- 최근 7일간 모델 접근 로그 조회
+SELECT
+    event_time,
+    user_identity.email AS user,
+    action_name,
+    request_params,
+    response.status_code
+FROM system.access.audit
+WHERE
+    service_name = 'unityCatalog'
+    AND action_name IN (
+        'getModel', 'createModelVersion', 'updateModelVersion',
+        'setRegisteredModelAlias', 'deleteModelVersion'
+    )
+    AND event_time >= CURRENT_TIMESTAMP - INTERVAL 7 DAYS
+ORDER BY event_time DESC;
+```
+
+```sql
+-- 특정 모델의 배포 이력 추적 (Alias 변경 이력)
+SELECT
+    event_time,
+    user_identity.email AS deployed_by,
+    request_params:name::STRING AS model_name,
+    request_params:alias::STRING AS alias,
+    request_params:version::STRING AS version
+FROM system.access.audit
+WHERE
+    action_name = 'setRegisteredModelAlias'
+    AND request_params:name::STRING LIKE '%fraud_detection%'
+ORDER BY event_time DESC;
+```
+
+```sql
+-- 모델 엔드포인트 호출 통계 (이상 접근 탐지)
+SELECT
+    DATE_TRUNC('hour', event_time) AS hour,
+    user_identity.email AS caller,
+    COUNT(*) AS call_count
+FROM system.access.audit
+WHERE
+    service_name = 'modelServing'
+    AND action_name = 'serveEndpoint'
+    AND event_time >= CURRENT_TIMESTAMP - INTERVAL 24 HOURS
+GROUP BY 1, 2
+HAVING call_count > 1000  -- 비정상적으로 많은 호출 탐지
+ORDER BY call_count DESC;
+```
+
+**참고 링크**: [Monitor Unity Catalog activity with system tables](https://docs.databricks.com/en/administration-guide/system-tables/audit.html)
+
+---
+
+## UC Model Registry vs Legacy Workspace Registry
+
+Databricks에는 두 가지 Model Registry가 존재합니다. 현재 **UC Model Registry** 가 표준이며, Workspace Registry는 레거시로 분류됩니다.
+
+| 항목 | Workspace Registry (레거시) | UC Model Registry (현재 표준) |
+|------|---------------------------|-------------------------------|
+| **네임스페이스** | `model_name` (flat) | `catalog.schema.model_name` (3-Level) |
+| **접근 제어** | Workspace ACL (제한적) | UC GRANT/REVOKE (세밀한 권한) |
+| **크로스 워크스페이스** | 불가 | 가능 (UC 공유) |
+| **리니지** | 제한적 | 자동 리니지 (소스 데이터 → 모델) |
+| **감사 로그** | Workspace 로그 | UC 시스템 테이블 (system.access.audit) |
+| **Stage** | Staging/Production/Archived | Alias (자유 정의) |
+| **Delta Sharing** | 불가 | 모델을 외부와 공유 가능 |
+
+### Workspace Registry → UC Registry 마이그레이션
+
+```python
+import mlflow
+
+mlflow.set_registry_uri("databricks-uc")
+client = mlflow.MlflowClient()
+
+# 1. Workspace Registry의 모델 버전 목록 조회
+# (임시로 레거시 URI 사용)
+legacy_client = mlflow.MlflowClient(registry_uri="databricks")
+versions = legacy_client.search_model_versions("name='legacy_fraud_detection'")
+
+# 2. 각 버전을 UC Registry로 복사
+for version in sorted(versions, key=lambda v: int(v.version)):
+    source_uri = f"models:/legacy_fraud_detection/{version.version}"
+
+    new_version = mlflow.register_model(
+        model_uri=source_uri,
+        name="ml_catalog.production_models.fraud_detection"
+    )
+    print(f"Migrated version {version.version} → UC version {new_version.version}")
+
+# 3. 프로덕션 버전에 champion Alias 설정
+client.set_registered_model_alias(
+    name="ml_catalog.production_models.fraud_detection",
+    alias="champion",
+    version=new_version.version
+)
+```
+
+> ⚠️ **마이그레이션 주의사항**: Model Serving 엔드포인트의 참조도 함께 업데이트해야 합니다. `models:/legacy_fraud_detection/Production` → `ml_catalog.production_models.fraud_detection@champion` 으로 변경합니다.
+
+---
+
+## 베스트 프랙티스와 흔한 실수
+
+### 권장 사항
+
+| 항목 | 권장 | 피해야 할 것 |
+|------|------|-------------|
+| **계정 관리** | 서비스 프린시펄 사용 | 개인 PAT 토큰으로 자동화 |
+| **권한 부여** | 최소 권한 원칙 (Least Privilege) | `ALL PRIVILEGES`를 모든 팀에 부여 |
+| **배포 방식** | Alias 기반 무중단 전환 | 버전 번호 하드코딩 |
+| **승인 프로세스** | CI/CD 파이프라인 + 메트릭 검증 게이트 | 수동 노트북 실행으로 배포 |
+| **토큰 관리** | OAuth M2M, 짧은 만료 시간 | 만료 없는 PAT 토큰 사용 |
+
+### 흔한 실수와 해결 방법
+
+**실수 1: USE CATALOG/USE SCHEMA 없이 EXECUTE만 부여**
+```sql
+-- 잘못된 예 (접근 불가)
+GRANT EXECUTE ON MODEL ml_catalog.models.fraud_detection TO `user@company.com`;
+
+-- 올바른 예 (상위 계층 권한 포함)
+GRANT USE CATALOG ON CATALOG ml_catalog TO `user@company.com`;
+GRANT USE SCHEMA ON SCHEMA ml_catalog.models TO `user@company.com`;
+GRANT EXECUTE ON MODEL ml_catalog.models.fraud_detection TO `user@company.com`;
+```
+
+**실수 2: 엔드포인트 권한과 모델 권한 혼동**
+```python
+# Model Serving 엔드포인트 호출 권한 (CAN_QUERY)과
+# UC 모델 접근 권한 (EXECUTE)은 별도로 관리됩니다.
+# 두 권한 모두 없으면 엔드포인트 호출이 실패합니다.
+```
+
+**실수 3: 개인 계정으로 엔드포인트 생성**
+```
+문제: 담당자 퇴사 시 엔드포인트가 비활성화되거나 오류 발생
+해결: 서비스 프린시펄 계정으로 엔드포인트 생성 및 관리
+```
+
+**실수 4: Alias 없이 버전 번호로 배포**
+```python
+# 잘못된 예 - 새 버전 배포 시 엔드포인트 설정 변경 필요
+"entity_version": "5"  # 버전 번호 하드코딩
+
+# 올바른 예 - Alias 변경만으로 자동 전환
+"entity_version": "champion"  # Alias 사용
+```
+
+**참고 링크**:
+- [MLflow Model Registry with Unity Catalog](https://docs.databricks.com/en/mlflow/models-in-uc.html)
+- [Set model serving endpoint permissions](https://docs.databricks.com/en/machine-learning/model-serving/manage-endpoint-permissions.html)
+- [Service principals for CI/CD](https://docs.databricks.com/en/dev-tools/ci-cd/ci-cd-sp.html)
+- [Audit log reference](https://docs.databricks.com/en/administration-guide/system-tables/audit.html)
