@@ -27,7 +27,13 @@
           {
             "group": "Databricks 플랫폼",
             "pages": [
-              "training/02-databricks-overview/what-is-databricks",
+              {
+                "group": "Databricks란?",
+                "pages": [
+                  "training/02-databricks-overview/what-is-databricks",
+                  "training/02-databricks-overview/what-is-databricks-roles"
+                ]
+              },
               {
                 "group": "무료 체험",
                 "pages": [
