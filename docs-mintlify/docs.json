@@ -662,7 +662,7 @@
               "training/13-appendix/rest-api",
               "training/13-appendix/databricks-connect",
               {
-                "group": "Asset Bundles (DABs)",
+                "group": "Databricks Bundles (DABs)",
                 "pages": [
                   "training/13-appendix/databricks-asset-bundles",
                   "training/13-appendix/databricks-asset-bundles-basics",
