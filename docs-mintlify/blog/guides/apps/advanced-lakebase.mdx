@@ -3,7 +3,7 @@ title: "Lakebase 연동"
 ---
 
 
-**Lakebase** 는 Databricks가 관리하는 PostgreSQL 호환 데이터베이스입니다. Databricks Apps에서 **OLTP(트랜잭션) 워크로드** 를 처리할 때 적합합니다.
+**Lakebase** 는 Databricks가 관리하는 PostgreSQL 데이터베이스입니다. Databricks Apps에서 **OLTP(트랜잭션) 워크로드** 를 처리할 때 적합합니다.
 
 ---
 
@@ -52,7 +52,7 @@ import psycopg2
 # Lakebase 연결 정보 가져오기
 db_connection = os.getenv("DB_CONNECTION")
 
-# PostgreSQL 호환 연결
+# PostgreSQL 연결
 conn = psycopg2.connect(db_connection)
 
 # CRUD 작업

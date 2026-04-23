@@ -5,7 +5,7 @@ title: "Lakebase란?"
 
 ## 개념
 
-> 💡 **Lakebase** 는 Databricks가 제공하는 **관리형 PostgreSQL 호환 OLTP 데이터베이스** 입니다. 레이크하우스 플랫폼 안에서 OLTP(트랜잭션 처리)와 OLAP(분석)를 하나로 통합하여, 데이터 복사 없이 운영 데이터를 바로 분석에 활용할 수 있게 합니다.
+> 💡 **Lakebase** 는 Databricks가 제공하는 **완전 관리형 클라우드 네이티브 PostgreSQL 데이터베이스**로, 레이크하우스에 OLTP 역량을 더합니다. 레이크하우스 플랫폼 안에서 OLTP(트랜잭션 처리)와 OLAP(분석)를 하나로 통합하여, 데이터 복사 없이 운영 데이터를 바로 분석에 활용할 수 있게 합니다.
 
 > 💡 **OLTP (Online Transaction Processing)**: 주문 접수, 결제 처리, 재고 차감, 사용자 로그인 등 **건 단위의 빠른 읽기/쓰기** 에 최적화된 시스템입니다. 웹 애플리케이션의 백엔드 DB로 사용됩니다. MySQL, PostgreSQL, Oracle이 대표적입니다.
 
@@ -35,7 +35,7 @@ title: "Lakebase란?"
 
 ## 핵심 특징
 
-### PostgreSQL 호환성
+### PostgreSQL 기반
 
 Lakebase는 **PostgreSQL 프로토콜과 호환** 됩니다. 기존 PostgreSQL 애플리케이션, 드라이버, ORM(SQLAlchemy, Django ORM 등)을 **코드 변경 없이** 그대로 사용할 수 있습니다.
 
@@ -89,7 +89,7 @@ Lakebase의 가장 차별화된 기능은 **Data Sync** 입니다.
 | 구성 요소 | 역할 | 설명 |
 |-----------|------|------|
 | **앱 (OLTP 쿼리)** | INSERT/UPDATE 수행 | Lakebase에 데이터를 쓰고 읽습니다 |
-| **Lakebase (PostgreSQL)** | OLTP 데이터 저장 | PostgreSQL 호환 데이터베이스입니다 |
+| **Lakebase (PostgreSQL)** | OLTP 데이터 저장 | PostgreSQL 데이터베이스입니다 |
 | **Delta Lake (분석용)** | 자동 Data Sync로 거의 실시간 동기화 | 분석용 데이터를 제공합니다 |
 | **DBSQL 분석** | SQL 분석 | Delta Lake 데이터를 SQL로 분석합니다 |
 | **MLflow 학습** | ML 모델 학습 | Delta Lake 데이터로 모델을 학습합니다 |
@@ -120,7 +120,7 @@ Lakebase의 가장 차별화된 기능은 **Data Sync** 입니다.
 
 | 비교 | Lakebase | Amazon RDS PostgreSQL | Azure Database for PostgreSQL |
 |------|----------|----------------------|------------------------------|
-| **PostgreSQL 호환** | ✅ | ✅ | ✅ |
+| **PostgreSQL** | ✅ | ✅ | ✅ |
 | **관리형** | ✅ 완전 관리 | ✅ 완전 관리 | ✅ 완전 관리 |
 | **오토스케일링** | ✅ 자동 | ❌ 수동 크기 변경 | ❌ 수동 크기 변경 |
 | **Instant Branching** | ✅ | ❌ | ❌ |
@@ -296,7 +296,7 @@ OLTP-OLAP 분리로 인한 고통은 데이터 팀이라면 누구나 겪어본 
 
 | 항목 | 전환 후 환경 |
 |------|----------|
-| 운영 DB | Lakebase (PostgreSQL 호환) |
+| 운영 DB | Lakebase (PostgreSQL) |
 | 분석 환경 | Databricks Lakehouse (동일) |
 | 동기화 | Data Sync (자동, 지연 \< 1분) |
 | 이점 | ETL 관리 불필요, 실시간에 가까운 분석 |
@@ -347,7 +347,7 @@ OLTP-OLAP 분리로 인한 고통은 데이터 팀이라면 누구나 겪어본 
 
 ```
 [마이그레이션 체크리스트]
-☐ PostgreSQL 호환성 확인 — 사용 중인 PostgreSQL extension이 지원되는가?
+☐ PostgreSQL 지원 범위 확인 — 사용 중인 PostgreSQL extension이 지원되는가?
 ☐ 커넥션 문자열 변경 — 앱의 DB 접속 정보를 Lakebase로 변경
 ☐ 스토리지 용량 확인 — 현재 DB 크기가 8TB 이내인가?
 ☐ Data Sync 설정 — 동기화할 테이블/스키마 선택
@@ -356,7 +356,7 @@ OLTP-OLAP 분리로 인한 고통은 데이터 팀이라면 누구나 겪어본 
 ☐ 백업 전략 확인 — PITR 보존 기간 설정
 ```
 
-> 💡 **현업 팁**: Lakebase는 PostgreSQL 호환이지만, RDS에서 사용하던 일부 extension(PostGIS, TimescaleDB 등)이 아직 지원되지 않을 수 있습니다. 마이그레이션 전에 반드시 사용 중인 extension과 PostgreSQL 고급 기능의 호환성을 확인하세요.
+> 💡 **현업 팁**: Lakebase는 PostgreSQL 기반이지만, RDS에서 사용하던 일부 extension(PostGIS, TimescaleDB 등)이 아직 지원되지 않을 수 있습니다. 마이그레이션 전에 반드시 사용 중인 extension과 PostgreSQL 고급 기능의 호환성을 확인하세요.
 
 ---
 
@@ -364,7 +364,7 @@ OLTP-OLAP 분리로 인한 고통은 데이터 팀이라면 누구나 겪어본 
 
 | 핵심 기능 | 설명 |
 |-----------|------|
-| **PostgreSQL 호환** | 기존 앱/드라이버를 코드 변경 없이 사용할 수 있습니다 |
+| **PostgreSQL** | 기존 앱/드라이버를 코드 변경 없이 사용할 수 있습니다 |
 | **오토스케일링** | 워크로드에 따라 자동 확장/축소됩니다 (최대 8TB) |
 | **Data Sync** | OLTP 데이터가 자동으로 Delta Lake에 동기화됩니다 |
 | **Instant Branching** | 프로덕션 데이터의 즉시 복제본을 생성합니다 |

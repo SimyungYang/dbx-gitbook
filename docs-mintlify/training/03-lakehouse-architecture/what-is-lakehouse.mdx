@@ -135,7 +135,7 @@ Databricks의 레이크하우스는 다음 요소들로 구성됩니다.
 
 | 한계 영역 | 상세 | 해결 방향 |
 |----------|------|----------|
-| **OLTP 워크로드** | 레이크하우스는 분석(OLAP)에 최적화되어 있습니다. 웹 앱의 건 단위 INSERT/UPDATE(sub-ms 지연시간)에는 부적합합니다 | **Lakebase** 로 해결: PostgreSQL 호환 OLTP를 레이크하우스와 통합합니다 |
+| **OLTP 워크로드** | 레이크하우스는 분석(OLAP)에 최적화되어 있습니다. 웹 앱의 건 단위 INSERT/UPDATE(sub-ms 지연시간)에는 부적합합니다 | **Lakebase** 로 해결: PostgreSQL OLTP를 레이크하우스와 통합합니다 |
 | **실시간 저지연(\<100ms)** | Structured Streaming도 마이크로배치 기반이므로 수백 ms~수 초의 지연이 발생합니다. Delta Lake의 commit 오버헤드도 있습니다 | Kafka/Flink 조합으로 실시간 레이어를 별도 구성하거나, Lakebase + Change Data Capture를 활용합니다 |
 | **동시성 제한** | Delta Lake의 Optimistic Concurrency Control은 동일 파일에 대한 동시 쓰기 충돌 시 재시도가 필요합니다 | 파티셔닝으로 쓰기 충돌을 분산하고, `delta.isolationLevel`을 `WriteSerializable`로 설정합니다 |
 | **소규모 데이터** | 수 MB~GB 수준의 데이터는 오히려 PostgreSQL이나 MySQL이 더 효율적입니다. 레이크하우스의 오버헤드(메타스토어, 파일 관리)가 과합니다 | 데이터 규모가 수십 GB 이상일 때 레이크하우스의 이점이 본격적으로 나타납니다 |

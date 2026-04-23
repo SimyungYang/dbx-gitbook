@@ -14,7 +14,7 @@ title: "에이전트 개발"
 | **Agent Bricks** | Databricks에서 AI 에이전트를 **코드 없이 UI/API로 생성**하는 기능입니다. Knowledge Assistant(문서 Q&A), Genie Agent(데이터 분석), Supervisor(오케스트레이션) 세 가지 유형이 있습니다. | [docs](https://docs.databricks.com/en/generative-ai/agent-bricks/index.html) |
 | **Vector Search** | 텍스트를 벡터(숫자 배열)로 변환하여 **의미적으로 유사한 문서**를 빠르게 찾는 기능입니다. Knowledge Assistant의 핵심 — FAQ 문서를 인덱싱하여 관련 답변을 검색합니다. | [docs](https://docs.databricks.com/en/generative-ai/vector-search.html) |
 | **Model Serving** | AI 모델을 API 엔드포인트로 배포하여 실시간으로 호출하는 기능입니다. 에이전트의 LLM(Claude, Llama 등)과 임베딩 모델이 여기서 서빙됩니다. | [docs](https://docs.databricks.com/en/machine-learning/model-serving/index.html) |
-| **Lakebase** | Databricks에 내장된 **PostgreSQL 호환 OLTP 데이터베이스**입니다. 에이전트 대화 이력, 사용자 선호도 등 트랜잭션 데이터를 저장합니다. (선택 사항) | [docs](https://docs.databricks.com/en/database/index.html) |
+| **Lakebase** | Databricks에 내장된 **PostgreSQL OLTP 데이터베이스**입니다. 에이전트 대화 이력, 사용자 선호도 등 트랜잭션 데이터를 저장합니다. (선택 사항) | [docs](https://docs.databricks.com/en/database/index.html) |
 
 ## 개요
 
@@ -394,7 +394,7 @@ Supervisor Agent를 생성해줘.
 
 ### 개념
 
-에이전트와 사용자의 대화 이력을 **Lakebase(PostgreSQL 호환 OLTP)**에 저장하면:
+에이전트와 사용자의 대화 이력을 **Lakebase(PostgreSQL OLTP)**에 저장하면:
 - 대화 컨텍스트 유지 (이전 대화 참조)
 - 사용자별 선호도 학습
 - 에이전트 사용 패턴 분석
