@@ -1,0 +1,230 @@
+---
+title: "데이터 & AI 플랫폼 경쟁 구도 (2026년 4월)"
+---
+
+> 이 문서는 **[GenAI 도구 생태계](/blog/guides/genai-tools/overview)** 섹션의 참고 자료입니다.
+
+
+Databricks를 중심으로 주요 데이터 & AI 플랫폼의 최신 동향을 비교합니다. 각 플랫폼이 AI/ML 시대에 어떤 전략을 취하고 있는지, Databricks와 어디서 겹치고 어디서 차별화되는지를 다룹니다.
+
+---
+
+## 경쟁 구도 조감도
+
+아래 테이블은 2026년 4월 기준 주요 데이터 & AI 플랫폼의 핵심 전략과 Databricks 대비 위치를 요약합니다.
+
+| 플랫폼 | 핵심 전략 | Databricks 대비 강점 | Databricks 대비 약점 |
+|--------|----------|--------------------|--------------------|
+| **Snowflake** | SQL 기반 AI (Cortex) | SQL 사용자 접근성, Marketplace | ML 라이프사이클, 분산 학습, 노트북 |
+| **GCP BigQuery** | Gemini 네이티브 통합 | 초저가 배치 처리, GCP 생태계 | 커스텀 ML, 스트리밍, 멀티클라우드 |
+| **Microsoft Fabric** | M365 Copilot 통합 | Power BI + Microsoft 생태계 | Spark 성숙도, 오픈소스 깊이 |
+| **AWS Redshift/SageMaker** | 네이티브 Zero-ETL 통합 | AWS 생태계, SaaS 연동 | 멀티클라우드, 오픈소스 생태계 |
+| **Cloudera** | Private AI (온프레미스) | 규제 산업, 데이터 주권 | 클라우드 네이티브, 개발자 경험 |
+| **Starburst/Trino** | 페더레이션 기반 분석 | 데이터 이동 없는 분석 | 단독 AI/ML 플랫폼 부재 |
+| **dbt Labs** | 분석 엔지니어링 플랫폼 | 웨어하우스 중립적, 변환 전문 | 보완 관계 (직접 경쟁 아님) |
+
+---
+
+## Snowflake
+
+### AI/ML: Cortex AI 생태계
+
+Snowflake는 2024~2025년에 걸쳐 **Cortex AI** 를 중심으로 AI 기능을 급속히 확장했습니다. SQL에서 직접 LLM을 호출하는 접근 방식이 핵심 차별점입니다.
+
+**주요 AI 기능:**
+
+| 기능 | 시기 | 설명 | Databricks 대응 |
+|------|------|------|----------------|
+| **Cortex LLM Functions** | 2024 GA → 2025 확장 | `COMPLETE()`, `SUMMARIZE()`, `TRANSLATE()` 등 SQL 기반 LLM 호출. Llama 3, Mistral, Arctic 지원 | AI Functions (`ai_query()`) + Foundation Model APIs |
+| **Cortex Analyst** | 2025 GA | 시맨틱 모델 기반 자연어 → SQL 변환. 비기술 사용자 대상 | **Genie** |
+| **Cortex Search** | 2025 GA | 하이브리드 검색(벡터 + 키워드). RAG 파이프라인 구축용 | **Vector Search** + Foundation Model APIs |
+| **Snowflake Intelligence** | 2025.02 발표 | Cortex 기능들을 통합한 엔터프라이즈 AI 에이전트 플랫폼 | **Mosaic AI Agent Framework** |
+| **Document AI** | 2024 GA | PDF/이미지에서 데이터 추출 (Arctic-TILT 모델 기반) | MLflow + 외부 모델 조합 |
+
+**Snowflake Arctic (자체 LLM):**
+
+2024년 4월 오픈소스로 공개된 Snowflake의 자체 LLM입니다. 480B MoE(활성 17B) 아키텍처로, Apache 2.0 라이선스입니다. 2025년에는 **Arctic Embed** (임베딩 모델 시리즈)도 추가 공개했습니다. Databricks는 **DBRX** (2024.03)로 대응했으나, 이후 자체 모델보다 외부 모델 통합(OpenAI, Anthropic 등)에 집중하는 전략으로 전환했습니다.
+
+### 데이터 플랫폼
+
+**Iceberg & 오픈 포맷:**
+- **Iceberg Tables** (2024 GA): Snowflake 내에서 네이티브 Iceberg 포맷 테이블 생성/관리. 외부 카탈로그(AWS Glue 등)의 Iceberg 테이블도 직접 쿼리 가능
+- **Polaris Catalog** (2024.06): Apache Iceberg용 오픈소스 카탈로그. Apache Software Foundation에 기증. 멀티엔진(Spark, Trino, Flink) 공유가 목표
+- Databricks는 **Unity Catalog 오픈소스화** (2024.06)와 **Delta Lake UniForm** (Iceberg 호환)으로 대응
+
+**기타:**
+- **Snowflake Horizon**: 거버넌스 프레임워크. Unity Catalog 대응
+- **Snowflake Notebooks** (2024 GA): SQL/Python 혼합, Git 통합. Databricks 노트북(10년+ 성숙도) 대비 후발
+- **Streamlit in Snowflake** (2024 GA): 데이터 앱 내장. Databricks Apps 대응
+- **Snowflake Marketplace**: 3rd-party 데이터/앱 공유 (2,400+ 리스팅). Delta Sharing + Databricks Marketplace 대응
+
+### 조직 변화
+
+2024년 11월 Sridhar Ramaswamy가 CEO에 취임(Frank Slootman 후임)하며 **AI 전략을 가속**하고 있습니다. 2025년 2월에는 Datavolo(Apache NiFi 기반 비정형 데이터 파이프라인)를 인수했습니다.
+
+### Databricks 대비 핵심 판단
+
+Snowflake는 **SQL 중심 사용자**와 **Managed AI 서비스 편의성**을 차별점으로 내세우고 있습니다. Cortex AI로 "SQL만 알면 AI를 쓸 수 있다"는 메시지가 강력합니다. 반면 ML 워크로드 성숙도(MLflow, 분산 학습, 모델 서빙), 노트북 생태계, 스트리밍 처리에서는 Databricks가 여전히 우위입니다.
+
+---
+
+## Google Cloud BigQuery
+
+### AI/ML: Gemini 네이티브 통합
+
+BigQuery는 Google의 Gemini 모델을 **SQL 안에서 직접 호출**할 수 있는 방향으로 빠르게 진화하고 있습니다.
+
+**주요 AI 기능:**
+
+| 기능 | 시기 | 설명 | Databricks 대응 |
+|------|------|------|----------------|
+| **Gemini in BigQuery** | 2024 Q4 GA → 2025 확장 | `ML.GENERATE_TEXT`, `ML.GENERATE_EMBEDDING` 등 SQL 내 AI 함수. Gemini 1.5 Pro/Flash 지원 | AI Functions + Foundation Model APIs |
+| **BigQuery ML** | 2025 업데이트 | Vertex AI Model Garden 모델 직접 참조, `ML.FORECAST` 개선, 자동 하이퍼파라미터 튜닝 | MLflow + Feature Store + Model Serving |
+| **Gemini Code Assist** | 2025 강화 | BigQuery Studio 내 SQL 자동완성, 쿼리 설명, 최적화 제안 | Databricks Assistant |
+
+### 데이터 플랫폼
+
+**오픈 포맷 & 스트리밍:**
+- **BigLake Iceberg 지원** (2025 GA): GCS 위 Iceberg 테이블 직접 쿼리. Iceberg REST Catalog 프로토콜 지원으로 Spark 등 외부 엔진 상호운용성 강화. Databricks Delta UniForm이 선행
+- **Continuous Queries** (2025 GA): SQL 기반 스트리밍 데이터 지속 처리. Pub/Sub → BigQuery/Bigtable 실시간 적재. Databricks Structured Streaming + DLT가 더 성숙
+- **Dataplex v2** (2025): 데이터 품질 자동 검사 + 리니지 강화. Unity Catalog 대비 통합도 부족
+- **BigQuery Omni**: AWS/Azure 교차 쿼리 리전 확대. 제한적 SQL 기능과 높은 전송 비용이 과제. Databricks는 네이티브 멀티클라우드
+
+### 개발자 경험
+
+**BigQuery Studio** (2025): SQL 편집기 + Python 노트북 + Gemini 코드 어시스턴트를 하나의 UI로 통합. Colab Enterprise와 연동. Databricks 노트북이 더 오래전부터 다국어(Python/SQL/Scala/R) 지원과 협업 기능을 제공합니다.
+
+### 가격
+
+- Standard/Enterprise/Enterprise Plus 3개 에디션 체계 유지
+- 슬롯 기반 과금(autoscaling)이 기본 (Enterprise: $0.06/slot-hour)
+- On-demand ($6.25/TB per query) 유지되나 Google은 슬롯 모델로 전환 유도
+
+### Databricks 대비 핵심 판단
+
+BigQuery는 **Gemini 통합으로 SQL 기반 AI 간편화**에 강점이 있습니다. 특히 Gemini 2.0 Flash ($0.10/1M 입력)의 파격적 가격으로 대량 배치 처리에서 경쟁력이 높습니다. 그러나 커스텀 ML/오픈소스 모델 유연성, 스트리밍, 거버넌스 통합에서는 Databricks가 우위입니다.
+
+---
+
+## Microsoft Fabric
+
+### 주요 업데이트 (2025)
+
+**Ignite 2025 (2025.11):**
+- **Fabric IQ** (Preview): 비즈니스 데이터를 이해하고 추론하는 통합 인텔리전스 레이어
+- **Data Agents**: 비정형 데이터, Azure AI Search 커스텀 인덱스, 미러링된 DB까지 지원 확대
+- **OneLake 보안**: 행/열 수준 접근 제어가 Spark 노트북, SQL 엔드포인트, Power BI Direct Lake 전체에 자동 적용 (Preview)
+
+**Build 2025:**
+- Real-Time Dashboard에서 **Copilot으로 KQL 없이 시각화 생성** (Preview)
+- Copilot 사이드카 챗 도구로 개발자 경험 개선
+
+**기타:**
+- **Mirroring GA**: PostgreSQL, Cosmos DB, SQL Server 2016-2025 미러링 정식 출시 → ETL 파이프라인 제거
+- **Digital Twin Builder**: Real-Time Intelligence 내 로우코드/노코드 디지털 트윈 (Preview)
+
+### Databricks 대비 핵심 판단
+
+Fabric의 최대 강점은 **Microsoft 365 생태계 통합**입니다. M365 Copilot에서 OneLake 데이터를 직접 질의하고, Power BI와 원스톱으로 연결되는 것은 Microsoft 환경이 표준인 기업에서 강력한 매력입니다. 반면 Spark 워크로드 성숙도, 오픈소스 생태계 깊이, ML 라이프사이클 관리에서는 Databricks가 우위입니다.
+
+---
+
+## AWS (Redshift + SageMaker)
+
+### 주요 업데이트 (re:Invent 2025)
+
+| 기능 | 설명 |
+|------|------|
+| **SageMaker Lakehouse GA** | S3 데이터 레이크 + Redshift 웨어하우스를 단일 데이터 복사본으로 통합 |
+| **Zero-ETL 확대** | Salesforce, SAP, Zendesk 등 SaaS 애플리케이션까지 확장 |
+| **SageMaker Unified Studio** | SQL/Python/Spark/자연어를 하나의 서버리스 노트북에서 통합. 원클릭 온보딩 |
+| **Redshift Iceberg 쓰기** | Redshift에서 Apache Iceberg 테이블 직접 쓰기 지원 |
+| **Amazon Q for Redshift** | Query Editor에서 자연어 → SQL 변환 GA |
+| **서버리스 자동 스케일링** | 쿼리 복잡도/빈도 기반 사전 스케일링으로 최대 10배 가성비 개선 |
+
+### Databricks 대비 핵심 판단
+
+AWS는 **네이티브 서비스 간 Zero-ETL 통합**과 **SageMaker로의 데이터+AI 통합 허브** 전략을 추진합니다. 기존 AWS 고객에게 마이그레이션 부담을 최소화하는 것이 핵심 메시지입니다. 그러나 멀티클라우드 지원과 오픈소스 생태계 통합에서 Databricks가 우위이며, Databricks 자체가 AWS 위에서도 네이티브로 실행된다는 점이 중요합니다.
+
+---
+
+## Cloudera
+
+### 핵심 전략: Private AI
+
+Cloudera는 **규제 산업(금융, 헬스케어, 공공)**을 타겟으로 **온프레미스/하이브리드 환경에서의 데이터 주권과 Private AI**를 핵심 차별점으로 내세우고 있습니다.
+
+**주요 업데이트 (Evolve 2025):**
+- **하이브리드 멀티클라우드 패브릭**: 기업 방화벽 내에서 GPU 가속 GenAI 구동
+- **AI Inference Service**: NVIDIA NIM 마이크로서비스 기반 하이브리드 LLM 운영화
+- **AI Agent Studio**: 드래그앤드롭 로우코드/노코드 에이전트 빌더
+- **Impala `ai_generate_text`**: SQL 내 LLM 직접 호출 함수
+- **Cloudera Data Services** (2025.08): 온프레미스 Private AI. AI Studios 템플릿으로 GenAI 앱/에이전트 구축
+
+### Databricks 대비 핵심 판단
+
+클라우드 네이티브 기능과 개발자 경험에서 Databricks가 크게 앞서지만, **데이터가 절대 외부로 나갈 수 없는 환경**(정부, 군사, 의료 등)에서 Cloudera는 여전히 유효한 선택입니다. 오픈소스(Iceberg, Spark, Impala) 기반 벤더 종속 회피 메시지도 일부 고객에게 매력적입니다.
+
+---
+
+## Starburst / Trino
+
+### 핵심 전략: 데이터 이동 없는 페더레이션
+
+**주요 업데이트 (AI & Datanova 2025):**
+- **Lakeside AI**: 데이터 이동 없이 페더레이션 기반 AI 워크플로 오케스트레이션
+- **AI Auto-Tagging GA**: LLM 기반 PII/규제 데이터 자동 태깅
+- **Icehouse**: Kafka → Iceberg 테이블 최대 100GB/초 스트리밍 인제스트
+- **Warp Speed**: 레이크하우스 전용 인덱싱/캐싱으로 최대 10배 쿼리 성능
+- **NVIDIA Vera CPU 최적화** (2026 예정): GPU 가속 Trino 쿼리 개발 중
+
+### Databricks 대비 핵심 판단
+
+"데이터를 한 곳에 모으지 않고 제자리에서 분석"하는 접근법이 핵심입니다. 멀티소스 페더레이션이 필요한 환경에서 강점이 있지만, 단독 AI/ML 플랫폼은 제공하지 않으므로 Databricks와는 부분 경쟁 관계입니다.
+
+---
+
+## dbt Labs
+
+### 핵심 전략: 분석 엔지니어링 플랫폼으로 확장
+
+**주요 업데이트 (Coalesce 2025):**
+
+| 기능 | 설명 |
+|------|------|
+| **dbt Canvas GA** | 드래그앤드롭 비주얼 모델 편집 도구 |
+| **dbt Copilot GA** | SQL, 문서, 테스트, 시맨틱 모델 자동 생성 (Enterprise, Azure OpenAI BYOK 지원) |
+| **Discovery Agent** (Beta) | 자연어로 데이터셋/메트릭 검색 |
+| **Analyst Agent** (Beta) | dbt Insights에서 자연어 질의 |
+| **MetricFlow 오픈소스화** | Apache 2.0, Open Semantic Interchange 이니셔티브 |
+| **dbt Mesh** | Enterprise 티어에서 크로스 프로젝트 참조. 대규모 조직 분산 데이터 관리 |
+| **`--sample` 플래그** | run/build 시 시간 기반 샘플링으로 빌드 시간/비용 절감 |
+
+### Databricks 대비 핵심 판단
+
+dbt는 순수 변환 도구에서 **Semantic Layer + Copilot + Mesh + Canvas**로 "분석 엔지니어링 플랫폼"으로 확장 중입니다. 그러나 웨어하우스 중립적(Snowflake, BigQuery, Databricks, Redshift 모두 지원)이라는 특성상, Databricks와는 **직접 경쟁보다 보완 관계**에 더 가깝습니다.
+
+---
+
+## 전체 트렌드 요약
+
+2025~2026년 데이터 & AI 플랫폼 시장에서 관찰되는 핵심 트렌드는 다음과 같습니다.
+
+### 1. SQL에서 직접 AI 호출
+
+모든 주요 플랫폼이 **SQL 함수로 LLM을 호출**하는 기능을 제공합니다. Snowflake의 `COMPLETE()`, BigQuery의 `ML.GENERATE_TEXT`, Databricks의 `ai_query()`, Cloudera의 `ai_generate_text` 등. SQL 사용자가 별도 환경 없이 AI를 활용할 수 있게 하려는 방향이 공통적입니다.
+
+### 2. 오픈 테이블 포맷 수렴
+
+Apache Iceberg가 사실상 업계 표준 오픈 테이블 포맷으로 자리 잡고 있습니다. Snowflake(네이티브 Iceberg), BigQuery(BigLake Iceberg), Redshift(Iceberg 쓰기), Databricks(UniForm), Starburst(Icehouse) 모두 Iceberg를 지원합니다. 카탈로그 표준 경쟁(Polaris vs Unity Catalog 오픈소스)은 여전히 진행 중입니다.
+
+### 3. AI 에이전트 플랫폼화
+
+Snowflake Intelligence, Databricks Mosaic AI Agent Framework, Fabric Data Agents, Cloudera AI Agent Studio 등 **AI 에이전트를 구축/배포할 수 있는 플랫폼 기능**이 각 벤더의 핵심 경쟁 포인트가 되고 있습니다.
+
+### 4. Zero-ETL / 페더레이션
+
+데이터를 옮기지 않고 제자리에서 분석하려는 흐름이 강해지고 있습니다. AWS의 Zero-ETL, Fabric의 Mirroring, Starburst의 페더레이션, BigQuery의 Omni 등이 이 트렌드를 반영합니다. Databricks는 Unity Catalog + Delta Sharing으로 데이터 공유를 표준화하는 접근을 취합니다.
+
+> **참고**
+> 이 문서의 가격과 기능 정보는 2026년 4월 기준이며, 각 플랫폼의 업데이트에 따라 빠르게 변동될 수 있습니다. 최신 정보는 각 벤더의 공식 문서를 확인하세요.

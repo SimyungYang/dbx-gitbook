@@ -157,6 +157,169 @@ for token in result:
 | **JK\*** | 조사 | 에서, 을, 의 |
 | **E\*** | 어미 | 합니다, 했습니다 |
 
+## 3. 실전: Kiwi + BM25 키워드 검색
+
+섹션 1에서 설명한 BM25 키워드 검색 실패 문제를 Kiwi로 해결하는 실전 코드입니다. LangChain 없이 `rank_bm25` 라이브러리를 직접 사용하므로, BM25 알고리즘의 동작 원리를 이해하고 세밀하게 제어할 수 있습니다.
+
+```python
+from kiwipiepy import Kiwi
+from rank_bm25 import BM25Okapi
+
+# Kiwi 형태소 분석기 초기화
+kiwi = Kiwi()
+
+def korean_tokenize(text):
+    """한국어 텍스트를 형태소 분석하여 의미 있는 토큰만 추출합니다.
+
+    조사, 어미 등 문법 기능 형태소를 제거하고
+    명사(NNG, NNP), 동사(VV), 형용사(VA)만 남깁니다.
+    이렇게 하면 '데이터브릭스에서'와 '데이터브릭스를'이
+    모두 '데이터브릭스'로 통일되어 BM25 매칭이 가능해집니다.
+    """
+    tokens = kiwi.tokenize(text)
+    # 명사(NNG, NNP), 동사(VV), 형용사(VA)만 추출
+    return [t.form for t in tokens if t.tag in ('NNG', 'NNP', 'VV', 'VA')]
+
+# ── 1단계: 문서 색인 ──
+# 검색 대상이 되는 문서 리스트
+docs = [
+    "Databricks는 통합 데이터 플랫폼입니다",
+    "Delta Lake는 ACID 트랜잭션을 지원합니다",
+    "Unity Catalog로 데이터 거버넌스를 관리합니다",
+    "MLflow로 머신러닝 모델을 추적합니다",
+]
+
+# 각 문서를 Kiwi로 토큰화하여 BM25 색인 생성
+tokenized_docs = [korean_tokenize(doc) for doc in docs]
+# 결과 예시: [['통합', '데이터', '플랫폼'], ['트랜잭션', '지원'], ...]
+bm25 = BM25Okapi(tokenized_docs)
+
+# ── 2단계: 검색 ──
+query = "데이터 플랫폼 트랜잭션"
+query_tokens = korean_tokenize(query)
+# query_tokens = ['데이터', '플랫폼', '트랜잭션']
+
+# 각 문서에 대한 BM25 점수 계산
+scores = bm25.get_scores(query_tokens)
+# scores 예시: [1.82, 0.95, 0.31, 0.0] — 높을수록 관련도 높음
+
+# 점수순으로 상위 K개 문서 반환
+import numpy as np
+top_k = 3
+top_indices = np.argsort(scores)[::-1][:top_k]
+for idx in top_indices:
+    print(f"[점수: {scores[idx]:.2f}] {docs[idx]}")
+```
+
+> **공백 기반 BM25 vs Kiwi BM25 비교**
+> - 공백 기반: "데이터브릭스에서" ≠ "데이터브릭스를" (매칭 실패)
+> - Kiwi 기반: "데이터브릭스에서" → "데이터브릭스", "데이터브릭스를" → "데이터브릭스" (매칭 성공)
+
+
+
+## 4. 실전: 하이브리드 검색 (BM25 + Vector Search)
+
+BM25 키워드 검색과 벡터 검색은 각각 강점이 다릅니다. BM25는 **정확한 키워드 매칭** 에 강하고, 벡터 검색은 **의미적 유사성** 포착에 강합니다. 이 두 가지를 결합하는 하이브리드 검색이 한국어 RAG에서 가장 효과적입니다.
+
+두 검색 결과를 결합할 때 가장 널리 쓰이는 방법이 **RRF(Reciprocal Rank Fusion)** 입니다. 각 검색기의 점수 스케일이 달라도 **순위(rank)** 기반으로 통합하므로 별도의 정규화 없이 사용할 수 있습니다.
+
+```python
+from kiwipiepy import Kiwi
+from rank_bm25 import BM25Okapi
+import numpy as np
+
+kiwi = Kiwi()
+
+def korean_tokenize(text):
+    """Kiwi로 의미 형태소(명사, 동사, 형용사)만 추출"""
+    tokens = kiwi.tokenize(text)
+    return [t.form for t in tokens if t.tag in ('NNG', 'NNP', 'VV', 'VA')]
+
+
+# ──────────────────────────────────────
+#  RRF (Reciprocal Rank Fusion) 구현
+# ──────────────────────────────────────
+def reciprocal_rank_fusion(vector_results, bm25_results, k=60):
+    """두 검색기의 결과를 RRF 알고리즘으로 결합합니다.
+
+    Args:
+        vector_results: 벡터 검색 결과 (doc_id 리스트, 관련도순 정렬)
+        bm25_results:   BM25 검색 결과 (doc_id 리스트, 관련도순 정렬)
+        k: 순위 완화 파라미터 (기본값 60, 논문 권장값)
+           — k가 클수록 상위 순위와 하위 순위의 점수 차이가 줄어듭니다.
+
+    Returns:
+        RRF 점수 기준 내림차순 정렬된 (doc_id, score) 리스트
+    """
+    scores = {}
+
+    # 벡터 검색 결과의 각 문서에 RRF 점수 부여
+    # rank=0(1위)이면 1/(60+1) ≈ 0.0164, rank=1(2위)이면 1/(60+2) ≈ 0.0161
+    for rank, doc_id in enumerate(vector_results):
+        scores[doc_id] = scores.get(doc_id, 0) + 1 / (k + rank + 1)
+
+    # BM25 검색 결과의 RRF 점수를 기존 점수에 누적
+    # 두 검색기 모두에서 상위에 등장한 문서는 점수가 합산되어 높아짐
+    for rank, doc_id in enumerate(bm25_results):
+        scores[doc_id] = scores.get(doc_id, 0) + 1 / (k + rank + 1)
+
+    # 최종 RRF 점수 기준 내림차순 정렬
+    return sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+
+# ──────────────────────────────────────
+#  사용 예시: BM25 + Databricks Vector Search
+# ──────────────────────────────────────
+# 검색 대상 문서 (실제로는 Delta 테이블에서 로드)
+docs = {
+    "doc_001": "Databricks는 데이터와 AI를 위한 통합 레이크하우스 플랫폼입니다",
+    "doc_002": "Delta Lake는 ACID 트랜잭션과 스키마 관리를 지원합니다",
+    "doc_003": "Unity Catalog로 테이블, 모델, 볼륨의 접근 권한을 관리합니다",
+    "doc_004": "Vector Search로 임베딩 기반 유사도 검색을 수행합니다",
+    "doc_005": "MLflow로 머신러닝 실험과 모델 배포를 추적합니다",
+}
+
+# ── BM25 검색 ──
+doc_ids = list(docs.keys())
+doc_texts = list(docs.values())
+tokenized = [korean_tokenize(text) for text in doc_texts]
+bm25 = BM25Okapi(tokenized)
+
+query = "데이터 플랫폼에서 접근 권한 관리"
+query_tokens = korean_tokenize(query)
+bm25_scores = bm25.get_scores(query_tokens)
+
+# BM25 점수순으로 doc_id 정렬
+bm25_ranked = [doc_ids[i] for i in np.argsort(bm25_scores)[::-1]]
+
+# ── 벡터 검색 (Databricks Vector Search) ──
+# 실제 환경에서는 아래와 같이 Databricks Vector Search API를 호출합니다.
+# from databricks.sdk import WorkspaceClient
+# w = WorkspaceClient()
+# vs_results = w.vector_search_indexes.query_index(
+#     index_name="catalog.schema.ko_docs_index",
+#     query_text=query,
+#     columns=["doc_id", "content"],
+#     num_results=5,
+# )
+# vector_ranked = [r["doc_id"] for r in vs_results.result.data_array]
+
+# (데모용) 벡터 검색 결과를 시뮬레이션
+vector_ranked = ["doc_001", "doc_004", "doc_003", "doc_002", "doc_005"]
+
+# ── RRF로 결합 ──
+fused = reciprocal_rank_fusion(vector_ranked, bm25_ranked, k=60)
+
+print("=== 하이브리드 검색 결과 (RRF) ===")
+for doc_id, score in fused[:5]:
+    print(f"[RRF 점수: {score:.4f}] {doc_id}: {docs[doc_id]}")
+```
+
+> **팁**
+> - **RRF의 `k` 파라미터**: 기본값 60은 원래 RRF 논문의 권장값입니다. `k`를 줄이면(예: 10) 상위 순위 문서에 더 큰 가중치가 부여되고, 늘리면 순위 간 점수 차이가 줄어듭니다.
+> - **가중 RRF**: BM25와 Vector Search에 서로 다른 가중치를 주고 싶다면, 각각의 RRF 점수에 가중치를 곱하면 됩니다 (예: BM25에 0.4, Vector에 0.6).
+> - LangChain의 `EnsembleRetriever`를 사용한 더 간결한 구현은 [심화 — 기초](korean-nlp-advanced-basics) 페이지를 참조하세요.
+
 <CardGroup cols={1}>
   <Card title="한국어 RAG 최적화 — 심화 — 기초" href="korean-nlp-advanced-basics">
     기본 개념과 핵심 기능

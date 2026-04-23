@@ -1519,22 +1519,6 @@
                   "blog/guides/rag/advanced-retrieval/implementation"
                 ]
               },
-              {
-                "group": "한국어 RAG",
-                "pages": [
-                  {
-                    "group": "한국어 RAG 최적화",
-                    "pages": [
-                      "blog/guides/rag/korean-nlp",
-                      "blog/guides/rag/korean-nlp-basics",
-                      "blog/guides/rag/korean-nlp-advanced"
-                    ]
-                  },
-                  "blog/guides/rag/korean-nlp-fundamentals",
-                  "blog/guides/rag/korean-nlp-embedding",
-                  "blog/guides/rag/korean-nlp-morphology"
-                ]
-              },
               "blog/guides/rag/chain-building",
               "blog/guides/rag/evaluation",
               "blog/guides/rag/deployment"
