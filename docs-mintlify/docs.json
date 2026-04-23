@@ -954,6 +954,7 @@
               "training/12-security-and-governance/secret-management",
               "training/12-security-and-governance/cmk-encryption",
               "training/12-security-and-governance/audit-logs",
+              "blog/guides/platform-setup/databricks-geos",
               {
                 "group": "System Tables",
                 "pages": [
@@ -1122,7 +1123,6 @@
               {
                 "group": "인증 (Authentication)",
                 "pages": [
-                  "blog/guides/platform-setup/databricks-geos",
                   "blog/guides/platform-setup/authentication/overview",
                   "blog/guides/platform-setup/authentication/oauth-u2m",
                   {
