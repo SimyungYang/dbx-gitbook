@@ -1161,6 +1161,7 @@
           {
             "group": "변경 이력",
             "pages": [
+              "changelog/2027-06-30",
               "changelog/2026-04-22",
               "changelog/2026-04-15"
             ]
