@@ -35,13 +35,19 @@ claude
 
 ---
 
-## 설치 방법 2: Genie Code에서 사용 (MCP 서버 앱 배포)
+## 설치 방법 2: Genie Code에서 사용 (Builder App + MCP)
 
-Genie Code에서 AI Dev Kit을 사용하려면 **Databricks App으로 MCP 서버를 배포**해야 합니다.
+Genie Code에서 AI Dev Kit을 사용하려면 **Builder App을 `--enable-mcp` 옵션으로 배포**합니다.
 
-전체 절차 (레포 클론 → 앱 생성 → 소스 업로드 → 배포 → 서비스 프린시펄 권한 부여)는 **[Section 2: AI Builder App 배포 핸즈온](../section-2-ai-builder-app/README)**에서 단계별로 상세히 안내합니다.
+```bash
+git clone https://github.com/databricks-solutions/ai-dev-kit.git
+cd ai-dev-kit/databricks-builder-app
+./scripts/deploy.sh mcp-builder-app --enable-mcp --profile <PROFILE>
+```
 
-> 💡 **핵심 포인트**: 앱 이름은 반드시 `mcp-` 접두사로 시작해야 Genie Code Settings에서 MCP 서버로 인식됩니다.
+전체 절차는 **[Section 2: AI Builder App 배포 핸즈온](../section-2-ai-builder-app/overview)**에서 단계별로 상세히 안내합니다.
+
+> **핵심 포인트**: 앱 이름은 반드시 `mcp-` 접두사로 시작해야 Genie Code Settings에서 MCP 서버로 인식됩니다.
 
 ---
 
@@ -89,7 +95,8 @@ SDP 파이프라인 관련 Skill이 있으면 내용을 요약해줘.
 | 주제 | URL |
 |------|-----|
 | AI Dev Kit GitHub | [github.com/databricks-solutions/ai-dev-kit](https://github.com/databricks-solutions/ai-dev-kit) |
-| Genie Code + AI Dev Kit 구성 가이드 | [github.com/SimyungYang/genie-code-ai-dev-kit](https://github.com/SimyungYang/genie-code-ai-dev-kit) |
+| Custom MCP Server 호스팅 | [docs.databricks.com/mcp/custom-mcp](https://docs.databricks.com/aws/en/generative-ai/mcp/custom-mcp) |
+| Genie Code + MCP 연결 | [docs.databricks.com/genie-code/mcp](https://docs.databricks.com/aws/en/genie-code/mcp) |
 | Databricks Apps 문서 | [docs.databricks.com/apps](https://docs.databricks.com/en/dev-tools/databricks-apps/index.html) |
 
 ---
