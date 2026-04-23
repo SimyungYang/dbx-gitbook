@@ -41,7 +41,7 @@ Databricks는 현재 7개의 Geo를 정의하고 있습니다. 각 Geo에 속하
 | **Mainland China** | 중국 본토 |
 | **Middle East and Africa** | 카타르, 남아프리카, UAE |
 
-이 Geo 구분은 단순히 지리적 편의가 아니라, **데이터 거주(Data Residency) 정책의 법적 경계** 로 작동합니다. 예를 들어 한국에서 생성한 워크스페이스는 Asia Geo에 속하며, Cross-Geo가 비활성화된 상태에서는 일본, 싱가포르 등 Asia Geo 내 리전에서만 데이터가 처리됩니다.
+이 Geo 구분은 단순히 지리적 편의가 아니라, **데이터 거주(Data Residency) 정책의 법적 경계** 로 작동합니다. 예를 들어 한국에서 생성한 워크스페이스는 Asia Geo에 속하며, Cross-Geo가 비활성화된 상태에서는 Asia Geo 내에서만 데이터가 처리됩니다. 특히 **일본, 한국, 싱가포르는 같은 Asia Geo에 속하더라도 각각 자국 리전에서 개별 처리**됩니다 — 한국 워크스페이스의 데이터가 일본이나 싱가포르로 라우팅되지 않습니다.
 
 ---
 
@@ -139,7 +139,11 @@ Cross-Geo 처리를 활성화하면, 해당 Geo에서 직접 지원하지 않는
 
 ### 한국의 Geo 위치
 
-한국은 **Asia Geo** 에 속합니다. Asia Geo에는 홍콩, 인도네시아, 일본, 한국, 싱가포르가 포함되어 있으며, 한국 리전(ap-northeast-2)에서 생성한 워크스페이스는 자동으로 Asia Geo로 분류됩니다.
+한국은 **Asia Geo** 에 속합니다. Asia Geo에는 홍콩, 인도네시아, 일본, 한국, 싱가포르가 포함되어 있지만, Designated Services의 경우 **일본, 한국, 싱가포르는 각각 자국 리전에서 개별 처리**됩니다. 한국 리전(ap-northeast-2, 서울)에서 생성한 워크스페이스는 자동으로 Asia Geo로 분류되며, Cross-Geo가 비활성화되면 한국 워크스페이스의 AI 트래픽은 **서울 리전에서만** 처리됩니다.
+
+> **참고**
+**Genie 서울 리전 배포**: 2026년 1월 31일부로 Genie 모델이 한국(서울) 리전에 GA 배포되었습니다. Cross-Geo를 비활성화(in-geo 강제)하면 Genie 트래픽이 서울 리전에서만 처리되며, 일본이나 싱가포르로 라우팅되지 않습니다.
+
 
 ### 사용 가능한 서비스 요약
 
@@ -147,21 +151,28 @@ Cross-Geo 처리를 활성화하면, 해당 Geo에서 직접 지원하지 않는
 
 | 서비스 | 한국에서 사용 가능? | Cross-Geo 필요? | 비고 |
 |--------|-------------------|----------------|------|
-| Pay-per-token Foundation Model APIs | ✅ | 불필요 | 일본/한국/싱가포르 리전에서 처리 |
-| AI Functions (배치 추론) | ✅ | 불필요 | 일본/한국/싱가포르 리전에서 처리 |
-| Provisioned Throughput APIs | ✅ | 불필요 | 일본/한국/싱가포르 리전에서 처리 |
+| Pay-per-token Foundation Model APIs | ✅ | 불필요 | **서울 리전**에서 처리 |
+| AI Functions (배치 추론) | ✅ | 불필요 | **서울 리전**에서 처리 |
+| Provisioned Throughput APIs | ✅ | 불필요 | **서울 리전**에서 처리 |
 | Knowledge Assistant & Supervisor Agent | ✅ | **필요** | Cross-Geo 활성화 시 사용 가능 |
 | Foundation Model Fine-tuning | ❌ | — | Americas만 지원 |
 | AI-generated comments | ✅ | 조건부 | Asia Geo 내 특수 처리 |
 | AI-based autocomplete | ✅ | **필요** | Cross-Geo 활성화 시 사용 가능 |
-| Genie Code Agent mode | ✅ | 불필요 | Anthropic 모델, Asia Geo 내 처리 |
-| Genie Code chat & cell | ✅ | 불필요 | 국가별 처리 |
-| Genie | ✅ | 조건부 | 싱가포르 등 일부 리전은 Cross-Geo 필요 |
-| Genie Spaces Agent mode | ✅ | 불필요 | 일본/한국/싱가포르 리전에서 처리 |
-| AI/BI dashboards | ✅ | 불필요 | 국가별 처리 |
+| Genie Code Agent mode | ✅ | 불필요 | Anthropic 모델, **서울 리전** 처리 |
+| Genie Code chat & cell | ✅ | 불필요 | **서울 리전** 국가별 처리 |
+| **Genie** | **✅** | **불필요** | **서울 리전 GA 배포 (2026-01-31)** |
+| Genie Spaces Agent mode | ✅ | 불필요 | **서울 리전**에서 처리 |
+| AI/BI dashboards | ✅ | 불필요 | **서울 리전** 국가별 처리 |
 | Data classification | ✅ | **필요** | Cross-Geo 활성화 시 사용 가능 |
 
-한국 고객은 대부분의 핵심 AI 서비스를 Cross-Geo 없이 사용할 수 있으나, Knowledge Assistant, AI autocomplete, Data classification 등 일부 서비스는 Cross-Geo 활성화가 필요합니다.
+한국 고객은 **Genie를 포함한 대부분의 핵심 AI 서비스를 Cross-Geo 없이 서울 리전에서** 사용할 수 있습니다. Knowledge Assistant, AI autocomplete, Data classification 등 일부 서비스만 Cross-Geo 활성화가 필요합니다.
+
+### Cross-Geo 설정별 Genie 라우팅 (한국)
+
+| 설정 | Genie 트래픽 라우팅 |
+|------|-------------------|
+| **Cross-Geo 비활성화** (Enforce = ON) | **서울 리전에서만 처리** — 일본/싱가포르로 라우팅되지 않음 |
+| **Cross-Geo 활성화** (Enforce = OFF) | US / JP / KR 중 하나로 라우팅 가능 |
 
 ### 개인정보보호법 관점에서의 고려사항
 
