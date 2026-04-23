@@ -406,6 +406,28 @@
             ]
           },
           {
+            "group": "Genie Space 운영",
+            "pages": [
+              "training/08-ai-bi/overview",
+              "training/08-ai-bi/aibi-overview",
+              "training/08-ai-bi/aibi-overview-concepts",
+              "training/08-ai-bi/aibi-overview-details",
+              "training/08-ai-bi/aibi-architecture",
+              "training/08-ai-bi/lakeview-dashboards",
+              "training/08-ai-bi/genie",
+              "training/08-ai-bi/alerts-and-scheduling",
+              {
+                "group": "Metric Views",
+                "pages": [
+                  "training/08-ai-bi/metric-views",
+                  "training/08-ai-bi/metric-views-basics",
+                  "training/08-ai-bi/metric-views-advanced"
+                ]
+              },
+              "training/08-ai-bi/hybrid-bi-strategy"
+            ]
+          },
+          {
             "group": "머신러닝",
             "pages": [
               "training/09-machine-learning/overview",
@@ -579,236 +601,7 @@
             ]
           },
           {
-            "group": "보안과 거버넌스",
-            "pages": [
-              "training/12-security-and-governance/overview",
-              "training/12-security-and-governance/security-overview",
-              {
-                "group": "ID & 접근 관리",
-                "pages": [
-                  "training/12-security-and-governance/identity-and-access",
-                  {
-                    "group": "SSO 설정",
-                    "pages": [
-                      "training/12-security-and-governance/sso-setup",
-                      "training/12-security-and-governance/sso-setup-guide",
-                      "training/12-security-and-governance/sso-setup-advanced"
-                    ]
-                  },
-                  "training/12-security-and-governance/scim-provisioning",
-                  "training/12-security-and-governance/service-principals"
-                ]
-              },
-              "training/12-security-and-governance/network-security",
-              "training/12-security-and-governance/secret-management",
-              "training/12-security-and-governance/cmk-encryption",
-              "training/12-security-and-governance/audit-logs",
-              {
-                "group": "System Tables",
-                "pages": [
-                  "training/12-security-and-governance/system-tables/overview",
-                  "training/12-security-and-governance/system-tables/overview-and-tables",
-                  "training/12-security-and-governance/system-tables/overview-and-tables-intro",
-                  "training/12-security-and-governance/system-tables/overview-and-tables-advanced",
-                  "training/12-security-and-governance/system-tables/practical-queries",
-                  "training/12-security-and-governance/system-tables/dashboard-and-setup"
-                ]
-              },
-              "training/12-security-and-governance/workspace-admin"
-            ]
-          },
-          {
-            "group": "모범 사례",
-            "pages": [
-              {
-                "group": "비용 최적화",
-                "pages": [
-                  "training/14-best-practices/cost-optimization/overview",
-                  "training/14-best-practices/cost-optimization/cost-structure",
-                  "training/14-best-practices/cost-optimization/compute-optimization",
-                  "training/14-best-practices/cost-optimization/storage-and-warehouse",
-                  "training/14-best-practices/cost-optimization/monitoring-and-checklist"
-                ]
-              },
-              {
-                "group": "성능 튜닝",
-                "pages": [
-                  "training/14-best-practices/performance-tuning/overview",
-                  "training/14-best-practices/performance-tuning/spark-query-tuning",
-                  "training/14-best-practices/performance-tuning/delta-lake-optimization",
-                  "training/14-best-practices/performance-tuning/sql-warehouse-and-pipeline",
-                  {
-                    "group": "ML 성능 진단",
-                    "pages": [
-                      "training/14-best-practices/performance-tuning/ml-and-diagnostics",
-                      "training/14-best-practices/performance-tuning/ml-and-diagnostics-optimization",
-                      "training/14-best-practices/performance-tuning/ml-and-diagnostics-debugging"
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "엔터프라이즈 거버넌스",
-                "pages": [
-                  "training/14-best-practices/enterprise-governance/overview",
-                  "training/14-best-practices/enterprise-governance/platform-design",
-                  "training/14-best-practices/enterprise-governance/access-control",
-                  "training/14-best-practices/enterprise-governance/data-classification",
-                  "training/14-best-practices/enterprise-governance/data-quality-cicd"
-                ]
-              }
-            ]
-          },
-          {
-            "group": "개발 도구",
-            "pages": [
-              "training/13-appendix/databricks-cli",
-              "training/13-appendix/databricks-sdk",
-              "training/13-appendix/rest-api",
-              "training/13-appendix/databricks-connect",
-              {
-                "group": "Databricks Bundles (DABs)",
-                "pages": [
-                  "training/13-appendix/databricks-asset-bundles",
-                  "training/13-appendix/databricks-asset-bundles-basics",
-                  "training/13-appendix/databricks-asset-bundles-deployment"
-                ]
-              },
-              {
-                "group": "Databricks Apps",
-                "pages": [
-                  "training/13-appendix/databricks-apps",
-                  "training/13-appendix/databricks-apps-overview",
-                  "training/13-appendix/databricks-apps-handson"
-                ]
-              },
-              "training/13-appendix/genie-code",
-              "training/13-appendix/ai-dev-kit"
-            ]
-          },
-          {
-            "group": "부록 — 선행 지식",
-            "pages": [
-              "training/00-prerequisites/overview",
-              "training/00-prerequisites/rdb-fundamentals",
-              "training/00-prerequisites/schema-design-patterns",
-              "training/00-prerequisites/bigdata-history",
-              {
-                "group": "빅데이터 생태계",
-                "pages": [
-                  "training/00-prerequisites/bigdata-ecosystem",
-                  "training/00-prerequisites/bigdata-ecosystem-foundations",
-                  "training/00-prerequisites/bigdata-ecosystem-architecture",
-                  "training/00-prerequisites/bigdata-ecosystem-landscape"
-                ]
-              },
-              "training/00-prerequisites/realtime-processing"
-            ]
-          },
-          {
-            "group": "부록 — 데이터 기초",
-            "pages": [
-              "training/01-data-fundamentals/overview",
-              "training/01-data-fundamentals/what-is-data-engineering",
-              "training/01-data-fundamentals/data-warehouse-vs-data-lake",
-              "training/01-data-fundamentals/etl-elt-basics",
-              "training/01-data-fundamentals/batch-vs-streaming",
-              "training/01-data-fundamentals/structured-semi-unstructured"
-            ]
-          },
-          {
-            "group": "부록 — 참고",
-            "pages": [
-              "training/13-appendix/glossary",
-              "training/13-appendix/learning-path"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "실전 가이드",
-        "groups": [
-          {
-            "group": "Platform Setup",
-            "pages": [
-              {
-                "group": "AWS Workspace 구성",
-                "pages": [
-                  "blog/platform-setup/aws/overview",
-                  "blog/platform-setup/aws/marketplace",
-                  "blog/platform-setup/aws/prerequisites",
-                  "blog/platform-setup/aws/credential",
-                  "blog/platform-setup/aws/storage",
-                  "blog/platform-setup/aws/network",
-                  "blog/platform-setup/aws/privatelink-backend",
-                  "blog/platform-setup/aws/privatelink-frontend",
-                  "blog/platform-setup/aws/workspace",
-                  "blog/platform-setup/aws/unity-catalog",
-                  "blog/platform-setup/aws/serverless-ncc",
-                  "blog/platform-setup/aws/external-service-privatelink",
-                  "blog/platform-setup/aws/privatelink-migration",
-                  "blog/platform-setup/aws/terraform"
-                ]
-              },
-              {
-                "group": "Azure Workspace 구성",
-                "pages": [
-                  "blog/platform-setup/azure/overview",
-                  "blog/platform-setup/azure/prerequisites",
-                  "blog/platform-setup/azure/resource-group",
-                  "blog/platform-setup/azure/vnet",
-                  "blog/platform-setup/azure/access-connector",
-                  "blog/platform-setup/azure/storage-account",
-                  "blog/platform-setup/azure/workspace",
-                  "blog/platform-setup/azure/privatelink",
-                  "blog/platform-setup/azure/unity-catalog"
-                ]
-              },
-              {
-                "group": "인증 (Authentication)",
-                "pages": [
-                  "blog/guides/platform-setup/databricks-geos",
-                  "blog/guides/platform-setup/authentication/overview",
-                  "blog/guides/platform-setup/authentication/oauth-u2m",
-                  "blog/guides/platform-setup/authentication/oauth-m2m",
-                  "blog/guides/platform-setup/authentication/pat-federation"
-                ]
-              }
-            ]
-          },
-          {
-            "group": "Data Engineering",
-            "pages": [
-              "blog/guides/lakeflow-incremental/overview",
-              "blog/guides/lakeflow-incremental/streaming-table",
-              "blog/guides/lakeflow-incremental/materialized-view",
-              "blog/guides/lakeflow-incremental/cdc-checklist"
-            ]
-          },
-          {
-            "group": "AI/BI",
-            "pages": [
-              "training/08-ai-bi/overview",
-              "training/08-ai-bi/aibi-overview",
-              "training/08-ai-bi/aibi-overview-concepts",
-              "training/08-ai-bi/aibi-overview-details",
-              "training/08-ai-bi/aibi-architecture",
-              "training/08-ai-bi/lakeview-dashboards",
-              "training/08-ai-bi/genie",
-              "training/08-ai-bi/alerts-and-scheduling",
-              {
-                "group": "Metric Views",
-                "pages": [
-                  "training/08-ai-bi/metric-views",
-                  "training/08-ai-bi/metric-views-basics",
-                  "training/08-ai-bi/metric-views-advanced"
-                ]
-              },
-              "training/08-ai-bi/hybrid-bi-strategy"
-            ]
-          },
-          {
-            "group": "GenAI & Agent",
+            "group": "GenAI 도구",
             "pages": [
               {
                 "group": "Genie Code",
@@ -942,6 +735,114 @@
             ]
           },
           {
+            "group": "보안과 거버넌스",
+            "pages": [
+              "training/12-security-and-governance/overview",
+              "training/12-security-and-governance/security-overview",
+              {
+                "group": "ID & 접근 관리",
+                "pages": [
+                  "training/12-security-and-governance/identity-and-access",
+                  {
+                    "group": "SSO 설정",
+                    "pages": [
+                      "training/12-security-and-governance/sso-setup",
+                      "training/12-security-and-governance/sso-setup-guide",
+                      "training/12-security-and-governance/sso-setup-advanced"
+                    ]
+                  },
+                  "training/12-security-and-governance/scim-provisioning",
+                  "training/12-security-and-governance/service-principals"
+                ]
+              },
+              "training/12-security-and-governance/network-security",
+              "training/12-security-and-governance/secret-management",
+              "training/12-security-and-governance/cmk-encryption",
+              "training/12-security-and-governance/audit-logs",
+              {
+                "group": "System Tables",
+                "pages": [
+                  "training/12-security-and-governance/system-tables/overview",
+                  "training/12-security-and-governance/system-tables/overview-and-tables",
+                  "training/12-security-and-governance/system-tables/overview-and-tables-intro",
+                  "training/12-security-and-governance/system-tables/overview-and-tables-advanced",
+                  "training/12-security-and-governance/system-tables/practical-queries",
+                  "training/12-security-and-governance/system-tables/dashboard-and-setup"
+                ]
+              },
+              "training/12-security-and-governance/workspace-admin"
+            ]
+          },
+          {
+            "group": "모범 사례",
+            "pages": [
+              {
+                "group": "비용 최적화",
+                "pages": [
+                  "training/14-best-practices/cost-optimization/overview",
+                  "training/14-best-practices/cost-optimization/cost-structure",
+                  "training/14-best-practices/cost-optimization/compute-optimization",
+                  "training/14-best-practices/cost-optimization/storage-and-warehouse",
+                  "training/14-best-practices/cost-optimization/monitoring-and-checklist"
+                ]
+              },
+              {
+                "group": "성능 튜닝",
+                "pages": [
+                  "training/14-best-practices/performance-tuning/overview",
+                  "training/14-best-practices/performance-tuning/spark-query-tuning",
+                  "training/14-best-practices/performance-tuning/delta-lake-optimization",
+                  "training/14-best-practices/performance-tuning/sql-warehouse-and-pipeline",
+                  {
+                    "group": "ML 성능 진단",
+                    "pages": [
+                      "training/14-best-practices/performance-tuning/ml-and-diagnostics",
+                      "training/14-best-practices/performance-tuning/ml-and-diagnostics-optimization",
+                      "training/14-best-practices/performance-tuning/ml-and-diagnostics-debugging"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "엔터프라이즈 거버넌스",
+                "pages": [
+                  "training/14-best-practices/enterprise-governance/overview",
+                  "training/14-best-practices/enterprise-governance/platform-design",
+                  "training/14-best-practices/enterprise-governance/access-control",
+                  "training/14-best-practices/enterprise-governance/data-classification",
+                  "training/14-best-practices/enterprise-governance/data-quality-cicd"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "개발 도구",
+            "pages": [
+              "training/13-appendix/databricks-cli",
+              "training/13-appendix/databricks-sdk",
+              "training/13-appendix/rest-api",
+              "training/13-appendix/databricks-connect",
+              {
+                "group": "Databricks Bundles (DABs)",
+                "pages": [
+                  "training/13-appendix/databricks-asset-bundles",
+                  "training/13-appendix/databricks-asset-bundles-basics",
+                  "training/13-appendix/databricks-asset-bundles-deployment"
+                ]
+              },
+              {
+                "group": "Databricks Apps",
+                "pages": [
+                  "training/13-appendix/databricks-apps",
+                  "training/13-appendix/databricks-apps-overview",
+                  "training/13-appendix/databricks-apps-handson"
+                ]
+              },
+              "training/13-appendix/genie-code",
+              "training/13-appendix/ai-dev-kit"
+            ]
+          },
+          {
             "group": "플랫폼 비교",
             "pages": [
               "blog/guides/platform-comparison/overview",
@@ -952,6 +853,105 @@
               "blog/guides/platform-comparison/ml-ai",
               "blog/guides/platform-comparison/governance",
               "blog/guides/platform-comparison/pricing"
+            ]
+          },
+          {
+            "group": "부록 — 선행 지식",
+            "pages": [
+              "training/00-prerequisites/overview",
+              "training/00-prerequisites/rdb-fundamentals",
+              "training/00-prerequisites/schema-design-patterns",
+              "training/00-prerequisites/bigdata-history",
+              {
+                "group": "빅데이터 생태계",
+                "pages": [
+                  "training/00-prerequisites/bigdata-ecosystem",
+                  "training/00-prerequisites/bigdata-ecosystem-foundations",
+                  "training/00-prerequisites/bigdata-ecosystem-architecture",
+                  "training/00-prerequisites/bigdata-ecosystem-landscape"
+                ]
+              },
+              "training/00-prerequisites/realtime-processing"
+            ]
+          },
+          {
+            "group": "부록 — 데이터 기초",
+            "pages": [
+              "training/01-data-fundamentals/overview",
+              "training/01-data-fundamentals/what-is-data-engineering",
+              "training/01-data-fundamentals/data-warehouse-vs-data-lake",
+              "training/01-data-fundamentals/etl-elt-basics",
+              "training/01-data-fundamentals/batch-vs-streaming",
+              "training/01-data-fundamentals/structured-semi-unstructured"
+            ]
+          },
+          {
+            "group": "부록 — 참고",
+            "pages": [
+              "training/13-appendix/glossary",
+              "training/13-appendix/learning-path"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "환경 구성",
+        "groups": [
+          {
+            "group": "Platform Setup",
+            "pages": [
+              {
+                "group": "AWS Workspace 구성",
+                "pages": [
+                  "blog/platform-setup/aws/overview",
+                  "blog/platform-setup/aws/marketplace",
+                  "blog/platform-setup/aws/prerequisites",
+                  "blog/platform-setup/aws/credential",
+                  "blog/platform-setup/aws/storage",
+                  "blog/platform-setup/aws/network",
+                  "blog/platform-setup/aws/privatelink-backend",
+                  "blog/platform-setup/aws/privatelink-frontend",
+                  "blog/platform-setup/aws/workspace",
+                  "blog/platform-setup/aws/unity-catalog",
+                  "blog/platform-setup/aws/serverless-ncc",
+                  "blog/platform-setup/aws/external-service-privatelink",
+                  "blog/platform-setup/aws/privatelink-migration",
+                  "blog/platform-setup/aws/terraform"
+                ]
+              },
+              {
+                "group": "Azure Workspace 구성",
+                "pages": [
+                  "blog/platform-setup/azure/overview",
+                  "blog/platform-setup/azure/prerequisites",
+                  "blog/platform-setup/azure/resource-group",
+                  "blog/platform-setup/azure/vnet",
+                  "blog/platform-setup/azure/access-connector",
+                  "blog/platform-setup/azure/storage-account",
+                  "blog/platform-setup/azure/workspace",
+                  "blog/platform-setup/azure/privatelink",
+                  "blog/platform-setup/azure/unity-catalog"
+                ]
+              },
+              {
+                "group": "인증 (Authentication)",
+                "pages": [
+                  "blog/guides/platform-setup/databricks-geos",
+                  "blog/guides/platform-setup/authentication/overview",
+                  "blog/guides/platform-setup/authentication/oauth-u2m",
+                  "blog/guides/platform-setup/authentication/oauth-m2m",
+                  "blog/guides/platform-setup/authentication/pat-federation"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Data Engineering",
+            "pages": [
+              "blog/guides/lakeflow-incremental/overview",
+              "blog/guides/lakeflow-incremental/streaming-table",
+              "blog/guides/lakeflow-incremental/materialized-view",
+              "blog/guides/lakeflow-incremental/cdc-checklist"
             ]
           }
         ]
