@@ -91,31 +91,41 @@ Serverless 계열은 단가가 높아 보이지만, **VM 관리 오버헤드 제
 
 ## 4. 플랜별 차이 (Standard / Premium / Enterprise)
 
-Databricks는 세 가지 구독 플랜을 제공합니다. 플랜마다 사용 가능한 기능이 다르고, DBU 단가도 차이가 납니다.
+Databricks는 구독 플랜을 제공하지만, **CSP(클라우드)에 따라 플랜 구성이 다릅니다.**
+
+### CSP별 플랜 구성
+
+| CSP | 제공 플랜 | 비고 |
+|-----|----------|------|
+| **AWS** | Standard / Premium / Enterprise | 3개 플랜 모두 제공 |
+| **Azure** | Standard / Premium | 2개 플랜만 제공 (Azure Premium ≈ AWS Enterprise) |
+| **GCP** | Standard / Premium | 2개 플랜만 제공 (GCP Premium ≈ AWS Enterprise) |
+
+> **핵심**: Azure와 GCP에서는 **Enterprise 플랜이 별도로 없습니다**. Azure/GCP의 Premium 플랜이 AWS의 Enterprise 플랜과 동등한 기능을 포함합니다. 따라서 CSP에 따라 동일한 기능이 다른 플랜 이름으로 제공될 수 있습니다.
 
 ### 플랜별 주요 기능 비교
 
-| 기능 | Standard | Premium | Enterprise |
-|------|----------|---------|------------|
-| **Apache Spark** 기반 컴퓨팅 | O | O | O |
-| **Delta Lake** | O | O | O |
-| **Databricks SQL** (SQL Warehouse) | O | O | O |
-| **MLflow** 기본 실험 추적 | O | O | O |
+| 기능 | Standard | Premium | Enterprise (AWS만) |
+|------|----------|---------|-------------------|
+| Apache Spark, Delta Lake, SQL Warehouse | O | O | O |
+| MLflow 기본 실험 추적 | O | O | O |
 | **Unity Catalog** (데이터 거버넌스) | X | O | O |
 | **역할 기반 접근 제어(RBAC)** | 기본 | 세분화 | 고급 |
 | **데이터 계보(Data Lineage)** | X | O | O |
 | **감사 로그(Audit Log)** | 기본 | 상세 | 완전 |
 | **IP 액세스 목록** | X | O | O |
 | **SSO / SAML 2.0** | X | O | O |
+| **CMK (고객 관리 키)** | X | X | O (AWS) / Premium (Azure) |
 | **전용 SLA / 지원** | 커뮤니티 | 비즈니스 | 엔터프라이즈 |
-| **Databricks Marketplace** | O | O | O |
 
 ### 어떤 플랜을 선택해야 할까?
 
-- **Standard**: 개인 학습, 소규모 팀의 빠른 프로토타이핑. 보안 요건이 낮고 데이터 거버넌스가 필요 없는 경우에 적합합니다.
-- **Premium**: 대부분의 기업 환경에 권장됩니다. Unity Catalog와 RBAC이 포함되어 데이터 거버넌스를 체계적으로 구성할 수 있습니다.
-- **Enterprise**: 금융, 의료, 공공 등 규제 산업. SLA 보장, 고급 감사 기능, 전담 지원이 필요한 대형 조직에 적합합니다.
+- **Standard**: 개인 학습, 소규모 PoC. Unity Catalog를 사용할 수 없어 프로덕션에는 적합하지 않습니다.
+- **Premium**: **대부분의 엔터프라이즈 고객에게 권장**합니다. Unity Catalog, RBAC, 감사 로그, SSO 등 프로덕션 필수 기능이 포함됩니다.
+- **Enterprise (AWS)**: 금융, 의료, 공공 등 규제 산업. CMK, 강화된 SLA, 전담 지원이 필요한 경우.
 
-> 💡 **현업 팁**: 한국의 대부분 엔터프라이즈 고객은 **Premium** 플랜에서 시작합니다. Standard는 Unity Catalog를 사용할 수 없어, 멀티 워크스페이스 환경에서 데이터 거버넌스를 구성하기 어렵습니다.
+> **한국 고객 기준**: 한국의 엔터프라이즈 고객은 대부분 **Premium** 또는 **Enterprise** 플랜을 사용합니다. Azure 고객이라면 Premium이 최상위 플랜이므로 Enterprise를 별도로 고려할 필요가 없습니다. AWS 고객 중 CMK나 강화된 SLA가 필요하다면 Enterprise를 선택합니다.
+
+> **참고**: 최신 플랜 구성과 가격은 [Databricks 공식 가격 페이지](https://www.databricks.com/product/pricing)에서 확인하세요. 플랜 구성은 변경될 수 있습니다.
 
 ---
