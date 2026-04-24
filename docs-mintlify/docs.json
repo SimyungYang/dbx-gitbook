@@ -1161,22 +1161,30 @@
           {
             "group": "한국어 RAG & Vector Search",
             "pages": [
-              "한국어 RAG 최적화",
-              "blog/guides/rag/korean-nlp",
-              "blog/guides/rag/korean-nlp-basics",
-              "blog/guides/rag/korean-nlp-advanced",
-              "blog/guides/rag/korean-nlp-fundamentals",
-              "blog/guides/rag/korean-nlp-morphology",
-              "blog/guides/rag/korean-nlp-embedding",
-              "blog/guides/rag/chunking-strategies",
-              "고급 검색 전략",
-              "blog/guides/rag/advanced-retrieval/overview",
-              "blog/guides/rag/advanced-retrieval/hybrid-search",
-              "blog/guides/rag/advanced-retrieval/preprocessing",
-              "blog/guides/rag/advanced-retrieval/reranking",
-              "blog/guides/rag/advanced-retrieval/postprocessing",
-              "blog/guides/rag/advanced-retrieval/chunking-advanced",
-              "blog/guides/rag/advanced-retrieval/implementation"
+              {
+                "group": "한국어 RAG 최적화",
+                "pages": [
+                  "blog/guides/rag/korean-nlp",
+                  "blog/guides/rag/korean-nlp-basics",
+                  "blog/guides/rag/korean-nlp-advanced",
+                  "blog/guides/rag/korean-nlp-fundamentals",
+                  "blog/guides/rag/korean-nlp-morphology",
+                  "blog/guides/rag/korean-nlp-embedding",
+                  "blog/guides/rag/chunking-strategies"
+                ]
+              },
+              {
+                "group": "고급 검색 전략",
+                "pages": [
+                  "blog/guides/rag/advanced-retrieval/overview",
+                  "blog/guides/rag/advanced-retrieval/hybrid-search",
+                  "blog/guides/rag/advanced-retrieval/preprocessing",
+                  "blog/guides/rag/advanced-retrieval/reranking",
+                  "blog/guides/rag/advanced-retrieval/postprocessing",
+                  "blog/guides/rag/advanced-retrieval/chunking-advanced",
+                  "blog/guides/rag/advanced-retrieval/implementation"
+                ]
+              }
             ]
           },
           {
