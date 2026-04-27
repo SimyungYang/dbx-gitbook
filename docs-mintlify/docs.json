@@ -120,14 +120,8 @@
                   {
                     "group": "스키마 진화",
                     "pages": [
-                      {
-                        "group": "스키마 진화",
-                        "pages": [
-                          "training/03-lakehouse-architecture/schema-evolution",
-                          "training/03-lakehouse-architecture/schema-evolution-basics",
-                          "training/03-lakehouse-architecture/schema-evolution-advanced"
-                        ]
-                      }
+                      "training/03-lakehouse-architecture/schema-evolution-basics",
+                      "training/03-lakehouse-architecture/schema-evolution-advanced"
                     ]
                   },
                   "training/03-lakehouse-architecture/delta-lake-operations",
@@ -135,7 +129,6 @@
                   {
                     "group": "OPTIMIZE와 VACUUM",
                     "pages": [
-                      "training/03-lakehouse-architecture/vacuum-and-optimize",
                       "training/03-lakehouse-architecture/vacuum-and-optimize-basics",
                       "training/03-lakehouse-architecture/vacuum-and-optimize-advanced"
                     ]
@@ -171,7 +164,6 @@
                   {
                     "group": "클러스터 종류",
                     "pages": [
-                      "training/04-compute-and-workspace/cluster-types",
                       "training/04-compute-and-workspace/cluster-types-basics",
                       "training/04-compute-and-workspace/cluster-types-advanced"
                     ]
@@ -180,7 +172,6 @@
                   {
                     "group": "Instance Pools — 클러스터 시작 시간 단축",
                     "pages": [
-                      "training/04-compute-and-workspace/instance-pools",
                       "training/04-compute-and-workspace/instance-pools-basics",
                       "training/04-compute-and-workspace/instance-pools-advanced"
                     ]
@@ -270,7 +261,6 @@
                   {
                     "group": "데이터 품질 관리 — Expectations",
                     "pages": [
-                      "training/05-data-engineering/spark-declarative-pipelines/expectations",
                       "training/05-data-engineering/spark-declarative-pipelines/expectations-basics",
                       "training/05-data-engineering/spark-declarative-pipelines/expectations-advanced"
                     ]
@@ -309,7 +299,6 @@
                       {
                         "group": "수집 파이프라인 구성",
                         "pages": [
-                          "training/05-data-engineering/lakeflow-connect/ingestion-pipeline-setup",
                           "training/05-data-engineering/lakeflow-connect/ingestion-pipeline-setup-basics",
                           "training/05-data-engineering/lakeflow-connect/ingestion-pipeline-setup-advanced"
                         ]
@@ -533,7 +522,6 @@
               {
                 "group": "AI/BI 대시보드",
                 "pages": [
-                  "training/08-ai-bi/lakeview-dashboards",
                   "training/08-ai-bi/lakeview-dashboards-basics",
                   "training/08-ai-bi/lakeview-dashboards-advanced"
                 ]
@@ -546,7 +534,6 @@
                   {
                     "group": "Metric Views — 비즈니스 시맨틱 레이어",
                     "pages": [
-                      "training/08-ai-bi/metric-views",
                       "training/08-ai-bi/metric-views-basics",
                       "training/08-ai-bi/metric-views-advanced"
                     ]
@@ -569,7 +556,6 @@
                   {
                     "group": "Feature Engineering 개요",
                     "pages": [
-                      "training/09-machine-learning/feature-engineering/feature-engineering-overview",
                       "training/09-machine-learning/feature-engineering/feature-engineering-overview-basics",
                       "training/09-machine-learning/feature-engineering/feature-engineering-overview-advanced"
                     ]
@@ -615,7 +601,6 @@
                       {
                         "group": "기본 개념과 모델 등록",
                         "pages": [
-                          "training/09-machine-learning/mlflow/model-registry/basics-and-registration",
                           "training/09-machine-learning/mlflow/model-registry/basics-and-registration-basics",
                           "training/09-machine-learning/mlflow/model-registry/basics-and-registration-advanced"
                         ]
@@ -651,14 +636,9 @@
                   {
                     "group": "모델 평가",
                     "pages": [
-                      {
-                        "group": "모델 평가",
-                        "pages": [
-                          "training/09-machine-learning/mlflow/mlflow-evaluation",
-                          "training/09-machine-learning/mlflow/mlflow-evaluation-basics",
-                          "training/09-machine-learning/mlflow/mlflow-evaluation-advanced"
-                        ]
-                      }
+                      "training/09-machine-learning/mlflow/mlflow-evaluation",
+                      "training/09-machine-learning/mlflow/mlflow-evaluation-basics",
+                      "training/09-machine-learning/mlflow/mlflow-evaluation-advanced"
                     ]
                   }
                 ]
@@ -752,7 +732,6 @@
               {
                 "group": "에이전트 평가",
                 "pages": [
-                  "training/10-agent-development/agent-evaluation",
                   "training/10-agent-development/agent-evaluation-basics",
                   "training/10-agent-development/agent-evaluation-advanced"
                 ]
@@ -837,7 +816,6 @@
                       {
                         "group": "Supervisor Agent",
                         "pages": [
-                          "blog/guides/agent-bricks/supervisor",
                           "blog/guides/agent-bricks/supervisor-basics",
                           "blog/guides/agent-bricks/supervisor-advanced"
                         ]
@@ -943,14 +921,9 @@
                   {
                     "group": "SSO 설정",
                     "pages": [
-                      {
-                        "group": "SSO 설정",
-                        "pages": [
-                          "training/12-security-and-governance/sso-setup",
-                          "training/12-security-and-governance/sso-setup-guide",
-                          "training/12-security-and-governance/sso-setup-advanced"
-                        ]
-                      }
+                      "training/12-security-and-governance/sso-setup",
+                      "training/12-security-and-governance/sso-setup-guide",
+                      "training/12-security-and-governance/sso-setup-advanced"
                     ]
                   },
                   {
@@ -992,7 +965,6 @@
               {
                 "group": "Databricks CLI",
                 "pages": [
-                  "training/13-appendix/databricks-cli",
                   "training/13-appendix/databricks-cli-basics",
                   "training/13-appendix/databricks-cli-advanced"
                 ]
@@ -1167,8 +1139,6 @@
                   "blog/guides/rag/korean-nlp",
                   "blog/guides/rag/korean-nlp-basics",
                   "blog/guides/rag/korean-nlp-advanced",
-                  "blog/guides/rag/korean-nlp-fundamentals",
-                  "blog/guides/rag/korean-nlp-morphology",
                   "blog/guides/rag/korean-nlp-embedding",
                   "blog/guides/rag/chunking-strategies"
                 ]
@@ -1225,7 +1195,6 @@
               {
                 "group": "Agent Bricks 평가 파이프라인",
                 "pages": [
-                  "blog/guides/practical-tips/agent-eval-pipeline",
                   "blog/guides/practical-tips/agent-eval-pipeline-basics",
                   "blog/guides/practical-tips/agent-eval-pipeline-advanced"
                 ]
@@ -1248,7 +1217,6 @@
                   {
                     "group": "비용 구조 이해",
                     "pages": [
-                      "training/14-best-practices/cost-optimization/cost-structure",
                       "training/14-best-practices/cost-optimization/cost-structure-basics",
                       "training/14-best-practices/cost-optimization/cost-structure-advanced"
                     ]
@@ -1282,7 +1250,6 @@
                   {
                     "group": "플랫폼 설계",
                     "pages": [
-                      "training/14-best-practices/enterprise-governance/platform-design",
                       "training/14-best-practices/enterprise-governance/platform-design-basics",
                       "training/14-best-practices/enterprise-governance/platform-design-advanced"
                     ]
@@ -1388,7 +1355,6 @@
                   {
                     "group": "종합 비교 & 선택 가이드",
                     "pages": [
-                      "blog/guides/genai-concepts/agent-frameworks-detail/comparison",
                       "blog/guides/genai-concepts/agent-frameworks-detail/comparison-basics",
                       "blog/guides/genai-concepts/agent-frameworks-detail/comparison-advanced"
                     ]
@@ -1440,7 +1406,6 @@
                       {
                         "group": "AWS & MS & Meta",
                         "pages": [
-                          "blog/guides/genai-concepts/agent-landscape/aws-others",
                           "blog/guides/genai-concepts/agent-landscape/aws-others-basics",
                           "blog/guides/genai-concepts/agent-landscape/aws-others-advanced"
                         ]
@@ -1456,7 +1421,6 @@
                       {
                         "group": "멀티에이전트 & Agentic AI 트렌드 (2025)",
                         "pages": [
-                          "blog/guides/genai-concepts/agent-landscape/multi-agent-trends",
                           "blog/guides/genai-concepts/agent-landscape/multi-agent-trends-basics",
                           "blog/guides/genai-concepts/agent-landscape/multi-agent-trends-advanced"
                         ]
@@ -1573,12 +1537,7 @@
               {
                 "group": "재학습 전략",
                 "pages": [
-                  {
-                    "group": "재학습 전략",
-                    "pages": [
-                      "blog/guides/ml-fundamentals/retraining-strategies"
-                    ]
-                  }
+                  "blog/guides/ml-fundamentals/retraining-strategies"
                 ]
               }
             ]

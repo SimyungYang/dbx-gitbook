@@ -160,67 +160,9 @@ GPT-4o 기준 ($2.50/1M input, $10.00/1M output):
 
 ## 한국어 RAG 최적화
 
-한국어 RAG 파이프라인에서는 **형태소 분석** 과 **한국어 임베딩 모델** 을 적절히 활용해야 검색 정확도가 올라갑니다.
+한국어 RAG 파이프라인에서는 **형태소 분석**(Kiwi 등), **한국어 임베딩 모델**, **하이브리드 검색** 등 특별한 고려가 필요합니다. 핵심 과제는 교착어 특성으로 인한 BM25 검색 실패, 한영 혼용 처리, 임베딩 품질 확보입니다.
 
-### 형태소 분석으로 검색 정확도 향상
-
-한국어는 교착어로, 같은 단어가 조사에 따라 다양한 형태로 나타납니다. "데이터를", "데이터의", "데이터에서" 모두 "데이터"를 포함하지만, 단순 텍스트 매칭으로는 연결되지 않습니다.
-
-```python
-# Kiwi 형태소 분석기 활용 예시
-from kiwipiepy import Kiwi
-
-kiwi = Kiwi()
-
-text = "데이터브릭스에서 제공하는 유니티카탈로그의 기능을 설명해주세요"
-tokens = kiwi.tokenize(text)
-
-# 결과: [('데이터브릭스', 'NNP'), ('에서', 'JKB'), ('제공', 'NNG'),
-#        ('하', 'XSV'), ('는', 'ETM'), ('유니티', 'NNP'),
-#        ('카탈로그', 'NNG'), ('의', 'JKG'), ('기능', 'NNG'),
-#        ('을', 'JKO'), ('설명', 'NNG'), ('해', 'XSV+EC'),
-#        ('주', 'VX'), ('세요', 'EP+EC')]
-
-# 명사만 추출하여 키워드 검색에 활용
-nouns = [t.form for t in tokens if t.tag.startswith('NN')]
-# → ['데이터브릭스', '제공', '유니티', '카탈로그', '기능', '설명']
-```
-
-### 한국어 임베딩 모델 비교
-
-| 모델 | 차원 | 한국어 STS 성능 | 다국어 지원 | 특징 |
-|------|------|---------------|-----------|------|
-| **KoSimCSE-roberta** | 768 | 83.5% | X (한국어 전용) | 한국어 STS 특화 |
-| **multilingual-e5-large** | 1024 | 82.1% | O (100+ 언어) | 다국어 범용. Databricks 지원 |
-| **bge-m3** | 1024 | 81.8% | O (100+ 언어) | Dense + Sparse + ColBERT 혼합 |
-| **Cohere embed-multilingual-v3** | 1024 | 84.2% | O (100+ 언어) | 최고 성능. API 형태 |
-| **databricks-bge-large-en** | 1024 | 75.3% | 영어 중심 | Databricks 기본 제공. 한국어는 약함 |
-
-> **주의**
-**주의**: Databricks 기본 제공 임베딩 모델(`databricks-bge-large-en`)은 **영어 중심** 입니다. 한국어 RAG에서는 `multilingual-e5-large` 또는 `bge-m3`를 Model Serving에 배포하여 사용하는 것을 권장합니다.
-
-
-### 한국어 하이브리드 검색
-
-한국어에서는 벡터 검색(semantic)만으로 부족한 경우가 많습니다. **키워드 검색(BM25)과 벡터 검색을 결합** 하면 정확도가 크게 향상됩니다.
-
-```python
-# Databricks Vector Search에서 하이브리드 검색
-# Delta Sync Index 생성 시 full-text 검색 활성화
-
-"""
-CREATE INDEX my_hybrid_index
-ON TABLE catalog.schema.documents
-USING VECTOR_SEARCH (
-  embedding_column = 'embedding',
-  embedding_dimension = 1024
-)
-WITH (
-  full_text_columns = ['content'],  -- BM25 키워드 검색 활성화
-  pipeline_type = 'TRIGGERED'
-)
-"""
-```
+> 한국어 RAG의 상세 구현 가이드(Kiwi 형태소 분석, BM25 Retriever, 임베딩 모델 비교, Re-ranking, 트러블슈팅)는 **[한국어 RAG 최적화](/blog/guides/rag/korean-nlp)** 를 참고하세요.
 
 ---
 
