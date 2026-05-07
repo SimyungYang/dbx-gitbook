@@ -9,16 +9,17 @@ description: "Lakeflow, SDP, Auto Loader, Structured Streaming 등 데이터 엔
 
 | 기능 | GA 시점 | 서울 리전 | 설명 |
 |------|---------|-----------|------|
+| Lakeflow Pipelines Editor | 2026.05 | ✅ | 파이프라인 편집기 정식 출시 |
+| Compute Log Delivery to Volumes | 2026.04 | ✅ | [Spark 로그를 UC Volume에 저장](https://docs.databricks.com/aws/en/compute/configure#log-delivery) |
+| Declarative Automation Bundles | 2026.03 | ✅ | [(구 Asset Bundles) CI/CD 배포 패키지](https://docs.databricks.com/aws/en/dev-tools/bundles/) |
+| Pipeline Metadata Governance | 2026.02 | ✅ | [ETL 출력에 필터·마스크·태그 적용](https://docs.databricks.com/aws/en/sdp/) |
+| Trigger on Update for Pipelines | 2026.01 | ✅ | [파이프라인 업데이트 시 트리거](https://docs.databricks.com/aws/en/sdp/triggers) |
+| Lakeflow Jobs System Tables | 2026.01 | ✅ | [잡 실행 이력 시스템 테이블](https://docs.databricks.com/aws/en/admin/system-tables/jobs) |
+| Custom Base Environments (Serverless Jobs) | 2026.01 | ✅ | [서버리스 잡 커스텀 환경](https://docs.databricks.com/aws/en/jobs/custom-environment) |
+| Lakeflow Connect (관리형 커넥터) | 2025 | ✅ | [Salesforce, MySQL, PostgreSQL 등](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/) |
 | Spark Declarative Pipelines (SDP) | 2024 | ✅ | [Streaming Tables, MV, Expectations](https://docs.databricks.com/aws/en/sdp/) |
 | Lakeflow Jobs | 2024 | ✅ | [워크플로우 오케스트레이션](https://docs.databricks.com/aws/en/jobs/) |
 | Auto Loader | 2023 | ✅ | [클라우드 스토리지 파일 자동 수집](https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/) |
-| Lakeflow Connect (관리형 커넥터) | 2025 | ✅ | [Salesforce, MySQL, PostgreSQL 등](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/) |
-| Trigger on Update for Pipelines | 2026.01 | ✅ | [파이프라인 업데이트 시 트리거](https://docs.databricks.com/aws/en/sdp/triggers) |
-| Lakeflow Jobs System Tables | 2026.01 | ✅ | [잡 실행 이력 시스템 테이블](https://docs.databricks.com/aws/en/admin/system-tables/jobs) |
-| Pipeline Metadata Governance | 2026.02 | ✅ | [ETL 출력에 필터·마스크·태그 적용](https://docs.databricks.com/aws/en/sdp/) |
-| Declarative Automation Bundles | 2026.03 | ✅ | [(구 Asset Bundles) CI/CD 배포 패키지](https://docs.databricks.com/aws/en/dev-tools/bundles/) |
-| Custom Base Environments (Serverless Jobs) | 2026.01 | ✅ | [서버리스 잡 커스텀 환경](https://docs.databricks.com/aws/en/jobs/custom-environment) |
-| Compute Log Delivery to Volumes | 2026.04 | ✅ | [Spark 로그를 UC Volume에 저장](https://docs.databricks.com/aws/en/compute/configure#log-delivery) |
 
 ## Public Preview
 
@@ -26,14 +27,16 @@ description: "Lakeflow, SDP, Auto Loader, Structured Streaming 등 데이터 엔
 |------|-------------|-----------|------|
 | Query-Based Connectors | 2026.04 | 미정 | Oracle, Teradata, SQL Server, MySQL, MariaDB, PostgreSQL |
 | Auto Loader Type Widening | 2026.03 | ✅ | JSON/CSV/XML 자동 타입 확장 |
+| Zerobus Ingest PrivateLink | 2026.03 | ✅ | Zerobus 인제스트 프라이빗링크 |
 | JAR Tasks on Serverless | 2026.02 | 미정 | 서버리스에서 JAR 잡 실행 |
 | Default Python Repositories | 2026.02 | 미정 | 파이프라인 기본 패키지 저장소 설정 |
-| Zerobus Ingest PrivateLink | 2026.03 | ✅ | Zerobus 인제스트 프라이빗링크 |
 
 ## Beta
 
 | 기능 | Beta 시점 | 서울 리전 | 설명 |
 |------|----------|-----------|------|
+| Lakeflow Designer | 2026.05 | 미정 | 드래그 앤 드롭 + 자연어 데이터 파이프라인 빌더 |
+| GitHub Managed Ingestion Connector | 2026.05 | 미정 | GitHub 활동/이슈/PR을 UC로 수집 |
 | SQL Pipelines Notifications | 2026.03 | 미정 | MV/ST 실패 알림 및 서버리스 성능 모드 |
 | Workday HCM Connector | 2026.03 | 미정 | Workday HR 데이터 수집 |
 | Declarative Feature Engineering APIs | 2026.03 | ❌ (us-east-1, us-west-2만) | 선언적 시간 윈도우 집계 |

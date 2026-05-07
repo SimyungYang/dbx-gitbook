@@ -9,36 +9,37 @@ description: "Foundation Model APIs, Agent Framework, MLflow, Vector Search 등 
 
 | 기능 | GA 시점 | 서울 리전 | 설명 |
 |------|---------|-----------|------|
-| Model Serving (CPU & GPU) | 2024 | ✅ | [커스텀 모델 엔드포인트](https://docs.databricks.com/aws/en/machine-learning/model-serving/) |
-| Foundation Model APIs (Provisioned) | 2024 | ✅ | [프로비저닝 처리량 모델 서빙](https://docs.databricks.com/aws/en/machine-learning/foundation-models/provisioned-throughput) |
+| ai_parse_document | 2026.05 | ✅ (cross-geo) | [PDF/이미지/Word 파싱 정식 출시](https://docs.databricks.com/aws/en/large-language-models/ai-functions#ai_parse_document) |
+| Managed OAuth for MCP | 2026.03 | ✅ | [Glean, GitHub 등 외부 MCP 인증](https://docs.databricks.com/aws/en/genie/mcp) |
+| Genie Code | 2026.03 | ✅ | [에이전틱 데이터 분석 어시스턴트](https://docs.databricks.com/aws/en/genie/genie-code) |
+| Supervisor Agent | 2026.02 | 🔜 서울 지원 임박 (현재 미지원) | [멀티 에이전트 오케스트레이션](https://docs.databricks.com/aws/en/generative-ai/agent-framework/build-supervisor-agent) |
+| Databricks Assistant + MCP | 2026.02 | ✅ | [MCP 서버 연동](https://docs.databricks.com/aws/en/genie/mcp) |
+| Knowledge Assistant | 2026.01 | 🔜 서울 지원 임박 (현재 미지원) | [문서 Q&A 에이전트](https://docs.databricks.com/aws/en/generative-ai/agent-framework/build-knowledge-assistant) |
 | Foundation Model APIs (Pay-per-token) | 2025 | ✅ (cross-geo) | [토큰당 과금 모델 접근](https://docs.databricks.com/aws/en/machine-learning/foundation-models/supported-models) |
 | Vector Search | 2025 | ✅ | [벡터 인덱스 및 유사도 검색](https://docs.databricks.com/aws/en/generative-ai/vector-search) |
-| MLflow Experiment Tracking | 기본 제공 | ✅ | [실험 추적 및 비교](https://docs.databricks.com/aws/en/mlflow/) |
-| MLflow Model Registry (UC) | 2024 | ✅ | [UC 기반 모델 레지스트리](https://docs.databricks.com/aws/en/mlflow/models-in-uc) |
 | Agent Framework & Evaluation | 2025 | ✅ | [에이전트 빌딩 및 평가](https://docs.databricks.com/aws/en/generative-ai/agent-framework/) |
-| Supervisor Agent | 2026.02 | 🔜 서울 지원 임박 (현재 미지원) | [멀티 에이전트 오케스트레이션](https://docs.databricks.com/aws/en/generative-ai/agent-framework/build-supervisor-agent) |
-| Knowledge Assistant | 2026.01 | 🔜 서울 지원 임박 (현재 미지원) | [문서 Q&A 에이전트](https://docs.databricks.com/aws/en/generative-ai/agent-framework/build-knowledge-assistant) |
-| Genie Code | 2026.03 | ✅ | [에이전틱 데이터 분석 어시스턴트](https://docs.databricks.com/aws/en/genie/genie-code) |
 | Unity AI Gateway | 2025 | ✅ | [LLM 엔드포인트 통합 관리](https://docs.databricks.com/aws/en/generative-ai/ai-gateway/) |
-| External Models | 2024 | ✅ | [외부 모델(OpenAI, Anthropic 등) 연동](https://docs.databricks.com/aws/en/generative-ai/external-models/) |
-| ai_parse_document | 2026.04 | ✅ (cross-geo) | [PDF/이미지/Word 파싱](https://docs.databricks.com/aws/en/large-language-models/ai-functions#ai_parse_document) |
 | Foundation Model Fine-tuning | 2025 | ✅ | [파운데이션 모델 파인튜닝](https://docs.databricks.com/aws/en/large-language-models/foundation-model-training/) |
-| Databricks Assistant + MCP | 2026.02 | ✅ | [MCP 서버 연동](https://docs.databricks.com/aws/en/genie/mcp) |
-| Managed OAuth for MCP | 2026.03 | ✅ | [Glean, GitHub 등 외부 MCP 인증](https://docs.databricks.com/aws/en/genie/mcp) |
+| Model Serving (CPU & GPU) | 2024 | ✅ | [커스텀 모델 엔드포인트](https://docs.databricks.com/aws/en/machine-learning/model-serving/) |
+| Foundation Model APIs (Provisioned) | 2024 | ✅ | [프로비저닝 처리량 모델 서빙](https://docs.databricks.com/aws/en/machine-learning/foundation-models/provisioned-throughput) |
+| MLflow Model Registry (UC) | 2024 | ✅ | [UC 기반 모델 레지스트리](https://docs.databricks.com/aws/en/mlflow/models-in-uc) |
+| External Models | 2024 | ✅ | [외부 모델(OpenAI, Anthropic 등) 연동](https://docs.databricks.com/aws/en/generative-ai/external-models/) |
+| MLflow Experiment Tracking | 기본 제공 | ✅ | [실험 추적 및 비교](https://docs.databricks.com/aws/en/mlflow/) |
 
 ### 호스팅 모델 — 서울 리전 가용성
 
 | 모델 | GA 시점 | Provisioned | Pay-per-token | Batch |
 |------|---------|-------------|---------------|-------|
+| Qwen3.5 122B A10B (Alibaba) | 2026.05 (Public Preview) | ❌ | ✅ cross-geo | ❌ |
 | Claude Opus 4.7 | 2026.04 | ❌ (TBD Q3) | ✅ cross-geo | ❌ |
-| Claude Opus 4.6 | 2026.02 | ❌ (TBD Q3) | ✅ cross-geo | ❌ |
-| Claude Sonnet 4.6 | 2026.02 | ❌ (TBD Q3) | ✅ cross-geo | ❌ |
 | OpenAI GPT-5.4 | 2026.03 | ✅ cross-geo | ✅ cross-geo | ✅ cross-geo |
 | OpenAI GPT-5.4 Mini/Nano | 2026.03 | ✅ cross-geo | ✅ cross-geo | ✅ cross-geo |
-| OpenAI GPT-5.3 Codex | 2026.02 | ✅ cross-geo | ✅ cross-geo | ✅ cross-geo |
 | GPT-OSS (20B/120B) | 2026.03 | ✅ in-region (3월~) | ✅ in-region (3월~) | ✅ in-region (3월~) |
-| Google Gemini 3.1 Pro | 2026.02 | ✅ cross-geo | ✅ cross-geo | ✅ cross-geo |
 | Google Gemini 2.5 | 2026.03 | ✅ in-region (3월~) | ✅ in-region (3월~) | ✅ in-region (3월~) |
+| Claude Opus 4.6 | 2026.02 | ❌ (TBD Q3) | ✅ cross-geo | ❌ |
+| Claude Sonnet 4.6 | 2026.02 | ❌ (TBD Q3) | ✅ cross-geo | ❌ |
+| OpenAI GPT-5.3 Codex | 2026.02 | ✅ cross-geo | ✅ cross-geo | ✅ cross-geo |
+| Google Gemini 3.1 Pro | 2026.02 | ✅ cross-geo | ✅ cross-geo | ✅ cross-geo |
 | Llama 3/4 family | 다양 | ✅ cross-geo | ✅ cross-geo | ✅ cross-geo |
 
 <Note>
@@ -49,31 +50,31 @@ description: "Foundation Model APIs, Agent Framework, MLflow, Vector Search 등 
 
 | 기능 | Preview 시점 | 서울 리전 | 설명 |
 |------|-------------|-----------|------|
-| Managed MCP Servers | 2026.01 | 미정 | Databricks 관리형 MCP 서버 |
+| MLflow Trace Storage in Unity Catalog | 2026.05 | ✅ | OTel 포맷, UC 권한 적용 |
 | Classification & Information Extraction UI | 2026.03 | ❌ (US만) | 문서 분석 시각적 도구 |
 | ai_classify / ai_extract v2 | 2026.03 | ✅ (cross-geo) | 정확도 90%+ (v1 대비 40%↑) |
 | AI Runtime (Single-node) | 2026.03 | ❌ | 서버리스 GPU 딥러닝 |
+| Genie Spaces Agent Mode | 2026.03 | ✅ (cross-geo → Japan) | Genie 에이전트 모드 |
 | Qwen3-Embedding-0.6B | 2026.02 | 미정 | 경량 임베딩 모델 |
 | Data Science Agent | 2026.02 | ✅ (cross-geo → Japan) | Sonnet 4.5 기반 |
-| Vector Search Reranker | 2025.09 | ✅ (in-region 3월~) | 검색 리랭킹 |
-| Genie Spaces Agent Mode | 2026.03 | ✅ (cross-geo → Japan) | Genie 에이전트 모드 |
+| Managed MCP Servers | 2026.01 | 미정 | Databricks 관리형 MCP 서버 |
 | Online Feature Stores | 2026.01 | ❌ | Lakebase 기반 |
+| Vector Search Reranker | 2025.09 | ✅ (in-region 3월~) | 검색 리랭킹 |
 
 ## Beta
 
 | 기능 | Beta 시점 | 서울 리전 | 설명 |
 |------|----------|-----------|------|
-| AI Gateway V2 | 2026.02 | 미정 | 네이티브 OpenAI/Anthropic/Gemini API 지원 |
 | AI Gateway for MCP Servers | 2026.04 | 미정 | MCP 서버 접근 제어·사용량 모니터링 |
+| AI Runtime 1xH100 Accelerator | 2026.04 | ❌ | H100 GPU 가속 |
+| vLLM Custom Model Serving | 2026.04 (Private Preview) | ❌ | 서버리스 GPU 컴퓨트 필요 |
 | AI Runtime (Distributed) | 2026.03 | ❌ | 서버리스 분산 딥러닝 |
 | Custom Model Serving Telemetry | 2026.03 | 미정 | OTel 기반 로그·트레이스·메트릭 |
-| MLflow Traces in Unity Catalog | 2026.01 | 미정 | MLflow 트레이스 UC 저장 (Public Preview 임박) |
 | Data Quality Monitoring Alerts | 2026.03 | 미정 | 데이터 품질 이상 탐지 알림 |
-| AI Runtime 1xH100 Accelerator | 2026.04 | ❌ | H100 GPU 가속 |
 | Agent Bricks: Information Extraction | 2026.03 | ❌ (US만) | 문서에서 정보 추출 에이전트 |
+| AI Gateway V2 | 2026.02 | 미정 | 네이티브 OpenAI/Anthropic/Gemini API 지원 |
 | Knowledge Assistant (Beta) | 2026.02 | ✅ (cross-geo) | 문서 Q&A 에이전트 |
 | AI Agent Memory | Preview | 미정 | 에이전트 대화 메모리 |
-| vLLM Custom Model Serving | 2026.04 (Private Preview) | ❌ | 서버리스 GPU 컴퓨트 필요 |
 
 ## 예상 로드맵
 

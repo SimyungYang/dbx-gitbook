@@ -9,27 +9,29 @@ description: "SQL Warehouse, AI/BI 대시보드, Genie, 쿼리 기능 등 SQL & 
 
 | 기능 | GA 시점 | 서울 리전 | 설명 |
 |------|---------|-----------|------|
-| SQL Warehouse (Serverless) | 2024 | ✅ | [서버리스 SQL 웨어하우스](https://docs.databricks.com/aws/en/compute/sql-warehouse/) |
-| AI/BI Dashboards (Lakeview) | 2024 | ✅ | [AI 기반 대시보드](https://docs.databricks.com/aws/en/dashboards/) |
-| Genie | 2025 | ✅ (in-region 2026.02~) | [자연어 → SQL 분석](https://docs.databricks.com/aws/en/genie/). cross-geo OFF 시 서울 리전 내 처리 |
-| SQL Scripting | 2025 | ✅ | [변수, 조건문, 루프 등 절차적 SQL](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-sql-scripting) |
-| Window Functions | 기본 제공 | ✅ | [ROW_NUMBER, RANK, LAG/LEAD 등](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-functions-builtin#window-functions) |
-| AI Functions (ai_query, ai_classify 등) | 2025 | ✅ (cross-geo) | [SQL 내 AI 함수 호출](https://docs.databricks.com/aws/en/large-language-models/ai-functions) |
+| Sample Data Explorer with Genie Code | 2026.05 | ✅ | UC 테이블 자연어 질의 정식 |
+| Google Sheets Connector | 2026.04 | ✅ | [UC 테이블/메트릭 뷰 조회](https://docs.databricks.com/aws/en/partners/bi/google-sheets) |
 | Dynamic Parameters in SQL Editor | 2026.03 | ✅ | [동적 드롭다운 파라미터](https://docs.databricks.com/aws/en/sql/user/queries/query-parameters) |
 | Databricks Usage Dashboard | 2026.03 | ✅ | [계정 수준 사용량 대시보드](https://docs.databricks.com/aws/en/admin/account-settings/usage) |
 | Default SQL Warehouse Settings | 2026.02 | ✅ | [워크스페이스 기본 웨어하우스 설정](https://docs.databricks.com/aws/en/compute/sql-warehouse/create) |
 | ADBC Default for Power BI | 2026.02 | ✅ | [Power BI Arrow DB 연결 기본값](https://docs.databricks.com/aws/en/partners/bi/power-bi) |
-| Google Sheets Connector | 2026.04 | ✅ | [UC 테이블/메트릭 뷰 조회](https://docs.databricks.com/aws/en/partners/bi/google-sheets) |
 | Google Sheets Pivot Tables | 2026.02 | ✅ | [피봇 테이블 생성](https://docs.databricks.com/aws/en/partners/bi/google-sheets) |
+| Genie | 2025 | ✅ (in-region 2026.02~) | [자연어 → SQL 분석](https://docs.databricks.com/aws/en/genie/). cross-geo OFF 시 서울 리전 내 처리 |
+| SQL Scripting | 2025 | ✅ | [변수, 조건문, 루프 등 절차적 SQL](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-sql-scripting) |
+| AI Functions (ai_query, ai_classify 등) | 2025 | ✅ (cross-geo) | [SQL 내 AI 함수 호출](https://docs.databricks.com/aws/en/large-language-models/ai-functions) |
+| SQL Warehouse (Serverless) | 2024 | ✅ | [서버리스 SQL 웨어하우스](https://docs.databricks.com/aws/en/compute/sql-warehouse/) |
+| AI/BI Dashboards (Lakeview) | 2024 | ✅ | [AI 기반 대시보드](https://docs.databricks.com/aws/en/dashboards/) |
+| Window Functions | 기본 제공 | ✅ | [ROW_NUMBER, RANK, LAG/LEAD 등](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-functions-builtin#window-functions) |
 
 ## Public Preview
 
 | 기능 | Preview 시점 | 서울 리전 | 설명 |
 |------|-------------|-----------|------|
+| Sketch Functions (KLL/Theta/Top-K/Tuple) | 2026.05 | ✅ | 근사 분석 함수 패밀리 |
+| Foreign Iceberg Table Sharing | 2026.04 | 미정 | Delta Sharing으로 페더레이티드 Iceberg 테이블 공유 |
 | Google Sheets Scheduled Refreshes | 2026.03 | 미정 | 시간/일/주 단위 자동 새로고침 |
 | Databricks Excel Add-in | 2026.03 | 미정 | Excel에서 직접 데이터 조회·분석 |
 | Query Tags for SQL Warehouses | 2026.02 | 미정 | 워크로드 분류·비용 귀속 태그 |
-| Foreign Iceberg Table Sharing | 2026.04 | 미정 | Delta Sharing으로 페더레이티드 Iceberg 테이블 공유 |
 
 ## Beta
 
@@ -38,7 +40,6 @@ description: "SQL Warehouse, AI/BI 대시보드, Genie, 쿼리 기능 등 SQL & 
 | 5X-Large SQL Warehouse | 2026.03 | ✅ (모든 리전) | 초대형 서버리스/프로 웨어하우스 |
 | BI Compatibility Mode for Metric Views | 2026.03 | 미정 | Power BI 집계 함수 자동 변환 |
 | Warehouse Activity Details | 2026.02 | 미정 | 쿼리 활동·세션 시각적 표시 |
-| Sample Data Explorer with Genie Code | 2026.04 | 미정 | UC 테이블에서 자연어 질의 |
 
 ## 주요 업데이트 예정
 

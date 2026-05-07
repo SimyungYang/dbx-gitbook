@@ -9,11 +9,7 @@ description: "Unity Catalog, 데이터 거버넌스, 보안 관련 기능의 현
 
 | 기능 | GA 시점 | 서울 리전 | 설명 |
 |------|---------|-----------|------|
-| Unity Catalog 3-Level Namespace | 2023 | ✅ | [catalog.schema.table 구조](https://docs.databricks.com/aws/en/data-governance/unity-catalog) |
-| Row-Level Security (Row Filters) | 2024 | ✅ | [행 단위 접근 제어](https://docs.databricks.com/aws/en/tables/row-filter) |
-| Column Masks | 2024 | ✅ | [열 단위 데이터 마스킹](https://docs.databricks.com/aws/en/tables/column-mask) |
-| Delta Sharing | 2024 | ✅ | [조직 간 데이터 공유](https://docs.databricks.com/aws/en/delta-sharing/) |
-| Data Lineage | 2024 | ✅ | [테이블/컬럼 수준 리니지 추적](https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-lineage) |
+| Attribute-Based Access Control (ABAC) | 2026.05 | ✅ | [Governed Tags 기반 행 필터·컬럼 마스크](https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac) |
 | Governed Tags | 2026.04 | ✅ | [접근 제어·분류·비용 추적용 태그](https://docs.databricks.com/aws/en/data-governance/unity-catalog/tags) |
 | Data Classification | 2026.04 | ✅ | [AI 기반 자동 데이터 분류 및 태깅](https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-classification) |
 | Type Widening | 2026.03 | ✅ | [파일 재작성 없이 컬럼 타입 확장](https://docs.databricks.com/aws/en/delta/type-widening) |
@@ -21,23 +17,30 @@ description: "Unity Catalog, 데이터 거버넌스, 보안 관련 기능의 현
 | Lineage System Table 확장 | 2026.03 | ✅ | [Genie Space, Alert ID 메타데이터 추가](https://docs.databricks.com/aws/en/admin/system-tables/lineage) |
 | Predictive Optimization | 2025 | ✅ | [자동 OPTIMIZE, VACUUM, Z-ORDER](https://docs.databricks.com/aws/en/optimizations/predictive-optimization) |
 | Metric Views | 2025 | ✅ | [비즈니스 메트릭 정의 및 공유](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-metric-views) |
+| Row-Level Security (Row Filters) | 2024 | ✅ | [행 단위 접근 제어](https://docs.databricks.com/aws/en/tables/row-filter) |
+| Column Masks | 2024 | ✅ | [열 단위 데이터 마스킹](https://docs.databricks.com/aws/en/tables/column-mask) |
+| Delta Sharing | 2024 | ✅ | [조직 간 데이터 공유](https://docs.databricks.com/aws/en/delta-sharing/) |
+| Data Lineage | 2024 | ✅ | [테이블/컬럼 수준 리니지 추적](https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-lineage) |
+| Unity Catalog 3-Level Namespace | 2023 | ✅ | [catalog.schema.table 구조](https://docs.databricks.com/aws/en/data-governance/unity-catalog) |
 
 ## Public Preview
 
 | 기능 | Preview 시점 | 서울 리전 | 설명 |
 |------|-------------|-----------|------|
+| Unity Catalog ↔ BigQuery Catalog Federation | 2026.05 | 미정 | [데이터 복제 없는 양방향 페더레이션](https://docs.databricks.com/aws/en/query-federation/) |
+| MLflow Trace Storage in Unity Catalog | 2026.05 | ✅ | OTel 포맷, UC 권한 적용 |
 | CMK for Unity Catalog | 2026.03 | 미정 | Unity Catalog 데이터 암호화 키 관리 |
 | Catalog Explorer Health Indicators | 2026.03 | ✅ | 테이블 신선도·완전성 이상 탐지 |
 | Multi-Table Transactions | 2026.03 | ✅ | Delta 테이블 간 원자적 트랜잭션 (`BEGIN ATOMIC`) |
-| Data Quality Monitoring Anomaly Detection | 2026.02 | ✅ | 스키마 수준 데이터 품질 이상 탐지 |
 | Notebook Tagging | 2026.03 | ✅ | 노트북 인증·비활성화 라이프사이클 태그 |
+| Data Quality Monitoring Anomaly Detection | 2026.02 | ✅ | 스키마 수준 데이터 품질 이상 탐지 |
 
 ## Beta
 
 | 기능 | Beta 시점 | 서울 리전 | 설명 |
 |------|----------|-----------|------|
-| Discover Page & Domains | 2026.02 | 미정 | AI 추천 기반 자산 검색·비즈니스 도메인 |
 | Vector Search Retrieval Quality | 2026.04 | 미정 | 검색 전략 관련성 내장 평가 |
+| Discover Page & Domains | 2026.02 | 미정 | AI 추천 기반 자산 검색·비즈니스 도메인 |
 | MLflow Traces in Unity Catalog | 2026.01 | 미정 | MLflow 트레이스를 UC에 저장 |
 
 ## 주요 업데이트 예정
