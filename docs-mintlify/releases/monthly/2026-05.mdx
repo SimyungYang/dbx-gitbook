@@ -1,0 +1,41 @@
+---
+title: "2026년 5월 릴리스"
+description: "2026년 5월 Databricks 플랫폼 릴리스 내역"
+---
+
+## GA (정식 출시)
+
+| 날짜 | 기능 | 영역 | 서울 리전 |
+|------|------|------|-----------|
+| 05.06 | **Lakeflow Pipelines Editor** — 파이프라인 편집기 GA | Data Engineering | ✅ |
+| 05.05 | **Databricks Runtime 18.2** — Apache Spark 4.1.0 정식 | Compute | ✅ |
+| 05.05 | **Attribute-Based Access Control (ABAC)** — Governed Tags 기반 행 필터·컬럼 마스크 GA | UC & Governance | ✅ |
+| 05.05 | **ai_parse_document GA** — PDF/이미지 구조화 추출 정식 출시 | AI/ML | ✅ (cross-geo) |
+| 05.04 | **Sample Data Explorer with Genie Code** — UC 테이블 자연어 질의 정식 | DBSQL & Analytics | ✅ |
+| 05.01 | **Adobe Experience Platform Delta Sharing** — 마케팅 활성화용 양방향 공유 | Data Sharing | ✅ |
+
+## Public Preview
+
+| 날짜 | 기능 | 영역 | 서울 리전 |
+|------|------|------|-----------|
+| 05.07 | **Qwen3.5 122B A10B (Alibaba)** — Foundation Model APIs pay-per-token | AI/ML | ✅ (cross-geo) |
+| 05.06 | **Adaptive Autoscaling — Performance Mode** — 서버리스 컴퓨트 속도 최적화 모드 | Compute | ✅ |
+| 05.05 | **MLflow Trace Storage in Unity Catalog** — OTel 포맷, UC 권한 적용 | AI/ML | ✅ |
+| 05.04 | **Sketch Functions (KLL/Theta/Top-K/Tuple)** — 근사 분석 함수 패밀리 | DBSQL & Analytics | ✅ |
+| 05.03 | **Unity Catalog ↔ BigQuery Catalog Federation** — 데이터 복제 없는 양방향 페더레이션 | UC & Governance | 미정 |
+| 05.02 | **Lakebase Customer-Managed Keys (CMK)** — 영구 저장소 + 단명 컴퓨트 암호화 | Lakebase | 미정 |
+| 05.01 | **Stripe Marketplace Listing** — Databricks Marketplace에서 Stripe 데이터 직접 사용 | Marketplace | ✅ |
+
+## Beta
+
+| 날짜 | 기능 | 영역 | 서울 리전 |
+|------|------|------|-----------|
+| 05.05 | **GitHub Managed Ingestion Connector** — GitHub 활동/이슈/PR을 UC로 수집 | Data Engineering | 미정 |
+| 05.04 | **SAP Semantic Metadata Delta Sharing** — SAP 비즈니스 컨텍스트와 의미 메타데이터 공유 | Data Sharing | 미정 |
+| 05.03 | **Lakeflow Designer** — 드래그 앤 드롭 + 자연어 데이터 파이프라인 빌더 | Data Engineering | 미정 |
+
+## 주요 블로그·발표
+
+- **[다음 세대 Databricks Genie](/translations/2026-04-26-next-generation-genie)** (4/26) — 단일 Genie Space에서 통합 어시스턴트로 진화, Databricks One 비즈니스 사용자 홈, 모바일 앱
+- **[AI Agent는 준비되었지만 아키텍처는?](/translations/2026-04-29-agents-ready-architecture)** (4/29) — 거버넌스 공백·데이터 사일로·잘못된 토대 패턴 분석
+- **[서버리스 분산 시스템 재설계](/translations/2026-05-06-rethinking-distributed-systems-serverless)** (5/6) — Spark Connect + 게이트웨이 + 적응형 오토스케일링으로 99.998% 성공률 달성

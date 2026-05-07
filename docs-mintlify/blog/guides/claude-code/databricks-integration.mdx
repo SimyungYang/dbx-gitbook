@@ -1,0 +1,197 @@
+---
+title: "Databricks 연계 활용"
+description: "Claude Code를 Databricks 워크스페이스, MCP, 스킬과 함께 사용하는 패턴"
+---
+
+## 개요
+
+Claude Code는 단순한 코드 어시스턴트를 넘어, **Databricks CLI·REST API·MCP 서버**를 통해 워크스페이스와 직접 통신할 수 있습니다. 이 페이지에서는 일상적인 데이터/AI 워크로드에서 Claude Code를 활용하는 패턴을 다룹니다.
+
+## Databricks CLI 연계
+
+가장 단순한 통합은 `databricks` CLI를 Claude가 직접 호출하는 방식입니다.
+
+### 인증 설정
+
+```bash
+databricks auth login --host https://<workspace>.azuredatabricks.net
+# 또는 OAuth 프로필
+databricks configure --profile myws
+```
+
+### 자주 사용하는 패턴
+
+**스키마 탐색**
+```
+> databricks api get /api/2.1/unity-catalog/schemas?catalog_name=main 결과를 보고
+  schema 목록을 표로 정리해줘
+```
+
+**잡 실행 후 결과 모니터링**
+```
+> databricks bundle run my_etl_job 실행한 뒤,
+  완료될 때까지 대기하고 실패면 로그에서 에러 라인을 추출해줘
+```
+
+**Volume에 파일 업로드**
+```
+> /tmp/data.parquet 파일을 /Volumes/main/raw/uploads에 올리고,
+  업로드 후 LIST로 확인해줘
+```
+
+## Databricks MCP 서버 — 더 강력한 통합
+
+Databricks는 공식 MCP(Model Context Protocol) 서버를 통해 Claude Code에 풍부한 도구를 노출합니다. CLI보다 표현력이 좋고, JSON 파싱 없이 구조화된 응답을 받을 수 있습니다.
+
+### 설정
+
+`~/.claude/settings.json`에 추가:
+
+```json
+{
+  "mcpServers": {
+    "databricks": {
+      "command": "uvx",
+      "args": ["databricks-mcp"],
+      "env": {
+        "DATABRICKS_HOST": "https://<workspace>",
+        "DATABRICKS_CONFIG_PROFILE": "myws"
+      }
+    }
+  }
+}
+```
+
+설정 후 `claude` 재시작.
+
+### 주요 MCP 도구
+
+| 도구 | 용도 |
+|------|------|
+| `execute_sql` | DBSQL Warehouse에서 SQL 직접 실행. 결과를 표로 받음 |
+| `get_table_stats_and_schema` | 테이블의 스키마·행 수·컬럼 통계를 한 번에 |
+| `manage_jobs` / `manage_job_runs` | 잡 생성·실행·상태 조회 |
+| `manage_pipeline` | Lakeflow 파이프라인 제어 |
+| `manage_volume_files` | Volume 파일 CRUD |
+| `query_vs_index` | Vector Search 인덱스 질의 |
+| `manage_uc_objects` | 카탈로그·스키마·테이블 관리 |
+| `manage_app` | Databricks Apps 배포·관리 |
+| `ask_genie` | Genie Space에 자연어 질문 |
+
+### 실제 사용 예
+
+**테이블 스키마 검토와 SQL 작성**
+```
+> main.sales.transactions의 스키마와 샘플을 확인하고,
+  지난 30일간 매출 상위 10개 카테고리를 추출하는 SQL을 작성해서 실행해줘
+```
+
+Claude가:
+1. `get_table_stats_and_schema`로 스키마 확인
+2. SQL 작성
+3. `execute_sql`로 실행
+4. 결과를 정리해 표시
+
+**잡 실패 디버깅**
+```
+> 마지막으로 실행된 etl_daily 잡의 결과를 확인하고,
+  실패면 어느 태스크에서 어떤 에러로 실패했는지 알려줘
+```
+
+## Databricks 관련 Skills
+
+Claude Code는 도메인별 **Skills**(가이드 + 코드 템플릿 묶음)를 통해 더 정교한 작업을 수행합니다. Databricks 환경에서 자주 쓰는 스킬:
+
+| 스킬 | 무엇을 해주나 |
+|------|---------------|
+| `databricks-apps` | React + FastAPI Databricks App 스캐폴드와 배포 |
+| `databricks-asset-bundles` | DAB 프로젝트 생성, 다중 환경 구성 |
+| `databricks-genie` | Genie Space 빌드, 의미 모델 작성 |
+| `databricks-aibi-dashboards` | Lakeview 대시보드 생성 + SQL 검증 |
+| `databricks-ai-functions` | ai_classify, ai_extract 등 AI 함수 활용 |
+| `databricks-vector-search` | RAG 인덱스 구축, 하이브리드 검색 |
+| `databricks-mlflow-evaluation` | MLflow GenAI 평가 파이프라인 |
+| `databricks-spark-declarative-pipelines` | Lakeflow 선언적 파이프라인 |
+| `databricks-iceberg` | Managed/External Iceberg 테이블 운용 |
+
+스킬은 사용자가 명시적으로 호출(`/<스킬명>`)하거나, 트리거 키워드 기반으로 자동 활성화됩니다.
+
+### 사용 예
+
+```
+> /databricks-apps
+> Lakebase + RAG로 사내 검색 앱 만들어줘. 업로드한 PDF를 청킹해서
+  Vector Search 인덱스에 넣고, 사용자가 질문하면 답변과 출처를 보여주는 형태.
+```
+
+스킬이 활성화되면 표준 스캐폴드(React 프론트, FastAPI 백엔드, app.yaml, OAuth 설정)를 자동 생성하고 배포까지 안내합니다.
+
+## 노트북 vs Claude Code — 언제 어느 쪽?
+
+| 작업 | 적합한 도구 |
+|------|-------------|
+| 데이터 탐색·시각화 | Databricks Notebook |
+| 모델 학습 (긴 실행) | Notebook 또는 Job |
+| 스크립트화·재사용 가능한 ETL | Claude Code → DAB |
+| 앱 빌드 / IaC | Claude Code |
+| 일회성 SQL 분석 | Notebook 또는 DBSQL Editor |
+| 다단계 자동화 (예: "잡 실행 → 실패 분석 → JIRA 티켓") | Claude Code |
+
+> 일반 원칙: **데이터를 보고 싶을 때는 노트북, 코드를 짜고 시스템을 조립할 때는 Claude Code.**
+
+## 실전 워크플로우 — 풀스택 Databricks App 만들기
+
+### 1단계: 스캐폴드
+
+```
+> /databricks-apps
+> 매출 대시보드 앱을 만들고 싶어. UC 테이블 main.sales.transactions를
+  소스로 쓰고, 일별 매출 추이와 상위 카테고리를 보여주는 React 앱.
+```
+
+### 2단계: 백엔드 라우트
+
+스캐폴드 후 FastAPI에 엔드포인트 추가:
+
+```
+> /api/sales/daily 라우트 추가해줘. 
+  서비스 프린시플 OAuth로 SQL Warehouse에 연결하고
+  지난 N일 매출을 반환. N은 쿼리 파라미터.
+```
+
+### 3단계: 프론트 컴포넌트
+
+```
+> Recharts로 일별 매출 라인 차트 컴포넌트 추가하고,
+  로딩 상태와 에러 핸들링도 같이.
+```
+
+### 4단계: 로컬 테스트
+
+```
+> 로컬에서 백엔드(uvicorn)와 프론트(npm run dev)를 동시에 실행하고,
+  /api/sales/daily?days=7 호출해서 응답 형식 확인해줘
+```
+
+### 5단계: 배포
+
+```
+> databricks apps deploy로 배포하고, 배포 후 로그 확인해서
+  에러 없이 시작됐는지 체크해줘
+```
+
+각 단계에서 Claude는 필요한 명령을 직접 실행하고 결과를 검증합니다. **5단계가 끝날 때 동작하는 앱이 워크스페이스에 떠 있는** 상태가 목표입니다.
+
+## 주의 사항 — 워크스페이스 검증 필수
+
+작업 전에 반드시 확인:
+
+1. **올바른 워크스페이스**: `databricks current-user me`로 자신이 어느 워크스페이스에 연결됐는지 확인
+2. **권한 확인**: 카탈로그 쓰기 권한이 있는지 미리 점검
+3. **시크릿 격리**: PAT나 OAuth 시크릿을 평문 코드에 두지 말 것 — Databricks Secrets 또는 환경 변수 사용
+
+> "잘못된 환경에 데이터를 넣거나, 확인 없이 바로 구현에 들어가서 시간을 낭비하지 않는다." — 작업 전 검증 원칙
+
+## 다음 단계
+
+다음 페이지에서 자동화와 후크를 다룹니다.

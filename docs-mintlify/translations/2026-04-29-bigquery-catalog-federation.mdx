@@ -1,0 +1,67 @@
+---
+title: "Unity Catalog와 Google BigQuery 카탈로그 페더레이션 — 데이터 복제 없는 상호운용성"
+---
+
+
+작성자: Databricks Unity Catalog 팀 | 2026년 4월 29일
+
+원문: https://www.databricks.com/blog/interoperability-between-unity-catalog-and-google-bigquery-catalog-federation
+
+---
+
+> **참고**
+**요약**
+- **양방향 페더레이션**: BigQuery에서 Unity Catalog 관리 테이블을 직접 조회하고, Databricks에서 Cloud Lakehouse가 관리하는 Iceberg 테이블을 직접 조회하는 양쪽 방향 모두 지원됩니다.
+- **데이터 복제 없음**: 같은 데이터를 두 플랫폼 모두에서 사용 가능 — 복사도, 이동도 필요 없음.
+- **Unity Catalog 거버넌스 일관성**: 접근 제어, 정책, 리니지가 두 환경에서 동일하게 적용됩니다.
+
+---
+
+데이터가 한 클라우드의 한 플랫폼에만 머무르는 시대는 끝났습니다. 조직은 BigQuery와 Databricks를 함께 쓰고, 팀마다 선호하는 도구가 다르며, 같은 데이터에 두 도구 모두에서 접근해야 하는 상황이 일상입니다. 지금까지 이 상황의 표준 답은 **데이터 복제**였습니다 — 비용·동기화·거버넌스가 모두 깨지는 답.
+
+Databricks와 Google Cloud는 이번에 **카탈로그 페더레이션**으로 이 답을 바꿉니다.
+
+## 두 가지 방향의 페더레이션
+
+### 방향 1 — BigQuery에서 Unity Catalog 데이터 조회
+
+Google Cloud는 카탈로그 페더레이션 지원을 프리뷰합니다. BigQuery 사용자가:
+
+> "Unity Catalog 관리 테이블을 데이터 복사 없이 읽을 수 있다."
+
+기존 BigQuery 쿼리, 대시보드, ML 워크플로우를 그대로 두고, Unity Catalog가 관리하는 테이블을 같은 SQL로 질의할 수 있습니다.
+
+### 방향 2 — Databricks에서 Cloud Lakehouse Iceberg 테이블 조회
+
+Databricks는 프라이빗 프리뷰를 통해 Google Cloud의 **Cloud Lakehouse가 관리하는 Iceberg 테이블**을 Unity Catalog에 직접 마운트할 수 있게 합니다. Foreign Iceberg 테이블 형태로 연결되며, 일반 UC 테이블과 동일한 권한·리니지·정책이 적용됩니다.
+
+## 핵심 가치 세 가지
+
+### 1. 데이터 통합 (Data Unification)
+
+같은 데이터셋이 양쪽에서 동일하게 접근 가능합니다. 복제도, 이동도, 동기화 작업도 없습니다. **단일 원본(single source of truth)** 이 진짜로 단일하게 유지됩니다.
+
+### 2. 통합 거버넌스 (Unified Governance)
+
+Unity Catalog의 접근 제어, 컬럼 마스킹, 행 필터, 리니지 추적이 두 환경에서 일관되게 적용됩니다. 같은 사용자가 BigQuery에서 데이터를 보든 Databricks에서 보든, 같은 보안 정책이 강제됩니다.
+
+### 3. 향상된 분석 (Enhanced Analytics)
+
+Genie 같은 자연어 인터페이스를 통해 비즈니스 사용자도 페더레이션된 데이터에 질문을 던질 수 있습니다. 거버넌스는 변하지 않고 유지됩니다.
+
+## 기술적 토대 — 오픈 표준 위에서
+
+이 페더레이션은 **Delta Lake**와 **Apache Iceberg** 같은 오픈 테이블 포맷 표준 위에 구축됩니다. 이전에 발표된 페더레이션 작업—AWS Glue, Microsoft Azure, Snowflake와의 연결—이 이번에 Google Cloud로 확장된 것입니다.
+
+오픈 테이블 포맷이 만드는 것:
+- **벤더 락인 회피**: 데이터는 표준 포맷으로 머물러 있고, 컴퓨트 엔진만 바뀜
+- **양방향 호환**: Iceberg ↔ Delta 변환이 메타데이터 수준에서 일어남 (실제 데이터 복제 없음)
+- **에코시스템 호환**: PyIceberg, Trino, Spark, BigQuery, Snowflake 등 다양한 엔진이 모두 같은 데이터를 읽음
+
+## 시작하기
+
+**BigQuery 측 프리뷰 등록**: Google Cloud 문서를 통해 Unity Catalog federation 사인업.
+
+**Databricks 측 프라이빗 프리뷰 등록**: [Databricks 페더레이션 문서](https://docs.databricks.com/aws/en/query-federation/)에서 Cloud Lakehouse 연결 가이드 확인.
+
+조직이 멀티 클라우드·멀티 엔진 전략을 채택했다면, 이번 발표는 데이터 복제를 줄이고 거버넌스를 강화하는 직접적인 경로가 될 수 있습니다.

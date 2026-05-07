@@ -1208,6 +1208,17 @@
             ]
           },
           {
+            "group": "부록 — Claude Code 사용 가이드",
+            "pages": [
+              "blog/guides/claude-code/overview",
+              "blog/guides/claude-code/installation",
+              "blog/guides/claude-code/basic-workflow",
+              "blog/guides/claude-code/databricks-integration",
+              "blog/guides/claude-code/automation-hooks",
+              "blog/guides/claude-code/best-practices"
+            ]
+          },
+          {
             "group": "모범 사례",
             "pages": [
               {
@@ -1620,6 +1631,8 @@
           {
             "group": "AI & Agent",
             "pages": [
+              "translations/2026-04-29-agents-ready-architecture",
+              "translations/2026-04-26-next-generation-genie",
               "translations/2026-04-06-multi-agent-audience-intelligence",
               "translations/2026-04-03-aichemy-drug-discovery",
               "translations/2026-04-02-agentic-analytics-governance",
@@ -1641,6 +1654,7 @@
           {
             "group": "Data Engineering",
             "pages": [
+              "translations/2026-04-29-sketch-functions-analytics",
               "translations/2026-04-02-lakeflow-connect-free-tier",
               "translations/2026-03-24-stop-hand-coding-cdc",
               "translations/2026-03-18-real-time-analytics-no-etl",
@@ -1656,6 +1670,7 @@
           {
             "group": "Unity Catalog & 거버넌스",
             "pages": [
+              "translations/2026-04-29-bigquery-catalog-federation",
               "translations/2026-04-02-unity-catalog-business-semantics-ga",
               "translations/2026-03-11-uc-metastore-migration",
               "translations/2026-03-05-unified-ai-governance",
@@ -1667,6 +1682,7 @@
           {
             "group": "Lakebase & Apps",
             "pages": [
+              "translations/2026-04-20-lakebase-customer-managed-keys",
               "translations/2026-03-27-lakebase-zero-downtime-patching",
               "translations/2026-03-20-introducing-databricks-apps",
               "translations/2026-03-18-lakebase-announcement",
@@ -1696,6 +1712,7 @@
           {
             "group": "플랫폼 & 기타",
             "pages": [
+              "translations/2026-05-06-rethinking-distributed-systems-serverless",
               "translations/2026-03-27-default-warehouse",
               "translations/2026-03-17-evolving-lakehouse",
               "translations/2026-02-18-databricksiq",
@@ -1729,6 +1746,7 @@
           {
             "group": "월별 릴리스",
             "pages": [
+              "releases/monthly/2026-05",
               "releases/monthly/2026-04",
               "releases/monthly/2026-03",
               "releases/monthly/2026-02",
