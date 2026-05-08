@@ -53,7 +53,7 @@ client = MlflowClient()
 # 모델 설명 추가
 client.update_registered_model(
     name=model_name,
-    description="""LG Innotek 예지보전 모델. AI4I 2020 기반 XGBoost 분류기.
+    description="""제조 현장 예지보전 모델. AI4I 2020 기반 XGBoost 분류기.
     입력: 설비 센서값 (온도, 회전속도, 토크, 공구 마모 등)
     출력: 고장 발생 확률 및 이진 분류 결과."""
 )

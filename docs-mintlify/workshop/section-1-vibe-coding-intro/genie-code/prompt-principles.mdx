@@ -20,7 +20,7 @@ Genie Code는 대화 내에서 "결정 트리"를 구축합니다. 다른 맥락
 ✅ 작업별 새 대화:
 대화 1: "viewing_logs 분석해줘" 
 대화 2 (새로 시작): "viewing_logs 정제하는 SDP 파이프라인을 만들어줘"
-대화 3 (새로 시작): "@lge_smart_tv.gold.daily_viewing_summary로 대시보드 만들어줘"
+대화 3 (새로 시작): "@smart_tv.gold.daily_viewing_summary로 대시보드 만들어줘"
 ```
 
 > 💡 **화면 참고**: 채팅 패널 상단의 "New conversation" 버튼
@@ -61,7 +61,7 @@ Genie Code는 대화 내에서 "결정 트리"를 구축합니다. 다른 맥락
 "시청 로그 테이블을 분석해줘"
 
 ✅ 명시적 참조:
-"@lge_smart_tv.bronze.viewing_logs에서 시간대별 시청 패턴을 분석해줘"
+"@smart_tv.bronze.viewing_logs에서 시간대별 시청 패턴을 분석해줘"
 ```
 
 `@`를 입력하면 자동완성 드롭다운이 나타나서 오타 없이 정확한 테이블을 선택할 수 있습니다.
@@ -84,7 +84,7 @@ Genie Code는 대화 내에서 "결정 트리"를 구축합니다. 다른 맥락
 ### 실습: @ 문법 직접 확인해보기
 
 ```
-@lge_smart_tv.bronze.devices 이 테이블의 스키마를 보여줘.
+@smart_tv.bronze.devices 이 테이블의 스키마를 보여줘.
 각 컬럼의 이름, 타입, 설명을 표로 정리해줘.
 ```
 
@@ -98,7 +98,7 @@ Genie Code는 대화 내에서 "결정 트리"를 구축합니다. 다른 맥락
 
 | 명시 항목 | 나쁜 예 | 좋은 예 |
 |----------|--------|--------|
-| **테이블** | "데이터를 분석해줘" | "@lge_smart_tv.gold.daily_viewing_summary를 분석해줘" |
+| **테이블** | "데이터를 분석해줘" | "@smart_tv.gold.daily_viewing_summary를 분석해줘" |
 | **관점** | "분석해줘" | "지역별, 제품라인별 평균 시청 시간을 비교해줘" |
 | **시각화** | "차트 만들어줘" | "matplotlib 가로 막대 차트, 시청 시간 내림차순" |
 | **출력 형태** | "결과 보여줘" | "Delta 테이블로 저장, COMMENT 포함" |
@@ -109,7 +109,7 @@ Genie Code는 대화 내에서 "결정 트리"를 구축합니다. 다른 맥락
 ```
 ❌ "좋은 대시보드 만들어줘"
 
-✅ "@lge_smart_tv.gold.ad_campaign_kpi로 대시보드를 만들어줘.
+✅ "@smart_tv.gold.ad_campaign_kpi로 대시보드를 만들어줘.
 
    Row 1: KPI 카운터 4개 (총 노출수, 평균 CTR%, 평균 VCR%, 총 수익 USD)
    Row 2: 일별 노출/클릭 추이 (꺾은선), 광고 형식별 CTR 비교 (막대)
@@ -141,7 +141,7 @@ Genie Code는 대화 내에서 "결정 트리"를 구축합니다. 다른 맥락
 안전 규칙이 잘 동작하는지 확인해보세요:
 
 ```
-@lge_smart_tv.bronze.devices에서 region = 'KR'인 디바이스를 10건만 조회해줘.
+@smart_tv.bronze.devices에서 region = 'KR'인 디바이스를 10건만 조회해줘.
 결과를 보여주기만 하고, 절대 기존 테이블을 수정하지 마.
 ```
 

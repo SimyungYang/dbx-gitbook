@@ -32,7 +32,7 @@ catalog: lge_appliance
 │   ├── [Operation] ac_operation_logs        250,000건   — 냉방/난방/제습/송풍 모드, 풍향/풍속
 │   ├── [Operation] ac_compressor_events      80,000건   — 컴프레서 가동/정지, 주파수(Hz)
 │   ├── [Energy] ac_energy_consumption       200,000건   — 시간대별 전력 소비 및 EER
-│   ├── [IoT] ac_thinq_commands               60,000건   — ThinQ 앱 원격 제어 명령
+│   ├── [IoT] ac_thinq_commands               60,000건   — 제조사 모바일 앱 원격 제어 명령
 │   ├── [Alert] ac_alert_events               30,000건   — 에러 코드, 정비 알림
 │   └── [Maintenance] ac_maintenance_logs     20,000건   — 정기 점검, 냉매 충전, 세척 이력
 ```
@@ -56,7 +56,7 @@ DDL 정보:
 - firmware_version: STRING — 'v2.5.0' ~ 'v3.2.0'
 - region: STRING — 서울, 경기, 부산, 대구, 광주, 대전, 인천, 세종
 - install_type: STRING — '벽걸이', '스탠드', '천장형', '시스템'
-- thinq_registered: BOOLEAN — ThinQ 앱 등록 여부 (75% true)
+- thinq_registered: BOOLEAN — 제조사 모바일 앱 등록 여부 (75% true)
 - warranty_end_date: DATE — manufactured_date + 3년
 - registration_date: TIMESTAMP
 
@@ -180,11 +180,11 @@ DDL 정보:
 - command_payload: STRING — JSON 형태 명령 파라미터
 - execution_result: STRING — 'success', 'failed', 'timeout', 'device_offline'
 - response_time_ms: INT — 명령 응답 시간(ms), 100~5000
-- app_version: STRING — ThinQ 앱 버전
+- app_version: STRING — 제조사 모바일 앱 버전
 - event_date: DATE
 
 성공률 90%, 실패 6%, 타임아웃 2.5%, 오프라인 1.5%.
-COMMENT: 'ThinQ 앱 에어컨 원격 제어 명령 로그'
+COMMENT: '제조사 모바일 앱 에어컨 원격 제어 명령 로그'
 Delta 형식, event_date 파티셔닝.
 ```
 
@@ -198,7 +198,7 @@ DDL 정보:
 - device_id: STRING
 - alert_at: TIMESTAMP
 - alert_type: STRING — 'filter_clean', 'refrigerant_low', 'compressor_error', 'sensor_fault', 'defrost_cycle', 'firmware_update'
-- error_code: STRING — 'CH01'~'CH15' LG 에러 코드 체계
+- error_code: STRING — 'CH01'~'CH15' 에러 코드 체계
 - severity: STRING — 'info', 'warning', 'critical'
 - alert_message: STRING — 한글 알림 메시지
 - acknowledged: BOOLEAN — 사용자 확인 여부

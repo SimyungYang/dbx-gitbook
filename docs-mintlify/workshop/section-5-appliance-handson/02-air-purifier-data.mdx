@@ -32,7 +32,7 @@ catalog: lge_appliance
 │   ├── [Operation] ap_operation_logs       200,000건   — 운전 모드(자동/수동/터보/수면), 풍량 단계
 │   ├── [Operation] ap_power_events          80,000건   — 전원 ON/OFF, 대기모드 전환
 │   ├── [Energy] ap_energy_consumption      150,000건   — 시간대별 전력 소비량(W)
-│   ├── [IoT] ap_thinq_commands              50,000건   — ThinQ 앱 원격 제어 명령
+│   ├── [IoT] ap_thinq_commands              50,000건   — 제조사 모바일 앱 원격 제어 명령
 │   └── [Alert] ap_alert_events              30,000건   — 필터 교체 알림, 센서 이상, 에러 코드
 ```
 
@@ -53,7 +53,7 @@ DDL 정보:
 - firmware_version: STRING — 'v3.2.1' ~ 'v4.1.0' 범위
 - region: STRING — 서울, 경기, 부산, 대구, 광주, 대전, 인천, 세종
 - install_location: STRING — 거실, 침실, 사무실, 아이방, 주방
-- thinq_registered: BOOLEAN — ThinQ 앱 등록 여부 (80% true)
+- thinq_registered: BOOLEAN — 제조사 모바일 앱 등록 여부 (80% true)
 - warranty_end_date: DATE — manufactured_date + 2년
 - registration_date: TIMESTAMP
 
@@ -175,11 +175,11 @@ DDL 정보:
 - command_payload: STRING — JSON 형태 명령 파라미터
 - execution_result: STRING — 'success', 'failed', 'timeout', 'device_offline'
 - response_time_ms: INT — 명령 응답 시간(ms), 100~5000
-- app_version: STRING — ThinQ 앱 버전
+- app_version: STRING — 제조사 모바일 앱 버전
 - event_date: DATE
 
 성공률 92%, 실패 5%, 타임아웃 2%, 오프라인 1%.
-COMMENT: 'ThinQ 앱 원격 제어 명령 로그'
+COMMENT: '제조사 모바일 앱 원격 제어 명령 로그'
 Delta 형식, event_date 파티셔닝.
 ```
 

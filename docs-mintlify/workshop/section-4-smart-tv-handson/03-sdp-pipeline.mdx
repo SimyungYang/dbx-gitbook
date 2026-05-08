@@ -51,7 +51,7 @@ title: "SDP 파이프라인"
 ### Genie Code 프롬프트: 데이터 품질 진단
 
 ```
-lge_smart_tv.bronze의 모든 테이블에 대해 데이터 품질 리포트를 만들어줘:
+smart_tv.bronze의 모든 테이블에 대해 데이터 품질 리포트를 만들어줘:
 
 1. 각 테이블별 NULL 비율 상위 5개 컬럼
 2. 중복 레코드 수 (event_id 기준)
@@ -131,7 +131,7 @@ Genie Code가 코드를 생성하면 다음 순서로 진행합니다:
 #### Silver 1: viewing_sessions (시청 세션)
 
 ```
-lge_smart_tv.bronze.viewing_logs를 정제하여 lge_smart_tv.silver.viewing_sessions 테이블을 만들어줘.
+smart_tv.bronze.viewing_logs를 정제하여 smart_tv.silver.viewing_sessions 테이블을 만들어줘.
 
 변환 규칙:
 1. event_id 기준 중복 제거 (같은 event_id면 최신 session_start만 유지)
@@ -156,7 +156,7 @@ CTAS SQL로 만들어줘.
 #### Silver 2: system_metrics (시스템 메트릭)
 
 ```
-lge_smart_tv.bronze.resource_utilization을 정제하여 lge_smart_tv.silver.system_metrics를 만들어줘.
+smart_tv.bronze.resource_utilization을 정제하여 smart_tv.silver.system_metrics를 만들어줘.
 
 변환 규칙:
 1. 이상치 클리핑: cpu_usage_pct, gpu_usage_pct, mem_used_pct → CLIP(0, 100)
@@ -182,7 +182,7 @@ CTAS SQL로 만들어줘.
 #### Silver 3: ad_funnel (광고 퍼널)
 
 ```
-lge_smart_tv.bronze.ad_impressions를 정제하여 lge_smart_tv.silver.ad_funnel을 만들어줘.
+smart_tv.bronze.ad_impressions를 정제하여 smart_tv.silver.ad_funnel을 만들어줘.
 
 변환 규칙:
 1. event_id 기준 중복 제거
@@ -206,7 +206,7 @@ CTAS SQL로 만들어줘.
 #### Silver 4: streaming_quality (스트리밍 품질)
 
 ```
-lge_smart_tv.bronze.streaming_buffer_events를 정제하여 lge_smart_tv.silver.streaming_quality를 만들어줘.
+smart_tv.bronze.streaming_buffer_events를 정제하여 smart_tv.silver.streaming_quality를 만들어줘.
 
 변환 규칙:
 1. event_id 중복 제거
@@ -227,7 +227,7 @@ CTAS SQL로 만들어줘.
 #### Silver 5: error_events (에러 이벤트)
 
 ```
-lge_smart_tv.bronze.error_crash_events를 정제하여 lge_smart_tv.silver.error_events를 만들어줘.
+smart_tv.bronze.error_crash_events를 정제하여 smart_tv.silver.error_events를 만들어줘.
 
 변환 규칙:
 1. event_id 중복 제거
@@ -400,7 +400,7 @@ silver.system_metrics, silver.error_events, silver.boot_events를 결합하여 g
 - health_grade: A(90~100), B(70~89), C(50~69), D(30~49), F(0~29)
 - risk_factors: 주요 위험 요인 배열 (예: ["high_crash_rate", "thermal_throttle", "oom_frequent"])
 
-devices 조인으로 product_line, webos_version 추가.
+devices 조인으로 product_line, os_version 추가.
 event_date 파티셔닝, device_id Z-ORDER.
 ```
 

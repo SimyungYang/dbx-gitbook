@@ -100,7 +100,7 @@ df = spark.read.parquet("/Volumes/my_catalog/my_schema/my_volume/file.parquet")
 
 # ✅ SQL 실행
 %sql
-SELECT * FROM lge_smart_tv.gold.daily_viewing_summary LIMIT 10
+SELECT * FROM smart_tv.gold.daily_viewing_summary LIMIT 10
 
 # ✅ 외부 API 호출 (노트북 코드에서)
 import requests

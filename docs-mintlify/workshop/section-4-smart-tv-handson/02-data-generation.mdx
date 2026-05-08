@@ -1,5 +1,5 @@
 ---
-title: "webOS Smart TV 가상 데이터 생성"
+title: "Smart TV 가상 데이터 생성"
 ---
 
 
@@ -16,9 +16,9 @@ title: "webOS Smart TV 가상 데이터 생성"
 
 ## 개요
 
-LG webOS Smart TV에서 실제로 발생하는 텔레메트리 로그 체계를 기반으로 **10개 카테고리, 17개 테이블, 약 250만 건**의 가상 데이터를 생성합니다.
+Smart TV에서 실제로 발생하는 텔레메트리 로그 체계를 기반으로 **10개 카테고리, 17개 테이블, 약 250만 건**의 가상 데이터를 생성합니다.
 
-webOS의 실제 로깅 인프라(`pmlogd`, Luna Service API, `rdxd`)의 구조를 반영하여, 현실적인 필드명과 값 분포를 가진 데이터를 만듭니다.
+Smart TV OS의 실제 로깅 인프라(`pmlogd`, Luna Service API, `rdxd`)의 구조를 반영하여, 현실적인 필드명과 값 분포를 가진 데이터를 만듭니다.
 
 ### Genie Code로 생성하기
 
@@ -99,14 +99,14 @@ Unity Catalog에 다음 환경을 설정해줘:
 
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
-| `device_id` | STRING | 고유 디바이스 ID | `LGE_TV_KR_000001` |
+| `device_id` | STRING | 고유 디바이스 ID | `STV_KR_000001` |
 | `model_name` | STRING | TV 모델명 | `OLED65C4PSA`, `86QNED90TPA` |
 | `product_line` | STRING | 제품 라인 | `OLED_C`, `OLED_G`, `QNED`, `NANO`, `UHD` |
 | `panel_type` | STRING | 패널 타입 | `WOLED`, `OLED_EX`, `MLA_OLED_EX`, `NanoCell`, `IPS_LCD` |
 | `screen_size_inch` | INT | 화면 크기 | `55`, `65`, `77`, `83`, `97` |
 | `manufacturing_date` | DATE | 제조일 | `2024-03-15` |
 | `manufacturing_country` | STRING | 제조국 | `KR`, `PL`, `MX`, `CN`, `ID` |
-| `webos_version` | STRING | webOS 버전 | `24.10.40`, `23.08.25`, `6.0`, `5.0` |
+| `os_version` | STRING | Smart TV OS 버전 | `24.10.40`, `23.08.25`, `6.0`, `5.0` |
 | `firmware_version` | STRING | 펌웨어 버전 | `03.33.85` |
 | `soc_chipset` | STRING | SoC 칩셋 | `Alpha9_Gen7`, `Alpha8`, `Alpha5_Gen7` |
 | `ram_mb` | INT | RAM 용량 | `2048`, `3072`, `4096` |
@@ -125,12 +125,12 @@ Unity Catalog에 다음 환경을 설정해줘:
 ### Genie Code 프롬프트
 
 ```
-10,000개의 LG webOS Smart TV 디바이스 마스터 데이터를 생성해줘.
+10,000개의 Smart TV 디바이스 마스터 데이터를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.devices
-- device_id: "LGE_TV_{region}_{6자리 시퀀스}" 형식 (예: LGE_TV_KR_000001)
-- model_name: LG TV 실제 모델 naming convention 따를 것
+- 테이블: smart_tv.bronze.devices
+- device_id: "STV_{region}_{6자리 시퀀스}" 형식 (예: STV_KR_000001)
+- model_name: Smart TV 실제 모델 naming convention 따를 것
   - OLED: OLED{size}{시리즈}{년도} (예: OLED65C4PSA, OLED77G4PUA)
   - QNED: {size}QNED{시리즈}{년도} (예: 86QNED90TPA, 75QNED85TPA)  
   - NANO: {size}NANO{시리즈}{년도} (예: 65NANO80TPA)
@@ -141,7 +141,7 @@ Unity Catalog에 다음 환경을 설정해줘:
   - QNED/NANO → NanoCell
   - UHD → IPS_LCD
 - screen_size_inch: OLED(55,65,77,83,97), QNED(65,75,86), NANO(50,55,65), UHD(43,50,55,65)
-- webos_version: "24.10.40"(30%), "23.08.25"(25%), "6.0"(20%), "5.0"(15%), "4.5"(10%)
+- os_version: "24.10.40"(30%), "23.08.25"(25%), "6.0"(20%), "5.0"(15%), "4.5"(10%)
 - region 분포: KR(30%), US(25%), EU(20%), JP(10%), SEA(10%), LATAM(5%)
 - manufacturing_date: 2022-01 ~ 2025-12 범위
 - soc_chipset은 product_line에 따라: OLED_G→Alpha9_Gen7, OLED_C→Alpha9_Gen7, OLED_B→Alpha8, QNED→Alpha8, NANO/UHD→Alpha5_Gen7
@@ -155,7 +155,7 @@ Delta 테이블로 저장하고 COMMENT를 달아줘.
 ### 생성 확인
 
 ```
-lge_smart_tv.bronze.devices 테이블이 잘 생성됐는지 확인해줘.
+smart_tv.bronze.devices 테이블이 잘 생성됐는지 확인해줘.
 총 row 수, region별 분포, product_line별 분포를 보여줘.
 ```
 
@@ -180,21 +180,21 @@ lge_smart_tv.bronze.devices 테이블이 잘 생성됐는지 확인해줘.
 
 ### 테이블 2: system_boot_events (시스템 부팅/전원 이벤트)
 
-> webOS `pmlogd` 로그 형식을 기반으로 한 부팅/전원 상태 전환 이벤트.
+> Smart TV의 `pmlogd` 로그 형식을 기반으로 한 부팅/전원 상태 전환 이벤트.
 
 ### 스키마 정의
 
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
 | `event_id` | STRING | 이벤트 고유 ID | `EVT_BOOT_20250101_000001` |
-| `device_id` | STRING | FK → devices | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices | `STV_KR_000001` |
 | `timestamp` | TIMESTAMP | ISO 8601 UTC | `2025-01-15T09:24:09.612Z` |
 | `monotonic_ms` | BIGINT | 부팅 이후 경과 ms | `10151514` |
 | `event_type` | STRING | 이벤트 유형 | `COLD_BOOT`, `WARM_BOOT`, `POWER_ON`, `POWER_OFF`, `STANDBY_ENTER`, `STANDBY_EXIT` |
 | `boot_reason` | STRING | 부팅 사유 | `user_remote`, `timer_wakeup`, `cec_wakeup`, `ota_update`, `watchdog_reset` |
 | `boot_time_ms` | INT | 부팅 소요 시간 | `8500` ~ `25000` |
 | `previous_shutdown` | STRING | 이전 종료 방식 | `clean`, `dirty`, `watchdog` |
-| `webos_version` | STRING | OS 버전 | `24.10.40` |
+| `os_version` | STRING | OS 버전 | `24.10.40` |
 | `firmware_version` | STRING | 펌웨어 버전 | `03.33.85` |
 | `kernel_version` | STRING | 커널 버전 | `4.14.150-lge-g12345` |
 | `uptime_before_event_sec` | BIGINT | 이벤트 전 가동 시간 | `86400` |
@@ -202,11 +202,11 @@ lge_smart_tv.bronze.devices 테이블이 잘 생성됐는지 확인해줘.
 ### Genie Code 프롬프트
 
 ```
-50,000건의 webOS TV 부팅/전원 이벤트 로그를 생성해줘.
+50,000건의 Smart TV OS TV 부팅/전원 이벤트 로그를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.system_boot_events
-- device_id는 lge_smart_tv.bronze.devices에서 랜덤 샘플링
+- 테이블: smart_tv.bronze.system_boot_events
+- device_id는 smart_tv.bronze.devices에서 랜덤 샘플링
 - timestamp: 2025-01-01 ~ 2025-12-31 범위, 디바이스별 timezone 반영
 - event_type 분포: POWER_ON(30%), POWER_OFF(25%), STANDBY_ENTER(20%), STANDBY_EXIT(15%), COLD_BOOT(5%), WARM_BOOT(5%)
 - boot_reason: POWER_ON일 때 → user_remote(60%), timer_wakeup(15%), cec_wakeup(15%), ota_update(5%), watchdog_reset(5%)
@@ -214,7 +214,7 @@ lge_smart_tv.bronze.devices 테이블이 잘 생성됐는지 확인해줘.
 - previous_shutdown: clean(85%), dirty(10%), watchdog(5%)
 - POWER_ON/POWER_OFF는 쌍으로 발생하도록 시간 순서 보장
 - 일반적으로 하루 1~3회 ON/OFF 사이클
-- webos_version, firmware_version은 devices 테이블과 조인하여 사용
+- os_version, firmware_version은 devices 테이블과 조인하여 사용
 - 이벤트 ID: "EVT_BOOT_{YYYYMMDD}_{6자리 시퀀스}" 형식
 
 Delta 테이블로 저장해줘.
@@ -230,7 +230,7 @@ Delta 테이블로 저장해줘.
 
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
-| `device_id` | STRING | FK → devices | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices | `STV_KR_000001` |
 | `timestamp` | TIMESTAMP | 수집 시각 | `2025-03-15T14:30:00.000Z` |
 | `cpu_usage_pct` | DOUBLE | CPU 사용률 | `34.7` |
 | `mem_total_kb` | INT | 전체 메모리 | `2097152` |
@@ -253,7 +253,7 @@ Delta 테이블로 저장해줘.
 200,000건의 TV 시스템 리소스 사용량 데이터를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.resource_utilization
+- 테이블: smart_tv.bronze.resource_utilization
 - device_id는 devices 테이블에서 랜덤 샘플링 (활성 디바이스 약 2000대)
 - timestamp: 2025-06-01 ~ 2025-06-30 (1개월), 1분 간격 샘플링
 - cpu_usage_pct: 앱에 따라 다름
@@ -282,7 +282,7 @@ Delta 테이블로 저장해줘.
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
 | `event_id` | STRING | 이벤트 고유 ID | `EVT_OTA_20250301_000001` |
-| `device_id` | STRING | FK → devices | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices | `STV_KR_000001` |
 | `timestamp` | TIMESTAMP | 이벤트 시각 | `2025-03-15T03:00:00.000Z` |
 | `event_type` | STRING | OTA 이벤트 유형 | `OTA_CHECK`, `OTA_AVAILABLE`, `OTA_DOWNLOAD_START`, `OTA_DOWNLOAD_COMPLETE`, `OTA_INSTALL_START`, `OTA_INSTALL_COMPLETE`, `OTA_ROLLBACK` |
 | `current_version` | STRING | 현재 펌웨어 | `03.33.80` |
@@ -298,7 +298,7 @@ Delta 테이블로 저장해줘.
 15,000건의 펌웨어 업데이트 이벤트를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.firmware_updates
+- 테이블: smart_tv.bronze.firmware_updates
 - device_id는 devices에서 샘플링
 - 업데이트는 주로 새벽 2~5시(로컬 타임존)에 발생
 - OTA 이벤트는 시퀀스로 발생: CHECK → AVAILABLE → DOWNLOAD_START → DOWNLOAD_COMPLETE → INSTALL_START → INSTALL_COMPLETE
@@ -325,14 +325,14 @@ Delta 테이블로 저장해줘.
 
 ### 테이블 5: viewing_logs (시청 로그)
 
-> webOS `com.webos.service.utp.broadcast` Luna Service 기반 채널/앱 시청 기록.
+> Smart TV의 `com.webos.service.utp.broadcast` Luna Service 기반 채널/앱 시청 기록.
 
 ### 스키마 정의
 
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
 | `event_id` | STRING | 이벤트 고유 ID | `EVT_VIEW_20250301_000001` |
-| `device_id` | STRING | FK → devices | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices | `STV_KR_000001` |
 | `session_start` | TIMESTAMP | 시청 시작 | `2025-03-15T20:00:00.000Z` |
 | `session_end` | TIMESTAMP | 시청 종료 | `2025-03-15T21:30:00.000Z` |
 | `duration_sec` | INT | 시청 시간 (초) | `5400` |
@@ -355,7 +355,7 @@ Delta 테이블로 저장해줘.
 500,000건의 Smart TV 시청 로그를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.viewing_logs
+- 테이블: smart_tv.bronze.viewing_logs
 - device_id는 devices에서 샘플링 (전체 10,000대 중 활성 약 8,000대)
 - timestamp: 2025-01-01 ~ 2025-12-31
 - 시청 패턴 반영:
@@ -377,14 +377,14 @@ Delta 테이블로 저장해줘.
 
 ### 테이블 6: app_launch_events (앱 실행 이벤트)
 
-> webOS `com.webos.applicationManager` (SAM) Luna Service 기반.
+> Smart TV의 `com.webos.applicationManager` (SAM) Luna Service 기반.
 
 ### 스키마 정의
 
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
 | `event_id` | STRING | 이벤트 고유 ID | `EVT_APP_20250301_000001` |
-| `device_id` | STRING | FK → devices | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices | `STV_KR_000001` |
 | `timestamp` | TIMESTAMP | 이벤트 시각 | `2025-03-15T20:00:00.000Z` |
 | `msgid` | STRING | SAM 메시지 ID | `NL_APP_LAUNCH_BEGIN`, `NL_APP_LAUNCH_END`, `APP_CLOSE`, `APP_PAUSE`, `APP_RELAUNCH` |
 | `app_id` | STRING | 앱 ID | `netflix`, `youtube.leanback.v4`, `com.webos.app.browser` |
@@ -403,7 +403,7 @@ Delta 테이블로 저장해줘.
 300,000건의 앱 실행 이벤트를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.app_launch_events
+- 테이블: smart_tv.bronze.app_launch_events
 - device_id는 devices에서 샘플링
 - msgid 시퀀스: NL_APP_LAUNCH_BEGIN → NL_APP_LAUNCH_END → (사용) → APP_CLOSE
 - app_id 상위 목록:
@@ -427,7 +427,7 @@ Delta 테이블로 저장해줘.
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
 | `event_id` | STRING | 이벤트 고유 ID | `EVT_INPUT_20250301_000001` |
-| `device_id` | STRING | FK → devices | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices | `STV_KR_000001` |
 | `timestamp` | TIMESTAMP | 전환 시각 | `2025-03-15T19:30:00.000Z` |
 | `input_id` | STRING | 전환된 입력 | `HDMI_1`, `HDMI_2`, `HDMI_3`, `HDMI_4` |
 | `previous_input_id` | STRING | 이전 입력 | `HDMI_2` |
@@ -443,13 +443,13 @@ Delta 테이블로 저장해줘.
 80,000건의 HDMI 입력 전환 이벤트를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.input_switch_events  
+- 테이블: smart_tv.bronze.input_switch_events  
 - device_id는 devices에서 샘플링 (HDMI 사용 디바이스 약 60%)
 - device_type 분포: stb(35%), game_console(25%), soundbar(15%), bluray(10%), pc(10%), unknown(5%)
 - cec_device_name 예시:
   - game_console → "PlayStation 5", "XBOX Series X", "Nintendo Switch"
-  - stb → "Apple TV 4K", "Chromecast", "Fire TV Stick", "KT IPTV", "SK Btv", "LG U+ tv"
-  - bluray → "LG UBK90", "Sony UBP-X800M2"
+  - stb → "Apple TV 4K", "Chromecast", "Fire TV Stick", "KT IPTV", "SK Btv", "통신사 IPTV"
+  - bluray → "블루레이 플레이어 (브랜드 X)", "Sony UBP-X800M2"
 - HDMI2.1 비율: OLED_C/G → 80%, 기타 → 30%
 - allm_active: game_console일 때 90% true
 - vrr_active: game_console이고 HDMI2.1일 때 85% true
@@ -471,14 +471,14 @@ Delta 테이블로 저장해줘.
 
 ### 테이블 8: wifi_connection_events (WiFi 연결 이벤트)
 
-> webOS `com.webos.service.connectionmanager` Luna Service 기반.
+> Smart TV의 `com.webos.service.connectionmanager` Luna Service 기반.
 
 ### 스키마 정의
 
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
 | `event_id` | STRING | 이벤트 고유 ID | `EVT_WIFI_20250301_000001` |
-| `device_id` | STRING | FK → devices | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices | `STV_KR_000001` |
 | `timestamp` | TIMESTAMP | 이벤트 시각 | `2025-03-15T09:00:00.000Z` |
 | `event_type` | STRING | 이벤트 유형 | `WIFI_CONNECTED`, `WIFI_DISCONNECTED`, `WIFI_AUTH_FAIL`, `DHCP_SUCCESS`, `DHCP_FAIL`, `WIFI_SCAN_COMPLETE` |
 | `state` | STRING | 연결 상태 | `connected`, `disconnected`, `connecting`, `associating` |
@@ -498,7 +498,7 @@ Delta 테이블로 저장해줘.
 100,000건의 WiFi 연결 이벤트를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.wifi_connection_events
+- 테이블: smart_tv.bronze.wifi_connection_events
 - device_id는 devices에서 network_type이 wifi인 디바이스만 (약 85%)
 - event_type: WIFI_CONNECTED(40%), WIFI_DISCONNECTED(25%), DHCP_SUCCESS(20%), WIFI_SCAN_COMPLETE(10%), WIFI_AUTH_FAIL(3%), DHCP_FAIL(2%)
 - ssid: 가정집 WiFi 이름 패턴 ("HomeNet_5G", "KT_GiGA_XXXX", "SK_WiFi_XXXX", "U+Net_XXXX", "iptime_XXXX")
@@ -521,7 +521,7 @@ Delta 테이블로 저장해줘.
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
 | `event_id` | STRING | 이벤트 고유 ID | `EVT_BUF_20250301_000001` |
-| `device_id` | STRING | FK → devices | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices | `STV_KR_000001` |
 | `timestamp` | TIMESTAMP | 이벤트 시각 | `2025-03-15T21:15:30.000Z` |
 | `event_type` | STRING | 버퍼 이벤트 | `STREAM_START`, `BUFFER_UNDERRUN`, `BUFFER_RECOVERY`, `BITRATE_SWITCH`, `STREAM_STOP`, `STREAM_ERROR` |
 | `app_id` | STRING | 스트리밍 앱 | `netflix`, `youtube.leanback.v4` |
@@ -541,7 +541,7 @@ Delta 테이블로 저장해줘.
 150,000건의 스트리밍 버퍼 이벤트를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.streaming_buffer_events
+- 테이블: smart_tv.bronze.streaming_buffer_events
 - device_id는 devices에서 샘플링
 - event_type 분포: STREAM_START(25%), BITRATE_SWITCH(30%), BUFFER_UNDERRUN(10%), BUFFER_RECOVERY(10%), STREAM_STOP(20%), STREAM_ERROR(5%)
 - app_id: netflix(30%), youtube(25%), wavve(15%), coupangplay(10%), tving(10%), disney+(10%)
@@ -575,7 +575,7 @@ Delta 테이블로 저장해줘.
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
 | `event_id` | STRING | 이벤트 고유 ID | `EVT_MEDIA_20250301_000001` |
-| `device_id` | STRING | FK → devices | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices | `STV_KR_000001` |
 | `timestamp` | TIMESTAMP | 이벤트 시각 | `2025-03-15T20:05:00.000Z` |
 | `event_type` | STRING | 이벤트 유형 | `MEDIA_PLAY_START`, `MEDIA_PLAY_STOP`, `RESOLUTION_CHANGE`, `HDR_MODE_CHANGE`, `CODEC_SWITCH` |
 | `video_codec` | STRING | 비디오 코덱 | `HEVC`, `AV1`, `VP9`, `H264` |
@@ -600,7 +600,7 @@ Delta 테이블로 저장해줘.
 200,000건의 미디어 재생 이벤트를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.media_playback_events
+- 테이블: smart_tv.bronze.media_playback_events
 - device_id는 devices에서 샘플링
 - video_codec 분포: HEVC(40%), AV1(20%), VP9(15%), H264(20%), MPEG2(5%)
   - AV1은 주로 YouTube, Netflix 최신 콘텐츠
@@ -621,14 +621,14 @@ Delta 테이블로 저장해줘.
 
 ### 테이블 11: acr_events (자동 콘텐츠 인식 이벤트)
 
-> LG "Live Plus" ACR 시스템. 화면 핑거프린트를 통한 콘텐츠 식별.
+> ACR (Automatic Content Recognition) 시스템. 화면 핑거프린트를 통한 콘텐츠 식별.
 
 ### 스키마 정의
 
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
 | `event_id` | STRING | 이벤트 고유 ID | `EVT_ACR_20250301_000001` |
-| `device_id` | STRING | FK → devices | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices | `STV_KR_000001` |
 | `timestamp` | TIMESTAMP | 이벤트 시각 | `2025-03-15T20:30:00.000Z` |
 | `event_type` | STRING | ACR 이벤트 | `ACR_FINGERPRINT`, `ACR_MATCH`, `ACR_NO_MATCH` |
 | `fingerprint_hash` | STRING | 화면 해시 | `a3f8c2e1b7d9...` (32자 hex) |
@@ -648,7 +648,7 @@ Delta 테이블로 저장해줘.
 300,000건의 ACR(자동 콘텐츠 인식) 이벤트를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.acr_events
+- 테이블: smart_tv.bronze.acr_events
 - device_id는 devices에서 샘플링 (ACR opt-in 디바이스 약 70%)
 - event_type: ACR_MATCH(70%), ACR_NO_MATCH(20%), ACR_FINGERPRINT(10%)
 - 30초 간격으로 fingerprint 생성 (실제는 10ms이지만 로그 집계 기준)
@@ -657,7 +657,7 @@ Delta 테이블로 저장해줘.
 - is_ad_break: linear_tv일 때 약 25% true (15분당 3~4분 광고)
 - 한국 프로그램: 드라마(슬기로운 의사생활, 이상한 변호사 우영우 등), 예능(나혼자산다, 놀면뭐하니 등), 뉴스(KBS 뉴스9 등)
 - 미국 프로그램: Breaking Bad, The Office, NFL Football 등
-- ad_brand: 한국(삼성, 현대, LG, SK, 롯데 등), 미국(Toyota, Apple, Amazon 등)
+- ad_brand: 한국 대기업 (제조·통신·유통 등), 미국(Toyota, Apple, Amazon 등)
 - dma_code: 한국(KR_SEOUL, KR_BUSAN, KR_INCHEON 등), 미국(US_501, US_803 등)
 
 Delta 테이블로 저장해줘.
@@ -672,7 +672,7 @@ Delta 테이블로 저장해줘.
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
 | `event_id` | STRING | 이벤트 고유 ID | `EVT_AD_20250301_000001` |
-| `device_id` | STRING | FK → devices | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices | `STV_KR_000001` |
 | `timestamp` | TIMESTAMP | 이벤트 시각 | `2025-03-15T20:45:00.000Z` |
 | `event_type` | STRING | 광고 이벤트 | `AD_REQUEST`, `AD_IMPRESSION`, `AD_START`, `AD_FIRST_QUARTILE`, `AD_MIDPOINT`, `AD_THIRD_QUARTILE`, `AD_COMPLETE`, `AD_SKIP`, `AD_CLICK`, `AD_ERROR` |
 | `ad_unit_id` | STRING | 광고 유닛 | `lg_home_banner_01`, `lg_screensaver_01`, `lg_channel_strip_01` |
@@ -693,7 +693,7 @@ Delta 테이블로 저장해줘.
 200,000건의 광고 노출/클릭/전환 이벤트를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.ad_impressions
+- 테이블: smart_tv.bronze.ad_impressions
 - device_id는 devices에서 샘플링
 - VAST 이벤트 퍼널: AD_REQUEST → AD_IMPRESSION → AD_START → AD_FIRST_QUARTILE → AD_MIDPOINT → AD_THIRD_QUARTILE → AD_COMPLETE
 - 퍼널 드롭율: REQUEST→IMPRESSION(90%), START→COMPLETE(70%), SKIP(15%), ERROR(5%)
@@ -703,7 +703,7 @@ Delta 테이블로 저장해줘.
 - ad_duration_sec: 15초(40%), 30초(40%), 60초(20%)
 - revenue_model: CPM(60%), CPC(25%), CPCV(15%)
 - bid_price_usd: CPM($5~25), CPC($0.5~3), CPCV($10~40)
-- advertiser_name: 대기업 위주 (삼성, 현대, SK, LG, 롯데, CJ, 네이버, 카카오 등)
+- advertiser_name: 대기업 위주 (제조·통신·유통·플랫폼 등)
 - 시간대별 bid_price 변동: 프라임타임(20~23시) 1.5배, 심야(0~6시) 0.5배
 
 Delta 테이블로 저장해줘.
@@ -729,10 +729,10 @@ Delta 테이블로 저장해줘.
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
 | `event_id` | STRING | 이벤트 고유 ID | `EVT_IOT_20250301_000001` |
-| `device_id` | STRING | FK → devices (TV) | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices (TV) | `STV_KR_000001` |
 | `timestamp` | TIMESTAMP | 이벤트 시각 | `2025-03-15T18:00:00.000Z` |
 | `event_type` | STRING | IoT 이벤트 | `DEVICE_DISCOVERED`, `DEVICE_PAIRED`, `DEVICE_STATUS_CHANGE`, `DEVICE_COMMAND_SENT`, `DEVICE_COMMAND_ACK`, `DEVICE_REMOVED` |
-| `iot_device_id` | STRING | IoT 디바이스 ID | `LG_REF_KR_001234` |
+| `iot_device_id` | STRING | IoT 디바이스 ID | `REF_KR_001234` |
 | `iot_device_type` | STRING | 디바이스 유형 | `refrigerator`, `washer`, `dryer`, `air_conditioner`, `air_purifier`, `robot_vacuum`, `styler` |
 | `iot_device_model` | STRING | 디바이스 모델 | `LRMVS3006S` |
 | `protocol` | STRING | 통신 프로토콜 | `thinq_cloud`, `matter`, `wifi_direct` |
@@ -747,7 +747,7 @@ Delta 테이블로 저장해줘.
 50,000건의 ThinQ IoT 디바이스 이벤트를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.thinq_device_events
+- 테이블: smart_tv.bronze.thinq_device_events
 - device_id는 devices에서 thinq_connected=true인 디바이스만 (약 70%)
 - TV 1대당 평균 3~5개 IoT 디바이스 연결
 - iot_device_type 분포: air_conditioner(25%), washer(20%), refrigerator(20%), air_purifier(15%), robot_vacuum(10%), dryer(5%), styler(5%)
@@ -773,7 +773,7 @@ Delta 테이블로 저장해줘.
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
 | `event_id` | STRING | 이벤트 고유 ID | `EVT_VOICE_20250301_000001` |
-| `device_id` | STRING | FK → devices | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices | `STV_KR_000001` |
 | `timestamp` | TIMESTAMP | 이벤트 시각 | `2025-03-15T20:10:00.000Z` |
 | `event_type` | STRING | 음성 이벤트 | `VOICE_WAKE`, `VOICE_COMMAND_START`, `VOICE_COMMAND_END`, `VOICE_RESULT`, `VOICE_ERROR`, `VOICE_CANCEL` |
 | `assistant_type` | STRING | 어시스턴트 | `lg_thinq_ai`, `alexa`, `google_assistant` |
@@ -793,7 +793,7 @@ Delta 테이블로 저장해줘.
 80,000건의 음성 명령 이벤트를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.voice_command_events
+- 테이블: smart_tv.bronze.voice_command_events
 - device_id는 devices에서 voice_assistant != 'none'인 디바이스 (약 85%)
 - assistant_type은 devices.voice_assistant 값 사용
 - intent 분포: channel_change(20%), volume_control(15%), search_content(25%), smart_home_control(15%), app_launch(15%), general_query(10%)
@@ -822,7 +822,7 @@ Delta 테이블로 저장해줘.
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
 | `event_id` | STRING | 이벤트 고유 ID | `EVT_APPLIFE_20250301_000001` |
-| `device_id` | STRING | FK → devices | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices | `STV_KR_000001` |
 | `timestamp` | TIMESTAMP | 이벤트 시각 | `2025-03-15T14:00:00.000Z` |
 | `event_type` | STRING | 라이프사이클 이벤트 | `APP_INSTALL`, `APP_UNINSTALL`, `APP_UPDATE`, `APP_UPDATE_CHECK` |
 | `app_id` | STRING | 앱 ID | `com.disney.disneyplus-prod` |
@@ -842,7 +842,7 @@ Delta 테이블로 저장해줘.
 100,000건의 앱 라이프사이클 이벤트를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.app_lifecycle_events
+- 테이블: smart_tv.bronze.app_lifecycle_events
 - device_id는 devices에서 샘플링
 - event_type 분포: APP_UPDATE(50%), APP_UPDATE_CHECK(25%), APP_INSTALL(15%), APP_UNINSTALL(10%)
 - app 목록 (인기순):
@@ -880,7 +880,7 @@ Delta 테이블로 저장해줘.
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
 | `event_id` | STRING | 이벤트 고유 ID | `EVT_PANEL_20250301_000001` |
-| `device_id` | STRING | FK → devices | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices | `STV_KR_000001` |
 | `timestamp` | TIMESTAMP | 이벤트 시각 | `2025-03-15T04:00:00.000Z` |
 | `event_type` | STRING | 패널 이벤트 | `PIXEL_REFRESH_SHORT`, `PIXEL_REFRESH_LONG`, `JB_COMPENSATION`, `OFFRS_COMPENSATION`, `ABL_ADJUST`, `TPC_ADJUST`, `GSR_CYCLE` |
 | `panel_type` | STRING | 패널 타입 | `WOLED`, `OLED_EX`, `MLA_OLED_EX` |
@@ -904,7 +904,7 @@ Delta 테이블로 저장해줘.
 30,000건의 패널 진단 이벤트를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.panel_diagnostics
+- 테이블: smart_tv.bronze.panel_diagnostics
 - device_id는 devices에서 OLED 제품군(OLED_C, OLED_G, OLED_B) 위주 (70%), LCD도 일부 포함 (30%)
 - OLED 전용 이벤트: PIXEL_REFRESH_SHORT, PIXEL_REFRESH_LONG, JB_COMPENSATION, OFFRS_COMPENSATION, GSR_CYCLE
 - 공통 이벤트: ABL_ADJUST, TPC_ADJUST
@@ -925,14 +925,14 @@ Delta 테이블로 저장해줘.
 
 ### 테이블 17: error_crash_events (에러/크래시 로그)
 
-> webOS `rdxd` 데몬이 수집하는 크래시/에러 리포트.
+> Smart TV의 `rdxd` 데몬이 수집하는 크래시/에러 리포트.
 
 ### 스키마 정의
 
 | 컬럼 | 타입 | 설명 | 예시 값 |
 |------|------|------|---------|
 | `event_id` | STRING | 이벤트 고유 ID | `EVT_ERR_20250301_000001` |
-| `device_id` | STRING | FK → devices | `LGE_TV_KR_000001` |
+| `device_id` | STRING | FK → devices | `STV_KR_000001` |
 | `timestamp` | TIMESTAMP | 이벤트 시각 | `2025-03-15T22:30:00.000Z` |
 | `event_type` | STRING | 에러 유형 | `APP_CRASH`, `APP_ANR`, `APP_OOM`, `SYSTEM_WATCHDOG`, `KERNEL_PANIC`, `GPU_HANG`, `MEDIA_PIPELINE_ERROR` |
 | `severity` | STRING | 심각도 | `CRITICAL`, `ERROR`, `WARNING` |
@@ -945,7 +945,7 @@ Delta 테이블로 저장해줘.
 | `cpu_usage_at_event` | DOUBLE | 이벤트 시 CPU | `98.2` |
 | `mem_used_pct_at_event` | DOUBLE | 이벤트 시 메모리 | `94.5` |
 | `uptime_sec` | BIGINT | 가동 시간 | `86400` |
-| `webos_version` | STRING | OS 버전 | `24.10.40` |
+| `os_version` | STRING | OS 버전 | `24.10.40` |
 | `coredump_available` | BOOLEAN | 코어덤프 존재 여부 | `true` |
 
 ### Genie Code 프롬프트
@@ -954,7 +954,7 @@ Delta 테이블로 저장해줘.
 40,000건의 에러/크래시 이벤트를 생성해줘.
 
 조건:
-- 테이블: lge_smart_tv.bronze.error_crash_events
+- 테이블: smart_tv.bronze.error_crash_events
 - device_id는 devices에서 샘플링 (모든 디바이스에서 발생 가능하지만, 구형 firmware에서 더 빈번)
 - event_type 분포: APP_CRASH(30%), APP_ANR(20%), APP_OOM(15%), MEDIA_PIPELINE_ERROR(20%), GPU_HANG(5%), SYSTEM_WATCHDOG(5%), KERNEL_PANIC(5%)
 - severity: APP_CRASH/ANR/OOM → ERROR, KERNEL_PANIC/SYSTEM_WATCHDOG → CRITICAL, MEDIA_PIPELINE_ERROR/GPU_HANG → ERROR 또는 WARNING
@@ -966,7 +966,7 @@ Delta 테이블로 저장해줘.
 - crash_signal: SIGSEGV(40%), SIGABRT(30%), SIGKILL(20%), SIGBUS(10%)
 - APP_OOM일 때: mem_used_pct_at_event > 90%, exit_code = 137
 - MEDIA_PIPELINE_ERROR error_code: MEDIA_ERR_DECODE(30%), MEDIA_ERR_NETWORK(25%), DRM_LICENSE_FAIL(20%), MEDIA_ERR_SRC_NOT_SUPPORTED(15%), MEDIA_ERR_ENCRYPTED(10%)
-- 구형 webos_version(5.0, 4.5)에서 에러 발생률 2배 높게
+- 구형 os_version(5.0, 4.5)에서 에러 발생률 2배 높게
 - coredump_available: CRITICAL → 90% true, ERROR → 50% true, WARNING → 10% true
 
 Delta 테이블로 저장해줘.
@@ -991,7 +991,7 @@ Delta 테이블로 저장해줘.
 ### 검증 프롬프트
 
 ```
-lge_smart_tv.bronze 스키마의 모든 테이블에 대해 다음을 확인해줘:
+smart_tv.bronze 스키마의 모든 테이블에 대해 다음을 확인해줘:
 1. 각 테이블의 row count
 2. 각 테이블의 컬럼 수와 주요 컬럼의 distinct count
 3. device_id가 devices 테이블에 모두 존재하는지 (참조 무결성)
