@@ -3,6 +3,22 @@ title: "Storage 구성"
 ---
 
 
+## Databricks S3 버킷 4-Layer 구조
+
+Databricks on AWS의 S3 버킷은 4개 레이어로 나뉩니다. **각 layer는 권한·암호화·라이프사이클 정책이 다르므로 같은 버킷을 공유하면 안 됩니다.** 물리적으로 분리하는 것이 원칙입니다.
+
+| 레이어 | 역할 | 분리 단위 |
+|--------|------|----------|
+| **Workspace root** | DBFS root, system data, MLflow artifacts, libraries, init scripts, logs | Workspace 단위 |
+| **UC Metastore root** | Managed table 기본 저장 위치 | Metastore (Region/Account) 단위 |
+| **UC External Location** | Catalog / Schema 별 데이터 격리, BYO storage | Catalog 또는 Domain 단위 |
+| **Audit Log delivery** | Account-level audit log delivery target | Account 단위 |
+
+> **핵심 원칙**
+> Layer 끼리 같은 버킷 공유 금지. 권한·암호화·라이프사이클 정책이 layer마다 달라야 하므로 물리적으로 분리합니다.
+
+이 문서의 아래 "Root S3 Bucket" 섹션은 **Workspace root** layer 구성을 다룹니다. UC Metastore root와 External Location은 [Unity Catalog 구성](unity-catalog) 문서를 참고하세요.
+
 ## Root S3 Bucket — 생성 요건
 
 AWS Console → S3 → Create bucket
@@ -68,3 +84,89 @@ Databricks Account Console에서 등록합니다.
 
 
 *참고: [Configure storage](https://docs.databricks.com/aws/en/admin/account-settings-e2/storage) · [Terraform: databricks_mws_storage_configurations](https://registry.terraform.io/providers/databricks/databricks/latest/docs/resources/mws_storage_configurations)*
+
+## MLOps 환경 권장 버킷 구성
+
+운영 / 개발 환경 분리를 가정한 권장 네이밍 예시입니다. `<company>` 부분은 사내 prefix로 교체하세요.
+
+```bash
+# Workspace root (DBR system data, MLflow artifacts)
+<company>-databricks-prod-root-apne2
+<company>-databricks-dev-root-apne2
+
+# UC Metastore root (managed tables - 기본 저장 위치)
+<company>-databricks-prod-uc-metastore-apne2
+<company>-databricks-dev-uc-metastore-apne2
+
+# Catalog 별 External Location (도메인/팀별 격리)
+<company>-data-prod-bronze-apne2     # Raw / 수집 데이터
+<company>-data-prod-silver-apne2     # 정제 / Feature
+<company>-data-prod-gold-apne2       # 분석 / Mart
+<company>-mlops-prod-models-apne2    # Model artifacts (UC Models 백엔드)
+<company>-mlops-prod-features-apne2  # Feature Store 전용
+<company>-mlops-prod-serving-apne2   # Inference 결과 / 로그
+
+# Audit log delivery (Account 단위)
+<company>-databricks-audit-logs-apne2
+```
+
+### Feature Store / Online Store
+
+- Feature table은 별도 Catalog (`mlops_features`)로 격리 → `<company>-mlops-prod-features` 버킷에 External Location 매핑
+- Online feature serving 사용 시 Online Store (DynamoDB / Cosmos / Lakebase) 별도 구성
+
+### Model Registry (UC Models)
+
+- Unity Catalog Model Registry 사용 시 `mlops_models` catalog 권장
+- Model artifacts 저장은 UC Metastore root 또는 별도 External Location 사용 가능 — **별도 분리 권장** (모델 라이프사이클 정책이 데이터와 다름)
+
+### Inference 결과 분리
+
+- Online inference 로그 / Batch inference 결과는 별도 Catalog (`mlops_inference`)로 격리
+- 보관 정책이 짧음 (90일 / 1년 등) — 라이프사이클 정책 따로 적용
+
+### Training 데이터 격리
+
+- Production model이 학습한 데이터 snapshot은 `mlops_training_snapshots` 같은 별도 catalog로 immutable 보관
+- 재현성 확보 + 감사 추적 목적
+
+## 운영 시 반드시 적용할 사항
+
+1. **버킷 정책 + IAM Role 분리**: Workspace IAM Role과 UC Storage Credential IAM Role 분리. UC가 workspace root 접근 못 하도록 명시적 deny.
+2. **암호화**: SSE-KMS + Databricks Managed Key 또는 CMK (BYOK). 보안성 평가 통과하려면 고객 측 KMS 키 사용 권장.
+3. **버킷 정책 enforcement**:
+   - `aws:SecureTransport true` 강제
+   - `s3:x-amz-server-side-encryption` 강제
+   - VPC Endpoint 경유만 허용 (PrivateLink 시)
+4. **버전닝 + 라이프사이클**: 모든 버킷 versioning ON. Workspace root는 90일 expiration, UC metastore는 영구, MLflow artifacts는 별도 정책.
+5. **CloudTrail Data Events**: 민감 catalog (HR, model, features) 버킷에 대해 S3 data event 활성화 → SIEM 연동.
+6. **Cross-region replication 금지**: Geo enforcement 정책과 일관성 유지 (보안성 평가 통과 시 필수).
+
+## 추가 고려 사항
+
+- **VPC Endpoint (S3 Gateway Endpoint)**: 모든 데이터 트래픽 VPC 내부 통과 → NAT GW 비용 절감 + 보안 강화
+- **PrivateLink**: Databricks Control Plane과 Workspace VPC 간 통신 PrivateLink 사용 (엔터프라이즈 보안 정책상 권장)
+- **Network Connectivity Configuration (NCC)**: Serverless 사용 시 NCC를 통해 고객 VPC 내 S3 접근 허용 (서버리스 워크로드는 Databricks 측 VPC에서 실행)
+- **Storage Credential 권한 최소화**: catalog별로 별도 Storage Credential + IAM Role → 한 catalog 침해 시 다른 catalog 보호
+
+## 권장 Catalog 구조
+
+운영환경 구성 시 가장 먼저 확정해야 하는 부분은 **Catalog 구조 (몇 개 catalog로 나눌지)** 입니다. Catalog가 곧 External Location 분리 단위가 되므로, MLOps 환경에서는 최소 다음 5개 catalog를 권장합니다:
+
+| Catalog | 용도 |
+|---------|------|
+| `bronze` | Raw / 수집 데이터 |
+| `silver` | 정제 / Feature 가공 데이터 |
+| `gold` | 분석 / Mart |
+| `mlops_features` | Feature Store 전용 |
+| `mlops_models` | Model Registry 백엔드 |
+
+이 구조로 시작하면 보안성 평가 / 권한 분리 / 라이프사이클 정책을 깔끔하게 정리할 수 있습니다. HR 데이터 격리, 외부 partner 데이터 격리 등 특수 요건이 있는 경우 catalog를 추가로 분리하세요.
+
+## 참고 문서
+
+- [Workspace storage configuration](https://docs.databricks.com/aws/en/admin/account-settings-e2/storage)
+- [Unity Catalog metastore creation](https://docs.databricks.com/aws/en/data-governance/unity-catalog/get-started)
+- [External locations and storage credentials](https://docs.databricks.com/aws/en/connect/unity-catalog/external-locations)
+- [Best practices for Unity Catalog](https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices)
+- [MLOps reference architecture](https://docs.databricks.com/aws/en/machine-learning/mlops/mlops-architecture)
