@@ -19,6 +19,81 @@ Databricks on AWS의 S3 버킷은 4개 레이어로 나뉩니다. **각 layer는
 
 이 문서의 아래 "Root S3 Bucket" 섹션은 **Workspace root** layer 구성을 다룹니다. UC Metastore root와 External Location은 [Unity Catalog 구성](unity-catalog) 문서를 참고하세요.
 
+### Layer별 IAM 권한 요구사항 비교
+
+각 layer는 접근 주체와 필요한 권한이 다릅니다. **하나의 IAM Role로 통합하지 말고 layer별로 분리**하세요.
+
+| 레이어 | IAM 구성 | 필요 권한 | 추가 권한 |
+|--------|---------|----------|----------|
+| **Workspace root** | Bucket Policy (Databricks Account `414351767826` Principal 허용) | `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`, `s3:ListBucket`, `s3:GetBucketLocation`, `s3:GetObjectVersion` | KMS (CMK 사용 시) |
+| **Cross-Account Role** (Workspace 컴퓨트용) | IAM Role (EC2 권한 위임) | `ec2:RunInstances`, `ec2:TerminateInstances`, `ec2:DescribeInstances`, etc. | **S3 권한 없음** — Workspace root는 Bucket Policy 경유 |
+| **UC Storage Credential** (Metastore root + External Location) | IAM Role + Self-Assume Trust | `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`, `s3:ListBucket`, `s3:GetBucketLocation` | `sts:AssumeRole` (self), KMS (필수 시), **SNS/SQS** (File Events 시) |
+| **External Location with File Events** | UC Storage Credential 확장 | 위 + `s3:GetBucketNotification`, `s3:PutBucketNotification` | `sns:CreateTopic/Subscribe/Publish` + `sqs:CreateQueue/ReceiveMessage/SendMessage` (Resource: `csms-*`) |
+| **Audit Log Delivery** | IAM Role + Bucket Policy | `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject`, `s3:PutObjectAcl`, `s3:ListBucket`, `s3:GetBucketLocation`, `s3:AbortMultipartUpload`, `s3:ListMultipartUploadParts` | — |
+
+> **주의**
+> **Workspace 컴퓨트용 Cross-Account IAM Role**은 EC2 라이프사이클(인스턴스 생성/종료)만 담당하며 **S3 직접 권한이 없습니다**. Workspace root 버킷 접근은 Bucket Policy에서 Databricks AWS 계정(`414351767826`)을 Principal로 명시해 허용합니다.
+
+#### External Location의 SNS/SQS 권한
+
+External Location 생성 시 **File Events가 기본 활성화**됩니다. File Events는 S3 변경 이벤트를 SQS/SNS로 Databricks에 전달하여 Auto Loader (File Notification 모드)와 Job File-Arrival Trigger를 지원합니다.
+
+- File Events 리소스는 `csms-*` prefix로 자동 생성됨 (Customer-Side Managed Service)
+- Resource scope를 `arn:aws:sns:*:*:csms-*` / `arn:aws:sqs:*:*:csms-*`로 제한해 권한 최소화
+- File Events가 불필요하면 External Location → Advanced Options에서 비활성화 가능
+
+전체 JSON 정책과 비활성화 방법은 [Unity Catalog — External Location File Events IAM 권한](unity-catalog#external-location--file-events-iam-권한) 참조.
+
+#### Audit Log Delivery IAM 권한
+
+Account-level audit log를 S3에 받기 위한 별도 IAM Role이 필요합니다. Workspace IAM Role / UC Storage Credential과 **반드시 분리**하세요 (관할 영역과 라이프사이클이 다름).
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AuditLogBucketLocation",
+      "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::<AUDIT-IAM-ROLE-ARN>" },
+      "Action": "s3:GetBucketLocation",
+      "Resource": "arn:aws:s3:::<AUDIT-BUCKET>"
+    },
+    {
+      "Sid": "AuditLogObjectAccess",
+      "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::<AUDIT-IAM-ROLE-ARN>" },
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject",
+        "s3:PutObjectAcl",
+        "s3:AbortMultipartUpload",
+        "s3:ListMultipartUploadParts"
+      ],
+      "Resource": [
+        "arn:aws:s3:::<AUDIT-BUCKET>/<PREFIX>/",
+        "arn:aws:s3:::<AUDIT-BUCKET>/<PREFIX>/*"
+      ]
+    },
+    {
+      "Sid": "AuditLogListBucket",
+      "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::<AUDIT-IAM-ROLE-ARN>" },
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::<AUDIT-BUCKET>",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": ["<PREFIX>", "<PREFIX>/*"]
+        }
+      }
+    }
+  ]
+}
+```
+
+*참고: [Audit log delivery — Cross-account support](https://docs.databricks.com/aws/en/admin/account-settings-e2/audit-aws-cross-account)*
+
 ## Root S3 Bucket — 생성 요건
 
 AWS Console → S3 → Create bucket
