@@ -3,40 +3,74 @@ title: "Lab 26.2 — 엔드포인트 쿼리"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 10분 | **난이도**: ⭐⭐
 **선행**: TBD
+**기능 분류**: serving_ui
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+본 Lab은 **엔드포인트 쿼리** 을 단일 기능 단위로 직접 수행하며 동작을 체감하는 것이 목적입니다. `M26. Model Serving + Endpoint 권한` 의 핵심 흐름 안에서 이 단계가 어떤 역할을 하는지 위치를 잡습니다.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
-```text
-TBD
+```python
+# 등록된 UC Model을 1클릭으로 서빙
+# Catalog Explorer → Models → 버전 → "Serve this model"
+
+# 또는 SDK로:
+from databricks.sdk import WorkspaceClient
+w = WorkspaceClient()
+w.serving_endpoints.create(
+    name='workshop-iris',
+    config={
+        'served_entities': [{
+            'name': 'iris-clf',
+            'entity_name': 'workshop_<name>.default.iris_clf',
+            'entity_version': '1',
+            'workload_size': 'Small',
+            'scale_to_zero_enabled': True,
+        }]
+    }
+)
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** Catalog Explorer → Model → Serve this model
+
+![엔드포인트 쿼리 — Step 1](/images/dbx-workshop/26-model-serving/26-2/step1-serve.png)
+
+**Step 2.** Endpoint 설정 (Workload size, Scale to zero)
+
+![엔드포인트 쿼리 — Step 2](/images/dbx-workshop/26-model-serving/26-2/step2-config.png)
+
+**Step 3.** Status = Ready 대기
+
+![엔드포인트 쿼리 — Step 3](/images/dbx-workshop/26-model-serving/26-2/step3-ready.png)
+
+**Step 4.** Query 탭에서 테스트 호출
+
+![엔드포인트 쿼리 — Step 4](/images/dbx-workshop/26-model-serving/26-2/step4-query.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] 엔드포인트 쿼리 완료
+- [ ] 결과가 기대한 대로 표시됨
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `권한 부족` | 필요 권한 미보유 | 선행 Lab 확인 또는 Admin 문의 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Module 끝의 Cleanup Lab에서 일괄 정리합니다.
+

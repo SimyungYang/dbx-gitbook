@@ -3,40 +3,74 @@ title: "Lab 2.4 — Cluster Policy 만들기"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 10분 | **난이도**: ⭐⭐⭐
 **선행**: TBD
+**기능 분류**: compute_config
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+Cluster Policy는 사용자가 클러스터를 만들 때 강제할 규칙입니다. 비용 제한, 보안 강제, 표준화에 사용.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
 ```text
-TBD
+{
+  "spark_version": {
+    "type": "allowlist",
+    "values": ["15.4.x-scala2.12", "14.3.x-scala2.12"]
+  },
+  "node_type_id": {
+    "type": "allowlist",
+    "values": ["i3.xlarge", "i3.2xlarge"]
+  },
+  "autotermination_minutes": {
+    "type": "range",
+    "maxValue": 60,
+    "defaultValue": 30
+  },
+  "num_workers": {
+    "type": "range",
+    "maxValue": 8
+  }
+}
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** Compute → Policies 탭
+
+![Cluster Policy 만들기 — Step 1](/images/dbx-workshop/02-compute/2-4/step1-policies-tab.png)
+
+**Step 2.** Create policy → Name: workshop-policy
+
+![Cluster Policy 만들기 — Step 2](/images/dbx-workshop/02-compute/2-4/step2-create-policy.png)
+
+**Step 3.** Definition에 JSON 붙여넣기 → Create
+
+![Cluster Policy 만들기 — Step 3](/images/dbx-workshop/02-compute/2-4/step3-paste-json.png)
+
+**Step 4.** 정책에 사용자/그룹 권한 부여
+
+![Cluster Policy 만들기 — Step 4](/images/dbx-workshop/02-compute/2-4/step4-policy-permission.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] 사용자가 클러스터 생성 시 정책 제약 적용됨
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `Invalid policy JSON` | JSON 구문 오류 | JSON validator로 확인 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Policy → ⋯ → Delete
+

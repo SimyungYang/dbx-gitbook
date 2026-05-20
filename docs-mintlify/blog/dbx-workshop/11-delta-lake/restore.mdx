@@ -3,40 +3,64 @@ title: "Lab 11.6 — RESTORE TABLE TO VERSION"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 10분 | **난이도**: ⭐⭐
 **선행**: TBD
+**기능 분류**: delta_sql
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+본 Lab은 **RESTORE TABLE TO VERSION** 을 단일 기능 단위로 직접 수행하며 동작을 체감하는 것이 목적입니다. `M11. Delta Lake — ACID, Time Travel, OPTIMIZE, CDF, Liquid Clustering` 의 핵심 흐름 안에서 이 단계가 어떤 역할을 하는지 위치를 잡습니다.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
-```text
-TBD
+```sql
+-- RESTORE TABLE TO VERSION
+-- Delta Lake 핵심 명령 예시:
+
+-- 1) 생성
+CREATE TABLE workshop_<name>.default.events (
+  event_id BIGINT, event_type STRING, ts TIMESTAMP
+) USING DELTA;
+
+-- 2) 변경
+UPDATE workshop_<name>.default.events SET event_type = 'click' WHERE event_id = 1;
+
+-- 3) 이력 확인
+DESCRIBE HISTORY workshop_<name>.default.events;
+
+-- 4) Time Travel
+SELECT * FROM workshop_<name>.default.events VERSION AS OF 0;
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** SQL Editor에서 위 명령 차례로 실행
+
+![RESTORE TABLE TO VERSION — Step 1](/images/dbx-workshop/11-delta-lake/11-6/step1-sql-execute.png)
+
+**Step 2.** Catalog Explorer → History 탭에서 버전 확인
+
+![RESTORE TABLE TO VERSION — Step 2](/images/dbx-workshop/11-delta-lake/11-6/step2-history-tab.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] RESTORE TABLE TO VERSION 완료
+- [ ] 결과가 기대한 대로 표시됨
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `권한 부족` | 필요 권한 미보유 | 선행 Lab 확인 또는 Admin 문의 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Module 끝의 Cleanup Lab에서 일괄 정리합니다.
+

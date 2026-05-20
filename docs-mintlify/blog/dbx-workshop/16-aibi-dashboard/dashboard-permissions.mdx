@@ -3,40 +3,61 @@ title: "Lab 16.6 — Dashboard 권한 (Can View/Run/Edit/Manage)"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 10분 | **난이도**: ⭐⭐
 **선행**: TBD
+**기능 분류**: dashboard_ui
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+본 Lab은 **Dashboard 권한 (Can View/Run/Edit/Manage)** 을 단일 기능 단위로 직접 수행하며 동작을 체감하는 것이 목적입니다. `M16. AI/BI Dashboard + Dashboard 권한` 의 핵심 흐름 안에서 이 단계가 어떤 역할을 하는지 위치를 잡습니다.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
 ```text
-TBD
+AI/BI Dashboard는 코드 없이 UI로 구성 — 아래 단계 참조.
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** SQL → Dashboards → Create dashboard
+
+![Dashboard 권한 (Can View/Run/Edit/Manage) — Step 1](/images/dbx-workshop/16-aibi-dashboard/16-6/step1-create-dash.png)
+
+**Step 2.** Data 탭 → Dataset 추가 (SQL Warehouse)
+
+![Dashboard 권한 (Can View/Run/Edit/Manage) — Step 2](/images/dbx-workshop/16-aibi-dashboard/16-6/step2-add-dataset.png)
+
+**Step 3.** Canvas → Widget 드래그
+
+![Dashboard 권한 (Can View/Run/Edit/Manage) — Step 3](/images/dbx-workshop/16-aibi-dashboard/16-6/step3-add-widget.png)
+
+**Step 4.** Filter 추가 + Cross-filter 설정
+
+![Dashboard 권한 (Can View/Run/Edit/Manage) — Step 4](/images/dbx-workshop/16-aibi-dashboard/16-6/step4-filter.png)
+
+**Step 5.** Publish → URL 공유
+
+![Dashboard 권한 (Can View/Run/Edit/Manage) — Step 5](/images/dbx-workshop/16-aibi-dashboard/16-6/step5-publish.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] Dashboard 권한 (Can View/Run/Edit/Manage) 완료
+- [ ] 결과가 기대한 대로 표시됨
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `권한 부족` | 필요 권한 미보유 | 선행 Lab 확인 또는 Admin 문의 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Module 끝의 Cleanup Lab에서 일괄 정리합니다.
+

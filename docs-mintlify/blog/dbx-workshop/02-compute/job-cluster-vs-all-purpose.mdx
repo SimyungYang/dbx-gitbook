@@ -3,40 +3,55 @@ title: "Lab 2.7 — Job Cluster vs All-Purpose 차이"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 5분 | **난이도**: ⭐
 **선행**: TBD
+**기능 분류**: compute_config
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+Job Cluster는 Job 실행 시 자동 생성/삭제되는 임시 클러스터로, All-Purpose보다 DBU 단가가 절반입니다. 운영 Job은 99% Job Cluster 사용.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
 ```text
-TBD
+| 항목         | All-Purpose            | Job Cluster                 |
+|--------------|------------------------|-----------------------------|
+| 수명         | 사용자가 종료할 때까지 | Job 시작~종료까지           |
+| DBU 단가     | 비쌈                   | 절반                        |
+| 다중 사용자  | 가능 (Shared mode)     | 불가 (Job 전용)             |
+| 디버깅       | 좋음 (인터랙티브)      | 한정 (Run 종료 후 확인)     |
+| 비용 최적화  | Auto termination       | 자동 종료 (Job 단위)        |
+| 권장 용도    | 개발/탐색              | 운영 / 스케줄 Job           |
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** Jobs & Pipelines → 임의 Job 생성
+
+![Job Cluster vs All-Purpose 차이 — Step 1](/images/dbx-workshop/02-compute/2-7/step1-create-job.png)
+
+**Step 2.** Cluster: Job cluster vs Existing cluster 옵션
+
+![Job Cluster vs All-Purpose 차이 — Step 2](/images/dbx-workshop/02-compute/2-7/step2-cluster-choice.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] Job Cluster 개념 이해
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| 권한 부족 | Workspace/UC 권한 미보유 | 선행 Lab 확인 또는 Admin 문의 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+별도 정리 불필요.
+

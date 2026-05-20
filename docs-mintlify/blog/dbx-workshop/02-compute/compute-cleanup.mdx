@@ -3,40 +3,55 @@ title: "Lab 2.10 — Compute Cleanup"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 3분 | **난이도**: ⭐
 **선행**: TBD
+**기능 분류**: compute_config
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+Module 2에서 만든 모든 Compute 리소스를 정리합니다.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
-```text
-TBD
+```bash
+# CLI로 일괄 정리
+databricks clusters delete --cluster-id <CLUSTER-ID>
+databricks warehouses delete <WAREHOUSE-ID>
+databricks cluster-policies delete --policy-id <POLICY-ID>
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** Compute → 모든 클러스터 ⋯ → Delete
+
+![Compute Cleanup — Step 1](/images/dbx-workshop/02-compute/2-10/step1-delete-clusters.png)
+
+**Step 2.** SQL Warehouses → Stop → Delete
+
+![Compute Cleanup — Step 2](/images/dbx-workshop/02-compute/2-10/step2-delete-warehouse.png)
+
+**Step 3.** Policies → Delete
+
+![Compute Cleanup — Step 3](/images/dbx-workshop/02-compute/2-10/step3-delete-policy.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] Compute / SQL Warehouses / Policies 목록이 비어있음 (또는 Module 외 리소스만)
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| 권한 부족 | Workspace/UC 권한 미보유 | 선행 Lab 확인 또는 Admin 문의 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+본 Lab 자체가 Cleanup입니다.
+

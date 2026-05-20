@@ -3,40 +3,57 @@ title: "Lab 1.2 — Account-level Group 생성"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
-**선행**: TBD
+**소요 시간**: 5분 | **난이도**: ⭐
+**선행**: Lab 1.1
+**기능 분류**: ui_admin
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+Account-level Group을 만들어 권한을 그룹 단위로 관리합니다. Workshop 동안 사용할 `workshop-users` Group을 생성합니다.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
 ```text
-TBD
+Account Console → User management → Groups → Add group
+  Name: workshop-users
+  Members:
+    - workshop-test@<your-domain>.com (Lab 1.1에서 만든 User)
+    - 본인 (Owner)
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** User management → Groups 탭
+
+![Account-level Group 생성 — Step 1](/images/dbx-workshop/01-identity/1-2/step1-groups-tab.png)
+
+**Step 2.** Add group → Name: workshop-users
+
+![Account-level Group 생성 — Step 2](/images/dbx-workshop/01-identity/1-2/step2-add-group.png)
+
+**Step 3.** Members 탭에서 User 추가
+
+![Account-level Group 생성 — Step 3](/images/dbx-workshop/01-identity/1-2/step3-add-members.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] Group이 생성됨
+- [ ] Group 멤버에 본인과 테스트 User가 보임
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `Group name already exists` | 동명 Group 존재 | 다른 이름 사용 (예: workshop-users-2026) |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Account Console → Groups → workshop-users → Delete
+

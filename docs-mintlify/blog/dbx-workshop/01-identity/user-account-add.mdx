@@ -3,40 +3,57 @@ title: "Lab 1.1 — User Account 추가 (Account Console)"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
-**선행**: TBD
+**소요 시간**: 5분 | **난이도**: ⭐
+**선행**: Lab 0.5
+**기능 분류**: ui_admin
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+Account Console에서 새 User를 추가합니다. Workshop 권한 검증에 사용할 두 번째 사용자를 만듭니다.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
 ```text
-TBD
+Account Console → User management → Users → "Add user"
+  - First name: Workshop
+  - Last name: TestUser
+  - Email: workshop-test@<your-domain>.com
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** accounts.cloud.databricks.com 접속
+
+![User Account 추가 (Account Console) — Step 1](/images/dbx-workshop/01-identity/1-1/step1-account-console.png)
+
+**Step 2.** User management → Users 탭
+
+![User Account 추가 (Account Console) — Step 2](/images/dbx-workshop/01-identity/1-1/step2-users-tab.png)
+
+**Step 3.** Add user → 이메일 입력 → Send invite
+
+![User Account 추가 (Account Console) — Step 3](/images/dbx-workshop/01-identity/1-1/step3-invite-user.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] 사용자에게 초대 메일이 전송됨
+- [ ] Users 목록에 새 사용자 표시
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `이메일이 이미 존재` | 다른 Account에 등록됨 또는 동명 이인 존재 | 다른 이메일 사용 |
+| `도메인 정책 위반` | Allowed Email Domain 제약 | Account Admin에게 도메인 추가 요청 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Workshop 종료 시 User → 메뉴 → Deactivate (Appendix B.2)
+

@@ -3,40 +3,73 @@ title: "Lab 21.6 — Hybrid Search (Keyword + Vector)"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 10분 | **난이도**: ⭐⭐
 **선행**: TBD
+**기능 분류**: vector_search
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+본 Lab은 **Hybrid Search (Keyword + Vector)** 을 단일 기능 단위로 직접 수행하며 동작을 체감하는 것이 목적입니다. `M21. Vector Search + Endpoint/Index 권한` 의 핵심 흐름 안에서 이 단계가 어떤 역할을 하는지 위치를 잡습니다.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
-```text
-TBD
+```python
+from databricks.vector_search.client import VectorSearchClient
+
+vsc = VectorSearchClient()
+
+# Endpoint 생성
+vsc.create_endpoint(name='workshop-vs', endpoint_type='STANDARD')
+
+# Delta Sync Index
+vsc.create_delta_sync_index(
+    endpoint_name='workshop-vs',
+    index_name='workshop_<name>.default.docs_idx',
+    source_table_name='workshop_<name>.default.docs',
+    pipeline_type='TRIGGERED',
+    primary_key='doc_id',
+    embedding_source_column='content',
+    embedding_model_endpoint_name='databricks-bge-large-en',
+)
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** Compute → Vector Search → Create endpoint
+
+![Hybrid Search (Keyword + Vector) — Step 1](/images/dbx-workshop/21-vector-search/21-6/step1-vs-endpoint.png)
+
+**Step 2.** Catalog Explorer → 테이블 → Create vector index
+
+![Hybrid Search (Keyword + Vector) — Step 2](/images/dbx-workshop/21-vector-search/21-6/step2-create-index.png)
+
+**Step 3.** Status: ONLINE 대기
+
+![Hybrid Search (Keyword + Vector) — Step 3](/images/dbx-workshop/21-vector-search/21-6/step3-status.png)
+
+**Step 4.** Search 테스트 (위 코드 또는 SDK)
+
+![Hybrid Search (Keyword + Vector) — Step 4](/images/dbx-workshop/21-vector-search/21-6/step4-search.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] Hybrid Search (Keyword + Vector) 완료
+- [ ] 결과가 기대한 대로 표시됨
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `권한 부족` | 필요 권한 미보유 | 선행 Lab 확인 또는 Admin 문의 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Module 끝의 Cleanup Lab에서 일괄 정리합니다.
+

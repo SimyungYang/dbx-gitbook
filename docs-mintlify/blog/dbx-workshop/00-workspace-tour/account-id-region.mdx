@@ -3,40 +3,56 @@ title: "Lab 0.4 — Account ID와 Region 확인"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 3분 | **난이도**: ⭐
 **선행**: TBD
+**기능 분류**: ui_navigate
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+Account ID와 Workspace Region을 확인합니다. 모든 API/CLI 호출에서 자주 사용됩니다.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
-```text
-TBD
+```bash
+# Workspace URL에서 자동 추출
+echo $DATABRICKS_HOST | sed 's|https://||'
+# Account ID는 Account Console (accounts.cloud.databricks.com)에서 확인
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** 우상단 본인 이메일 클릭 → 워크스페이스 이름 확인
+
+![Account ID와 Region 확인 — Step 1](/images/dbx-workshop/00-workspace-tour/0-4/step1-workspace-name.png)
+
+**Step 2.** URL bar에서 Workspace ID 추출 (예: dbc-xxx)
+
+![Account ID와 Region 확인 — Step 2](/images/dbx-workshop/00-workspace-tour/0-4/step2-url-id.png)
+
+**Step 3.** Account Console (별창)에서 Account ID 복사
+
+![Account ID와 Region 확인 — Step 3](/images/dbx-workshop/00-workspace-tour/0-4/step3-account-id.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] Workspace ID 메모
+- [ ] Account ID 메모
+- [ ] Region 메모 (예: ap-northeast-2)
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `Account Console 진입 불가` | Account Admin 권한 없음 | Account Admin에게 문의 — Appendix A 참조 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+별도 정리 불필요.
+

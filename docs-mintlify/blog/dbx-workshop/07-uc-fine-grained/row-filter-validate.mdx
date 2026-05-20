@@ -3,40 +3,61 @@ title: "Lab 7.3 — Row Filter 검증 (Group 멤버십 기반)"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 10분 | **난이도**: ⭐⭐
 **선행**: TBD
+**기능 분류**: uc_fine_grained
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+본 Lab은 **Row Filter 검증 (Group 멤버십 기반)** 을 단일 기능 단위로 직접 수행하며 동작을 체감하는 것이 목적입니다. `M7. UC Fine-grained Security — Row Filter, Column Mask, Dynamic View` 의 핵심 흐름 안에서 이 단계가 어떤 역할을 하는지 위치를 잡습니다.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
-```text
-TBD
+```sql
+-- Row Filter Function
+CREATE FUNCTION workshop_<name>.default.region_filter(region STRING)
+RETURNS BOOLEAN
+RETURN region = current_user_region();
+
+-- 테이블에 Row Filter 적용
+ALTER TABLE workshop_<name>.default.sales
+  SET ROW FILTER workshop_<name>.default.region_filter
+  ON (region);
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** SQL Editor에서 Function 생성
+
+![Row Filter 검증 (Group 멤버십 기반) — Step 1](/images/dbx-workshop/07-uc-fine-grained/7-3/step1-create-func.png)
+
+**Step 2.** Catalog Explorer → 테이블 → Row Filter 적용
+
+![Row Filter 검증 (Group 멤버십 기반) — Step 2](/images/dbx-workshop/07-uc-fine-grained/7-3/step2-set-filter.png)
+
+**Step 3.** 다른 사용자로 검증
+
+![Row Filter 검증 (Group 멤버십 기반) — Step 3](/images/dbx-workshop/07-uc-fine-grained/7-3/step3-verify.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] Row Filter 검증 (Group 멤버십 기반) 완료
+- [ ] 결과가 기대한 대로 표시됨
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `권한 부족` | 필요 권한 미보유 | 선행 Lab 확인 또는 Admin 문의 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Module 끝의 Cleanup Lab에서 일괄 정리합니다.
+

@@ -3,40 +3,61 @@ title: "Lab 2.3 — Cluster 설정 옵션 (Photon, autoscale, DBR 버전)"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 10분 | **난이도**: ⭐⭐
 **선행**: TBD
+**기능 분류**: compute_config
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+클러스터 생성 시 사용 가능한 모든 옵션을 살펴봅니다. Photon, Autoscale, Access mode가 성능과 비용에 가장 큰 영향.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
 ```text
-TBD
+주요 옵션:
+  Databricks Runtime  — LTS 권장 (15.4 LTS / 14.3 LTS)
+  Photon              — 분석 워크로드 2-3x 빠름 (ETL/SQL에 강력 권장)
+  Access Mode
+    - Single user      : 한 사용자 전용, UC 모든 기능, Python/Scala
+    - Shared           : 다중 사용자, UC 지원, Python/SQL만
+    - No isolation     : Legacy (UC 미지원)
+  Autoscaling          — 부하에 따라 worker 자동 조정
+  Auto termination     — Idle 시 자동 종료 (비용 절감 필수)
+  Cluster tags         — 비용 추적용 (env, team, project)
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** Create compute 화면에서 각 옵션 hover
+
+![Cluster 설정 옵션 (Photon, autoscale, DBR 버전) — Step 1](/images/dbx-workshop/02-compute/2-3/step1-options-hover.png)
+
+**Step 2.** Advanced options 펼치기 (Tags, Spark config, Init scripts)
+
+![Cluster 설정 옵션 (Photon, autoscale, DBR 버전) — Step 2](/images/dbx-workshop/02-compute/2-3/step2-advanced.png)
+
+**Step 3.** Custom tags 추가 (예: env=workshop)
+
+![Cluster 설정 옵션 (Photon, autoscale, DBR 버전) — Step 3](/images/dbx-workshop/02-compute/2-3/step3-tags.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] 모든 옵션 의미 이해
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| 권한 부족 | Workspace/UC 권한 미보유 | 선행 Lab 확인 또는 Admin 문의 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Lab 2.2의 cluster와 동일.
+

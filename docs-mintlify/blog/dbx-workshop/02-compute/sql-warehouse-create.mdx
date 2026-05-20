@@ -3,40 +3,58 @@ title: "Lab 2.5 — SQL Warehouse 생성"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 10분 | **난이도**: ⭐⭐
 **선행**: TBD
+**기능 분류**: compute_config
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+SQL Warehouse는 BI / 분석가용 전용 컴퓨트입니다. Serverless / Pro / Classic 3종류가 있고 Photon이 항상 활성화.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
 ```text
-TBD
+SQL → SQL Warehouses → Create SQL warehouse
+  Name:        workshop-warehouse
+  Cluster size: 2X-Small (DBU/h: 4)
+  Type:        Serverless (권장) / Pro / Classic
+  Auto stop:   10 min
+  Scaling:     min 1, max 4
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** SQL → SQL Warehouses 메뉴
+
+![SQL Warehouse 생성 — Step 1](/images/dbx-workshop/02-compute/2-5/step1-sql-menu.png)
+
+**Step 2.** Create SQL warehouse → 옵션 설정
+
+![SQL Warehouse 생성 — Step 2](/images/dbx-workshop/02-compute/2-5/step2-create-warehouse.png)
+
+**Step 3.** Start → 상태 Running 확인
+
+![SQL Warehouse 생성 — Step 3](/images/dbx-workshop/02-compute/2-5/step3-warehouse-running.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] Warehouse 상태 = Running
+- [ ] SQL Editor에서 사용 가능
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `Quota exceeded` | Serverless quota 초과 | 더 작은 size 또는 Account Admin 문의 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Warehouse → Stop → Delete
+

@@ -3,40 +3,69 @@ title: "Lab 6.1 — ABAC vs RBAC 차이 + 시나리오"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 10분 | **난이도**: ⭐⭐
 **선행**: TBD
+**기능 분류**: uc_abac
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+본 Lab은 **ABAC vs RBAC 차이 + 시나리오** 을 단일 기능 단위로 직접 수행하며 동작을 체감하는 것이 목적입니다. `M6. UC ABAC — Attribute-Based Access Control` 의 핵심 흐름 안에서 이 단계가 어떤 역할을 하는지 위치를 잡습니다.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
-```text
-TBD
+```sql
+-- Tag 정의 + Column에 부여
+ALTER TABLE workshop_<name>.default.customers
+  ALTER COLUMN ssn SET TAGS ('sensitivity' = 'pii');
+
+-- ABAC Policy (예: PII Column 자동 마스킹)
+CREATE POLICY mask_pii
+ON CATALOG workshop_<name>
+TO ALL
+WHEN MATCH TAG sensitivity = 'pii'
+APPLY MASK (col) -> CASE
+  WHEN is_member('pii-allowed') THEN col
+  ELSE '***'
+END;
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** Catalog Explorer → 객체 → Tags 탭
+
+![ABAC vs RBAC 차이 + 시나리오 — Step 1](/images/dbx-workshop/06-uc-abac/6-1/step1-tags-tab.png)
+
+**Step 2.** Sensitivity tag 부여
+
+![ABAC vs RBAC 차이 + 시나리오 — Step 2](/images/dbx-workshop/06-uc-abac/6-1/step2-add-tag.png)
+
+**Step 3.** ABAC Policies 페이지에서 Policy 생성
+
+![ABAC vs RBAC 차이 + 시나리오 — Step 3](/images/dbx-workshop/06-uc-abac/6-1/step3-create-policy.png)
+
+**Step 4.** 다른 사용자로 SELECT — 마스킹 결과 확인
+
+![ABAC vs RBAC 차이 + 시나리오 — Step 4](/images/dbx-workshop/06-uc-abac/6-1/step4-masking-result.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] ABAC vs RBAC 차이 + 시나리오 완료
+- [ ] 결과가 기대한 대로 표시됨
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `권한 부족` | 필요 권한 미보유 | 선행 Lab 확인 또는 Admin 문의 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Module 끝의 Cleanup Lab에서 일괄 정리합니다.
+

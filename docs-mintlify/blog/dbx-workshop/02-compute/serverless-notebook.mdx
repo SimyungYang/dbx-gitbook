@@ -3,40 +3,57 @@ title: "Lab 2.1 — Serverless Compute에 노트북 attach"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 5분 | **난이도**: ⭐
 **선행**: TBD
+**기능 분류**: compute_config
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+Serverless Compute는 Databricks가 관리하는 컴퓨트로, 클러스터를 직접 만들 필요 없이 노트북에 즉시 attach 가능합니다.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
-```text
-TBD
+```python
+# 노트북 우상단 "Connect" → "Serverless" 선택
+# 코드 셀에서 즉시 실행 가능
+
+spark.sql("SELECT current_user(), current_timestamp()").show()
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** 새 노트북 만들기 (Workspace → Create → Notebook)
+
+![Serverless Compute에 노트북 attach — Step 1](/images/dbx-workshop/02-compute/2-1/step1-new-notebook.png)
+
+**Step 2.** 우상단 Connect → Serverless 선택
+
+![Serverless Compute에 노트북 attach — Step 2](/images/dbx-workshop/02-compute/2-1/step2-connect-serverless.png)
+
+**Step 3.** 첫 셀에 코드 입력 후 Shift+Enter 실행
+
+![Serverless Compute에 노트북 attach — Step 3](/images/dbx-workshop/02-compute/2-1/step3-first-cell.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] 코드 실행 성공
+- [ ] 결과 1 row 반환
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `Serverless not available` | Region에서 Serverless 미지원 또는 미활성 | Workspace Admin에게 활성화 요청 |
+| `Cluster start timeout` | Serverless 콜드 스타트 (드물게 30초+) | 재시도 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Serverless는 idle 시 자동 종료 (별도 정리 불필요).
+

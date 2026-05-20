@@ -3,40 +3,56 @@ title: "Lab 1.6 — Personal Access Token 발급"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 5분 | **난이도**: ⭐
 **선행**: TBD
+**기능 분류**: ui_admin
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+Personal Access Token (PAT)은 본인 ID로 API를 호출할 때 사용하는 토큰입니다. CLI/SDK 기본 인증 수단.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
-```text
-TBD
+```bash
+# Workspace UI에서 PAT 발급 후 CLI 설정
+export DATABRICKS_HOST=https://<your-workspace>.cloud.databricks.com
+export DATABRICKS_TOKEN=dapi...........
+
+databricks workspace list /
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** 우상단 사용자 → Settings → Developer 탭
+
+![Personal Access Token 발급 — Step 1](/images/dbx-workshop/01-identity/1-6/step1-developer-tab.png)
+
+**Step 2.** Access tokens → Generate new token
+
+![Personal Access Token 발급 — Step 2](/images/dbx-workshop/01-identity/1-6/step2-new-token.png)
+
+**Step 3.** Comment / Lifetime 입력 → Generate → Token 복사
+
+![Personal Access Token 발급 — Step 3](/images/dbx-workshop/01-identity/1-6/step3-token-copy.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] CLI에서 `databricks workspace list /` 성공
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `PAT 발급 버튼 없음` | Workspace Admin이 PAT 비활성화 | Admin에게 활성화 요청 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Developer 탭 → Token Revoke
+

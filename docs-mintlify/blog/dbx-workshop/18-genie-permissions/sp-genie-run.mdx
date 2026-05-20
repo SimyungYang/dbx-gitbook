@@ -3,40 +3,58 @@ title: "Lab 18.4 — Service Principal로 Genie 실행"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 10분 | **난이도**: ⭐⭐
 **선행**: TBD
+**기능 분류**: genie_perm
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+본 Lab은 **Service Principal로 Genie 실행** 을 단일 기능 단위로 직접 수행하며 동작을 체감하는 것이 목적입니다. `M18. Genie Permissions — Space + Underlying Data 분리` 의 핵심 흐름 안에서 이 단계가 어떤 역할을 하는지 위치를 잡습니다.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
-```text
-TBD
+```sql
+-- Genie Space에 underlying 데이터 접근 권한 부여
+GRANT USE CATALOG ON CATALOG workshop_<name>   TO `analyst_group`;
+GRANT USE SCHEMA  ON SCHEMA  workshop_<name>.default TO `analyst_group`;
+GRANT SELECT      ON SCHEMA  workshop_<name>.default TO `analyst_group`;
+
+-- Genie Space 자체 권한은 UI: Genie Space → Share → Add
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** Genie Space → Share 버튼
+
+![Service Principal로 Genie 실행 — Step 1](/images/dbx-workshop/18-genie-permissions/18-4/step1-share.png)
+
+**Step 2.** User/Group 추가 + Permission level (Can View / Run / Edit)
+
+![Service Principal로 Genie 실행 — Step 2](/images/dbx-workshop/18-genie-permissions/18-4/step2-add-perm.png)
+
+**Step 3.** Underlying 데이터 권한도 SQL로 부여
+
+![Service Principal로 Genie 실행 — Step 3](/images/dbx-workshop/18-genie-permissions/18-4/step3-data-grant.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] Service Principal로 Genie 실행 완료
+- [ ] 결과가 기대한 대로 표시됨
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `권한 부족` | 필요 권한 미보유 | 선행 Lab 확인 또는 Admin 문의 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Module 끝의 Cleanup Lab에서 일괄 정리합니다.
+

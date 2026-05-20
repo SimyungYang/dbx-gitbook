@@ -3,40 +3,65 @@ title: "Lab 2.2 — Classic All-Purpose Cluster 생성"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 10분 | **난이도**: ⭐⭐
 **선행**: TBD
+**기능 분류**: compute_config
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+Classic All-Purpose Cluster는 고객 VPC 내 EC2에서 실행되는 전통적인 클러스터입니다. Spark 디버깅, GPU 워크로드, 특수 라이브러리 필요 시 사용.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
 ```text
-TBD
+Compute → Create compute → All-purpose compute
+  Name:                 workshop-cluster
+  Policy:               Unrestricted
+  Access mode:          Single user (또는 Shared)
+  Databricks runtime:   15.4 LTS (Photon)
+  Node type:            i3.xlarge
+  Autoscale:            min 2, max 4
+  Auto termination:     60 minutes
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** 좌측 사이드바 → Compute → Create compute
+
+![Classic All-Purpose Cluster 생성 — Step 1](/images/dbx-workshop/02-compute/2-2/step1-create-compute.png)
+
+**Step 2.** All-purpose compute 선택
+
+![Classic All-Purpose Cluster 생성 — Step 2](/images/dbx-workshop/02-compute/2-2/step2-all-purpose.png)
+
+**Step 3.** 설정 입력 후 Create cluster
+
+![Classic All-Purpose Cluster 생성 — Step 3](/images/dbx-workshop/02-compute/2-2/step3-cluster-config.png)
+
+**Step 4.** 클러스터 상태 RUNNING 확인
+
+![Classic All-Purpose Cluster 생성 — Step 4](/images/dbx-workshop/02-compute/2-2/step4-running.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] Cluster State = RUNNING
+- [ ] Driver/Worker 노드 IP 확인 가능
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `Cluster failed: INSTANCE_POOL_EXHAUSTED` | EC2 quota 초과 | 다른 instance type 시도 또는 AWS quota 증액 |
+| `DBR version not available` | Region에서 미지원 | 다른 LTS 버전 선택 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Compute → workshop-cluster → ⋯ → Delete
+

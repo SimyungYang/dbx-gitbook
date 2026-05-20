@@ -3,40 +3,59 @@ title: "Lab 1.3 — Service Principal 생성"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 8분 | **난이도**: ⭐⭐
 **선행**: TBD
+**기능 분류**: ui_admin
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+Service Principal (SP)은 사람이 아닌 자동화/앱이 사용하는 ID입니다. CI/CD, Job 실행, SDK 자동화에 필수입니다.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
-```text
-TBD
+```bash
+# CLI로 SP 생성
+databricks account service-principals create --json '{
+  "display_name": "workshop-sp",
+  "active": true
+}'
+
+# 또는 Account Console UI에서 생성
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** Account Console → User management → Service principals
+
+![Service Principal 생성 — Step 1](/images/dbx-workshop/01-identity/1-3/step1-sp-tab.png)
+
+**Step 2.** Add service principal → Name: workshop-sp
+
+![Service Principal 생성 — Step 2](/images/dbx-workshop/01-identity/1-3/step2-add-sp.png)
+
+**Step 3.** SP의 Application ID 복사 (이후 Lab에서 사용)
+
+![Service Principal 생성 — Step 3](/images/dbx-workshop/01-identity/1-3/step3-app-id.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] SP가 목록에 표시
+- [ ] Application ID (UUID) 메모
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `권한 거부` | Account Admin 권한 필요 | Account Admin에게 요청 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Service principals → workshop-sp → Delete
+

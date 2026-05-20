@@ -3,40 +3,61 @@ title: "Lab 2.8 — Auto-scaling 동작 관찰"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 10분 | **난이도**: ⭐⭐
 **선행**: TBD
+**기능 분류**: compute_config
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+Auto-scaling이 실제로 작동하는 것을 관찰합니다. 부하를 주고 worker 수 변화를 모니터링.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
-```text
-TBD
+```python
+# 부하 생성 — 큰 데이터 처리
+df = spark.range(0, 10_000_000_000).repartition(200)
+df.groupBy((df.id % 1000).alias("bucket")).count().count()
+
+# 실행 중 Compute → Cluster → Metrics 탭에서 worker 수 확인
+# 부하 종료 후 5분 이내 worker가 다시 줄어듦 (downscale)
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** 위 코드를 실행 중 상태로 둠
+
+![Auto-scaling 동작 관찰 — Step 1](/images/dbx-workshop/02-compute/2-8/step1-run-load.png)
+
+**Step 2.** Compute → Cluster → Metrics 탭
+
+![Auto-scaling 동작 관찰 — Step 2](/images/dbx-workshop/02-compute/2-8/step2-metrics-tab.png)
+
+**Step 3.** Workers 수가 증가하는 그래프 확인
+
+![Auto-scaling 동작 관찰 — Step 3](/images/dbx-workshop/02-compute/2-8/step3-scale-out.png)
+
+**Step 4.** 실행 종료 후 5분 후 다시 확인 (scale-in)
+
+![Auto-scaling 동작 관찰 — Step 4](/images/dbx-workshop/02-compute/2-8/step4-scale-in.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] worker 수가 동적으로 변동하는 것 확인
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `worker 수 변동 없음` | min == max 또는 부하가 작음 | min/max 차이 확대 + 더 큰 데이터 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+별도 정리 불필요.
+

@@ -3,40 +3,57 @@ title: "Lab 99.1 — 전체 리소스 일괄 정리"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 10분 | **난이도**: ⭐⭐
 **선행**: TBD
+**기능 분류**: cleanup
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+본 Lab은 **전체 리소스 일괄 정리** 을 단일 기능 단위로 직접 수행하며 동작을 체감하는 것이 목적입니다. `M99. Final Cleanup` 의 핵심 흐름 안에서 이 단계가 어떤 역할을 하는지 위치를 잡습니다.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
-```text
-TBD
+```sql
+-- 모든 Workshop catalog 삭제
+DROP CATALOG IF EXISTS workshop_<name> CASCADE;
+
+-- 또는 단계별 정리: Pipeline → Job → Cluster → Warehouse → Catalog
+-- CLI 일괄:
+--   databricks pipelines delete --pipeline-id ...
+--   databricks jobs delete ...
+--   databricks clusters delete ...
+--   databricks warehouses delete ...
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** 각 자원 페이지에서 Delete
+
+![전체 리소스 일괄 정리 — Step 1](/images/dbx-workshop/99-cleanup/99-1/step1-delete-each.png)
+
+**Step 2.** Catalog Explorer에서 Workshop catalog 삭제 확인
+
+![전체 리소스 일괄 정리 — Step 2](/images/dbx-workshop/99-cleanup/99-1/step2-verify.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] 전체 리소스 일괄 정리 완료
+- [ ] 결과가 기대한 대로 표시됨
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `권한 부족` | 필요 권한 미보유 | 선행 Lab 확인 또는 Admin 문의 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Module 끝의 Cleanup Lab에서 일괄 정리합니다.
+

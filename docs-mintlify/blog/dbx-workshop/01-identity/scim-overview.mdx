@@ -3,40 +3,51 @@ title: "Lab 1.8 — SCIM Provisioning 개요 (UI 확인)"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 5분 | **난이도**: ⭐⭐
 **선행**: TBD
+**기능 분류**: ui_admin
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+SCIM (System for Cross-domain Identity Management)은 IdP (Okta/Azure Entra)에서 User/Group을 자동 프로비저닝합니다. 본 Lab은 UI만 확인.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
 ```text
-TBD
+Account Console → Settings → User Provisioning (SCIM)
+  - SCIM endpoint URL
+  - SCIM token (Bearer)
+  - Mapping rules (User attribute → Databricks)
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** Account Console → Settings → User Provisioning
+
+![SCIM Provisioning 개요 (UI 확인) — Step 1](/images/dbx-workshop/01-identity/1-8/step1-scim-tab.png)
+
+**Step 2.** SCIM endpoint URL과 토큰 확인
+
+![SCIM Provisioning 개요 (UI 확인) — Step 2](/images/dbx-workshop/01-identity/1-8/step2-scim-endpoint.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] SCIM 설정 페이지 확인
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| 권한 부족 | Workspace/UC 권한 미보유 | 선행 Lab 확인 또는 Admin 문의 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+변경 사항 없음 (조회만).
+

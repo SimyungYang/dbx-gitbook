@@ -3,40 +3,55 @@ title: "Lab 2.6 — Serverless vs Pro vs Classic Warehouse 비교"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
+**소요 시간**: 5분 | **난이도**: ⭐
 **선행**: TBD
+**기능 분류**: compute_config
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+SQL Warehouse 3종 비교: Serverless (Databricks 관리, 가장 빠른 시작), Pro (고객 VPC, Photon 기본), Classic (legacy, Photon 옵션).
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
 ```text
-TBD
+| 항목           | Serverless           | Pro              | Classic         |
+|----------------|----------------------|------------------|-----------------|
+| 위치           | Databricks VPC       | 고객 VPC         | 고객 VPC        |
+| 시작 시간      | 수초                 | 2-5분            | 4-8분           |
+| Photon         | 항상                 | 항상             | 옵션            |
+| Predictive IO  | 항상                 | 옵션             | X               |
+| 가격           | 가장 비쌈            | 중간             | 가장 쌈         |
+| 권장 용도      | BI 대시보드, Genie   | 정기 ETL/SQL     | Legacy 호환     |
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** Create warehouse 화면에서 Type 옵션 비교
+
+![Serverless vs Pro vs Classic Warehouse 비교 — Step 1](/images/dbx-workshop/02-compute/2-6/step1-warehouse-types.png)
+
+**Step 2.** 각 type별 가격 도구 확인 (calculator.databricks.com)
+
+![Serverless vs Pro vs Classic Warehouse 비교 — Step 2](/images/dbx-workshop/02-compute/2-6/step2-calc.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] 3종 비교 이해
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| 권한 부족 | Workspace/UC 권한 미보유 | 선행 Lab 확인 또는 Admin 문의 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+별도 정리 불필요.
+

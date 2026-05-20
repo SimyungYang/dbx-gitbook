@@ -3,40 +3,54 @@ title: "Lab 1.5 — 두 번째 테스트 User를 Workspace에 할당"
 ---
 
 <Info>
-**소요 시간**: TBD | **난이도**: TBD
-**선행**: TBD
+**소요 시간**: 5분 | **난이도**: ⭐
+**선행**: Lab 1.1
+**기능 분류**: ui_admin
 </Info>
-
-> 🚧 이 Lab은 작성 예정입니다. 곧 내용이 채워집니다.
 
 ## 🧭 이 기능은 무엇이고 언제 쓰나
 
-(작성 예정)
+Identity Federation이 비활성화된 경우, Lab 1.1에서 만든 User를 Workspace에 수동 할당합니다. 활성화 상태면 자동 할당되므로 이 단계는 skip 가능.
 
-## ⚙️ 핵심 옵션
+## ⚙️ 핵심 옵션 / 파라미터
 
-(작성 예정)
+| 옵션 | 설명 |
+|------|------|
+| 본 Lab에서 다루는 핵심 변수 | 샘플 코드의 `<...>` 부분을 본인 환경에 맞게 교체 |
 
 ## 💻 샘플 코드
 
 ```text
-TBD
+Account Console → Workspaces → <your-workspace> → Permissions → Add user
+  User: workshop-test@<your-domain>.com
+  Role: User (또는 Workspace Admin)
 ```
 
-## 🖥 UI 등가 작업
+## 🖥 UI 등가 작업 — 스크린샷 위치
 
-(작성 예정)
+**Step 1.** Account Console → Workspaces 메뉴
+
+![두 번째 테스트 User를 Workspace에 할당 — Step 1](/images/dbx-workshop/01-identity/1-5/step1-workspaces.png)
+
+**Step 2.** 본인의 Workspace 클릭 → Permissions 탭
+
+![두 번째 테스트 User를 Workspace에 할당 — Step 2](/images/dbx-workshop/01-identity/1-5/step2-ws-permissions.png)
+
+**Step 3.** Add user → 테스트 User 검색 → 추가
+
+![두 번째 테스트 User를 Workspace에 할당 — Step 3](/images/dbx-workshop/01-identity/1-5/step3-add-user.png)
 
 ## ✅ Validation
 
-(작성 예정)
+- [ ] 테스트 User가 Workspace에 접속 가능
 
 ## 🚧 자주 만나는 오류
 
 | 에러 | 원인 | 해결 |
 |------|------|------|
-| TBD  | TBD  | TBD  |
+| `User not found` | User가 Account에 추가되지 않음 | Lab 1.1 재실행 |
 
 ## 🧹 Cleanup
 
-(작성 예정)
+Workspace Permissions → 테스트 User → Remove
+
