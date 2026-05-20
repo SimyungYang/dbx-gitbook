@@ -1875,6 +1875,787 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Databricks Workshop",
+        "groups": [
+          {
+            "group": "시작하기",
+            "pages": [
+              "blog/dbx-workshop/overview",
+              "blog/dbx-workshop/prerequisites"
+            ]
+          },
+          {
+            "group": "Tier 1 — Foundation",
+            "pages": [
+              {
+                "group": "M0. Workspace Tour & Account Console",
+                "pages": [
+                  "blog/dbx-workshop/00-workspace-tour/overview",
+                  "blog/dbx-workshop/00-workspace-tour/workspace-login",
+                  "blog/dbx-workshop/00-workspace-tour/sidebar-tour",
+                  "blog/dbx-workshop/00-workspace-tour/user-settings",
+                  "blog/dbx-workshop/00-workspace-tour/account-id-region",
+                  "blog/dbx-workshop/00-workspace-tour/admin-vs-user",
+                  "blog/dbx-workshop/00-workspace-tour/identity-federation"
+                ]
+              },
+              {
+                "group": "M1. Identity — User / Group / Service Principal",
+                "pages": [
+                  "blog/dbx-workshop/01-identity/overview",
+                  "blog/dbx-workshop/01-identity/user-account-add",
+                  "blog/dbx-workshop/01-identity/group-create",
+                  "blog/dbx-workshop/01-identity/service-principal-create",
+                  "blog/dbx-workshop/01-identity/sp-oauth-secret",
+                  "blog/dbx-workshop/01-identity/test-user-workspace-add",
+                  "blog/dbx-workshop/01-identity/pat-token",
+                  "blog/dbx-workshop/01-identity/sso-saml-overview",
+                  "blog/dbx-workshop/01-identity/scim-overview"
+                ]
+              },
+              {
+                "group": "M2. Compute — Cluster / Warehouse / Serverless",
+                "pages": [
+                  "blog/dbx-workshop/02-compute/overview",
+                  "blog/dbx-workshop/02-compute/serverless-notebook",
+                  "blog/dbx-workshop/02-compute/classic-cluster-create",
+                  "blog/dbx-workshop/02-compute/cluster-config-detail",
+                  "blog/dbx-workshop/02-compute/cluster-policy",
+                  "blog/dbx-workshop/02-compute/sql-warehouse-create",
+                  "blog/dbx-workshop/02-compute/sql-warehouse-types",
+                  "blog/dbx-workshop/02-compute/job-cluster-vs-all-purpose",
+                  "blog/dbx-workshop/02-compute/autoscale-observe",
+                  "blog/dbx-workshop/02-compute/cluster-permissions",
+                  "blog/dbx-workshop/02-compute/compute-cleanup"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Tier 2 — Notebook",
+            "pages": [
+              {
+                "group": "M3. Notebook, Workspace Files, Git",
+                "pages": [
+                  "blog/dbx-workshop/03-notebook/overview",
+                  "blog/dbx-workshop/03-notebook/notebook-create",
+                  "blog/dbx-workshop/03-notebook/multi-language-cells",
+                  "blog/dbx-workshop/03-notebook/magic-commands",
+                  "blog/dbx-workshop/03-notebook/variable-explorer",
+                  "blog/dbx-workshop/03-notebook/git-folder",
+                  "blog/dbx-workshop/03-notebook/co-edit",
+                  "blog/dbx-workshop/03-notebook/comments",
+                  "blog/dbx-workshop/03-notebook/dashboard-mode",
+                  "blog/dbx-workshop/03-notebook/dbutils-basics",
+                  "blog/dbx-workshop/03-notebook/notebook-run-job",
+                  "blog/dbx-workshop/03-notebook/notebook-import-export",
+                  "blog/dbx-workshop/03-notebook/notebook-permissions"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Tier 3 — Unity Catalog Deep Dive",
+            "pages": [
+              {
+                "group": "M4. UC 객체 — Catalog / Schema / Table / View / Volume / Function / Model / Connection",
+                "pages": [
+                  "blog/dbx-workshop/04-uc-objects/overview",
+                  "blog/dbx-workshop/04-uc-objects/catalog-explorer-tour",
+                  "blog/dbx-workshop/04-uc-objects/catalog-create",
+                  "blog/dbx-workshop/04-uc-objects/schema-create",
+                  "blog/dbx-workshop/04-uc-objects/managed-table",
+                  "blog/dbx-workshop/04-uc-objects/external-table",
+                  "blog/dbx-workshop/04-uc-objects/view-create",
+                  "blog/dbx-workshop/04-uc-objects/materialized-view",
+                  "blog/dbx-workshop/04-uc-objects/streaming-table",
+                  "blog/dbx-workshop/04-uc-objects/volume-managed",
+                  "blog/dbx-workshop/04-uc-objects/volume-external",
+                  "blog/dbx-workshop/04-uc-objects/volume-files",
+                  "blog/dbx-workshop/04-uc-objects/uc-function-sql",
+                  "blog/dbx-workshop/04-uc-objects/uc-function-python",
+                  "blog/dbx-workshop/04-uc-objects/uc-connection",
+                  "blog/dbx-workshop/04-uc-objects/foreign-catalog",
+                  "blog/dbx-workshop/04-uc-objects/uc-model",
+                  "blog/dbx-workshop/04-uc-objects/catalog-explorer-search",
+                  "blog/dbx-workshop/04-uc-objects/catalog-explorer-tags-comments"
+                ]
+              },
+              {
+                "group": "M5. UC RBAC — Role-Based Access Control",
+                "pages": [
+                  "blog/dbx-workshop/05-uc-rbac/overview",
+                  "blog/dbx-workshop/05-uc-rbac/privilege-hierarchy",
+                  "blog/dbx-workshop/05-uc-rbac/use-catalog",
+                  "blog/dbx-workshop/05-uc-rbac/use-schema",
+                  "blog/dbx-workshop/05-uc-rbac/select-grant",
+                  "blog/dbx-workshop/05-uc-rbac/modify-grant",
+                  "blog/dbx-workshop/05-uc-rbac/create-grant",
+                  "blog/dbx-workshop/05-uc-rbac/execute-grant",
+                  "blog/dbx-workshop/05-uc-rbac/volume-rw-grant",
+                  "blog/dbx-workshop/05-uc-rbac/browse-grant",
+                  "blog/dbx-workshop/05-uc-rbac/apply-tag-grant",
+                  "blog/dbx-workshop/05-uc-rbac/all-privileges",
+                  "blog/dbx-workshop/05-uc-rbac/grant-with-option",
+                  "blog/dbx-workshop/05-uc-rbac/revoke",
+                  "blog/dbx-workshop/05-uc-rbac/show-grants",
+                  "blog/dbx-workshop/05-uc-rbac/inheritance",
+                  "blog/dbx-workshop/05-uc-rbac/ownership-transfer",
+                  "blog/dbx-workshop/05-uc-rbac/group-grant",
+                  "blog/dbx-workshop/05-uc-rbac/account-vs-workspace-group",
+                  "blog/dbx-workshop/05-uc-rbac/sp-grant",
+                  "blog/dbx-workshop/05-uc-rbac/multi-user-validation"
+                ]
+              },
+              {
+                "group": "M6. UC ABAC — Attribute-Based Access Control",
+                "pages": [
+                  "blog/dbx-workshop/06-uc-abac/overview",
+                  "blog/dbx-workshop/06-uc-abac/abac-vs-rbac",
+                  "blog/dbx-workshop/06-uc-abac/sensitivity-tags-define",
+                  "blog/dbx-workshop/06-uc-abac/column-tag-ui",
+                  "blog/dbx-workshop/06-uc-abac/column-tag-sql",
+                  "blog/dbx-workshop/06-uc-abac/schema-catalog-tags",
+                  "blog/dbx-workshop/06-uc-abac/abac-policy-create",
+                  "blog/dbx-workshop/06-uc-abac/abac-policy-apply",
+                  "blog/dbx-workshop/06-uc-abac/abac-policy-validate",
+                  "blog/dbx-workshop/06-uc-abac/abac-with-row-filter",
+                  "blog/dbx-workshop/06-uc-abac/abac-rbac-priority",
+                  "blog/dbx-workshop/06-uc-abac/abac-policy-disable",
+                  "blog/dbx-workshop/06-uc-abac/abac-audit"
+                ]
+              },
+              {
+                "group": "M7. UC Fine-grained Security — Row Filter, Column Mask, Dynamic View",
+                "pages": [
+                  "blog/dbx-workshop/07-uc-fine-grained/overview",
+                  "blog/dbx-workshop/07-uc-fine-grained/row-filter-function",
+                  "blog/dbx-workshop/07-uc-fine-grained/row-filter-apply",
+                  "blog/dbx-workshop/07-uc-fine-grained/row-filter-validate",
+                  "blog/dbx-workshop/07-uc-fine-grained/column-mask-function",
+                  "blog/dbx-workshop/07-uc-fine-grained/column-mask-apply",
+                  "blog/dbx-workshop/07-uc-fine-grained/dynamic-view",
+                  "blog/dbx-workshop/07-uc-fine-grained/combined-row-column",
+                  "blog/dbx-workshop/07-uc-fine-grained/cleanup-filters-masks"
+                ]
+              },
+              {
+                "group": "M8. UC External Resources — Storage Credential, External Location, Connection",
+                "pages": [
+                  "blog/dbx-workshop/08-uc-external-resources/overview",
+                  "blog/dbx-workshop/08-uc-external-resources/storage-credential-create",
+                  "blog/dbx-workshop/08-uc-external-resources/external-location-create",
+                  "blog/dbx-workshop/08-uc-external-resources/external-location-permissions",
+                  "blog/dbx-workshop/08-uc-external-resources/file-events-enable",
+                  "blog/dbx-workshop/08-uc-external-resources/uc-connection-types",
+                  "blog/dbx-workshop/08-uc-external-resources/foreign-catalog-mysql",
+                  "blog/dbx-workshop/08-uc-external-resources/delta-sharing-receive",
+                  "blog/dbx-workshop/08-uc-external-resources/delta-sharing-provide"
+                ]
+              },
+              {
+                "group": "M9. UC Audit & Lineage",
+                "pages": [
+                  "blog/dbx-workshop/09-uc-audit-lineage/overview",
+                  "blog/dbx-workshop/09-uc-audit-lineage/system-tables-enable",
+                  "blog/dbx-workshop/09-uc-audit-lineage/system-access-audit",
+                  "blog/dbx-workshop/09-uc-audit-lineage/grant-revoke-history",
+                  "blog/dbx-workshop/09-uc-audit-lineage/table-lineage",
+                  "blog/dbx-workshop/09-uc-audit-lineage/column-lineage",
+                  "blog/dbx-workshop/09-uc-audit-lineage/catalog-explorer-lineage",
+                  "blog/dbx-workshop/09-uc-audit-lineage/notebook-lineage",
+                  "blog/dbx-workshop/09-uc-audit-lineage/audit-dashboard"
+                ]
+              },
+              {
+                "group": "M10. UC Governance Boundary — Catalog Binding, Network Binding",
+                "pages": [
+                  "blog/dbx-workshop/10-uc-governance-boundary/overview",
+                  "blog/dbx-workshop/10-uc-governance-boundary/catalog-binding",
+                  "blog/dbx-workshop/10-uc-governance-boundary/catalog-isolation",
+                  "blog/dbx-workshop/10-uc-governance-boundary/network-binding",
+                  "blog/dbx-workshop/10-uc-governance-boundary/metastore-admin",
+                  "blog/dbx-workshop/10-uc-governance-boundary/default-catalog",
+                  "blog/dbx-workshop/10-uc-governance-boundary/cross-region-considerations"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Tier 4 — Data Engineering",
+            "pages": [
+              {
+                "group": "M11. Delta Lake — ACID, Time Travel, OPTIMIZE, CDF, Liquid Clustering",
+                "pages": [
+                  "blog/dbx-workshop/11-delta-lake/overview",
+                  "blog/dbx-workshop/11-delta-lake/delta-create-insert",
+                  "blog/dbx-workshop/11-delta-lake/update-delete-merge",
+                  "blog/dbx-workshop/11-delta-lake/time-travel-version",
+                  "blog/dbx-workshop/11-delta-lake/time-travel-timestamp",
+                  "blog/dbx-workshop/11-delta-lake/describe-history",
+                  "blog/dbx-workshop/11-delta-lake/restore",
+                  "blog/dbx-workshop/11-delta-lake/optimize",
+                  "blog/dbx-workshop/11-delta-lake/zorder",
+                  "blog/dbx-workshop/11-delta-lake/vacuum",
+                  "blog/dbx-workshop/11-delta-lake/liquid-clustering",
+                  "blog/dbx-workshop/11-delta-lake/change-data-feed",
+                  "blog/dbx-workshop/11-delta-lake/schema-evolution",
+                  "blog/dbx-workshop/11-delta-lake/generated-columns",
+                  "blog/dbx-workshop/11-delta-lake/clone"
+                ]
+              },
+              {
+                "group": "M12. Data Ingestion — Upload / COPY INTO / Auto Loader / Lakeflow Connect",
+                "pages": [
+                  "blog/dbx-workshop/12-data-ingestion/overview",
+                  "blog/dbx-workshop/12-data-ingestion/ui-upload-data",
+                  "blog/dbx-workshop/12-data-ingestion/copy-into",
+                  "blog/dbx-workshop/12-data-ingestion/auto-loader-directory",
+                  "blog/dbx-workshop/12-data-ingestion/auto-loader-file-events",
+                  "blog/dbx-workshop/12-data-ingestion/schema-inference-evolution",
+                  "blog/dbx-workshop/12-data-ingestion/rescued-data",
+                  "blog/dbx-workshop/12-data-ingestion/lakeflow-connect-salesforce",
+                  "blog/dbx-workshop/12-data-ingestion/foreign-table-query"
+                ]
+              },
+              {
+                "group": "M13. Lakeflow Declarative Pipelines (구 DLT)",
+                "pages": [
+                  "blog/dbx-workshop/13-lakeflow-pipelines/overview",
+                  "blog/dbx-workshop/13-lakeflow-pipelines/pipeline-create",
+                  "blog/dbx-workshop/13-lakeflow-pipelines/streaming-table-bronze",
+                  "blog/dbx-workshop/13-lakeflow-pipelines/materialized-view-silver",
+                  "blog/dbx-workshop/13-lakeflow-pipelines/gold-aggregation",
+                  "blog/dbx-workshop/13-lakeflow-pipelines/expectations",
+                  "blog/dbx-workshop/13-lakeflow-pipelines/pipeline-monitoring",
+                  "blog/dbx-workshop/13-lakeflow-pipelines/pipeline-event-log",
+                  "blog/dbx-workshop/13-lakeflow-pipelines/pipeline-permissions"
+                ]
+              },
+              {
+                "group": "M14. Jobs & Workflow + Run-As Permissions",
+                "pages": [
+                  "blog/dbx-workshop/14-jobs-workflow/overview",
+                  "blog/dbx-workshop/14-jobs-workflow/job-single-task",
+                  "blog/dbx-workshop/14-jobs-workflow/job-multi-task-dag",
+                  "blog/dbx-workshop/14-jobs-workflow/job-parameters",
+                  "blog/dbx-workshop/14-jobs-workflow/job-cluster",
+                  "blog/dbx-workshop/14-jobs-workflow/conditional-retry",
+                  "blog/dbx-workshop/14-jobs-workflow/schedule-cron",
+                  "blog/dbx-workshop/14-jobs-workflow/file-arrival-trigger",
+                  "blog/dbx-workshop/14-jobs-workflow/notifications",
+                  "blog/dbx-workshop/14-jobs-workflow/run-as",
+                  "blog/dbx-workshop/14-jobs-workflow/job-permissions"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Tier 5 — Analytics & BI",
+            "pages": [
+              {
+                "group": "M15. DBSQL — SQL Editor, Query, Visualization",
+                "pages": [
+                  "blog/dbx-workshop/15-dbsql/overview",
+                  "blog/dbx-workshop/15-dbsql/sql-editor",
+                  "blog/dbx-workshop/15-dbsql/saved-query",
+                  "blog/dbx-workshop/15-dbsql/query-parameters",
+                  "blog/dbx-workshop/15-dbsql/query-history",
+                  "blog/dbx-workshop/15-dbsql/query-profile",
+                  "blog/dbx-workshop/15-dbsql/visualization-chart",
+                  "blog/dbx-workshop/15-dbsql/visualization-pivot",
+                  "blog/dbx-workshop/15-dbsql/sql-snippets",
+                  "blog/dbx-workshop/15-dbsql/sql-aliases",
+                  "blog/dbx-workshop/15-dbsql/warehouse-monitoring"
+                ]
+              },
+              {
+                "group": "M16. AI/BI Dashboard + Dashboard 권한",
+                "pages": [
+                  "blog/dbx-workshop/16-aibi-dashboard/overview",
+                  "blog/dbx-workshop/16-aibi-dashboard/dashboard-create",
+                  "blog/dbx-workshop/16-aibi-dashboard/dashboard-widgets",
+                  "blog/dbx-workshop/16-aibi-dashboard/dashboard-filters",
+                  "blog/dbx-workshop/16-aibi-dashboard/dashboard-publish",
+                  "blog/dbx-workshop/16-aibi-dashboard/dashboard-embed",
+                  "blog/dbx-workshop/16-aibi-dashboard/dashboard-permissions",
+                  "blog/dbx-workshop/16-aibi-dashboard/sql-alert",
+                  "blog/dbx-workshop/16-aibi-dashboard/alert-notifications"
+                ]
+              },
+              {
+                "group": "M17. Genie Spaces — 자연어 NLQ",
+                "pages": [
+                  "blog/dbx-workshop/17-genie-spaces/overview",
+                  "blog/dbx-workshop/17-genie-spaces/genie-space-create",
+                  "blog/dbx-workshop/17-genie-spaces/sample-questions",
+                  "blog/dbx-workshop/17-genie-spaces/instructions",
+                  "blog/dbx-workshop/17-genie-spaces/trusted-assets",
+                  "blog/dbx-workshop/17-genie-spaces/nl-query",
+                  "blog/dbx-workshop/17-genie-spaces/sql-function-genie",
+                  "blog/dbx-workshop/17-genie-spaces/genie-history",
+                  "blog/dbx-workshop/17-genie-spaces/genie-share",
+                  "blog/dbx-workshop/17-genie-spaces/genie-embed",
+                  "blog/dbx-workshop/17-genie-spaces/genie-evaluation"
+                ]
+              },
+              {
+                "group": "M18. Genie Permissions — Space + Underlying Data 분리",
+                "pages": [
+                  "blog/dbx-workshop/18-genie-permissions/overview",
+                  "blog/dbx-workshop/18-genie-permissions/space-level-permissions",
+                  "blog/dbx-workshop/18-genie-permissions/underlying-data-permissions",
+                  "blog/dbx-workshop/18-genie-permissions/permission-mismatch",
+                  "blog/dbx-workshop/18-genie-permissions/sp-genie-run",
+                  "blog/dbx-workshop/18-genie-permissions/trusted-function-execute",
+                  "blog/dbx-workshop/18-genie-permissions/group-batch-grant"
+                ]
+              },
+              {
+                "group": "M19. Databricks One — Persona, Consumer Mode",
+                "pages": [
+                  "blog/dbx-workshop/19-databricks-one/overview",
+                  "blog/dbx-workshop/19-databricks-one/databricks-one-entry",
+                  "blog/dbx-workshop/19-databricks-one/persona-switch",
+                  "blog/dbx-workshop/19-databricks-one/consumer-ui",
+                  "blog/dbx-workshop/19-databricks-one/default-genie-space",
+                  "blog/dbx-workshop/19-databricks-one/consumer-only-permission",
+                  "blog/dbx-workshop/19-databricks-one/publish-to-one",
+                  "blog/dbx-workshop/19-databricks-one/consumer-validation",
+                  "blog/dbx-workshop/19-databricks-one/embedded-genie-portal"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Tier 6 — AI / ML",
+            "pages": [
+              {
+                "group": "M20. AI Functions — SQL로 LLM 호출",
+                "pages": [
+                  "blog/dbx-workshop/20-ai-functions/overview",
+                  "blog/dbx-workshop/20-ai-functions/ai-query",
+                  "blog/dbx-workshop/20-ai-functions/ai-classify",
+                  "blog/dbx-workshop/20-ai-functions/ai-extract",
+                  "blog/dbx-workshop/20-ai-functions/ai-summarize",
+                  "blog/dbx-workshop/20-ai-functions/ai-translate",
+                  "blog/dbx-workshop/20-ai-functions/ai-parse-document",
+                  "blog/dbx-workshop/20-ai-functions/ai-forecast",
+                  "blog/dbx-workshop/20-ai-functions/ai-sentiment-similarity"
+                ]
+              },
+              {
+                "group": "M21. Vector Search + Endpoint/Index 권한",
+                "pages": [
+                  "blog/dbx-workshop/21-vector-search/overview",
+                  "blog/dbx-workshop/21-vector-search/vs-endpoint-create",
+                  "blog/dbx-workshop/21-vector-search/vs-delta-sync-index",
+                  "blog/dbx-workshop/21-vector-search/vs-direct-index",
+                  "blog/dbx-workshop/21-vector-search/vs-query",
+                  "blog/dbx-workshop/21-vector-search/vs-metadata-filter",
+                  "blog/dbx-workshop/21-vector-search/vs-hybrid-search",
+                  "blog/dbx-workshop/21-vector-search/vs-permissions",
+                  "blog/dbx-workshop/21-vector-search/vs-monitoring"
+                ]
+              },
+              {
+                "group": "M22. Agent Bricks — KA / MAS / Information Extraction",
+                "pages": [
+                  "blog/dbx-workshop/22-agent-bricks/overview",
+                  "blog/dbx-workshop/22-agent-bricks/ai-playground",
+                  "blog/dbx-workshop/22-agent-bricks/ka-create",
+                  "blog/dbx-workshop/22-agent-bricks/ka-upload-docs",
+                  "blog/dbx-workshop/22-agent-bricks/ka-evaluate",
+                  "blog/dbx-workshop/22-agent-bricks/ka-improve",
+                  "blog/dbx-workshop/22-agent-bricks/information-extraction",
+                  "blog/dbx-workshop/22-agent-bricks/supervisor-create",
+                  "blog/dbx-workshop/22-agent-bricks/supervisor-routing",
+                  "blog/dbx-workshop/22-agent-bricks/supervisor-tools",
+                  "blog/dbx-workshop/22-agent-bricks/agent-cleanup"
+                ]
+              },
+              {
+                "group": "M23. Agent Bricks Permissions",
+                "pages": [
+                  "blog/dbx-workshop/23-agent-bricks-permissions/overview",
+                  "blog/dbx-workshop/23-agent-bricks-permissions/ka-permissions",
+                  "blog/dbx-workshop/23-agent-bricks-permissions/fmapi-endpoint-perm",
+                  "blog/dbx-workshop/23-agent-bricks-permissions/ka-data-source-perm",
+                  "blog/dbx-workshop/23-agent-bricks-permissions/supervisor-permissions",
+                  "blog/dbx-workshop/23-agent-bricks-permissions/sp-agent-run"
+                ]
+              },
+              {
+                "group": "M24. Genie Code (구 Databricks Assistant)",
+                "pages": [
+                  "blog/dbx-workshop/24-genie-code/overview",
+                  "blog/dbx-workshop/24-genie-code/genie-code-enable",
+                  "blog/dbx-workshop/24-genie-code/nl-to-code",
+                  "blog/dbx-workshop/24-genie-code/code-explain",
+                  "blog/dbx-workshop/24-genie-code/code-refactor",
+                  "blog/dbx-workshop/24-genie-code/sql-generate",
+                  "blog/dbx-workshop/24-genie-code/error-debug"
+                ]
+              },
+              {
+                "group": "M25. MLflow — Tracking / Tracing / Evaluation",
+                "pages": [
+                  "blog/dbx-workshop/25-mlflow/overview",
+                  "blog/dbx-workshop/25-mlflow/sklearn-autolog",
+                  "blog/dbx-workshop/25-mlflow/mlflow-experiment-compare",
+                  "blog/dbx-workshop/25-mlflow/mlflow-uc-models-register",
+                  "blog/dbx-workshop/25-mlflow/model-alias",
+                  "blog/dbx-workshop/25-mlflow/model-version-stage",
+                  "blog/dbx-workshop/25-mlflow/mlflow-tracing-llm",
+                  "blog/dbx-workshop/25-mlflow/mlflow-tracing-langchain",
+                  "blog/dbx-workshop/25-mlflow/mlflow-evaluation-llm",
+                  "blog/dbx-workshop/25-mlflow/mlflow-prompt-registry",
+                  "blog/dbx-workshop/25-mlflow/mlflow-feedback",
+                  "blog/dbx-workshop/25-mlflow/mlflow-permissions",
+                  "blog/dbx-workshop/25-mlflow/mlflow-cleanup"
+                ]
+              },
+              {
+                "group": "M26. Model Serving + Endpoint 권한",
+                "pages": [
+                  "blog/dbx-workshop/26-model-serving/overview",
+                  "blog/dbx-workshop/26-model-serving/endpoint-deploy",
+                  "blog/dbx-workshop/26-model-serving/endpoint-query",
+                  "blog/dbx-workshop/26-model-serving/traffic-split",
+                  "blog/dbx-workshop/26-model-serving/inference-table",
+                  "blog/dbx-workshop/26-model-serving/fmapi-call",
+                  "blog/dbx-workshop/26-model-serving/custom-model-serving",
+                  "blog/dbx-workshop/26-model-serving/endpoint-monitoring",
+                  "blog/dbx-workshop/26-model-serving/endpoint-permissions"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Tier 7 — Applications & Sharing",
+            "pages": [
+              {
+                "group": "M27. Databricks Apps",
+                "pages": [
+                  "blog/dbx-workshop/27-databricks-apps/overview",
+                  "blog/dbx-workshop/27-databricks-apps/app-streamlit-template",
+                  "blog/dbx-workshop/27-databricks-apps/app-sql-warehouse",
+                  "blog/dbx-workshop/27-databricks-apps/app-lakebase",
+                  "blog/dbx-workshop/27-databricks-apps/app-sso",
+                  "blog/dbx-workshop/27-databricks-apps/app-local-dev",
+                  "blog/dbx-workshop/27-databricks-apps/app-deploy",
+                  "blog/dbx-workshop/27-databricks-apps/app-resources",
+                  "blog/dbx-workshop/27-databricks-apps/app-monitoring"
+                ]
+              },
+              {
+                "group": "M28. Apps Permissions — OBO + App SP",
+                "pages": [
+                  "blog/dbx-workshop/28-apps-permissions/overview",
+                  "blog/dbx-workshop/28-apps-permissions/app-permission",
+                  "blog/dbx-workshop/28-apps-permissions/app-sp-auto",
+                  "blog/dbx-workshop/28-apps-permissions/app-sp-grant",
+                  "blog/dbx-workshop/28-apps-permissions/obo-auth",
+                  "blog/dbx-workshop/28-apps-permissions/app-resource-binding",
+                  "blog/dbx-workshop/28-apps-permissions/obo-vs-sp"
+                ]
+              },
+              {
+                "group": "M29. Lakebase — Postgres OLTP + 권한",
+                "pages": [
+                  "blog/dbx-workshop/29-lakebase/overview",
+                  "blog/dbx-workshop/29-lakebase/lakebase-instance",
+                  "blog/dbx-workshop/29-lakebase/lakebase-database",
+                  "blog/dbx-workshop/29-lakebase/lakebase-sync",
+                  "blog/dbx-workshop/29-lakebase/lakebase-psql",
+                  "blog/dbx-workshop/29-lakebase/lakebase-from-app",
+                  "blog/dbx-workshop/29-lakebase/lakebase-permissions",
+                  "blog/dbx-workshop/29-lakebase/lakebase-branching",
+                  "blog/dbx-workshop/29-lakebase/lakebase-monitoring"
+                ]
+              },
+              {
+                "group": "M30. Marketplace + Delta Sharing",
+                "pages": [
+                  "blog/dbx-workshop/30-marketplace-sharing/overview",
+                  "blog/dbx-workshop/30-marketplace-sharing/marketplace-get-dataset",
+                  "blog/dbx-workshop/30-marketplace-sharing/marketplace-install",
+                  "blog/dbx-workshop/30-marketplace-sharing/delta-sharing-recipient",
+                  "blog/dbx-workshop/30-marketplace-sharing/delta-sharing-share",
+                  "blog/dbx-workshop/30-marketplace-sharing/delta-sharing-open",
+                  "blog/dbx-workshop/30-marketplace-sharing/delta-sharing-d2d",
+                  "blog/dbx-workshop/30-marketplace-sharing/sharing-audit",
+                  "blog/dbx-workshop/30-marketplace-sharing/sharing-permissions"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Tier 8 — Developer Tooling",
+            "pages": [
+              {
+                "group": "M31. Databricks CLI",
+                "pages": [
+                  "blog/dbx-workshop/31-databricks-cli/overview",
+                  "blog/dbx-workshop/31-databricks-cli/cli-install",
+                  "blog/dbx-workshop/31-databricks-cli/cli-auth",
+                  "blog/dbx-workshop/31-databricks-cli/cli-workspace",
+                  "blog/dbx-workshop/31-databricks-cli/cli-uc",
+                  "blog/dbx-workshop/31-databricks-cli/cli-jobs",
+                  "blog/dbx-workshop/31-databricks-cli/cli-clusters",
+                  "blog/dbx-workshop/31-databricks-cli/cli-volumes",
+                  "blog/dbx-workshop/31-databricks-cli/cli-repos",
+                  "blog/dbx-workshop/31-databricks-cli/cli-warehouses",
+                  "blog/dbx-workshop/31-databricks-cli/cli-apps"
+                ]
+              },
+              {
+                "group": "M32. Databricks SDK (Python)",
+                "pages": [
+                  "blog/dbx-workshop/32-databricks-sdk/overview",
+                  "blog/dbx-workshop/32-databricks-sdk/sdk-install",
+                  "blog/dbx-workshop/32-databricks-sdk/sdk-auth-methods",
+                  "blog/dbx-workshop/32-databricks-sdk/sdk-jobs-run",
+                  "blog/dbx-workshop/32-databricks-sdk/sdk-sql-statement",
+                  "blog/dbx-workshop/32-databricks-sdk/sdk-files",
+                  "blog/dbx-workshop/32-databricks-sdk/sdk-uc-objects",
+                  "blog/dbx-workshop/32-databricks-sdk/sdk-clusters",
+                  "blog/dbx-workshop/32-databricks-sdk/sdk-webhook"
+                ]
+              },
+              {
+                "group": "M33. Databricks Connect — 로컬 IDE에서 원격 Spark",
+                "pages": [
+                  "blog/dbx-workshop/33-databricks-connect/overview",
+                  "blog/dbx-workshop/33-databricks-connect/dbconnect-install",
+                  "blog/dbx-workshop/33-databricks-connect/dbconnect-auth",
+                  "blog/dbx-workshop/33-databricks-connect/dbconnect-spark",
+                  "blog/dbx-workshop/33-databricks-connect/dbconnect-dataframe",
+                  "blog/dbx-workshop/33-databricks-connect/dbconnect-debug",
+                  "blog/dbx-workshop/33-databricks-connect/dbconnect-serverless"
+                ]
+              },
+              {
+                "group": "M34. IDE 통합 — VS Code / Cursor / JetBrains",
+                "pages": [
+                  "blog/dbx-workshop/34-ide-integration/overview",
+                  "blog/dbx-workshop/34-ide-integration/vscode-extension-install",
+                  "blog/dbx-workshop/34-ide-integration/vscode-workspace-link",
+                  "blog/dbx-workshop/34-ide-integration/vscode-notebook-sync",
+                  "blog/dbx-workshop/34-ide-integration/vscode-dab-integration",
+                  "blog/dbx-workshop/34-ide-integration/cursor-jetbrains",
+                  "blog/dbx-workshop/34-ide-integration/ssh-cluster"
+                ]
+              },
+              {
+                "group": "M35. Databricks Asset Bundle (DAB) — Deep Dive",
+                "pages": [
+                  "blog/dbx-workshop/35-dab-deep-dive/overview",
+                  "blog/dbx-workshop/35-dab-deep-dive/dab-overview",
+                  "blog/dbx-workshop/35-dab-deep-dive/dab-init",
+                  "blog/dbx-workshop/35-dab-deep-dive/dab-first-job",
+                  "blog/dbx-workshop/35-dab-deep-dive/dab-job-cluster",
+                  "blog/dbx-workshop/35-dab-deep-dive/dab-pipeline",
+                  "blog/dbx-workshop/35-dab-deep-dive/dab-app",
+                  "blog/dbx-workshop/35-dab-deep-dive/dab-dashboard",
+                  "blog/dbx-workshop/35-dab-deep-dive/dab-serving",
+                  "blog/dbx-workshop/35-dab-deep-dive/dab-uc-resources",
+                  "blog/dbx-workshop/35-dab-deep-dive/dab-variables",
+                  "blog/dbx-workshop/35-dab-deep-dive/dab-targets",
+                  "blog/dbx-workshop/35-dab-deep-dive/dab-validate",
+                  "blog/dbx-workshop/35-dab-deep-dive/dab-deploy",
+                  "blog/dbx-workshop/35-dab-deep-dive/dab-run",
+                  "blog/dbx-workshop/35-dab-deep-dive/dab-state-destroy"
+                ]
+              },
+              {
+                "group": "M36. Terraform Provider",
+                "pages": [
+                  "blog/dbx-workshop/36-terraform/overview",
+                  "blog/dbx-workshop/36-terraform/tf-provider-setup",
+                  "blog/dbx-workshop/36-terraform/tf-workspace-resources",
+                  "blog/dbx-workshop/36-terraform/tf-uc-resources",
+                  "blog/dbx-workshop/36-terraform/tf-account-resources",
+                  "blog/dbx-workshop/36-terraform/tf-state",
+                  "blog/dbx-workshop/36-terraform/tf-vs-dab"
+                ]
+              },
+              {
+                "group": "M37. REST API + Webhook",
+                "pages": [
+                  "blog/dbx-workshop/37-rest-api/overview",
+                  "blog/dbx-workshop/37-rest-api/api-auth",
+                  "blog/dbx-workshop/37-rest-api/api-curl-job",
+                  "blog/dbx-workshop/37-rest-api/api-sql-statement",
+                  "blog/dbx-workshop/37-rest-api/api-catalog",
+                  "blog/dbx-workshop/37-rest-api/api-webhook",
+                  "blog/dbx-workshop/37-rest-api/api-openapi"
+                ]
+              },
+              {
+                "group": "M38. CI/CD — DAB + GitHub Actions",
+                "pages": [
+                  "blog/dbx-workshop/38-cicd/overview",
+                  "blog/dbx-workshop/38-cicd/cicd-github-actions-template",
+                  "blog/dbx-workshop/38-cicd/cicd-pr-validate",
+                  "blog/dbx-workshop/38-cicd/cicd-dev-deploy",
+                  "blog/dbx-workshop/38-cicd/cicd-prod-deploy",
+                  "blog/dbx-workshop/38-cicd/cicd-pytest"
+                ]
+              },
+              {
+                "group": "M39. Secret Management",
+                "pages": [
+                  "blog/dbx-workshop/39-secret-management/overview",
+                  "blog/dbx-workshop/39-secret-management/secret-scope-create",
+                  "blog/dbx-workshop/39-secret-management/secret-aws-sm",
+                  "blog/dbx-workshop/39-secret-management/secret-azure-kv",
+                  "blog/dbx-workshop/39-secret-management/secret-use"
+                ]
+              },
+              {
+                "group": "M40. Testing & Quality",
+                "pages": [
+                  "blog/dbx-workshop/40-testing-quality/overview",
+                  "blog/dbx-workshop/40-testing-quality/pytest-notebook",
+                  "blog/dbx-workshop/40-testing-quality/dlt-expectations-test",
+                  "blog/dbx-workshop/40-testing-quality/query-profile-perf",
+                  "blog/dbx-workshop/40-testing-quality/code-lineage",
+                  "blog/dbx-workshop/40-testing-quality/nutter-framework"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Cleanup",
+            "pages": [
+              {
+                "group": "M99. Final Cleanup",
+                "pages": [
+                  "blog/dbx-workshop/99-cleanup/overview",
+                  "blog/dbx-workshop/99-cleanup/cleanup-all"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Appendix — Account Console 관리",
+            "pages": [
+              "blog/dbx-workshop/appendix/overview",
+              {
+                "group": "Appendix A. Account Console 개요",
+                "pages": [
+                  "blog/dbx-workshop/appendix/A-account-console-tour/overview",
+                  "blog/dbx-workshop/appendix/A-account-console-tour/account-console-entry",
+                  "blog/dbx-workshop/appendix/A-account-console-tour/menu-tour",
+                  "blog/dbx-workshop/appendix/A-account-console-tour/admin-tiers",
+                  "blog/dbx-workshop/appendix/A-account-console-tour/account-region-id",
+                  "blog/dbx-workshop/appendix/A-account-console-tour/federation-check"
+                ]
+              },
+              {
+                "group": "Appendix B. Identity Management",
+                "pages": [
+                  "blog/dbx-workshop/appendix/B-identity-management/overview",
+                  "blog/dbx-workshop/appendix/B-identity-management/user-add",
+                  "blog/dbx-workshop/appendix/B-identity-management/user-deactivate",
+                  "blog/dbx-workshop/appendix/B-identity-management/group-account-level",
+                  "blog/dbx-workshop/appendix/B-identity-management/nested-groups",
+                  "blog/dbx-workshop/appendix/B-identity-management/sp-create",
+                  "blog/dbx-workshop/appendix/B-identity-management/sso-saml",
+                  "blog/dbx-workshop/appendix/B-identity-management/scim-provision",
+                  "blog/dbx-workshop/appendix/B-identity-management/identity-federation-enable",
+                  "blog/dbx-workshop/appendix/B-identity-management/workspace-assign-vs-auto",
+                  "blog/dbx-workshop/appendix/B-identity-management/pat-policy"
+                ]
+              },
+              {
+                "group": "Appendix C. Workspace 관리",
+                "pages": [
+                  "blog/dbx-workshop/appendix/C-workspace-management/overview",
+                  "blog/dbx-workshop/appendix/C-workspace-management/workspace-create-quickstart",
+                  "blog/dbx-workshop/appendix/C-workspace-management/workspace-create-custom",
+                  "blog/dbx-workshop/appendix/C-workspace-management/workspace-settings",
+                  "blog/dbx-workshop/appendix/C-workspace-management/workspace-admin-assign",
+                  "blog/dbx-workshop/appendix/C-workspace-management/workspace-delete",
+                  "blog/dbx-workshop/appendix/C-workspace-management/metastore-assign"
+                ]
+              },
+              {
+                "group": "Appendix D. UC Metastore Admin",
+                "pages": [
+                  "blog/dbx-workshop/appendix/D-uc-metastore-admin/overview",
+                  "blog/dbx-workshop/appendix/D-uc-metastore-admin/metastore-create",
+                  "blog/dbx-workshop/appendix/D-uc-metastore-admin/metastore-admin-assign",
+                  "blog/dbx-workshop/appendix/D-uc-metastore-admin/metastore-default-catalog",
+                  "blog/dbx-workshop/appendix/D-uc-metastore-admin/metastore-storage-root",
+                  "blog/dbx-workshop/appendix/D-uc-metastore-admin/metastore-multi-workspace"
+                ]
+              },
+              {
+                "group": "Appendix E. Cloud Resources (AWS 중심)",
+                "pages": [
+                  "blog/dbx-workshop/appendix/E-cloud-resources/overview",
+                  "blog/dbx-workshop/appendix/E-cloud-resources/credential-config",
+                  "blog/dbx-workshop/appendix/E-cloud-resources/storage-config",
+                  "blog/dbx-workshop/appendix/E-cloud-resources/network-config",
+                  "blog/dbx-workshop/appendix/E-cloud-resources/vpc-endpoint",
+                  "blog/dbx-workshop/appendix/E-cloud-resources/private-access",
+                  "blog/dbx-workshop/appendix/E-cloud-resources/cmk",
+                  "blog/dbx-workshop/appendix/E-cloud-resources/ncc",
+                  "blog/dbx-workshop/appendix/E-cloud-resources/cloud-region-diff"
+                ]
+              },
+              {
+                "group": "Appendix F. Logs & Audit",
+                "pages": [
+                  "blog/dbx-workshop/appendix/F-logs-audit/overview",
+                  "blog/dbx-workshop/appendix/F-logs-audit/audit-log-delivery",
+                  "blog/dbx-workshop/appendix/F-logs-audit/audit-log-format",
+                  "blog/dbx-workshop/appendix/F-logs-audit/billable-usage-delivery",
+                  "blog/dbx-workshop/appendix/F-logs-audit/system-tables-activate",
+                  "blog/dbx-workshop/appendix/F-logs-audit/system-tables-permission",
+                  "blog/dbx-workshop/appendix/F-logs-audit/compliance-profile"
+                ]
+              },
+              {
+                "group": "Appendix G. Budget & Cost",
+                "pages": [
+                  "blog/dbx-workshop/appendix/G-budget-cost/overview",
+                  "blog/dbx-workshop/appendix/G-budget-cost/budget-policy",
+                  "blog/dbx-workshop/appendix/G-budget-cost/budget-apply",
+                  "blog/dbx-workshop/appendix/G-budget-cost/custom-tags",
+                  "blog/dbx-workshop/appendix/G-budget-cost/tag-auto-apply",
+                  "blog/dbx-workshop/appendix/G-budget-cost/usage-dashboard"
+                ]
+              },
+              {
+                "group": "Appendix H. Marketplace Provider",
+                "pages": [
+                  "blog/dbx-workshop/appendix/H-marketplace-provider/overview",
+                  "blog/dbx-workshop/appendix/H-marketplace-provider/provider-register",
+                  "blog/dbx-workshop/appendix/H-marketplace-provider/listing-create",
+                  "blog/dbx-workshop/appendix/H-marketplace-provider/listing-audience",
+                  "blog/dbx-workshop/appendix/H-marketplace-provider/provider-stats"
+                ]
+              },
+              {
+                "group": "Appendix I. Account API 자동화",
+                "pages": [
+                  "blog/dbx-workshop/appendix/I-account-api-automation/overview",
+                  "blog/dbx-workshop/appendix/I-account-api-automation/account-api-token",
+                  "blog/dbx-workshop/appendix/I-account-api-automation/account-api-curl",
+                  "blog/dbx-workshop/appendix/I-account-api-automation/account-api-workspace-create",
+                  "blog/dbx-workshop/appendix/I-account-api-automation/scim-api-automation",
+                  "blog/dbx-workshop/appendix/I-account-api-automation/audit-log-delivery-api",
+                  "blog/dbx-workshop/appendix/I-account-api-automation/terraform-mws"
+                ]
+              }
+            ]
+          }
+        ]
       }
     ]
   }
