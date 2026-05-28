@@ -67,9 +67,25 @@ df = (spark.readStream
 
 File Notification 모드는 클라우드 스토리지의 **이벤트 알림 서비스** 를 통해 새 파일 도착을 감지합니다. 파일이 업로드되면 이벤트가 발생하고, Auto Loader가 이를 수신하여 즉시 처리합니다.
 
-![Auto Loader File Notification 아키텍처](https://docs.databricks.com/aws/en/_images/auto-loader-file-notification.png)
+<Steps>
+  <Step title="새 파일이 클라우드 스토리지에 업로드">
+    데이터가 S3 / ADLS / GCS 의 모니터링 경로에 도착합니다.
+  </Step>
+  <Step title="이벤트 알림 발행">
+    클라우드 이벤트 서비스 (S3 Event Notifications / Azure Event Grid / GCP Pub/Sub) 가 파일 도착 이벤트를 발행합니다.
+  </Step>
+  <Step title="큐에 이벤트 적재">
+    큐 서비스 (AWS SQS / Azure Queue Storage / Pub/Sub Subscription) 가 이벤트를 보관합니다.
+  </Step>
+  <Step title="Auto Loader가 큐 폴링">
+    스트리밍 마이크로배치마다 큐를 폴링하여 새 파일 메타데이터를 수신합니다. 전체 디렉토리 스캔이 불필요합니다.
+  </Step>
+  <Step title="파일 읽어 DataFrame 으로 변환">
+    수신한 파일 경로만 읽어 스트리밍 DataFrame 으로 처리합니다. 처리 완료 후 메시지를 큐에서 ACK 합니다.
+  </Step>
+</Steps>
 
-> 이미지 출처: [Databricks: File notification mode](https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/file-detection-modes.html)
+> 참고: [Databricks: File notification mode](https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/file-detection-modes.html)
 
 ### 클라우드별 이벤트 알림 서비스
 

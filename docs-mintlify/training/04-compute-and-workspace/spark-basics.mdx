@@ -17,7 +17,7 @@ Spark는 **분산 처리(Distributed Processing)** 엔진입니다. 단일 서�
 
 Spark는 **Driver** 와 **Executor** 라는 두 가지 역할로 구성됩니다.
 
-![Spark 클러스터 아키텍처 — Driver와 Executor](https://docs.databricks.com/en/_images/spark-cluster-overview.png)
+![Spark 클러스터 아키텍처 — Driver와 Executor](https://spark.apache.org/docs/latest/img/cluster-overview.png)
 
 > 출처: [Apache Spark 공식 문서 — Cluster Mode Overview](https://spark.apache.org/docs/latest/cluster-overview.html)
 
@@ -40,20 +40,20 @@ Spark에서 데이터를 다루는 가장 기본적인 구조는 **DataFrame** �
 ```python
 # DataFrame 생성 예시
 df = spark.createDataFrame([
-    ("김철수", 28, "서울", 4500000),
-    ("이영희", 34, "부산", 5200000),
-    ("박민수", 25, "대구", 3800000),
-], ["이름", "나이", "도시", "연봉"])
+    ("Alice", 28, "Seoul",  4500000),
+    ("Bob",   34, "Busan",  5200000),
+    ("Carol", 25, "Daegu",  3800000),
+], ["name", "age", "city", "salary"])
 
 # DataFrame 내용 확인
 df.show()
-# +------+---+----+-------+
-# |  이름|나이|도시|   연봉|
-# +------+---+----+-------+
-# |김철수| 28|서울|4500000|
-# |이영희| 34|부산|5200000|
-# |박민수| 25|대구|3800000|
-# +------+---+----+-------+
+# +-----+---+-----+-------+
+# | name|age| city| salary|
+# +-----+---+-----+-------+
+# |Alice| 28|Seoul|4500000|
+# |  Bob| 34|Busan|5200000|
+# |Carol| 25|Daegu|3800000|
+# +-----+---+-----+-------+
 ```
 
 ### 파티션(Partition) — 분산의 단위
@@ -81,9 +81,9 @@ Spark의 연산은 크게 **Transformation(변환)** 과 **Action(실행)** 으�
 
 ```python
 # 이 코드들은 아직 실행되지 않습니다 (계획만 세움)
-filtered = df.filter(df.나이 >= 30)           # 30세 이상 필터링
-selected = filtered.select("이름", "연봉")      # 필요한 컬럼만 선택
-sorted_df = selected.orderBy("연봉", ascending=False)  # 연봉 내림차순 정렬
+filtered  = df.filter(df.age >= 30)                    # 30세 이상 필터링
+selected  = filtered.select("name", "salary")          # 필요한 컬럼만 선택
+sorted_df = selected.orderBy("salary", ascending=False)  # 연봉 내림차순 정렬
 ```
 
 ### Action (실행) — "계획 실행하기"
@@ -135,12 +135,12 @@ df.createOrReplaceTempView("employees")
 # SQL로 분석
 result = spark.sql("""
     SELECT
-        도시,
-        COUNT(*) AS 인원수,
-        AVG(연봉) AS 평균연봉
+        city,
+        COUNT(*)   AS headcount,
+        AVG(salary) AS avg_salary
     FROM employees
-    GROUP BY 도시
-    ORDER BY 평균연봉 DESC
+    GROUP BY city
+    ORDER BY avg_salary DESC
 """)
 
 result.show()
@@ -150,10 +150,10 @@ Databricks에서는 `%sql` 매직 커맨드를 사용하여 노트북 셀에서 
 
 ```sql
 %sql
-SELECT 도시, COUNT(*) AS 인원수, AVG(연봉) AS 평균연봉
+SELECT city, COUNT(*) AS headcount, AVG(salary) AS avg_salary
 FROM employees
-GROUP BY 도시
-ORDER BY 평균연봉 DESC
+GROUP BY city
+ORDER BY avg_salary DESC
 ```
 
 ---
@@ -169,28 +169,29 @@ orders = spark.read.table("catalog.schema.orders")
 # 2. 필터링: 완료된 주문만
 completed = orders.filter(col("status") == "COMPLETED")
 
-# 3. 변환: 새 컬럼 추가
+# 3. 변환: 새 컬럼 추가 (주문 금액 기준으로 사이즈 라벨링)
 enriched = completed.withColumn(
     "order_size",
-    when(col("amount") >= 100000, "대형")
-    .when(col("amount") >= 50000, "중형")
-    .otherwise("소형")
+    when(col("amount") >= 100000, "large")
+    .when(col("amount") >=  50000, "medium")
+    .otherwise("small")
 )
 
 # 4. 집계: 주문 크기별 통계
 summary = enriched.groupBy("order_size").agg(
-    count("*").alias("주문건수"),
-    sum("amount").alias("총매출"),
-    avg("amount").alias("평균주문액")
+    count("*").alias("order_count"),
+    sum("amount").alias("total_revenue"),
+    avg("amount").alias("avg_order_value"),
 )
 
 # 5. 결과 출력
 display(summary)
 
 # 6. 결과를 Delta 테이블로 저장
-summary.write.format("delta") \
-    .mode("overwrite") \
-    .saveAsTable("catalog.schema.order_summary")
+(summary.write
+    .format("delta")
+    .mode("overwrite")               # 기존 데이터 덮어쓰기 (append/ignore/errorifexists 와 택1)
+    .saveAsTable("catalog.schema.order_summary"))
 ```
 
 ---
@@ -294,13 +295,20 @@ COMPUTE STATISTICS FOR COLUMNS customer_id, order_date, amount;
 from pyspark.sql.functions import broadcast
 
 # Broadcast Join 강제 (작은 테이블을 명시적으로 브로드캐스트)
+# - broadcast(df) hint 는 임계값을 무시하고 강제로 broadcast 시도
+# - 단, 실제 크기가 Driver memory 의 일정 비율을 넘으면 fallback 됨
 result = large_orders.join(
-    broadcast(small_stores),  # small_stores를 모든 Executor로 복제
+    broadcast(small_stores),  # small_stores 전체를 모든 Executor 로 복제
     "store_id"
 )
 
-# Broadcast 임계값 조정 (기본 10MB → 100MB)
-spark.conf.set("spark.sql.autoBroadcastJoinThreshold", "104857600")  # 100MB
+# spark.sql.autoBroadcastJoinThreshold
+#   - 의미: 이 크기 미만의 테이블은 자동으로 Broadcast Join 후보로 선택
+#   - 기본값: 10MB (10 * 1024 * 1024 = 10485760)
+#   - 단위: bytes
+#   - 비활성화: -1 (자동 broadcast 사용 안 함)
+#   - 튜닝: Driver 메모리가 충분하고 dim 테이블이 큰 경우 100MB ~ 500MB 까지 상향
+spark.conf.set("spark.sql.autoBroadcastJoinThreshold", str(100 * 1024 * 1024))  # 100MB
 ```
 
 > ⚠️ **Gotcha — Broadcast Join 메모리**: Broadcast되는 테이블은 **각 Executor의 메모리에 적재** 됩니다. 100MB 테이블을 20개 Executor에 브로드캐스트하면 총 2GB의 메모리를 사용합니다. 임계값을 너무 크게 설정하면 OOM(Out of Memory)이 발생할 수 있습니다.
@@ -308,11 +316,15 @@ spark.conf.set("spark.sql.autoBroadcastJoinThreshold", "104857600")  # 100MB
 #### Shuffle 파티션 수 튜닝
 
 ```python
-# 기본값: 200 (대부분의 워크로드에 부적합!)
+# spark.sql.shuffle.partitions
+#   - 의미: GROUP BY / JOIN / ORDER BY 등 셔플 후 생성될 파티션 수
+#   - 기본값: 200 (대부분의 워크로드에 부적합)
+#   - 영향: 너무 적으면 OOM/GC, 너무 많으면 스케줄링 오버헤드·소형 파일
+#   - Databricks 권장: AQE 활성화 + "auto" 로 두면 런타임에 자동 조정
 spark.conf.get("spark.sql.shuffle.partitions")  # "200"
 
 # 데이터 규모에 맞게 조정
-# 일반 가이드: 셔플 후 각 파티션이 100~200MB가 되도록 설정
+# 일반 가이드: 셔플 후 각 파티션이 100~200MB 가 되도록 설정
 # 예: 셔플 데이터 100GB → 100GB / 128MB ≈ 800 파티션
 spark.conf.set("spark.sql.shuffle.partitions", "800")
 ```
@@ -342,17 +354,35 @@ spark.conf.set("spark.sql.shuffle.partitions", "800")
 | **Optimizing Skew Join** | 데이터 편향(Skew)이 있는 파티션을 자동 분할합니다 | Skew로 인한 지연 해소 |
 
 ```python
-# AQE 관련 설정 (Databricks에서는 기본 활성화)
+# AQE 관련 설정 (Databricks 에서는 기본 활성화)
+
+# spark.sql.adaptive.enabled
+#   - AQE 마스터 스위치. true 일 때 아래 세부 기능이 동작
+#   - 기본값: true (Databricks) / false (OSS Spark < 3.2)
 spark.conf.set("spark.sql.adaptive.enabled", "true")
+
+# spark.sql.adaptive.coalescePartitions.enabled
+#   - 셔플 후 작은 파티션을 자동 병합 (Coalescing Post-Shuffle Partitions)
+#   - 기본값: true
 spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
+
+# spark.sql.adaptive.skewJoin.enabled
+#   - 편향 파티션을 자동 분할
+#   - 기본값: true
 spark.conf.set("spark.sql.adaptive.skewJoin.enabled", "true")
 
-# Skew Join 감지 임계값 (기본: 256MB, 파티션 중앙값의 5배)
-spark.conf.set("spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes", "268435456")
+# Skew Join 감지 임계값
+#   - skewedPartitionThresholdInBytes: 이 크기 이상이면 skew 후보 (기본 256MB)
+#   - skewedPartitionFactor:           파티션 중앙값의 N 배 이상이면 skew (기본 5)
+#   - 두 조건을 동시에 만족할 때 분할
+spark.conf.set("spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes", str(256 * 1024 * 1024))
 spark.conf.set("spark.sql.adaptive.skewJoin.skewedPartitionFactor", "5")
 
-# 셔플 파티션 합치기 목표 크기 (기본: 64MB)
-spark.conf.set("spark.sql.adaptive.advisoryPartitionSizeInBytes", "134217728")  # 128MB
+# spark.sql.adaptive.advisoryPartitionSizeInBytes
+#   - 셔플 파티션을 병합/분할할 때 목표 크기
+#   - 기본값: 64MB
+#   - 튜닝: 클러스터 코어가 많을수록 키워서 task 수 줄임 (128~256MB 권장)
+spark.conf.set("spark.sql.adaptive.advisoryPartitionSizeInBytes", str(128 * 1024 * 1024))  # 128MB
 ```
 
 > ⚠️ **Gotcha**: AQE는 **Shuffle 또는 Broadcast Exchange 경계** 에서만 재최적화합니다. 단일 Stage 내에서는 초기 계획이 유지됩니다. 따라서 AQE가 있어도 `ANALYZE TABLE`로 통계를 수집하는 것이 여전히 중요합니다.
@@ -468,11 +498,20 @@ Spark UI → Stages 탭에서 확인:
 
 ```python
 # OOM 디버깅에 유용한 설정
-spark.conf.set("spark.sql.adaptive.enabled", "true")  # AQE로 자동 최적화
-spark.conf.set("spark.sql.shuffle.partitions", "auto")  # Databricks에서 자동 조정
 
-# 메모리 사용량 모니터링 (Spark UI 외)
-print(f"Storage Memory Used: {spark.sparkContext._jsc.sc().getExecutorMemoryStatus()}")
+# AQE 로 셔플 파티션·skew 자동 보정 → 가장 먼저 켜기
+spark.conf.set("spark.sql.adaptive.enabled", "true")
+
+# spark.sql.shuffle.partitions = "auto"
+#   - Databricks 전용 값. AQE 가 클러스터 코어/데이터 크기 기반으로 동적 결정
+#   - OSS Spark 에서는 정수 값만 허용
+spark.conf.set("spark.sql.shuffle.partitions", "auto")
+
+# Executor 별 메모리 사용량 스냅샷
+#   - getExecutorMemoryStatus() : {executor_id: (max_memory, remaining_memory)}
+#   - private API 이므로 운영 코드보다는 디버깅에서만 사용
+status = spark.sparkContext._jsc.sc().getExecutorMemoryStatus()
+print(f"Executor memory status: {status}")
 ```
 
 > ⚠️ **Gotcha — collect()의 위험**: `df.collect()`는 전체 DataFrame 데이터를 **Driver 한 대의 메모리** 로 가져옵니다. 1억 건의 데이터를 collect하면 Driver가 OOM으로 죽습니다. 반드시 `.limit()`, `.head()`, `.take()` 등으로 필요한 데이터만 가져오세요.

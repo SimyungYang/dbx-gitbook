@@ -51,9 +51,15 @@ ZORDER BY (customer_id, order_date);
 
 > 💡 **Liquid Clustering** 은 Databricks가 도입한 **차세대 데이터 레이아웃 최적화 기술** 입니다. 기존의 Hive 파티셔닝과 Z-Order를 대체하며, 데이터를 **증분 방식으로 자동 재배치** 하여 쿼리 성능을 최적화합니다.
 
-![Liquid Clustering 개념](https://docs.databricks.com/aws/en/_images/liquid-clustering.png)
+| 비교 항목 | Hive 파티셔닝 / Z-Order | Liquid Clustering |
+|---|---|---|
+| **데이터 배치** | 컬럼 값 기준으로 고정된 디렉토리 분할 | 컬럼 값 기반으로 데이터 파일이 유동적으로 재배치 |
+| **클러스터링 키 변경** | 테이블 재생성 필요 | `ALTER TABLE ... CLUSTER BY` 로 즉시 변경 |
+| **편향(skew) 대응** | 수동 리파티셔닝 필요 | 증분 클러스터링이 자동 보정 |
+| **운영 부담** | OPTIMIZE 실행 시마다 ZORDER 컬럼 재지정 | Predictive Optimization 이 자동 실행 |
+| **소량 파일 문제** | 파티션 폭증 시 성능 저하 | 자동 파일 컴팩션 |
 
-> 이미지 출처: [Databricks: Use Liquid Clustering for Delta tables](https://docs.databricks.com/aws/en/delta/clustering.html)
+> 참고: [Databricks: Use Liquid Clustering for Delta tables](https://docs.databricks.com/aws/en/delta/clustering.html)
 
 핵심 차이는 "유동적(Liquid)"이라는 이름에 담겨 있습니다. 기존 파티셔닝이 데이터를 **고정된 칸** 에 넣는 방식이라면, Liquid Clustering은 데이터가 **자유롭게 흘러** 최적의 위치에 배치되도록 합니다.
 

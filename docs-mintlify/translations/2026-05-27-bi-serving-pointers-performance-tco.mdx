@@ -1,0 +1,131 @@
+---
+title: "BI 서빙 — 성능과 TCO 동시 최적화 가이드"
+description: "물리 레이어부터 Metric View 까지, Databricks BI 서빙 스택 전체 가이드"
+---
+
+> **원문**: [BI Serving Pointers; Maximizing for Performance and TCO](https://www.databricks.com/blog/bi-serving-pointers-maximizing-performance-and-tco)
+> **저자**: Chris Koester
+> **게시일**: 2026년 5월 27일
+
+## 요약
+
+- 물리 레이어를 **스타 스키마 + Liquid Clustering + Predictive Optimization** 으로 구성하여 BI 쿼리를 가속합니다.
+- **Unity Catalog Metric Views** 로 거버넌스된 비즈니스 지표를 한 번 정의 — 모든 BI 도구, Genie space, AI 에이전트가 단일 진실 공급원(single source of truth) 에서 동일한 값을 받습니다(headless semantic layer).
+- **집계 인식 머티리얼라이제이션(aggregate-aware materialization)** 을 활성화하여 별도의 집계 테이블을 만들고 유지보수하지 않고도 OLAP 스타일의 사전 집계 성능을 얻습니다.
+
+---
+
+BI 대시보드가 느리고, 튜닝에 너무 많은 시간과 돈이 듭니다.
+
+익숙한 패턴입니다. 대시보드 쿼리가 30 초 걸리면, 누군가가 그것을 빠르게 만들기 위해 집계 테이블을 만듭니다. 그 테이블은 리프레시 파이프라인이 필요합니다. 파이프라인은 모니터링이 필요합니다. 그 후 두 번째 BI 도구가 약간 다른 모양의 같은 데이터를 필요로 해서, 누군가가 별도 파이프라인을 사용해 또 다른 집계 테이블을 만듭니다. 얼마 지나지 않아 집계, 추출, 도구별 시맨틱 레이어가 난립한 상태를 관리하게 됩니다 — 각각 자체의 staleness 윈도우, 자체의 거버넌스 공백, 컴퓨트 청구서의 별도 항목과 함께.
+
+BI 워크로드는 다른 분석 워크로드와 다릅니다. 매우 동시성이 높고, 지연에 민감하며, 쿼리 패턴이 반복적입니다. 이 조합은 데이터 모델링·저장·최적화·서빙에 대한 의도적인 접근을 요구합니다. 좋은 소식: Databricks 는 BI 서빙을 위한 **전체 스택**을 제공합니다 — 물리적 데이터 레이아웃부터 거버넌스된 시맨틱 레이어까지 — 그리고 각 레이어는 그 아래 레이어의 성능 이득을 복합적으로(compound) 증폭시킵니다.
+
+이 글은 그 스택을 **바닥부터 위로(bottom-up)** 살펴보며, 쿼리 성능과 비용에서 가장 큰 개선을 위해 어디에 집중해야 하는지를 실용적으로 가이드합니다.
+
+## BI 서빙 스택
+
+각 레이어로 들어가기 전, 전체 그림은 다음과 같습니다.
+
+![Unity Catalog Governance](https://www.databricks.com/sites/default/files/inline-images/unity-catalog-governance1.png)
+
+Unity Catalog 가 전반에 걸쳐 거버넌스를 제공합니다 — raw 데이터부터 시맨틱, 소비까지의 리니지와 접근 제어. 각 레이어는 성능·비용의 서로 다른 측면을 다룹니다. 하나씩 살펴봅시다.
+
+## 물리 레이어 최적화
+
+물리 레이어는 BI 성능의 대부분이 결정되는 곳입니다. 여기를 잘 맞추면 시맨틱 레이어를 건드리기 전부터 모든 쿼리가 혜택을 봅니다.
+
+### 차원 모델링으로 시작하기
+
+스타 스키마는 BI 쿼리 성능의 황금 표준으로 남아 있습니다. 넓은(wide) 비정규화 차원 테이블이 대리키(surrogate key)를 통해 팩트 테이블에 조인되면, 쿼리 옵티마이저에게 깨끗하고 예측 가능한 조인 경로를 제공합니다.
+
+Databricks 는 필요한 관계형 모델링 구성 요소를 완전히 지원합니다 — 기본 키와 외래 키 제약 (옵티마이저 힌트를 위한 `RELY` 포함), 대리키를 위한 identity column, 그리고 `CHECK` 및 `NOT NULL` 제약. 메달리온 아키텍처를 따른다면, 정규화 또는 Data Vault 모델은 Silver 에 두고, BI 소비를 위한 비정규화 스타 스키마는 Gold 에서 구축하세요.
+
+상세 구현 패턴 — SCD Type-1/2 처리, `MERGE` 를 사용한 팩트 ETL, 늦게 도착하는 차원 처리 — 은 [Implementing a Dimensional Data Warehouse in Databricks SQL](https://www.databricks.com/blog/implementing-dimensional-data-warehouse-databricks-sql-part-1) 블로그 시리즈를 참고하세요.
+
+### Managed Tables 사용
+
+Unity Catalog [managed tables](https://docs.databricks.com/aws/en/tables/managed) 는 이 스택의 모든 것의 토대입니다. Unity Catalog 가 managed table 에 대한 모든 읽기·쓰기·저장·최적화 책임을 관리합니다. 이것이 external table 에서는 얻을 수 없는 자동 기능들을 풀어줍니다 — **Predictive Optimization** (아래에서 다룹니다) 이 기본 활성화됩니다. **자동 Liquid Clustering** 은 쿼리 패턴이 변할 때 적응하는 클러스터링 키를 선택합니다. **메타데이터 캐싱** 은 항상 켜져 있어, 클라우드 스토리지 요청을 줄이고 쿼리 계획을 가속합니다.
+
+플랫폼 전반에 걸쳐 managed table 을 사용하세요 — BI 서빙뿐 아니라 Bronze, Silver, Gold 레이어 모두에서. Unity Catalog 의 기본 테이블 타입이며, 성능·거버넌스 혜택이 이 스택의 다른 모든 최적화와 복합적으로 증폭됩니다.
+
+### Liquid Clustering 적용
+
+[Liquid clustering](https://docs.databricks.com/aws/en/delta/clustering) 은 정적 파티셔닝과 수동 `Z-ORDER` 를 대체합니다 — 그리고 그 접근들과 달리, **기존 데이터를 다시 쓰지 않고도 클러스터링 키를 재정의**할 수 있습니다. 테이블 생성 시 `CLUSTER BY (col1, col2)` 를 추가하거나, 기존 테이블에 `ALTER TABLE` 을 사용하세요. 어떤 컬럼을 선택할지 확실하지 않다면, `CLUSTER BY AUTO` 가 Predictive Optimization 으로 관찰된 쿼리 패턴에 기반해 키를 선택하게 할 수 있습니다.
+
+BI 워크로드의 경우, 가장 일반적인 **필터·조인 컬럼** 에 클러스터링하세요 — 날짜 키, 지역, 제품 카테고리. 최대 네 개의 컬럼을 선택할 수 있으며, 두 컬럼이 매우 상관 관계가 높다면 하나만 포함하세요. 대시보드가 클러스터 컬럼으로 필터링하면, liquid clustering 은 데이터 스키핑을 통해 쿼리 성능을 개선합니다.
+
+### Predictive Optimization 에 맡기기
+
+Predictive Optimization 은 `OPTIMIZE`, `VACUUM`, 통계 수집을 그것이 도움이 되는 테이블에 자동으로 실행합니다 — 이 잡들을 직접 스케줄링할 필요가 없습니다. Photon 쓰기 동안 Delta 데이터 스키핑 통계와 쿼리 옵티마이저 통계를 모두 수집하고, 기존 테이블에 대한 통계를 백필(back-fill)합니다. 관찰된 워크로드에서 이는 [평균 22% 성능 개선](https://www.databricks.com/blog/introducing-predictive-optimization-statistics) 을 제공했습니다. 반복적 필터 패턴을 가진 BI 워크로드의 경우, 영향이 특히 큽니다 — 더 나은 통계는 더 나은 데이터 스키핑과 더 효율적인 쿼리 계획을 의미합니다.
+
+카탈로그 수준에서 Predictive Optimization 을 활성화하고 그냥 동작하게 두세요. Predictive Optimization 사용은 **수익률 최고, 노력 최저** 의 최적화 중 하나입니다.
+
+**결과**: BI 쿼리가 더 적은 데이터를 스캔하고, 더 효율적으로 조인하고, 실행 비용이 더 낮아집니다 — 시맨틱 레이어는 아직 건드리지도 않았습니다.
+
+## Metric Views — 지표를 한 번만 정의
+
+여기서부터 흥미로워집니다. 대부분의 조직은 같은 비즈니스 지표가 여러 곳에 정의되어 있습니다 — 한 BI 도구에 매출 계산이 있고, 다른 도구에 약간 다른 것이 있고, 누군가가 지난 분기에 작성한 SQL 노트북에 세 번째 변형이 있습니다. 각 정의는 독립적으로 표류(drift)합니다. 누구도 어떤 것이 맞는지 확신하지 못합니다.
+
+Unity Catalog 의 [Metric Views](https://www.databricks.com/blog/redefining-semantics-data-layer-future-bi-and-ai) 는 **headless BI 레이어**를 제공함으로써 이를 해결합니다 — 데이터 모델과 KPI 를 특정 BI 도구와 무관하게 한 번 정의하는 단일 거버넌스된 시맨틱 레이어. SQL 이나 Unity Catalog Explorer 의 포인트앤클릭 UI 로 중앙에서 정의합니다. AI/BI Dashboards, Genie, SQL 노트북, 서드파티 BI 도구가 모두 같은 정의에서 지표를 resolve 합니다. 지표를 한 번 정의하면, 모든 소비자 — 사람이든 AI 든 — 가 같은 답을 얻습니다.
+
+Metric View 는 중앙화된 지표 정의를 넘어섭니다 — **시맨틱 메타데이터**가 차별점입니다. `display_name`, `comment`, `synonyms` 같은 필드가 AI 시스템에 비즈니스 질문을 올바르게 해석할 수 있는 컨텍스트를 줍니다. 사용자가 Genie 에게 "지난 주 매출은 얼마였어?" 라고 물을 때, 그 어노테이션이 Genie 가 자연어를 올바른 측정값(measure)과 차원으로 매핑하는 방법입니다. 커스텀 프롬프트나 별도 용어집이 필요 없습니다. Databricks 위에 만들어진 AI 에이전트도 마찬가지입니다 — Unity Catalog 에 접근 가능한 어떤 에이전트든 하드코딩된 SQL 대신 시맨틱 레이어를 통해 거버넌스된 지표를 발견하고 쿼리할 수 있습니다. 메타데이터가 풍부할수록 AI 가 더 정확한 답을 제공합니다.
+
+다음은 시스템 테이블을 사용한 예시 — 모든 Databricks 고객이 접근 가능하기 때문 — 이지만, 같은 패턴이 매출, 주문량, 고객 유지 같은 비즈니스 KPI 에도 적용됩니다. 이 Metric View 는 DBSQL warehouse 메트릭을 계산합니다.
+
+소비자는 `MEASURE()` 를 사용해 거버넌스된 지표 정의를 참조하여 Metric View 를 쿼리합니다.
+
+지표는 Metric View 에 **한 번만** 정의됩니다. `metv_dbsql_metrics` 를 쿼리하는 모든 대시보드, Genie space, 노트북이 같은 결과를 얻습니다. 아래는 metric view 를 소스로 사용하는 대시보드입니다.
+
+![Warehouse Metrics](https://www.databricks.com/sites/default/files/inline-images/warehouse-metrics2.png)
+
+같은 metric view 를 사용하는 Genie 입니다.
+
+![Daily Query Count](https://www.databricks.com/sites/default/files/inline-images/daily-query-count3.png)
+
+여러 BI 도구에 지표 정의가 흩어진 팀에 Metric Views 는 시맨틱 레이어를 Databricks 로 통합하는 경로를 제공합니다. 각 도구에 별도의 지표 로직을 유지하는 대신, Unity Catalog 에서 한 번 정의하고 BI 도구를 거버넌스된 그 출처에 연결합니다.
+
+코어 구현은 Apache Spark™ 에 오픈소스로 공개되어 있으며 ([SPARK-54119](https://issues.apache.org/jira/browse/SPARK-54119)), Unity Catalog OSS 지원도 곧 추가됩니다 — 즉, 벤더 락인 없는 **개방형 표준** 위에서 구축합니다. AI 가 BI 워크로드를 더 많이 떠맡으면서 그 개방성이 더욱 중요해집니다. 데이터를 쿼리하는 에이전트는 각 지표의 의미에 대한 일관되고 머신 판독 가능한 정의가 필요하며, 개방 표준은 벤더 특정 도구가 아닌 **어떤 도구나 에이전트든** 같은 거버넌스된 지표 위에서 추론할 수 있게 합니다.
+
+## Metric View 머티리얼라이제이션 — 오버헤드 없이 OLAP 성능
+
+전통적으로 BI 대시보드가 너무 느릴 때의 답은 집계 테이블을 만드는 것이었습니다. 스타 스키마 위에 materialized view 나 커스텀 사전 집계 테이블을 만들고, 리프레시 파이프라인을 세팅하고, BI 도구를 새 테이블로 다시 가리키게 했습니다. 동작은 했지만, 유지보수할 객체와 파이프라인 전체 레이어가 추가됐고, 집계 로직이 바뀔 때마다 BI 도구 쿼리도 그에 맞춰 업데이트해야 했습니다.
+
+Metric View 머티리얼라이제이션은 더 단순한 대안을 제공합니다. Metric View 에 머티리얼라이제이션을 활성화하면, 플랫폼이 **BI 도구가 이미 쿼리하는 같은 지표 정의 뒤에서** 사전 집계 결과를 자동 유지합니다 — 별도 집계 테이블을 만들 필요도, BI 도구 쿼리를 리팩터링할 필요도 없습니다. 내부 동작은 다음과 같습니다.
+
+- **자동 사전 집계**: 지표 결과가 미리 계산되어 저장됩니다.
+- **증분 리프레시**: 전체 재계산 없이 지표가 최신으로 유지됩니다.
+- **지능적 쿼리 재작성**: 엔진이 쿼리를 사용 가능한 최적의 머티리얼라이제이션으로 라우팅합니다.
+- **투명한 라우팅**: 사용자는 지표를 같은 방식으로 쿼리하고, 시스템이 가장 빠른 경로를 서빙합니다.
+
+이전에 전체 팩트 테이블을 스캔하던 대시보드 쿼리들이 이제 사전 집계 머티리얼라이제이션을 만나 — 더 낮은 지연과 더 낮은 컴퓨트 비용을 갖습니다. 위의 대시보드와 Genie 예시는 둘 다 같은 Metric View 를 쿼리했고, 둘 다 쿼리가 머티리얼라이제이션으로 투명하게 라우팅되었습니다. 아래 Genie 의 쿼리 계획이 이를 보여줍니다.
+
+![Query Plan](https://www.databricks.com/sites/default/files/inline-images/query-plan4.png)
+
+## 실용적 TCO 포인터
+
+빠른 쿼리와 낮은 비용은 경쟁 목표가 아닙니다 — 스캔 데이터를 줄이는 모든 최적화는 지불하는 컴퓨트도 줄입니다. 그리고 스택의 각 최적화는 복합 효과를 냅니다. Liquid clustering 과 더 나은 통계가 데이터 스키핑과 쿼리 계획을 개선합니다. 머티리얼라이제이션이 증분 리프레시되어 대시보드를 서빙하기 위한 SQL warehouse 컴퓨트가 줄어듭니다. 비용을 낮추는 몇 가지 추가 방법:
+
+- **SQL warehouse 의 적정 크기 선택.** BI 동시성 버스트에 대해 **오토스케일링이 있는 서버리스 SQL warehouse** 를 사용하세요. 사용한 만큼만 지불하며, 피크 용량에 대해 지불하지 않습니다.
+- **DBSQL 의 캐싱 계층 활용.** Disk cache 가 핫 데이터를 warehouse 로컬에 유지하고, Query Result Cache (QRC) 가 반복 쿼리를 재실행 없이 서빙합니다. 일관된 쿼리 패턴의 대시보드의 경우, 캐싱은 많은 요청을 거의 0 컴퓨트 비용으로 밀리초 지연 응답으로 바꿉니다.
+- **중복 데이터 이동 제거.** Extract 나 import 대신 **DirectQuery 또는 라이브 연결** 로 레이크하우스에서 BI 를 직접 서빙하세요.
+- **시스템 테이블로 모니터링.** `system.billing.usage` 와 `system.query.history` 같은 시스템 테이블로 대시보드/사용자/warehouse 별 BI 사용을 추적할 수 있습니다. 시스템 테이블 위에 Metric View 와 AI/BI Dashboard 를 구축하여 BI 사용에 대한 가시성을 확보하세요.
+
+## 시작하기
+
+전체 스택을 한 번에 구현할 필요는 없습니다. 가장 영향이 큰 곳부터 시작하세요.
+
+- managed table, 기본/외래 키, liquid clustering 으로 **Gold 계층 스타 스키마 구축(또는 검증)**
+- 카탈로그에 **Predictive Optimization 활성화** — `OPTIMIZE`/`VACUUM`/통계 수집 자동 관리
+- 핵심 비즈니스 KPI 에 대해 **Metric View 정의** — SQL 또는 UC Explorer UI 로 시작
+- 가장 트래픽이 많은 지표에 **Metric View 머티리얼라이제이션 활성화**
+- 결과 모니터링 — 대시보드를 Metric View 로 가리키고 시스템 테이블로 쿼리 성능 추적
+
+Databricks 는 BI 서빙 스택의 모든 레이어에서 최적화를 제공합니다. Managed table, liquid clustering, Predictive Optimization 이 스캔 데이터와 소비 컴퓨트를 최소화합니다. Metric View 가 비즈니스 로직을 거버넌스된 시맨틱 레이어로 중앙화하여 대시보드, Genie, AI 에이전트에 일관되게 서빙합니다. 머티리얼라이제이션이 수동 사전 집계 파이프라인 없이 서브초(sub-second) 쿼리 성능을 제공합니다. 이 레이어들이 함께 복합 효과를 내어 — 쿼리 지연과 총 소유 비용(TCO)을 모두 끌어내립니다.
+
+기존 Gold 계층 테이블 위에 첫 Metric View 를 정의하고 머티리얼라이제이션을 활성화하는 것부터 시작하세요. 아래 자료를 참고하세요.
+
+- [Unity Catalog Metric Views 개요](https://www.databricks.com/resources/demos/videos/unity-catalog-metric-views-overview)
+- [AI/BI 에서 Metric View 노출](https://www.databricks.com/resources/demos/videos/unity-catalog-metric-views-ai-bi)
+- [SQL Editor 에서 Metric View 쿼리](https://www.databricks.com/resources/demos/videos/unity-catalog-metric-views-dbsql)
+- [Databricks SQL 에 차원 데이터 웨어하우스 구현](https://www.databricks.com/blog/implementing-dimensional-data-warehouse-databricks-sql-part-1)

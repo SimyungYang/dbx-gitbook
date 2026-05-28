@@ -1,0 +1,46 @@
+---
+title: "Lakebase Change Data Feed (CDF) 발표"
+description: "OLTP 데이터베이스를 다른 엔진들에게 개방하다"
+---
+
+> **원문**: [Announcing Lakebase Change Data Feed (CDF)](https://www.databricks.com/blog/announcing-lakebase-change-data-feed-cdf)
+> **저자**: Pranav Aurora, Cheng Chen, Hristo Stoyanov
+> **게시일**: 2026년 5월 27일
+
+## 요약
+
+- **Lakebase Change Data Feed (Public Preview)** 는 운영 데이터베이스로부터 파생되는 파이프라인 난립을 제거합니다. Lakebase 프로젝트당 한 번만 CDF를 켜면, 모든 테이블의 변경 사항이 Unity Catalog **Managed Table** 을 통해 노출되어 임의의 엔진·모델·에이전트가 직접 읽어갈 수 있습니다.
+- **사이드카 인프라 없이 엔드-투-엔드로 거버넌스되는 네이티브 CDC**: 데이터베이스 커넥터, 복제 상태 모니터링, 별도의 추출 작업 모두 필요 없습니다. SDP 스트리밍 파이프라인, DBSQL Materialized View, Agent Bricks 임베딩 등 다운스트림 소비자들이 모두 동일한 격리된 피드를 구독하므로, 주 워크로드에 영향을 주지 않습니다.
+- **운영 데이터가 메달리온 아키텍처의 네이티브 Bronze 계층으로 동작**합니다. Lakebase Synced Table 은 이미 Gold 데이터를 애플리케이션에 서빙해 왔고, Lakebase CDF 가 그 반대 방향(원천 → 레이크) 의 고리를 닫음으로써 데이터 생애주기 전반에 Unity Catalog 거버넌스와 리니지를 적용할 수 있게 되었습니다.
+
+---
+
+운영 데이터베이스에서 데이터를 옮기는 작업은 전통적으로 **각 소스마다, 각 목적지마다 파이프라인을 별도로 구축하고 모니터링**하는 것을 의미했습니다. 대부분의 팀에서 이 작업은 깨지기 쉽고, 거버넌스되지 않으며, 사람 손이 비례해서 더 들어가는(O(n)) 작업이었습니다.
+
+오늘, 우리는 이 접근 방식을 바꿉니다. Public Preview 로 지금 사용 가능한 [Lakebase](https://www.databricks.com/product/lakebase) 는 [Change Data Feed (CDF)](https://docs.databricks.com/aws/en/oltp/projects/lakebase-cdf) 를 제공하며, 이 피드는 [Unity Catalog Managed Tables](https://docs.databricks.com/aws/en/tables/managed) 에 저장되고 거버넌스됩니다. 피드를 한 번 활성화하면 모든 엔진·모델·에이전트가 거기서 직접 읽어갈 수 있습니다.
+
+![몇 번의 클릭만으로 Lakebase CDF 를 설정합니다.](https://www.databricks.com/sites/default/files/inline-images/cdf.gif?v=1779800445)
+
+## 운영 데이터를 레이크로 옮기는 일은 왜 아직도 어려운가
+
+Lakeflow Connect 가 Lakehouse 로의 데이터 적재를 수월하게 만들었지만, **OLTP 데이터베이스에서 데이터를 꺼내오는** 일은 여전히 수작업이 많고 마찰이 큰 작업으로 남아 있습니다. CDC(Change Data Capture)를 뽑아내려면 팀이 데이터베이스 커넥터를 구성하고, 복제 상태를 일일이 챙기고, 성능 영향에 대응하고, 흩어진 도구들로 에러를 추적해야 합니다. 이 모델은 빠른 데이터 브랜칭에 의존하는 에이전트 중심 개발 환경에서는 무너집니다. 새 브랜치마다, 새 목적지마다 복잡하고 거버넌스 없는 추출 파이프라인을 유지하는 것은 지속 불가능합니다.
+
+### Lakehouse 에서 해결한 문제. 이제 Lakebase 에 가져옵니다.
+
+Lakehouse 는 데이터를 오픈 포맷(Apache Iceberg™, Delta Lake)에 한 번 저장함으로써 분석을 위한 추출 파이프라인을 제거했습니다. 그 과정에서 **Change Data Feed (CDF)** 가 다운스트림 복제의 표준으로 자리 잡았고, ETL·스트리밍 워크플로·감사 로그를 떠받쳐 왔습니다.
+
+![Lakebase CDF 는 행 단위 변경을 동기화합니다](https://www.databricks.com/sites/default/files/inline-images/Lakebase-Change-Data-2026-05-26-154305-1.png?v=1779810291)
+
+이제 그 CDF 를 **Lakebase 에 네이티브로** 설정할 수 있습니다. 활성화에 1분도 걸리지 않으며, 프로젝트 내 모든 테이블에 일괄 적용됩니다. 이 단일 피드 하나로:
+
+- SDP 로 스트리밍 파이프라인 구축
+- DBSQL 로 Materialized View 생성
+- Agent Bricks 로 임베딩 계산 및 저장
+
+모든 다운스트림 소비자가 정확히 같은 피드를 구독하며, 주 운영 워크로드와는 완전히 격리됩니다.
+
+## 운영 데이터베이스는 메달리온 아키텍처에 속한다
+
+Lakebase 와 함께 운영 데이터는 더 이상 Lakehouse 와 분리되어 있지 않습니다. Lakebase 는 이미 [Synced Tables](https://docs.databricks.com/aws/en/oltp/projects/sync-tables) 를 제공하여 Gold 데이터셋을 애플리케이션에 직접 서빙하는 패턴을 확립했습니다. Lakebase CDF 가 그 아키텍처를 완성합니다 — 운영 데이터베이스가 이제 **네이티브 Bronze 계층**이 되며, 데이터를 Lakehouse 로 옮기기 위한 별도 파이프라인이나 추출 작업이 필요 없어집니다. 대신 Unity Catalog 를 통해 데이터 생애주기 전반에 걸친 거버넌스와 리니지를 얻습니다.
+
+이것은 시작일 뿐입니다. Lakehouse 에서 사랑받던 개방성을 Lakebase 에 그대로 가져옵니다. Data and AI Summit 의 [브레이크아웃 세션](https://www.databricks.com/dataaisummit/session/zeroetl-was-just-start-operational-databases-belong-medallion) — "Zero-ETL was just the start: operational databases belong in the medallion" — 에서 이 아키텍처에 관한 더 자세한 내용을 만나실 수 있습니다.

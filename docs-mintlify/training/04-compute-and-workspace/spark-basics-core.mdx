@@ -20,7 +20,7 @@ Spark는 **분산 처리(Distributed Processing)** 엔진입니다. 단일 서�
 
 Spark는 **Driver** 와 **Executor** 라는 두 가지 역할로 구성됩니다.
 
-![Spark 클러스터 아키텍처 — Driver와 Executor](https://docs.databricks.com/en/_images/spark-cluster-overview.png)
+![Spark 클러스터 아키텍처 — Driver와 Executor](https://spark.apache.org/docs/latest/img/cluster-overview.png)
 
 > 출처: [Apache Spark 공식 문서 — Cluster Mode Overview](https://spark.apache.org/docs/latest/cluster-overview.html)
 
@@ -43,20 +43,20 @@ Spark에서 데이터를 다루는 가장 기본적인 구조는 **DataFrame** �
 ```python
 # DataFrame 생성 예시
 df = spark.createDataFrame([
-    ("김철수", 28, "서울", 4500000),
-    ("이영희", 34, "부산", 5200000),
-    ("박민수", 25, "대구", 3800000),
-], ["이름", "나이", "도시", "연봉"])
+    ("Alice", 28, "Seoul",  4500000),
+    ("Bob",   34, "Busan",  5200000),
+    ("Carol", 25, "Daegu",  3800000),
+], ["name", "age", "city", "salary"])
 
 # DataFrame 내용 확인
 df.show()
-# +------+---+----+-------+
-# |  이름|나이|도시|   연봉|
-# +------+---+----+-------+
-# |김철수| 28|서울|4500000|
-# |이영희| 34|부산|5200000|
-# |박민수| 25|대구|3800000|
-# +------+---+----+-------+
+# +-----+---+-----+-------+
+# | name|age| city| salary|
+# +-----+---+-----+-------+
+# |Alice| 28|Seoul|4500000|
+# |  Bob| 34|Busan|5200000|
+# |Carol| 25|Daegu|3800000|
+# +-----+---+-----+-------+
 ```
 
 ### 파티션(Partition) — 분산의 단위
@@ -84,9 +84,9 @@ Spark의 연산은 크게 **Transformation(변환)** 과 **Action(실행)** 으�
 
 ```python
 # 이 코드들은 아직 실행되지 않습니다 (계획만 세움)
-filtered = df.filter(df.나이 >= 30)           # 30세 이상 필터링
-selected = filtered.select("이름", "연봉")      # 필요한 컬럼만 선택
-sorted_df = selected.orderBy("연봉", ascending=False)  # 연봉 내림차순 정렬
+filtered  = df.filter(df.age >= 30)                    # 30세 이상 필터링
+selected  = filtered.select("name", "salary")          # 필요한 컬럼만 선택
+sorted_df = selected.orderBy("salary", ascending=False)  # 연봉 내림차순 정렬
 ```
 
 ### Action (실행) — "계획 실행하기"
@@ -138,12 +138,12 @@ df.createOrReplaceTempView("employees")
 # SQL로 분석
 result = spark.sql("""
     SELECT
-        도시,
-        COUNT(*) AS 인원수,
-        AVG(연봉) AS 평균연봉
+        city,
+        COUNT(*)    AS headcount,
+        AVG(salary) AS avg_salary
     FROM employees
-    GROUP BY 도시
-    ORDER BY 평균연봉 DESC
+    GROUP BY city
+    ORDER BY avg_salary DESC
 """)
 
 result.show()
@@ -153,10 +153,10 @@ Databricks에서는 `%sql` 매직 커맨드를 사용하여 노트북 셀에서 
 
 ```sql
 %sql
-SELECT 도시, COUNT(*) AS 인원수, AVG(연봉) AS 평균연봉
+SELECT city, COUNT(*) AS headcount, AVG(salary) AS avg_salary
 FROM employees
-GROUP BY 도시
-ORDER BY 평균연봉 DESC
+GROUP BY city
+ORDER BY avg_salary DESC
 ```
 
 ---
@@ -172,28 +172,29 @@ orders = spark.read.table("catalog.schema.orders")
 # 2. 필터링: 완료된 주문만
 completed = orders.filter(col("status") == "COMPLETED")
 
-# 3. 변환: 새 컬럼 추가
+# 3. 변환: 새 컬럼 추가 (주문 금액 기준으로 사이즈 라벨링)
 enriched = completed.withColumn(
     "order_size",
-    when(col("amount") >= 100000, "대형")
-    .when(col("amount") >= 50000, "중형")
-    .otherwise("소형")
+    when(col("amount") >= 100000, "large")
+    .when(col("amount") >=  50000, "medium")
+    .otherwise("small")
 )
 
 # 4. 집계: 주문 크기별 통계
 summary = enriched.groupBy("order_size").agg(
-    count("*").alias("주문건수"),
-    sum("amount").alias("총매출"),
-    avg("amount").alias("평균주문액")
+    count("*").alias("order_count"),
+    sum("amount").alias("total_revenue"),
+    avg("amount").alias("avg_order_value"),
 )
 
 # 5. 결과 출력
 display(summary)
 
 # 6. 결과를 Delta 테이블로 저장
-summary.write.format("delta") \
-    .mode("overwrite") \
-    .saveAsTable("catalog.schema.order_summary")
+(summary.write
+    .format("delta")
+    .mode("overwrite")               # 기존 데이터 덮어쓰기 (append/ignore/errorifexists 와 택1)
+    .saveAsTable("catalog.schema.order_summary"))
 ```
 
 ---
