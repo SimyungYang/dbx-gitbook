@@ -1,0 +1,84 @@
+---
+title: "Unity AI Gateway 정식 출시 (GA)"
+description: "AI 지출·보안·접근을 통합 거버넌스하는 Unity AI Gateway가 정식 출시됐다"
+---
+
+> **원문**: [Unity AI Gateway is Generally Available](https://www.databricks.com/blog/unity-ai-gateway-generally-available)
+> **저자**: David Nasi, Stefania Leone, Kevin Stumpf, Kasey Uhlenhuth, Kelly Albano
+> **게시일**: 2026년 8월 4일
+
+## 요약
+
+- Unity AI Gateway가 정식 출시(Generally Available)되어, 기업이 에이전트·모델·MCP·스킬·도구 전반의 AI 지출, 보안, 접근을 통합적으로 거버넌스할 수 있게 되었다.
+- AI 도입이 확산되면서 토큰 기반 비용이 빠르고 예측 불가능하게 증가한다. Unity AI Gateway는 엔드투엔드 관측 가능성, 비용 제어, 스마트 라우팅으로 모든 AI 지출의 가치를 극대화한다.
+- 에이전트가 민감한 데이터에 접근하고 도구를 호출하며 행동함에 따라 AI 상호작용은 제어하기 어려워진다. Unity AI Gateway는 런타임 가드레일과 정책을 적용하면서도 모델과 도구 전반의 개발자 선택권을 보존한다.
+
+---
+
+지난 6개월 동안 AI 기반 생산성이 급격히 상승하고, 기업 전반에 에이전트가 확산되는 것을 목격했습니다. 이 에이전트들은 지식 노동을 변혁할 수 있지만, 동시에 비용(cost), 제어(control), 선택(choice)의 교차점에서 중대한 도전 과제를 던집니다.
+
+- **비용: 지속 불가능한 지출**. 도입이 확산되면서, 좌석(seat)이 아니라 토큰을 추적하는 소비 기반 과금 모델로 인해 AI 비용이 기하급수적으로 증가하고 있습니다. 비용 관리를 더욱 어렵게 만드는 것은, AI 도구에 견고한 네이티브 비용 제어가 없고 전체 청구서를 볼 수 있는 단일 뷰가 없다는 점입니다.
+
+- **제어: 보안 및 지식재산(IP) 리스크**. 효과적이려면 에이전트는 당신의 가장 민감한 데이터를 신뢰받아야 합니다. 그러나 [모델이 보안 샌드박스를 뚫고 나오고](https://openai.com/index/hugging-face-model-evaluation-security-incident/), [공급망 공격](https://docs.litellm.ai/blog/security-update-march-2026)과 프롬프트 인젝션이 데이터를 유출하며, 데이터 보존과 메모리 시스템이 거버넌스되지 않는 데이터 사본을 만들고 있습니다.
+
+- **선택: 벤더 종속(Vendor lock-in)**. 조직은 개발자에게 최신 모델과 도구를 채택할 자유를 주어야 한다는 압박을 받고 있습니다. AI 혁신의 빠른 속도(매달 새로운 모델이나 에이전트 하네스가 나옵니다!)는 특정 벤더에 묶이지 않으면서 민첩성을 유지하는 것을 어렵게 만듭니다.
+
+이러한 도전 과제들은 광범위한 에이전트 난립(agent sprawl)으로 인해 더욱 악화됩니다. 조직들이 여러 AI 도구와 수천 개의 커스텀 에이전트를 단절된 플랫폼들에 걸쳐 관리하려 하기 때문입니다.
+
+엔터프라이즈 시스템은 이러한 도전 과제를 따라잡지 못했습니다. 이것이 우리가 **Unity AI Gateway의 정식 출시(General Availability)**를 발표하게 되어 기쁜 이유입니다. [Unity AI Gateway](https://www.databricks.com/product/artificial-intelligence/unity-ai-gateway)는 기업에게 AI 지출을 관리하고 AI 에이전트 및 자산 전반의 보안을 강제하는 데 필요한 **비용**, **제어**, **선택**의 레버를 제공합니다. 코딩 에이전트든, MCP든, 외부 에이전트든, 스킬이든, 모델이든 어디에나 적용됩니다.
+
+![](https://www.databricks.com/sites/default/files/inline-images/2026-08-Blog-Unity-AI-Gateway-GA-Inline-960x666-2x.png)
+
+Rivian, Asana, Edmunds 같은 수천 개의 고객이 이미 Unity AI Gateway를 사용하여 조직 전반에 AI를 책임감 있게 배포하고 있으며, 지난 한 해 동안 1천조(quadrillion) 개가 넘는 토큰이 우리 게이트웨이를 통과했습니다. Databricks도 [사내에서 Unity AI Gateway를 사용](https://www.databricks.com/blog/benchmarking-coding-agents-databricks-multi-million-line-codebase)하여, 각자 여러 선도적 AI 도구에 접근하는 수천 명 직원의 지출을 관리하고 있습니다.
+
+## 비용: 완전한 AI 관측 가능성과 비용 제어 (Cost: Complete AI observability and cost control)
+
+조직은 모든 AI 비용이 어디로 가는지에 대한 완전한 가시성, 실시간으로 폭주하는 비용을 멈출 수 있는 능력, 그리고 개발자의 속도를 늦추거나 부담을 지우지 않으면서 AI 예산이 어떻게 사용되는지 지속적으로 최적화할 방법이 필요합니다.
+
+Unity AI Gateway는 외부 에이전트, MCP, 스킬, 코딩 어시스턴트를 포함한 모든 AI 자산의 중앙 허브 역할을 하며, 모델·제공업체·팀·애플리케이션 전반에 걸쳐 엔드투엔드 관측 가능성과 세분화된 비용 귀속(cost attribution)을 제공합니다. 이 데이터를 Unity Catalog에 중앙화함으로써, 우리는 즉시 사용 가능한 대시보드와 Genie 기반 분석을 제공하여 당신의 AI 투자에 대한 깊고 즉각적인 인사이트를 제공합니다. 나아가 팀은 사전 예산(proactive budgets)을 설정하고 엄격한 지출 상한(hard spend caps)을 강제하여, AI 혁신이 예측 가능하고 비즈니스 목표에 부합하도록 보장할 수 있습니다.
+
+![](https://www.databricks.com/sites/default/files/inline-images/image-54.png)
+
+AI 지출을 제어하는 데 도움이 되는 한 가지 기법은 독점 및 오픈 소스를 아우르는 프런티어(frontier) 모델들에 걸쳐 라우팅하는 것입니다. **현재 베타(Beta)로 제공되는 스마트 라우팅(Smart Routing)은 개발자 생산성을 제한하지 않으면서 조직이 AI 지출의 가치를 극대화하도록 돕습니다.** Unity AI Gateway는 품질, 비용, 성능, 가용성, 예산 같은 요소에 기반해 각 요청을 올바른 모델로 동적으로 라우팅합니다. 가장 유능하고 비싼 모델은 그것이 필요한 과제를 위해 남겨 두고, 다른 작업은 더 효율적인 옵션으로 라우팅합니다. 그 결과 개발자가 사용하는 도구나 필요로 하는 품질에서 타협하도록 강요하지 않으면서, 모든 AI 비용에서 더 나은 가치를 얻게 됩니다. 베타에 참여하고 싶다면 담당 어카운트 팀에 문의하세요.
+
+> "Unity AI Gateway는 월 1,000억(>100B) 토큰이라는 우리의 프로덕션 규모를 가용성 문제 없이 처리하면서, AI 지출에 대한 가시성과 사용자 수준의 제어를 제공했습니다. 최신 프런티어 및 오픈 소스 모델에 빠르게 접근할 수 있고, 쉽게 쿼리 가능한 사용량 테이블과 결합되어, 새 모델을 신속히 평가하고 AI 사용에 대한 커스텀 분석을 구축하는 데 도움이 되었습니다." —Sriram Ravichandran, Technical Lead - Software Engineering, Zepto
+
+> "Unity AI Gateway는 우리 데이터 제품과 코딩 에이전트 전반에 걸쳐 LLM을 대규모로 중앙 거버넌스할 수 있게 해줍니다. 모델 제공업체 전반에 걸친 단일 거버넌스 접근 레이어와 포괄적인 관측 가능성 및 예산 제어를 제공함으로써, 조직 전반에 AI를 안전하게 확장하기가 훨씬 쉬워졌습니다." —Max Lautner, Staff Engineer, Technical Lead, STRABAG SE
+
+## 제어: 통합 제어 평면을 통한 데이터와 AI의 거버넌스 (Control: Govern data and AI through a unified control plane)
+
+우리는 데이터와 AI가 함께 거버넌스되어야 한다고 믿습니다. 결국 에이전트는 당신의 가장 민감한 엔터프라이즈 데이터와 상호작용하고, 사용자를 대신해 행동을 취하기 위해 MCP 서버와 도구를 호출하여 데이터와 기록 시스템(system of record)을 만듭니다. 그리고 생성된 에이전트 추적(trace)에는 기밀 정보, PII 데이터, 또는 부주의하게 유출될 수 있는 다른 비밀들이 흩뿌려져 있습니다. 기업은 에이전트가 무엇에 접근하고 무엇을 할 수 있는지 제어하면서, 모든 행동을 거버넌스하는 데 필요한 아이덴티티, 감사 추적, 정책을 유지할 통합된 방법이 필요합니다.
+
+Unity Catalog와 Unity AI Gateway를 통해, 조직은 데이터와 AI를 한곳에서 거버넌스할 수 있습니다. Unity Catalog는 데이터 및 AI 자산에 대한 접근을 거버넌스하는 아이덴티티, 권한, 계보, 감사를 제공하고, Unity AI Gateway는 AI 상호작용 전반에 걸쳐 런타임 가드레일과 맥락적 정책(contextual policies)을 강제합니다. 둘이 함께, 별도의 거버넌스 및 보안 시스템을 이어 붙일 필요 없이, 민감한 데이터를 보호하고 정책을 강제하며 AI 활동을 조사할 중앙화된 가시성과 제어를 팀에게 제공합니다.
+
+> "Unity AI Gateway를 통해 우리는 마침내 회사 전반에서 AI 코딩 도구와 에이전트가 어떻게 사용되는지에 대한 단일 진실 공급원(single source of truth)을 갖게 되었습니다. 모든 요청이 단일 제어 평면을 거치며, 속도 제한, PII 가드레일, 사용자별 비용 귀속이 우리가 이미 소유한 인프라 위에서 이루어집니다. 다음으로 우리는 Databricks와 함께 그 동일한 가시성과 제어를 AI 스택의 나머지 부분으로 확장하는 작업을 하고 있습니다. 에이전트는 계속 더 자율적으로 진화할 것입니다. 하나의 거버넌스된 제어 평면을 갖는다는 것은, 열두 개가 아니라 하나의 문을 지켜본다는 뜻입니다." —Saravanan Lakshmanan, Tech Lead, Analytics Platforms, Rivian and Volkswagen Group Technologies (RV Tech)
+
+> "OnePay에서 AI 선도적이라는 것은, 고객의 금융 데이터 관리자로서의 책임을 지키면서 우리 팀에게 폭넓은 AI 접근을 제공하는 것을 의미합니다. Databricks의 Unity Catalog는 우리가 의존하는 거버넌스 기반이며, Unity AI Gateway는 그 동일한 신뢰 레이어를 우리의 AI 도구, 에이전트, 개발 하네스 전반으로 확장합니다. 이제 우리 팀은 일관된 가드레일과 함께 더 빠르게 움직일 수 있으며, 품질, 효율성, 관측 가능성에서 타협하지 않습니다." —Nameet Pai, Head of Platform & Data Engineering, OnePay
+
+## 선택: 종속 없는 개방형 멀티 AI 접근 (Choice: Open, multi-AI access without lock-in)
+
+개발자는 단일 AI 생태계에 종속되지 않으면서, 자기 팀에 가장 잘 맞는 모델, 제공업체, 코딩 에이전트, AI 도구를 선택할 자유를 원합니다. Unity AI Gateway는 개방형 멀티 AI 거버넌스 접근 방식을 제공하여, Unity Catalog의 아이덴티티, 권한, 정책, 관측 가능성을 팀이 구축하는 어디로든 확장합니다.
+
+Unity Catalog를 통해, 조직은 Databricks 호스팅 모델과 외부 모델, 코딩 에이전트, MCP 서버, 스킬을 단일 진실 공급원에 등록하고 발견할 수 있습니다. 그러면 Unity AI Gateway는 그러한 AI 자산과의 상호작용 전반에 걸쳐 거버넌스를 강제하여, 일관된 권한, 정책, 제어를 그것들이 사용되는 어디로든 확장합니다. 기존의 아이덴티티 제공업체와 보안 도구는 이러한 AI 워크플로로 [확장](https://www.databricks.com/blog/building-open-ecosystem-ai-governance-unity-ai-gateway)될 수 있어, 팀이 거버넌스를 재구축하거나 신뢰하는 엔터프라이즈 제어를 교체하지 않고도 새로운 AI 기술을 채택할 유연성을 제공합니다.
+
+Unity AI Gateway는 또한 Anthropic, OpenAI, Gemini, Kimi, GLM 등을 포함한 프런티어 모델에 대한 네이티브 접근을 단일 쿼리 API를 통해 제공합니다. 이는 모델을 교체하고 최신 최고 모델을 계속 따라잡는 것을 놀랍도록 쉽게 만듭니다.
+
+![](https://www.databricks.com/sites/default/files/inline-images/image3_0.jpg)
+
+> "Unity AI Gateway는 우리의 Unity Catalog 거버넌스를 외부 모델 엔드포인트로 확장하여, 우리가 코딩 에이전트에 대해 중립적(agnostic)으로 남으면서도 엔지니어에게 가장 잘 맞는 도구를 사용할 자유를 줍니다. 동시에, 개별 엔지니어 수준부터 부서 전체에 이르기까지 AI 지출을 추적하는 능력과 함께 중앙화된 감독과 비용 제어를 제공합니다." —Bart Consedine, Head of AI Engineering, Magnite
+
+> "Unity AI Gateway는 거버넌스를 희생하지 않으면서 모든 코딩 과제에 맞는 올바른 모델을 선택할 유연성을 줍니다. 일관된 권한, 중앙화된 관측 가능성, 그리고 우리 엔지니어링 팀 전반에서 AI가 어떻게 사용되는지에 대한 확신을 유지하면서, AI 지형이 진화함에 따라 빠르게 움직일 수 있습니다." —Naveen Rao, CEO, Unconventional AI
+
+> "Unity AI Gateway는 우리 조직 전반의 AI 트래픽을 관리하고 거버넌스할 단일 지점을 제공합니다. 내장된 관측 가능성과, 거버넌스된 스킬을 안전하게 공유할 수 있는 표준화된 코딩 에이전트를 통해, 더 큰 확신을 가지고 AI 도입을 확장할 기반을 제공합니다." —Greg Rokita, VP of Technology, Edmunds
+
+## Unity AI Gateway로 시작하기 (Get started with Unity AI Gateway)
+
+Unity AI Gateway는 오늘 정식 출시(generally available)되어, AI 도입이 확산됨에 따라 비용, 제어, 선택의 균형을 맞추는 통합적 AI 거버넌스 접근 방식을 조직에 제공합니다.
+
+더 알아보려면:
+
+- [AWS](https://docs.databricks.com/aws/en/ai-gateway/), [Azure](https://learn.microsoft.com/en-us/azure/databricks/ai-gateway/), [GCP](https://docs.databricks.com/gcp/en/ai-gateway/)에 대한 문서를 살펴보세요.
+
+- 우리 [웹사이트](https://www.databricks.com/product/artificial-intelligence/unity-ai-gateway)를 방문하세요.
+
+- Databricks 공동 창업자 겸 CTO Matei Zaharia와 Databricks AI 제품 디렉터 Kasey Uhlenhuth가 진행하는 8월 13일 [AI 거버넌스 웨비나](https://www.databricks.com/resources/webinar/govern-ai-spend-scale?scid=701Vp000019QPUxIAO&utm_medium=email&utm_source=BDRSDR)에 등록하세요.

@@ -1,0 +1,89 @@
+---
+title: "OfficeQA Pro V2 공개 — 기업 근거 기반 추론을 위한 새 벤치마크"
+description: "230년치 미국 재무부 회계 문서 위에서 AI 에이전트의 근거 기반 추론을 평가하는 벤치마크"
+---
+
+> **원문**: [Introducing OfficeQA Pro V2: A New Benchmark for Enterprise Grounded Reasoning](https://www.databricks.com/blog/introducing-officeqa-pro-v2-new-benchmark-enterprise-grounded-reasoning)
+> **저자**: Databricks AI Research Team
+> **게시일**: 2026년 8월 6일
+
+## 요약
+
+- **OfficeQA Pro V2** 는 기업 문서 위에서 AI 에이전트의 **근거 기반 추론(grounded reasoning)** 능력을 평가하는 벤치마크입니다. 미국 재무부의 *Accounts of Receipts and Expenditures*(1793–2024) 약 **12만 페이지·1,400여 PDF** 에 근거한 **90개 질문**으로 구성됩니다.
+- 표준 하네스를 쓴 프런티어 에이전트의 평균 정확도는 **37.5%** 였습니다. **Databricks Genie** 를 적용하자 매칭된 4개 모델 기준 **37.5% → 52.8%(+15.3%p)**, 매칭 모델 비교 전반으로는 평균 **+24.0%p(상대 92% 향상)** 로 올랐고, 최고 구성은 **60%** 에 도달했습니다.
+- 그럼에도 여전히 상당한 개선 여지가 남아 있습니다. 파싱 정확도, 시간에 따른 회계 관례의 정합(reconciliation), 개체(entity) 범위 해석 등에서 실패가 반복됩니다.
+
+---
+
+우리는 기업 문서 위에서 AI 에이전트의 근거 기반 추론을 평가하도록 설계한 벤치마크 **OfficeQA Pro V2** 를 공개합니다. 이 벤치마크는 Databricks 내부 작업에서 출발했으며, 주요 AI 기업들이 후원하고 11개 학술 팀이 참가한 첫 **Databricks Grounded Reasoning Cup** 의 평가 프레임워크로 사용되었습니다.
+
+벤치마크는 미국 재무부의 *Accounts of Receipts and Expenditures* 문서 약 **12만 페이지**(1793–2024)에 근거한 **90개 질문**으로 구성됩니다. 이는 약 1,400개 PDF로, 미국 건국 250주년을 맞아 재무부가 처음으로 하나의 응집된(cohesive) 형태로 공개한 자료입니다.
+
+OfficeQA Pro V2를 만든 핵심 동기는, 원래의 OfficeQA 벤치마크에서 나온 개선이 **근거 기반 추론의 진짜 발전**인지 아니면 단지 특정 과제에 국한된 진전인지 확인하는 것이었습니다. 기업 환경은 단일하고 고정된 문서 모음을 다루는 경우가 드물기 때문에, 일반화(generalization) 여부를 시험하는 것이 중요합니다.
+
+## OfficeQA Pro V2에서의 에이전트 성능
+
+![OfficeQA Pro V2에서의 에이전트 성능](https://www.databricks.com/sites/default/files/inline-images/2026-08-Blog-Introducing-OfficeQA-Pro-V2-A-New-Benchmark-for-Enterprise-Grounded-Reasoning-Inline-960x606-2x.png)
+
+**기본 성능(out-of-the-box baseline).** 각 제공사의 표준 하네스를 쓴 프런티어 에이전트 — Claude Code(Claude Opus 4.8, Claude Fable 5)와 Codex(GPT-5.5, GPT-5.6 Sol) — 는 평균 정확도 **37.5%** 를 기록했습니다. Grounded Reasoning Cup을 위해 별도로 개발된 에이전트들은 이보다 나은 평균 **41.1%** 를 냈고, 우승 팀은 **63.3%** 에 도달했습니다.
+
+**Databricks Genie 결과.** 복잡한 기업 데이터 질문에 대응하도록 설계된 AI 에이전트 Databricks Genie로 평가하자 성능이 크게 향상됐습니다. 매칭된 4개 모델 기준으로 Genie는 정확도를 평균 **37.5%에서 52.8%로(+15.3%p)** 끌어올렸습니다. 매칭 모델 비교 전반에서는 평균 **+24.0%p**, 즉 상대 **92%** 향상이었습니다. 가장 강한 구성은 **60%** 에 도달했습니다. 예컨대 Claude Fable 5는 Genie의 최적화된 아키텍처를 통해 약 **9배 낮은 비용**으로 정확도를 대폭 개선했습니다.
+
+**비용–품질 분석.** 모델 비용이 높다고 해서 정확도가 일관되게 높아지지는 않았습니다. 예를 들어 Claude Code의 Sonnet 5는 롤아웃당 **$5.01** 에 정확도 **15.6%** 였던 반면, Codex의 GPT-5.6 Sol은 비슷한 비용(**$4.70**)에 **33.3%** 를 달성했습니다. Genie 구성 중 GPT-5.6 Luna, GPT-5.6 Terra, Claude Fable 5는 비용–품질 파레토 프런티어(Pareto frontier)를 지배했습니다.
+
+![OfficeQA Pro V2의 비용–품질 파레토](https://www.databricks.com/sites/default/files/inline-images/2026-08-Blog-Introducing-OfficeQA-Pro-V2-A-New-Benchmark-for-Enterprise-Grounded-Reasoning-Inline-960x690-2x.png)
+
+**지속되는 난제.** 하네스 개선에도 불구하고 여전히 상당한 개선 여지(headroom)가 남아 있습니다. 시스템들은 원래 OfficeQA에서 관찰된 것과 유사한 실패 양상을 계속 보입니다 — 파싱 정확도 문제, 회계 관례가 시간에 따라 변하면서 생기는 잘못된 시점 정합(temporal reconciliation), 개체 범위나 범주 세분도(granularity)에 대한 오해입니다.
+
+## 근거 기반 추론 벤치마크 만들기
+
+진짜 일반화를 시험하려면, 기업에서 실제로 요구되는 역량 — 복잡한 문서 파싱, 적절한 근거 검색(retrieval), 근거 기반 분석 추론 — 을 반영하는 새 코퍼스가 필요했습니다. 미국 연방의 *Accounts of Receipts and Expenditures* 는 이전에는 통합된 데이터셋으로 제공된 적이 없어 이상적인 코퍼스였습니다.
+
+이 모음은 약 **1,400개 PDF·12만 페이지** 로, 1793년부터 2024년까지의 상세한 미국 회계 기록을 담고 있습니다. 원래 OfficeQA 벤치마크에 쓰인 재무부 회보(Treasury Bulletin)와 마찬가지로, 이 코퍼스는 전형적인 기업의 난제를 반영합니다 — 조밀한 표와 차트, 시간이 지나며 수정되는 값, 진화하는 보고 관례, 그리고 깊은 제도적 지식(institutional knowledge)에 대한 요구입니다.
+
+이 벤치마크의 질문은 원래의 OfficeQA Pro보다 훨씬 많은 출처 문서에서 근거를 요구합니다. OfficeQA Pro 질문은 평균 약 2개의 재무부 회보 문서를 참조했지만, OfficeQA Pro V2는 평균 **6.7개**(중앙값 5.5, 최대 24)의 출처 문서에서 근거를 요구합니다. 질문의 약 **74.4%** 가 4개 이상의 출처를 필요로 합니다 — OfficeQA Pro의 62.4%보다 높습니다.
+
+원래 OfficeQA는 사람이 손으로 직접 만들었습니다. 품질을 담보하기 위해 여러 차례의 검토를 거쳐야 하는, 시간이 많이 들고 비용이 크며 확장하기 어려운 과정이었습니다.
+
+## 합성 데이터로 확장하기
+
+![OfficeQA Pro V2 제작에 사용된 합성 데이터 파이프라인](https://www.databricks.com/sites/default/files/inline-images/2026-08-Blog-Introducing-OfficeQA-Pro-V2-A-New-Benchmark-for-Enterprise-Grounded-Reasoning-Inline-960x475-2x.png)
+
+OfficeQA Pro V2의 90개 질문은 내부 합성 데이터 파이프라인 *asynth* 로 구축했습니다. 절차는 네 단계로 이뤄집니다.
+
+1. **시딩(seeding)** — 시간 구간(time period)과 분석 방법(analytical method) 같은 파라미터를 씨앗으로 설정
+2. **합성(synthesis)** — 합성 에이전트가 코퍼스를 검색해 근거를 찾음
+3. **검증(verification)** — 독립적인 여러 솔버(solver)를 통해 검증
+4. **수작업 검토(manual review)** — 프런티어 모델의 풀이와 함께 사람이 최종 검토
+
+## 예시 질문
+
+![예시 질문 1 — 1793년 재무부 문서에서 대법원장 존 제이의 급여 찾기](https://www.databricks.com/sites/default/files/blog_images/introducing-officeqa-pro-v2-a-new-benchmark-blog-img-6.jpg)
+
+질문의 난이도는 폭넓게 분포합니다. 낮은 난이도는 단일 항목을 찾는 유형입니다 — 예를 들어 1793년 문서에서 대법원장 존 제이(John Jay)의 급여를 찾는 질문입니다. 높은 난이도는 특정 방법을 사용해 여러 기관·연도에 걸쳐 예측(forecasting)을 수행하는 것과 같은, 여러 문서에 걸친 복합 추론을 요구합니다.
+
+![예시 질문 2 — Combined Statement의 메디케어 지출 표](https://www.databricks.com/sites/default/files/blog_images/introducing-officeqa-pro-v2-a-new-benchmark-blog-img-7.png)
+
+![예시 질문 3 — 여러 기관에 걸친 운영 명세서(statement of operations)](https://www.databricks.com/sites/default/files/inline-images/statement-of-operations.jpg)
+
+## 벤치마크 세부
+
+![OfficeQA 스위트 전반에서 평가되는 역량](https://www.databricks.com/sites/default/files/inline-images/2026-08-Blog-Introducing-OfficeQA-Pro-V2-A-New-Benchmark-for-Enterprise-Grounded-Reasoning-Inline-960x584-2x.png)
+
+- 질문의 **74.4%** 는 4개 이상의 출처 문서를 요구합니다.
+- **7%** 는 시각적 차트 해석(visual chart interpretation)을 요구합니다.
+- **10%** 는 보조적인 웹 검색(supplemental web search)을 요구합니다.
+
+## 코퍼스의 진화
+
+문서는 **230년 이상**에 걸쳐 있으며, 시대에 따라 관례가 크게 바뀝니다 — 고풍스러운 활자체(예: 긴 s, long-s 문자), 변화하는 표 형식, 진화하는 회계 용어, 그리고 종이에서 디지털로의 전환입니다.
+
+![1793년 수입 요약 — 고풍스러운 long-s 문자 포함](https://www.databricks.com/sites/default/files/blog_images/introducing-officeqa-pro-v2-a-new-benchmark-blog-img-10.jpg)
+
+![1797년 가로 접이식(foldout) 표와 1854년 수입 표](https://www.databricks.com/sites/default/files/blog_images/introducing-officeqa-pro-v2-a-new-benchmark-blog-img-11.jpg)
+
+![2020년의 현대적 재무부 차트와 2024년 계정 잔액 표](https://www.databricks.com/sites/default/files/blog_images/introducing-officeqa-pro-v2-a-new-benchmark-blog-img-12.jpg)
+
+1700년대 후반의 개별 지급 기록에서 시작해, 현대의 디지털 네이티브 보고서에 이르기까지 문서는 표준화된 표와 통합된 차트로 진화했습니다.
+
+**핵심 시사점.** 하네스 개선에도 불구하고 이 벤치마크는 여전히 도전적입니다. 이는 AI 에이전트 시스템 안에서 파싱, 검색, 검증의 발전이 계속 필요하다는 점을 보여줍니다.

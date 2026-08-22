@@ -1,0 +1,91 @@
+---
+title: "Databricks Document Intelligence — 복잡한 문서 추출의 한계를 넓히다"
+description: "긴 문서와 복잡한 스키마에서 프런티어급 정확도를 내는 AI Extract Precision Mode"
+---
+
+> **원문**: [Databricks Document Intelligence: pushing the frontier for complex document extraction](https://www.databricks.com/blog/databricks-document-intelligence-pushing-frontier-complex-document-extraction)
+> **저자**: Jane Zhang, Arnav Singhvi, Ivan Zhou, Archika Dogra, Matthew Ding, Nihit Desai
+> **게시일**: 2026년 8월 18일
+
+## 요약
+
+- 복잡한 문서에서의 필드 추출은 흔히 세 가지 사용 사례에서 실패합니다. **페이지 간 대조(cross-page reconciliation)가 필요한 긴 문서**, 수천 개의 송장 라인 항목 같은 **대규모 출력**, 그리고 필드 자체가 추론과 계산을 요구하는 **복잡한 스키마**입니다.
+- **Precision Mode** 는 문서 추출용으로 **커스텀 파인튜닝한 추출 모델**과, 단계적으로 추론하고 서브에이전트를 띄워 병렬로 추출한 뒤 결과를 하나의 출력으로 병합하는 **에이전트 하니스(agentic harness)** 를 결합합니다. 문서와 스키마가 커져도 견고하게 동작합니다.
+- 6개의 복잡 문서 벤치마크 전반에서 Precision Mode 는 **다음으로 우수한 프런티어 모델을 정확도에서 7포인트 앞섰습니다.**
+
+---
+
+모든 기업에는 지저분한 비정형 문서 안에 갇힌 귀중한 데이터가 있습니다. 오늘날 Databricks Document Intelligence 는 수천 곳의 고객이 이런 데이터를 활용하도록 돕고 있으며, 수십억 페이지를 프로덕션 [파이프라인](https://docs.databricks.com/aws/en/getting-started/data-pipeline-get-started), [에이전트](https://docs.databricks.com/aws/en/agents/custom-agents/build-agents), [애플리케이션](https://docs.databricks.com/aws/en/dev-tools/databricks-apps/)을 구동하는 정형 데이터로 바꾸고 있습니다. [Panasonic](https://www.databricks.com/customers/panasonic/lakeflow-connect), [EY-Parthenon](https://www.databricks.com/blog/why-frontier-agents-cant-read-documents-and-how-were-fixing-it), [Intercontinental Exchange (NYSE)](https://www.databricks.com/blog/why-frontier-agents-cant-read-documents-and-how-were-fixing-it) 같은 고객들은 가장 까다로운 워크플로에 Document Intelligence 를 사용해 매주 수백만 건의 문서를 처리합니다.
+
+고객과 협업하는 과정에서, 기존의 대규모 언어 모델(LLM) 기반 또는 규칙 기반 문서 추출 솔루션이 제대로 대응하지 못하는 몇 가지 어려운 추출 문제를 발견했습니다.
+
+- **긴 문서.** 1페이지의 갱신 조건이 80페이지의 조항에 좌우되는 임대차 계약서, 혹은 150페이지의 문단이 3페이지에서 정의한 용어를 재정의하는 계약서 같은 경우입니다. 기존 솔루션은 이런 상호 참조(cross-reference)를 해소하지 못합니다.
+- **대규모 중첩 출력.** 수백 개의 SKU 가 담긴 여러 페이지짜리 선하증권(bill of lading), 혹은 수천 개의 라인 항목이 있는 송장 같은 경우입니다. 기존 솔루션은 출력이 커지면 필드를 누락하거나 잘라냅니다.
+- **복잡한 스키마와 추론.** 세 가지 재무제표를 종합하는 리스크 분류, 혹은 기록된 모든 가격에 명시된 할인을 적용해야 하는 계약 금액 같은 경우입니다. 기존 솔루션은 문서 전반에 올바른 로직을 일관되게 적용하지 못합니다.
+
+**오늘 우리는 문서 추출 API인** [ai_extract](https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_extract) **에 Precision Mode 를 도입하게 되어 기쁩니다. 가장 복잡한 엔터프라이즈 문서와 작업에서 새로운 정확도 기준을 세웁니다.**
+
+![Precision Mode 벤치마크 정확도 결과](https://www.databricks.com/sites/default/files/blog_images/databricks-document-intelligence-pushing-the-frontier-for-blog-img-6.png)
+
+Precision Mode 는 문서 추출을 위해 커스텀 학습한 모델과 에이전트 하니스를 결합해, 긴 문서, 대규모 출력, 추론이 많은 스키마에서 신뢰할 수 있고 정확한 추출을 제공합니다. 약 9,000건의 복잡한 문서에 걸친 벤치마크에서 **Precision Mode 는 최신 프런티어 모델을 추출 정확도에서 큰 격차로 앞서며 최고 수준(state of the art) 품질을 달성했습니다.**
+
+> "Intercontinental Exchange 에서 우리는 매월 수백만 건의 복잡하고 변동성이 큰 금융 문서를 처리합니다. Document Intelligence 는 그 복잡성을 정형화된 시장 인텔리전스로 바꿔 주어, 더 빠르게 움직이고 고객에게 더 큰 가치를 전달하며, 대규모로 분석과 의사결정을 가속하는 에이전트 워크플로를 열어 줍니다."
+> — Anand Pradhan, CTO 겸 Head of AI, Mortgage Data, Intercontinental Exchange (NYSE)
+
+## 복잡한 문서 추출을 위한 새로운 접근
+
+가장 어려운 추출 작업에서 정확도를 끌어올리기 위해, 우리 연구 및 엔지니어링 팀은 문서 추출 품질을 두 개의 층위에서 접근했습니다. 모델 자체를 커스터마이징하는 것과, 그 모델을 둘러싼 효과적인 에이전트 하니스를 구축하는 것입니다.
+
+- **문서 추출을 위한 커스텀 고효율 모델을 학습했습니다.** 어려운 고객 워크로드를 중심으로 만든 벤치마크를 기반으로, 우리 연구팀은 복잡한 문서에서 정형 정보를 찾아내고 추론하고 추출하는 커스텀 모델을 학습했습니다. 점점 더 커지는 범용 모델에 의존하기보다, 우리가 풀고자 하는 과제, 즉 정확한 정형 추출에 맞춰 최적화했습니다.
+- **모델의 실패 모드를 극복하도록 설계한 추출 하니스를 구축했습니다.** 강력한 모델이라도 수백 페이지를 넘나들며 추론하거나 한 번에 수천 개의 필드를 생성해야 할 때는 어려움을 겪을 수 있습니다. 우리 팀은 Databricks [MemEx](https://www.databricks.com/blog/memex-programmable-scratchpad-llm-agents) 에서 영감을 받은 에이전트 하니스를 구축했습니다. 이 하니스는 대규모 추출 작업을 의미 단위로 분해하고, 작은 작업들을 병렬로 실행하며, 중간 결과를 보존하고, 이를 하나의 최종 정형 출력으로 대조·병합합니다.
+
+![에이전트 하니스로 긴 문서 추출을 관리하는 방식](https://www.databricks.com/sites/default/files/blog_images/databricks-document-intelligence-pushing-the-frontier-for-blog-img-7.png)
+
+에이전트 하니스를 사용해 긴 문서 추출을 관리하는 방식
+
+## 평가 방법론
+
+### 벤치마크 설계와 데이터셋 구성
+
+Precision Mode 를 검증하기 위해, 우리는 기존 접근법을 한계까지 몰아붙이는 워크로드를 중심으로 평가 벤치마크를 설계했습니다.
+
+구체적으로, Precision Mode 가 해결하도록 설계된 세 가지 추출 과제에 걸쳐 약 **9,000건의 문서**로 평가했습니다. 평가에는 최대 2,000페이지에 이르는 문서, 수천 개의 라인 항목이 담긴 송장, 여러 페이지에 걸친 촘촘한 표와 차트, 300개 이상 깊게 중첩된 필드를 가진 스키마, 그리고 문서 전반에서 정보를 상호 참조해야 하는 추론 집약적 작업이 포함됩니다.
+
+문서는 두 종류의 벤치마크에서 가져왔습니다.
+
+- **우리가 접한 가장 어려운 고객 워크로드에서 영감을 받은 10개의 내부 데이터셋** — 금융 서비스, 제조, 헬스케어 등 주요 산업을 아우릅니다.
+- **5개의 공개 벤치마크**: [VAREX](https://udibarzi.github.io/varex-bench/), [RealDocBench](https://www.extend.ai/resources/realdocbench), [LongExtractBench](https://www.micro1.ai/benchmark/long-extraction), [LEDGER](https://arxiv.org/abs/2606.13100), 그리고 [Caselaw Access Project](https://case.law/) 데이터셋을 활용한 긴 문서 스트레스 테스트.
+
+이들 데이터셋을 합치면 10-K 공시, 선하증권, 기술 매뉴얼, 금융 문서, 임상 기록, 정부 특허 및 지원금 신청서 등 다양한 문서를 포괄합니다.
+
+![내부 벤치마크에 포함된 복잡한 문서 예시](https://www.databricks.com/sites/default/files/blog_images/databricks-document-intelligence-pushing-the-frontier-for-blog-img-8.gif)
+
+내부 벤치마크에 포함된 복잡한 문서 예시
+
+### 베이스라인 설계와 모델 비교
+
+문서 추출에서 자연스러운 출발점은 **단일 프런티어 모델 호출**입니다. 문서와 스키마를 넣고 모델에게 정형 출력을 반환하도록 요청하는 것이죠. 하지만 우리가 평가하는 밀도 높고 복잡한 워크로드에서는 이 방식이 금세 무너집니다. 긴 문서는 모델의 컨텍스트 한계를 초과할 수 있어, 부정확하고 불완전한 결과를 낳습니다.
+
+그래서 우리는 더 강하고 현실적인 베이스라인인 **chunk-and-merge** 를 기준으로 벤치마킹했습니다. 각 문서를 작은 청크로 나눠 개별적으로 추출한 뒤, 결과를 최종 출력으로 병합하는 방식입니다. 단일 모델 호출로 충분하지 않을 때 엔지니어들이 흔히 쓰는 바로 그 패턴입니다.
+
+우리는 선도적인 GPT, Claude, Gemini 모델을 기본 API 설정으로 사용해 chunk-and-merge 접근법을 테스트했습니다. 그런 다음 각각을 추출 정확도에서 Precision Mode 와 비교했습니다. ¹
+
+## 벤치마크 결과
+
+![Precision Mode 벤치마크 정확도 결과](https://www.databricks.com/sites/default/files/blog_images/databricks-document-intelligence-pushing-the-frontier-for-blog-img-6.png)
+
+우리 벤치마크 전반에서 **Precision Mode 는 94.7% 정확도를 기록하며, 가장 강력한 프런티어 모델 chunk-and-merge 베이스라인인 GPT-5.6 Sol 을 7포인트 앞섰습니다.**
+
+특히 어려운 긴 문서 워크로드에서, 프런티어 모델들은 청크 타임아웃, 잘린 출력, 요청한 스키마를 따르지 않는 불완전한 최종 병합 등 수많은 운영상 실패 모드를 겪는 것을 관찰했습니다. 반면 Precision Mode 의 에이전트 방식은 이런 실패 모드에 견고하며, 커스텀 학습한 추출 모델은 추출을 효율적이고 정확하게 유지합니다.
+
+## 시작하기
+
+가장 복잡한 문서 추출 작업을 위한 AI Extract Precision Mode 를 이제 사용할 수 있습니다. [ai_extract 함수](https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_extract)를 호출할 때 mode 를 `precision` 으로 설정하거나, Agents 페이지의 [Information Extraction UI](https://docs.databricks.com/aws/en/agents/agent-bricks/info-extraction) 에서 precision mode 토글을 켜면 됩니다.
+
+![Information Extraction UI 에서 Precision Mode 사용](https://www.databricks.com/sites/default/files/blog_images/databricks-document-intelligence-pushing-the-frontier-for-blog-img-9.gif)
+
+**[AI Extract Precision Mode 사용해 보기](https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_extract)**
+
+각주:
+
+¹ 우리는 정확도를 추출된 객체 중 정답(ground-truth) 객체와 일치하는 비율로 정의합니다. 채점은 타입에 따라 달라집니다. 원시 타입(불리언, 부동소수점, 정수, 열거형)은 직접 일치(direct match)를 사용합니다. 문자열은 먼저 직접 일치를 시도하고, 그다음 퍼지 매치(fuzzy match), 그다음 LLM 심판(judge)을 사용합니다. 배열은 예측 항목과 기대 항목 사이의 가장 가까운 짝을 찾은 뒤 짝별로 평균을 냅니다. 객체는 필드별로 타입에 따라 채점한 다음 모든 필드에 걸쳐 평균을 냅니다.

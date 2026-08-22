@@ -1631,6 +1631,16 @@
           {
             "group": "AI & Agent",
             "pages": [
+              "translations/2026-08-19-designing-genie-agents-single-prompt",
+              "translations/2026-08-18-document-intelligence-complex-extraction",
+              "translations/2026-08-17-prototyping-tax-ai-roadmap",
+              "translations/2026-08-13-smart-routing-unity-ai-gateway",
+              "translations/2026-08-07-managing-ai-coding-costs-scale",
+              "translations/2026-08-06-officeqa-pro-v2-benchmark",
+              "translations/2026-07-23-frontier-data-agent-vs-coding-agents",
+              "translations/2026-07-16-ai-ready-data-foundation",
+              "translations/2026-07-15-data-native-ai-agents",
+              "translations/2026-07-15-inkling-thinking-machines-lab",
               "translations/2026-05-27-reliable-llm-inference-scale",
               "translations/2026-05-22-prompt-caching-oss-models",
               "translations/2026-04-29-agents-ready-architecture",
@@ -1656,6 +1666,9 @@
           {
             "group": "Data Engineering",
             "pages": [
+              "translations/2026-08-20-busting-sql-migration-myths",
+              "translations/2026-08-14-ai-functions-data-warehouse",
+              "translations/2026-08-11-taking-auto-cdc-next-level",
               "translations/2026-04-29-sketch-functions-analytics",
               "translations/2026-04-02-lakeflow-connect-free-tier",
               "translations/2026-03-24-stop-hand-coding-cdc",
@@ -1684,6 +1697,8 @@
           {
             "group": "Lakebase & Apps",
             "pages": [
+              "translations/2026-08-11-electric-wasm-postgres-agent-sandboxes",
+              "translations/2026-07-22-lakebase-agent-orchestration",
               "translations/2026-05-27-lakebase-cdf",
               "translations/2026-05-27-lakebase-always-on-pricing",
               "translations/2026-04-20-lakebase-customer-managed-keys",
@@ -1696,6 +1711,7 @@
           {
             "group": "ML & MLflow",
             "pages": [
+              "translations/2026-08-17-feature-store-subsecond-freshness",
               "translations/2026-03-07-model-evaluation-compound-ai",
               "translations/2026-02-21-mlflow-3-release",
               "translations/2026-02-04-mosaic-ai-platform",
@@ -1707,6 +1723,7 @@
           {
             "group": "보안 & 모니터링",
             "pages": [
+              "translations/2026-07-06-security-alert-triage-agents",
               "translations/2026-03-17-introducing-lakewatch-siem",
               "translations/2026-03-14-lakehouse-monitoring-march",
               "translations/2026-01-30-intelligent-monitoring",
@@ -1716,6 +1733,9 @@
           {
             "group": "플랫폼 & 기타",
             "pages": [
+              "translations/2026-08-12-network-config-serverless-vms",
+              "translations/2026-08-11-metals-v2-scala-lsp",
+              "translations/2026-08-04-unity-ai-gateway-ga",
               "translations/2026-05-27-bi-serving-pointers-performance-tco",
               "translations/2026-05-06-rethinking-distributed-systems-serverless",
               "translations/2026-03-27-default-warehouse",
