@@ -10,16 +10,18 @@ title: "Genie Code 안전하게 쓰는 법"
 
 | 규칙 | 이유 |
 |------|------|
-| **"Allow in this thread"만 클릭** | 이번 대화에서만 해당 작업 허용 |
-| **"Always Allow" 절대 금지** ❌ | 이후 모든 파괴적 작업이 자동 승인됨 |
+| **`Allow in this thread`를 기본으로** | 이번 대화에서만 해당 작업 허용 — 가장 안전한 기본값 |
+| **`Always Allow`는 프롬프트로 보완 후 사용** | 매번 승인이 번거롭다면 자동 승인을 써도 됩니다. 단, 켜기 전에 아래 Custom Instructions 보완을 먼저 하세요 |
 | DROP/DELETE/ALTER는 **계획(Plan)을 읽고** 승인 | 의도치 않은 삭제 방지 |
 | Genie Code가 작업 중이면(빨간 Stop 버튼) 다음 프롬프트 입력 금지 | 중복 실행 방지 |
 
+> **`Always Allow`를 켜기 전에 — 프롬프트 차원의 안전망.** 승인 클릭을 줄여 생산성을 높이고 싶다면, 먼저 [Part E](#part-e-custom-instructions--genie-code의-시스템-프롬프트)의 **Custom Instructions**에 `DROP/DELETE/기존 테이블 수정 금지` 같은 안전 규칙을 넣으세요. 이렇게 하면 자동 승인이어도 파괴적 작업은 Genie Code가 계획 단계에서 스스로 걸러내므로, UI 승인을 매번 누르지 않아도 안전선이 유지됩니다.
+
 ### B-2. Serverless 제약 (가장 흔한 차단 원인)
 
-Genie Code는 Serverless 위에서 돕니다. 아래는 **안 됩니다** → Python·SQL·UC Volumes로 대체:
+Genie Code는 Serverless 위에서 돕니다. 아래 항목은 **지원하지 않습니다** → Python·SQL·UC Volumes로 대체:
 
-| 안 되는 것 | 대안 |
+| 미지원 항목 | 대안 |
 |-----------|------|
 | R / Scala / Spark RDD | Python / SQL / DataFrame API |
 | `dbutils.fs.mount` (DBFS 마운트) | Unity Catalog Volumes |
@@ -35,7 +37,7 @@ Genie Code는 Serverless 위에서 돕니다. 아래는 **안 됩니다** → Py
 
 ### B-4. ⚠️ 서울리전 사전 확인
 
-서울리전(`ap-northeast-2`)에서 Genie Code가 안 되면, 관리자가 워크스페이스 설정에서
+서울리전(`ap-northeast-2`)에서 Genie Code가 동작하지 않으면, 관리자가 워크스페이스 설정에서
 **"Enforce data processing within workspace Geography for AI features"**를 확인/조정해야 합니다 (Cross-Geo).
 
 ---

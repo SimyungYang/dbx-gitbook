@@ -31,6 +31,8 @@ title: "문서 파싱 & 이미지 AI"
 
 ### B-2. `ai_parse_document`로 텍스트 추출
 
+`ai_parse_document`는 **PDF·문서를 텍스트와 구조(표·섹션)로 변환**하는 함수입니다. 서식이 있는 문서를 SQL에서 바로 다룰 수 있는 데이터로 바꿉니다.
+
 **1단계 —** 1건 파싱 테스트.
 ```
 @ccm_factory.bronze.raw_files 볼륨의 8d_reports/ 아래 PDF를 ai_parse_document로 파싱해줘. 먼저 1개로 테스트하고 결과 미리보기.
@@ -91,6 +93,8 @@ AOI가 촬영한 불량 이미지를 Vision LLM(`ai_query`)으로 분류·설명
 ```
 
 ### C-2. Vision LLM으로 불량 유형 분류
+
+`ai_query`는 **임의의 서빙 엔드포인트(LLM·Vision)를 SQL에서 직접 호출**하는 함수입니다. 여기서는 Vision 모델을 불러 불량 이미지를 판독합니다 — 이미지를 사람이 일일이 보지 않고 SQL 한 번으로 유형을 분류합니다.
 
 **1단계 —** (필수 선행) 이미지 입력 구문 먼저 확인.
 ```

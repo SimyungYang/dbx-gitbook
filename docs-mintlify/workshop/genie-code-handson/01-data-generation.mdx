@@ -9,6 +9,11 @@ title: "개요 & 진행 방식"
 | **실습 환경** | Genie Code Agent Mode + AI Dev Kit MCP, Serverless |
 | **사용 MCP 도구** | `execute_sql`, `execute_code`, `manage_uc_objects` |
 
+### 이 모듈의 목적과 다루는 테이블
+
+- **목적** — 카메라 모듈 공장에서 실제로 있을 법한 Bronze 원천 17테이블을 확보합니다(강사 배포본 임포트 또는 Genie Code 생성).
+- **다루는 테이블** — Bronze 17개: 마스터 3(설비·제품·자재로트) + 생산 3(작업지시·통과이벤트·추적성) + 공정 4(SMT·디스펜싱·리플로우·AA) + 설비 2(센서로그·비가동) + 검사 3(AOI·최종화질·불량이벤트) + 환경/필드 2(클린룸·필드리턴).
+
 > **핵심 메시지**: "있을 법한 원천 로그를, 자연어 프롬프트만으로 대규모로 만든다."
 
 ### 이 모듈에서 사용하는 Databricks 기능
@@ -29,6 +34,8 @@ title: "개요 & 진행 방식"
 ```
 
 데이터는 **실제 있을 법한 분포·상관관계·비정형**을 갖도록 설계했습니다(자재로트↔불량, 설비 노후↔고장 전조, 환경 파티클↔오염불량, 구형 테스터 결측 등). 그래서 이후 NL2SQL·예측 ML·예측정비·RAG·AI 함수 실습이 모두 자연스럽게 이어집니다.
+
+생성 결과는 모두 **Delta Lake** 테이블로 저장합니다 — 트랜잭션·스키마 관리·Time Travel을 기본 제공하는 표준 테이블 형식이라, 이후 재현과 정제 실습의 안전판이 됩니다.
 
 > **Tip**: `Cmd+I` → Agent Mode 전환 후 프롬프트 입력. 코드 생성 시 **Plan 확인 → "Allow in this thread" → Accept all → Run**. "Always Allow"는 누르지 마세요.
 
@@ -56,6 +63,8 @@ title: "개요 & 진행 방식"
 ### 방식 0 — 시드 데이터 zip 다운로드 후 임포트 (가장 간단·자립형) ★
 
 별도 공유 볼륨이나 Delta Share 없이, 아래 압축 파일 하나만 받으면 됩니다.
+
+> **Unity Catalog Volume**은 zip·PDF 같은 파일을 카탈로그 거버넌스 아래 두는 파일 저장 공간입니다. 시드 zip을 여기 올려 두면 참가자 모두 동일한 경로로 접근할 수 있어, 이번 임포트의 시작점으로 씁니다.
 
 > 📦 **다운로드**: [ccm_factory_seed.zip](https://github.com/SimyungYang/dbx-gitbook/releases/download/ccm-seed-v1/ccm_factory_seed.zip) — Bronze 17테이블 parquet, 약 **60MB** (압축 내부 구조: `ccm_factory/<table>/part.parquet`). 고정 시드로 생성돼 모든 참가자가 **동일한 데이터**로 시작합니다.
 

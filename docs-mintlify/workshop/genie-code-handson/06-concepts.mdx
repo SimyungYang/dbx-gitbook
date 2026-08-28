@@ -3,74 +3,20 @@ title: "개념: AI Functions & 비정형 처리"
 sidebarTitle: "개념 소개"
 ---
 
-이 모듈은 SQL 한 줄로 LLM을 호출해 **비정형 데이터**(자연어 리포트, PDF, 이미지)를 분석 가능한 정형 데이터로 바꾸는 기능을 다룹니다. 아래에서 각 개념이 무엇이고, 왜 필요하며, 어떻게 동작하는지 설명합니다.
+모듈 6에서 만나는 SQL AI 함수와 비정형 처리 개념을 한눈에 정리합니다. 각 항목의 상세 사용법은 모듈 본문의 해당 시점에서 다룹니다.
 
-### Databricks Document Intelligence (SQL AI 함수)
+| 개념 / 기능 | 한 줄 요지 |
+|------|-----------|
+| **Databricks Document Intelligence** | SQL로 LLM을 부르는 내장 AI 함수 브랜드(배포·엔드포인트 관리 불필요). 비정형 데이터를 SQL만으로 정형화 |
+| **`ai_classify`** | 텍스트를 정해진 레이블 집합으로 자동 분류. 필드 리턴 증상 → 근본원인 카테고리 태깅 |
+| **`ai_extract`** | 텍스트에서 지정 항목을 구조화 추출. 증상/불량부위/의심원인 컬럼 분리 |
+| **`ai_summarize` / `ai_gen`** | 긴 텍스트 요약 / 자유형 생성. 모델별 리턴 증상을 3문장으로 압축 |
+| **`ai_parse_document`** | PDF·문서를 텍스트·구조로 파싱. 8D 리포트 PDF의 지식을 데이터화 |
+| **`ai_query` (Vision LLM)** | 임의 서빙 엔드포인트·이미지를 SQL에서 직접 호출. AOI 불량 이미지 분류·설명 |
+| **Agent Bricks Foundation Model API** | AI 함수가 호출하는 관리형 모델 엔드포인트(Claude·GTE 등). 배포 없이 최신 모델 사용 |
+| **배치 추론 / AI Ready Data** | 검증한 로직을 전체에 적용해 만든 정형 인사이트 테이블. 대시보드·Genie·RAG의 소스 |
 
-- **무엇** — SQL 함수처럼 호출하는 내장 AI 기능 모음. 별도의 모델 배포·엔드포인트 관리 없이 `SELECT ai_classify(...)` 형태로 LLM을 부릅니다. 여러 문서·텍스트 AI 기능이 이 이름으로 통합돼 제공됩니다.
-- **왜·언제** — 분석가·현장 담당자가 파이썬이나 ML 인프라 없이, 이미 쓰던 SQL만으로 비정형 텍스트/문서/이미지를 처리하고 싶을 때. "왜 불량이 났나" 같은 정형 SQL로 못 답하던 질문을 비정형 데이터에서 캐냅니다.
-- **어떻게** — 각 행의 텍스트/파일을 백엔드 파운데이션 모델 엔드포인트로 보내 결과를 컬럼으로 되돌려 받습니다. 함수마다 목적이 정해져 있어(분류·추출·요약·파싱) 프롬프트를 직접 설계할 필요가 적습니다.
+> AI 함수는 엔드포인트 호출당 과금됩니다. 반드시 `LIMIT 10~20`으로 결과·비용을 확인한 뒤 전체에 적용하고, 민감 텍스트는 마스킹 후 처리합니다.
 
-### `ai_classify` — 분류
-
-- **무엇** — 텍스트를 미리 준 레이블 집합 중 하나로 자동 분류하는 함수.
-- **왜·언제** — 자유 서술된 필드 리턴 증상을 근본원인 카테고리(`ALIGNMENT`, `SENSOR` 등)로 자동 태깅할 때. 사람이 일일이 라벨링하던 작업을 대체합니다.
-- **어떻게** — `ai_classify(텍스트, ARRAY('레이블1','레이블2', ...))`. 레이블 정의를 프롬프트에 함께 주면(few-shot 힌트) 정확도가 오릅니다.
-
-### `ai_extract` — 구조화 추출
-
-- **무엇** — 텍스트에서 지정한 항목(엔티티)을 뽑아 구조화된 형태로 반환하는 함수.
-- **왜·언제** — 하나의 서술문에 뒤섞인 증상·불량 부위·의심 원인을 각각의 컬럼으로 분리해 분석·집계 가능하게 만들 때.
-- **어떻게** — `ai_extract(텍스트, ARRAY('symptom','defect_location','suspected_cause'))`. 뽑을 항목 이름을 배열로 지정하면 항목별 값을 담은 구조를 돌려줍니다.
-
-### `ai_summarize` / `ai_gen` — 요약·생성
-
-- **무엇** — `ai_summarize`는 긴 텍스트를 짧게 요약하고, `ai_gen`은 자유형 지시로 새 텍스트를 생성합니다.
-- **왜·언제** — 모델별로 쌓인 수십 건의 리턴 증상을 3문장으로 압축해 한눈에 파악할 때, 또는 자유 프롬프트로 임의 생성이 필요할 때.
-- **어떻게** — `ai_summarize(텍스트)`로 요약, 필요 시 그룹 단위(`GROUP BY model_code`)로 묶은 뒤 요약합니다.
-
-### `ai_parse_document` — 문서 파싱
-
-- **무엇** — PDF 등 문서 파일을 텍스트와 구조(표·섹션)로 변환하는 함수.
-- **왜·언제** — 품질 부서의 8D 리포트나 설비 SOP처럼 PDF에 갇힌 지식을 데이터로 꺼내 분석하거나 RAG의 지식 소스로 쓸 때.
-- **어떻게** — `READ_FILES(볼륨경로, format => 'binaryFile')`로 파일 바이트를 읽어 `ai_parse_document(content)`에 넘기면 파싱된 텍스트가 나옵니다. 이후 `ai_extract`로 핵심 항목을 구조화합니다.
-
-### `ai_query` 와 Vision LLM — 임의 엔드포인트·이미지 처리
-
-- **무엇** — `ai_query`는 임의의 서빙 엔드포인트(LLM 또는 Vision 모델)를 SQL에서 직접 호출하는 범용 함수. 이미지와 긴 프롬프트도 처리합니다.
-- **왜·언제** — 목적별 함수로 부족할 때, 특히 AOI 불량 이미지를 Vision LLM으로 분류·설명하는 등 이미지 입력이 필요할 때.
-- **어떻게** — `ai_query('엔드포인트명', '프롬프트', files => ARRAY(content))` 형태로 모델·프롬프트·이미지 바이트를 함께 전달합니다. Vision 지원 구문은 워크스페이스 버전에 따라 다를 수 있습니다.
-
-### Agent Bricks Foundation Model API
-
-- **무엇** — 위 AI 함수들이 실제로 호출하는 파운데이션 모델 엔드포인트(Claude·Llama·GTE 등). **Agent Bricks Foundation Model API**로 제공됩니다.
-- **왜·언제** — 사용자가 모델을 직접 배포·운영하지 않고도 최신 LLM/임베딩 모델을 즉시 쓰고 싶을 때. Databricks가 관리하는 엔드포인트라 관리 부담이 없습니다.
-- **어떻게** — AI 함수가 내부적으로 이 엔드포인트를 호출합니다. `ai_query`에서는 모델명을 직접 지정해 원하는 모델을 고를 수 있습니다.
-
-### 배치 추론과 AI Ready Data
-
-- **무엇** — 소량 테스트를 마친 AI 함수를 전체 데이터에 대량 적용해 정형화된 인사이트 테이블을 만드는 방식. 그 결과물이 대시보드·Genie·RAG가 바로 소비할 수 있는 **AI Ready Data**입니다.
-- **왜·언제** — 검증이 끝난 분류·추출 로직을 만 건 단위 원천에 돌려 상시 활용할 테이블로 굳힐 때. 정기 파이프라인(Job)에 편입하면 신규 데이터를 자동 처리합니다.
-- **어떻게** — AI 함수는 엔드포인트 **호출당 과금**되므로, 반드시 `LIMIT 10~20`으로 결과·비용을 확인한 뒤 전체에 적용합니다. 배치 전 예상 호출 수를 먼저 점검하고, 개인정보가 섞인 텍스트는 마스킹/필터 후 처리합니다.
-
----
-
-## 요약
-
-| 개념 | 한 줄 정의 | 이 워크샵에서의 쓰임 |
-|------|-----------|--------------------|
-| Databricks Document Intelligence | SQL로 LLM을 부르는 내장 AI 함수 브랜드 | 비정형 데이터를 SQL만으로 정형화 |
-| `ai_classify` | 텍스트를 정해진 레이블로 분류 | 필드 리턴 증상 → 근본원인 카테고리 태깅 |
-| `ai_extract` | 텍스트에서 지정 항목 구조화 추출 | 증상/불량부위/의심원인 컬럼 분리 |
-| `ai_summarize` / `ai_gen` | 요약·자유형 생성 | 모델별 리턴 증상 3문장 요약 |
-| `ai_parse_document` | PDF/문서를 텍스트·구조로 파싱 | 8D 리포트 PDF의 지식 데이터화 |
-| `ai_query` (Vision LLM) | 임의 엔드포인트·이미지 처리 범용 호출 | AOI 불량 이미지 분류·설명 |
-| Foundation Model API | AI 함수가 호출하는 관리형 모델 | Claude·GTE 등을 배포 없이 사용 |
-| 배치 추론 / AI Ready Data | 전체 적용해 만든 정형 인사이트 테이블 | 대시보드·Genie·RAG의 소스 |
-
-## 공식 문서
-
-- SQL AI 함수 (Databricks Document Intelligence): https://docs.databricks.com/en/large-language-models/ai-functions.html
-- `ai_query`: https://docs.databricks.com/en/sql/language-manual/functions/ai_query.html
-- Foundation Model API: https://docs.databricks.com/en/machine-learning/foundation-models/index.html
+공식 문서: [SQL AI 함수](https://docs.databricks.com/en/large-language-models/ai-functions.html) · [`ai_query`](https://docs.databricks.com/en/sql/language-manual/functions/ai_query.html) · [Foundation Model API](https://docs.databricks.com/en/machine-learning/foundation-models/index.html)
 

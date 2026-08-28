@@ -8,6 +8,8 @@ title: "다변량 · 세그먼트 분석"
 
 ### 공정 파라미터 상관 히트맵
 
+> 💡 상관행렬(correlation matrix)은 변수 쌍이 함께 움직이는 정도를 -1~1로 요약합니다. 히트맵으로 그리면 어떤 공정 지표가 화질 결과와 강하게 얽히는지 한눈에 보입니다 — 상관은 인과가 아니라는 점만 유의합니다.
+
 ```
 @ccm_factory.bronze.active_alignment 와 @ccm_factory.bronze.final_image_test 를 serial 기준으로 조인해서
 주요 수치형 파라미터(mtf_center/corner, tilt_x/y, focus_z, snr_db, distortion_pct) 간 상관행렬을 구하고
@@ -26,7 +28,7 @@ title: "다변량 · 세그먼트 분석"
 
 ```
 @ccm_factory.bronze.field_returns 의 모델별 리턴율과, 같은 모델의 공장 내 불량률/수율을 나란히 비교해줘.
-공장에서 못 걸러 필드로 나간 것으로 의심되는 모델이 있는지 봐줘.
+공장 검사에서 걸러지지 않고 필드로 유출된 것으로 의심되는 모델이 있는지 봐줘.
 ```
 
 > 💡 **AI 결과에 도전하기**: 세그먼트 차이가 보이면 표본 수 차이로 인한 착시가 아닌지 되물어보세요 —

@@ -38,7 +38,7 @@ title: "Silver Layer 정제"
 3. 노트북에 초록색 새 코드 표시 → 우측 패널 **Accept all**
 4. 상단 **Run all** 또는 셀 실행(▶)
 
-> 💡 마음에 안 들면 **Reject all** 후 구체적 수정사항을 프롬프트로 요청하세요.
+> 💡 결과가 의도와 다르면 **Reject all** 후 구체적 수정사항을 프롬프트로 요청하세요.
 
 ### Silver 핵심 5개 테이블 프롬프트
 
@@ -75,9 +75,9 @@ event_date 파티셔닝, (equipment_id, event_date) Z-ORDER, 테이블/컬럼 CO
 ```
 event_id 중복 제거, serial_id 참조 무결성(없으면 quarantine.final_orphans)을 적용하고, snr_db가 NULL이면 같은 model_code의 중앙값으로 대체하되 snr_imputed=true 플래그로 원본 NULL 여부를 보존해줘.
 ```
-**3단계 —** 마스터 조인.
+**3단계 —** 마스터 조인 (조인 경로 주의 — final_image_test에는 model_code가 없음).
 ```
-@ccm_factory.bronze.product_master 조인으로 model_code, spec_mtf_min을 추가해줘.
+@ccm_factory.bronze.final_image_test에는 model_code가 없으니, serial_id → @ccm_factory.silver.serials_cleaned(없으면 @ccm_factory.bronze.traceability)에서 model_code를 얻은 뒤 → @ccm_factory.bronze.product_master 경로로 조인해서 model_code, spec_mtf_min을 추가해줘.
 ```
 **4단계 —** 파생 컬럼 + 판정 재검증.
 ```

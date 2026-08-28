@@ -9,7 +9,12 @@ title: "개요 & 텍스트 AI 함수"
 | **실습 환경** | Genie Code Agent Mode + AI Dev Kit MCP, Serverless / SQL Warehouse |
 | **사용 MCP 도구** | `execute_sql` |
 
-> **핵심 메시지**: "정형 SQL로는 못 답하던 '왜'를, 비정형 데이터에서 캔다."
+> **핵심 메시지**: "정형 SQL로는 답하지 못하던 '왜'를, 비정형 데이터에서 캔다."
+
+> **이 모듈 한눈에**
+> - **목적** — 정형 SQL로는 다루기 힘든 비정형 데이터(필드리턴 텍스트·8D PDF·AOI 이미지)를 AI 함수로 구조화·분석합니다.
+> - **다루는 소스** — `bronze.field_returns`, `bronze.raw_files` 볼륨(8D PDF·AOI 이미지).
+> - **생성물** — `silver.parsed_8d_reports`, `gold.quality_8d_structured`, `gold.field_return_insights` 등 AI Ready Data.
 
 ### 이 모듈에서 사용하는 Databricks 기능
 
@@ -57,6 +62,8 @@ AI 함수는 내부적으로 Foundation Model 서빙 엔드포인트를 호출�
 
 `field_returns.failure_symptom`(자연어 증상)과 `analysis_result`(자연어 분석)를 AI로 분류·추출합니다.
 
+> **왜 SQL에서 LLM을 부르나?** AI 함수는 데이터가 이미 있는 테이블 위에서 SQL 한 줄로 LLM을 호출합니다. 별도로 데이터를 추출해 파이썬 파이프라인이나 모델 엔드포인트를 직접 관리하지 않고도, 분류·추출·요약 결과를 곧바로 새 컬럼으로 얻습니다.
+
 ### A-1. 데이터 훑어보기
 
 ```
@@ -65,6 +72,8 @@ AI 함수는 내부적으로 Foundation Model 서빙 엔드포인트를 호출�
 ```
 
 ### A-2. `ai_classify` — 증상을 근본원인 카테고리로 분류
+
+`ai_classify`는 텍스트를 **미리 정한 레이블 집합 중 하나로 분류**하는 함수입니다. 여기서는 자연어 증상 텍스트를 근본원인 카테고리로 자동 태깅합니다.
 
 Genie Code에 한 번에 하나씩 덧붙여 요청하면 SQL AI 함수를 생성·실행합니다:
 
@@ -97,6 +106,8 @@ LIMIT 20
 
 ### A-3. `ai_extract` — 구조화 추출
 
+`ai_extract`는 자유 형식 텍스트에서 **지정한 항목(엔티티)을 뽑아 구조화**하는 함수입니다. 흩어진 서술형 문장을 분석 가능한 필드로 바꿉니다.
+
 **1단계 —** 결합 텍스트에서 추출 시작.
 ```
 field_returns의 failure_symptom과 analysis_result를 결합한 텍스트에서 ai_extract로 항목을 뽑아줘. 우선 LIMIT 20.
@@ -124,6 +135,8 @@ LIMIT 20
 ```
 
 ### A-4. `ai_summarize` — 모델별 리턴 요약
+
+`ai_summarize`는 긴 텍스트를 **지정한 길이로 요약**하는 함수입니다. 여러 건의 증상 서술을 모델별로 묶어 핵심만 압축합니다.
 
 **1단계 —** 모델별 요약 시작.
 ```

@@ -16,15 +16,20 @@ title: "SDP 파이프라인 & Job 스케줄"
 
 ### SDP 파이프라인 생성 프롬프트
 
+> **재현성 팁.** SDP 노트북 생성은 "앞 대화에서 만든 21개 변환 로직"을 세션이 기억한다는 전제에 기대지 않도록 합니다. Part B·C에서 만든 Silver/Gold CTAS SQL을 **노트북 셀에 그대로 보존**해두고, 그 SQL을 SDP 정의(Streaming Table / Materialized View)로 옮기세요. 새 세션에서 시작한다면 CTAS SQL부터 다시 확보한 뒤 아래를 진행합니다.
+
 **1단계 —** 전환 뼈대 + 타겟 메타.
 ```
-위에서 만든 Bronze → Silver → Gold 변환 로직을 SDP(Spark Declarative Pipeline)로 전환하려고 해. 파이프라인 이름은 ccm_factory_pipeline, 타겟 카탈로그는 ccm_factory, 타겟 스키마는 silver, gold야. 먼저 전환 구조를 제안해줘.
+앞서 Part B·C에서 만든 Silver/Gold 정의(CTAS SQL)를 참조해서, Bronze → Silver → Gold 변환 로직을 SDP(Spark Declarative Pipeline)로 전환하려고 해. 파이프라인 이름은 ccm_factory_pipeline, 타겟 카탈로그는 ccm_factory, 타겟 스키마는 silver, gold야. 먼저 전환 구조를 제안해줘.
 ```
 **2단계 —** 계층별 테이블 유형.
 ```
 Bronze → Silver는 Streaming Table로(증분 처리), Silver → Gold는 Materialized View로(자동 리프레시) 구성해줘.
 ```
 **3단계 —** Expectations 추가.
+
+> **Expectations란** — SDP에 선언하는 데이터 품질 규칙입니다. 위반 레코드를 자동으로 감지해 제거(`expect_or_drop`)·중단(`expect_or_fail`)·경고(`expect`)하므로, 품질 필터를 코드로 흩뿌리지 않고 한곳에서 규칙으로 관리합니다.
+
 ```
 Expectations를 추가해줘:
 - aa_measurements: expect_or_drop("valid_mtf", "mtf_center_pct BETWEEN 0 AND 100")
@@ -104,7 +109,9 @@ Development 모드와 Production 모드의 차이(클러스터 재사용·재시
 
 > 💡 **왜 이걸 배우나**: 초기엔 Triggered + 서버리스가 편하지만, 실시간성이 필요하면 Continuous, 비용/성능을 세밀히 잡아야 하면 클래식 컴퓨트로 갑니다. 모드·채널·알림은 운영 안정성과 직결됩니다.
 
-### 기대 결과: Expectations 통과율(예시)
+### 기대 결과: Expectations 통과율 (예시 · 환경별 상이)
+
+> ⚠️ 아래 통과율·위반 건수는 **예시 수치**입니다. 데이터 생성 시드·적재 범위·환경에 따라 달라지므로 절대값이 아니라 "대부분 통과, 소수 격리"라는 경향으로 읽으세요.
 
 | 테이블 | Expectation | 통과율 | 위반 |
 |--------|------------|--------|------|
@@ -116,6 +123,8 @@ Development 모드와 Production 모드의 차이(클러스터 재사용·재시
 ---
 
 ## Part E: 파이프라인 Job 스케줄링
+
+> **Job이란** — 노트북·파이프라인을 정해진 스케줄에 자동 실행하는 Databricks의 오케스트레이션 기능입니다. SDP 파이프라인을 매일 새벽 무인으로 리프레시해, 아침에 대시보드·Genie가 항상 최신 데이터를 보게 만드는 것이 목표입니다.
 
 **1단계 —** Job 뼈대.
 ```

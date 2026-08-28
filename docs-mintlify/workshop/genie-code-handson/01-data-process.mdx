@@ -74,6 +74,7 @@ Delta로 저장, COMMENT 추가.
 
 | 컬럼 | 타입 | 설명 |
 |------|------|------|
+| `event_id` | STRING | 이벤트 고유 ID |
 | `focus_z_um` | DOUBLE | 포커스 Z 위치 |
 | `tilt_x_arcmin`/`tilt_y_arcmin` | DOUBLE | 틸트 |
 | `rotation_deg` | DOUBLE | 회전 |
@@ -86,6 +87,7 @@ Delta로 저장, COMMENT 추가.
 ```
 Active Alignment 공정(ccm_factory.bronze.active_alignment) 250,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.active_alignment
+- 각 레코드에 고유 event_id 부여(이후 Silver 중복 제거의 기준 키)
 - serial_id/equipment_id는 ALIGN 스테이션과 정합, model_code 조인으로 target_mtf 참조
 - mtf_center_pct: 정상 78~92 (모델 target 근처), FAIL은 60~75
 - mtf_corner_pct: center보다 8~15 낮음
