@@ -51,9 +51,34 @@ title: "개요 & 진행 방식"
 
 ## Part A: 샘플 데이터셋 임포트 (실제 교육 기본)
 
-> **사전 조건**: 강사가 공유한 시드 데이터 위치를 확인하세요. 아래 예시는 공유 볼륨의 parquet 기준입니다. Delta Sharing/Marketplace를 쓰는 경우 강사 안내를 따르세요.
+> **사전 조건**: 시드 데이터를 확보하는 방법은 세 가지입니다 — **(방식 0) 아래 다운로드 링크의 zip**, (방식 1) 강사가 공유한 볼륨의 parquet, (방식 2) Delta Sharing/Marketplace. 가장 간단한 **방식 0**을 권장합니다.
 
-### 방식 1 — 공유 볼륨의 parquet 로드 (권장)
+### 방식 0 — 시드 데이터 zip 다운로드 후 임포트 (가장 간단·자립형) ★
+
+별도 공유 볼륨이나 Delta Share 없이, 아래 압축 파일 하나만 받으면 됩니다.
+
+> 📦 **다운로드**: [ccm_factory_seed.zip](https://github.com/SimyungYang/dbx-gitbook/releases/download/ccm-seed-v1/ccm_factory_seed.zip) — Bronze 17테이블 parquet, 약 **60MB** (압축 내부 구조: `ccm_factory/<table>/part.parquet`). 고정 시드로 생성돼 모든 참가자가 **동일한 데이터**로 시작합니다.
+
+**1단계 —** 받은 zip을 내 UC Volume에 업로드할 위치를 확인.
+```
+ccm_factory.bronze.raw_files 볼륨에 시드 zip을 업로드하려고 해. 업로드 방법(Catalog Explorer)과 최종 경로를 알려줘.
+```
+**2단계 —** 업로드한 zip의 압축을 풀고 구조 확인.
+```
+/Volumes/ccm_factory/bronze/raw_files/ccm_factory_seed.zip 을 풀어서 ccm_factory/ 아래 테이블별 parquet 폴더 17개가 있는지 목록으로 보여줘.
+```
+**3단계 —** parquet → Delta 17개 테이블로 로드.
+```
+풀린 각 parquet 폴더(ccm_factory/<table>/)를 읽어서 ccm_factory.bronze 스키마에 동일 이름의 Delta 테이블 17개로 CREATE OR REPLACE TABLE 저장해줘.
+```
+**4단계 —** 코멘트 보완과 확인.
+```
+테이블/컬럼에 COMMENT가 없으면 의미에 맞게 달아주고, 완료 후 17개 테이블 row count를 표로 보여줘.
+```
+
+> 💡 이 시드에는 결측·중복·이상치·참조무결성 위반 등 **의도적 데이터 품질 이슈**가 심어져 있습니다 ([02. EDA](02-eda)·[03. 파이프라인](03-transformation-pipeline)에서 찾아내고 정제하는 실습 소재). 정상입니다.
+
+### 방식 1 — 공유 볼륨의 parquet 로드
 
 **1단계 —** 소스와 타겟만 알려주고 시작.
 ```
