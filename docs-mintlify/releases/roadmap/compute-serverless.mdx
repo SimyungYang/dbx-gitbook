@@ -3,6 +3,8 @@ title: "Compute & Serverless"
 description: "클러스터, 서버리스 컴퓨트, 런타임, Databricks Apps 등 컴퓨트 영역의 현재 상태와 로드맵"
 ---
 
+> **2026년 6~8월 업데이트 (DAIS 2026 이후)** — 아래 항목은 [Databricks 월별 릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/)를 기준으로 공개 확인된 기능만 반영했습니다.
+
 > **관련 가이드**: [Databricks Apps 완벽 가이드](/blog/guides/apps/overview) — Apps 컴퓨트 사이즈(Medium/Large), Scale to Zero, Horizontal Scaling
 
 ## 현재 GA 기능
@@ -22,12 +24,18 @@ description: "클러스터, 서버리스 컴퓨트, 런타임, Databricks Apps �
 | Job Clusters | 기본 제공 | ✅ | [잡 실행 전용 클러스터](https://docs.databricks.com/aws/en/jobs/) |
 | Instance Pools | 기본 제공 | ✅ | [사전 프로비저닝된 인스턴스 풀](https://docs.databricks.com/aws/en/compute/pool/) |
 | Cluster Policies | 기본 제공 | ✅ | [클러스터 정책 관리](https://docs.databricks.com/aws/en/compute/cluster-policies) |
+| JAR Tasks on Serverless Compute | 2026.08 | 확인 필요 | 클러스터 프로비저닝 없이 Scala/Java 태스크 실행 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/august)) |
+| Serverless Compute Access Control | 2026.08 | 확인 필요 | 서버리스 워크로드 실행 권한 거버넌스 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/august)) |
+| Deferred compute policy enforcement | 2026.06 | 확인 필요 | 정책 업데이트를 다음 재시작 시 적용하도록 예약 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/june)) |
+| AWS Graviton 컴플라이언스 지원 | 2026.06 | 확인 필요 | Graviton 인스턴스의 컴플라이언스 보안 프로파일 지원 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/june)) |
 
 ### Databricks Runtime 버전
 
 | 런타임 | 상태 | Spark 버전 | 비고 |
 |--------|------|-----------|------|
-| 18.2 | GA (2026.05) | Spark 4.1.0 | 최신 GA |
+| 19 (+ 19 ML) | GA (2026.07) | Spark 4.2.0 | Beta 2026.06 → GA ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/july)) |
+| 18 LTS (+ 18 ML LTS) | GA (2026.07, LTS) | Spark 4.1.0 | 3년 안정성 장기 지원 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/july)) |
+| 18.2 | GA (2026.05) | Spark 4.1.0 | |
 | 18.1 | GA | Spark 4.1.0 | |
 | 18.0 | GA | Spark 4.0.0 | |
 | 17.3 LTS | GA (LTS) | Spark 3.5.x | 장기 지원 |
@@ -39,16 +47,18 @@ description: "클러스터, 서버리스 컴퓨트, 런타임, Databricks Apps �
 
 | 기능 | Preview 시점 | 서울 리전 | 설명 |
 |------|-------------|-----------|------|
+| AI Runtime (서버리스 GPU, 구 Serverless GPU Compute) | 2026.07 | 확인 필요 | 관리형 분산 GPU 학습 플랫폼. 웹 터미널(Preview 2026.07), CLI·커스텀 Docker 이미지(Beta 2026.06), fault-tolerant PyTorch 학습 지원 ([블로그](https://www.databricks.com/blog/fast-fault-tolerant-pytorch-training-ai-runtime)) |
 | Adaptive Autoscaling — Performance Mode | 2026.05 | ✅ | 서버리스 컴퓨트 속도 최적화 모드 |
 | Workspace Browser Tree View | 2026.03 | ✅ | 폴더 확장 가능한 트리 뷰 |
 | Inbound PrivateLink for Perf Services | 2026.03 | 미정 | Zerobus·Lakebase PrivateLink |
-| JAR Tasks on Serverless | 2026.02 | 미정 | 서버리스에서 JAR 잡 실행 |
 | Serverless Outbound IPs (JSON) | 2026.02 | 미정 | 서버리스 아웃바운드 IP 조회 |
 
 ## Beta
 
 | 기능 | Beta 시점 | 서울 리전 | 설명 |
 |------|----------|-----------|------|
+| Session Restore for Serverless Jobs | 2026.08 | 확인 필요 | Python 변수·Spark 세션 복원 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/august)) |
+| Base Environments for Classic Compute | 2026.08 | 확인 필요 | Databricks/커스텀 환경으로 의존성 관리 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/august)) |
 | AI Runtime 1xH100 | 2026.04 | 미정 | H100 GPU 가속 옵션 |
 | AI Runtime (Distributed) | 2026.03 | 미정 | 서버리스 분산 딥러닝 GPU |
 
@@ -60,8 +70,6 @@ description: "클러스터, 서버리스 컴퓨트, 런타임, Databricks Apps �
 
 | 기능 | 예상 상태 | 방향성 |
 |------|----------|--------|
-| Runtime 18.2 | GA 예정 | Spark 4.1.0 정식 출시 |
-| AI Runtime | GA 예정 | 서버리스 GPU 컴퓨트 |
-| JAR Tasks on Serverless | GA 예정 | JVM 워크로드 서버리스 지원 |
+| AI Runtime GA | GA 예정 | 서버리스 GPU 컴퓨트 정식 출시 (현재 Public Preview) |
 | Serverless 전면 확대 | 방향성 | 모든 워크로드의 서버리스 기본값화 |
 | ARM 기반 인스턴스 | 방향성 | Graviton 등 비용 효율 컴퓨트 |

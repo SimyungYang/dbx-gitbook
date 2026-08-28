@@ -3,6 +3,8 @@ title: "Security & Compliance"
 description: "네트워크 보안, 암호화, 컴플라이언스, ID 관리 등 보안 영역의 현재 상태와 로드맵"
 ---
 
+> **2026년 6~8월 업데이트 (DAIS 2026 이후)** — 아래 항목은 [Databricks 월별 릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/)를 기준으로 공개 확인된 기능만 반영했습니다.
+
 > **관련 가이드**: [AWS Workspace 구성 — PrivateLink](/blog/platform-setup/aws/privatelink-backend) — AWS PrivateLink 설정 | [Databricks Apps 네트워킹](/blog/guides/apps/networking) — Apps IP 제어, Private Link, Egress
 
 ## 현재 GA 기능
@@ -22,6 +24,15 @@ description: "네트워크 보안, 암호화, 컴플라이언스, ID 관리 등 
 | Secret Management | 기본 제공 | ✅ | [시크릿 저장·관리](https://docs.databricks.com/aws/en/security/secrets/) |
 | Audit Logs | 기본 제공 | ✅ | [감사 로그 (System Tables)](https://docs.databricks.com/aws/en/admin/system-tables/audit) |
 | IP Access Lists | 기본 제공 | ✅ | [IP 기반 접근 제어](https://docs.databricks.com/aws/en/security/network/front-end/ip-access-list) |
+| Inbound PrivateLink for Performance Services | 2026.06 | 확인 필요 | 성능 집약 서비스에 직접 프라이빗 연결 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/june)) |
+| Identity Federation 기본 활성 | 2026.06 | 확인 필요 | 신규 워크스페이스에 기본 적용 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/june)) |
+| OpenSharing (구 Delta Sharing) | 2026.06 | 확인 필요 | Delta Sharing을 오픈 표준 OpenSharing으로 리브랜딩. Iceberg 클라이언트용 OIDC, foreign Delta 테이블 공유(Public Preview 2026.08) ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/june)) |
+| Context-Based Ingress Control | 2026.07 | 확인 필요 | ID·네트워크·요청 유형별 워크스페이스 접근 허용/차단 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/july)) |
+| Okta Automatic Identity Management | 2026.07 | 확인 필요 | SCIM 없이 Okta에서 사용자/그룹 동기화 (Public Preview 2026.06 → GA 2026.07) ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/july)) |
+| Packaged Clean Rooms | 2026.07 | 확인 필요 | 제공자가 노트북+데이터를 배포, 소비자는 자기 데이터로 실행 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/july)) |
+| Budgets (계정 비용 관리) | 2026.07 | 확인 필요 | 지출 임계값·사용자별 오버라이드·알림 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/july)) |
+| Service Principal 토큰 만료 알림 | 2026.07 | 확인 필요 | 만료 7일 전 관리자 이메일 (Beta 2026.06 → GA 2026.07) ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/july)) |
+| SecureConnect (방화벽 뒤 공유) | 2026.08 | 확인 필요 | IP 허용목록 없이 방화벽 뒤 공유, 상용↔GovCloud 교차 공유 (OpenSharing용) ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/august)) |
 
 ## Public Preview
 
@@ -33,12 +44,18 @@ description: "네트워크 보안, 암호화, 컴플라이언스, ID 관리 등 
 | CMK Query History Decryption | 2026.02 | 미정 | CMK 환경 쿼리 이력 복호화 |
 | HITRUST Compliance Controls | 2026.02 | 미정 | HITRUST 컴플라이언스 도구 |
 | Scoped PATs (확장) | 2026.02 | ✅ | 세분화된 토큰 권한 |
+| Managed Disaster Recovery | 2026.06 | 확인 필요 | UC 메타데이터 + 관리형 테이블 데이터를 리전 간 복제 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/june)) |
+| Mission Critical 애드온 | 2026.06 | 확인 필요 | DR + Enhanced Security & Compliance를 묶은 통합 가격 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/june)) |
+| Block Internet Destinations | 2026.06 | 확인 필요 | 네트워크 모드와 무관하게 차단 대상 egress 강제 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/june)) |
+| Custom URLs for Databricks account | 2026.07 | 확인 필요 | 브랜드 진입점 지원 (예: acme.databricks.com) ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/july)) |
+| Alert / audit 시스템 테이블 | 2026.08 | 확인 필요 | 알림·평가 이력을 시스템 테이블로 제공 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/august)) |
 
 ## Beta
 
 | 기능 | Beta 시점 | 서울 리전 | 설명 |
 |------|----------|-----------|------|
 | Front-end PrivateLink Services | 2026.01 | 미정 | 프런트엔드 서비스 PrivateLink |
+| PrivateLink for account-level resources | 2026.07 | 확인 필요 | VPC 엔드포인트로 계정 콘솔에 프라이빗 연결 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/july)) |
 
 ## 컴플라이언스 지원 현황
 
@@ -52,6 +69,9 @@ description: "네트워크 보안, 암호화, 컴플라이언스, ID 관리 등 
 | C5 | ✅ GA | EU 리전 |
 | TISAX | ✅ GA | EU 리전 |
 | HITRUST | Public Preview | 미정 |
+| IRAP | ✅ GA | 확인 필요 |
+
+> **Data Classification 기본 활성** (2026.06~07 GA) — 컴플라이언스 준수 워크스페이스에서 데이터 분류가 기본 적용되며 C5·TISAX·IRAP 지원이 추가되었습니다. ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/july))
 
 ## 주요 업데이트 예정
 
@@ -64,6 +84,7 @@ description: "네트워크 보안, 암호화, 컴플라이언스, ID 관리 등 
 | **Serverless Access Controls** | Private Preview (2025.09) | 사용량 정책 기반 |
 | **AIM (Auto Identity Mgmt) for AWS** | Private Preview (03월) | Azure는 Entra ID로 GA |
 | **Context-Based Ingress Control** | Public Preview (2026) | 조건부 접근 제어 |
+| **Private Network Gateway** (serverless→VPC) | Private Preview (08월) | 서버리스를 단일 게이트웨이로 VPC 리소스에 연결 ([릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/august)) |
 
 ## 예상 로드맵
 

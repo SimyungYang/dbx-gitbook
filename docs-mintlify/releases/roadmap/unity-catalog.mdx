@@ -3,12 +3,21 @@ title: "Unity Catalog & Governance"
 description: "Unity Catalog, 데이터 거버넌스, 보안 관련 기능의 현재 상태와 로드맵"
 ---
 
+> **2026년 6~8월 업데이트 (DAIS 2026 이후)** — 아래 항목은 [Databricks 월별 릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/)를 기준으로 공개 확인된 기능만 반영했습니다.
+
 > **관련 가이드**: [Platform Setup — Unity Catalog 설정](/blog/platform-setup/aws/unity-catalog) — 워크스페이스 UC 초기 설정 가이드
 
 ## 현재 GA 기능
 
 | 기능 | GA 시점 | 서울 리전 | 설명 |
 |------|---------|-----------|------|
+| Role-Based Access Control (RBAC) | 2026.08 | 확인 필요 | [세션 동안만 역할 권한을 부여받는 접근 제어 (Public Preview 2026.07 → GA)](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
+| Secrets in Unity Catalog | 2026.08 | 확인 필요 | [시크릿을 UC 보안 객체로 저장·거버넌스 (Public Preview 2026.07 → GA)](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
+| READ METADATA privilege | 2026.08 | 확인 필요 | [보안 민감 메타데이터에 대한 읽기 전용 권한](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
+| Query Text Masking | 2026.08 | 확인 필요 | [`system.query.history`의 statement_text를 `<REDACTED>`로 반환](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
+| Managed Iceberg Tables / UniForm 상호운용 | 2026.08 (공유 GA) | 확인 필요 | [외부 엔진이 읽을 수 있는 managed Iceberg MV·테이블 공유 (Public Preview 2026.07, 공유 GA 2026.08)](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
+| External Lineage | 2026.06 | 확인 필요 | [외부 자산을 리니지 그래프에 등록](https://docs.databricks.com/aws/en/release-notes/product/2026/june) |
+| Column Popularity in Catalog Explorer | 2026.06 | 확인 필요 | [가장 많이 조회된 컬럼 표시](https://docs.databricks.com/aws/en/release-notes/product/2026/june) |
 | Attribute-Based Access Control (ABAC) | 2026.05 | ✅ | [Governed Tags 기반 행 필터·컬럼 마스크](https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac) |
 | Governed Tags | 2026.04 | ✅ | [접근 제어·분류·비용 추적용 태그](https://docs.databricks.com/aws/en/data-governance/unity-catalog/tags) |
 | Data Classification | 2026.04 | ✅ | [AI 기반 자동 데이터 분류 및 태깅](https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-classification) |
@@ -27,6 +36,9 @@ description: "Unity Catalog, 데이터 거버넌스, 보안 관련 기능의 현
 
 | 기능 | Preview 시점 | 서울 리전 | 설명 |
 |------|-------------|-----------|------|
+| Metric View parameters | 2026.06 | 확인 필요 | [메트릭 뷰에 쿼리 타임 파라미터 정의](https://docs.databricks.com/aws/en/release-notes/product/2026/june) |
+| Metastore-level Access Requests | 2026.06 | 확인 필요 | [UC 메타스토어 전역 접근 요청](https://docs.databricks.com/aws/en/release-notes/product/2026/june) |
+| The Discover Page | 2026.06 | 확인 필요 | [비즈니스 영역별로 데이터를 탐색하는 큐레이션 경험](https://docs.databricks.com/aws/en/release-notes/product/2026/june) |
 | Unity Catalog ↔ BigQuery Catalog Federation | 2026.05 | 미정 | [데이터 복제 없는 양방향 페더레이션](https://docs.databricks.com/aws/en/query-federation/) |
 | MLflow Trace Storage in Unity Catalog | 2026.05 | ✅ | OTel 포맷, UC 권한 적용 |
 | CMK for Unity Catalog | 2026.03 | 미정 | Unity Catalog 데이터 암호화 키 관리 |
@@ -39,7 +51,13 @@ description: "Unity Catalog, 데이터 거버넌스, 보안 관련 기능의 현
 
 | 기능 | Beta 시점 | 서울 리전 | 설명 |
 |------|----------|-----------|------|
-| Vector Search Retrieval Quality | 2026.04 | 미정 | 검색 전략 관련성 내장 평가 |
+| Governance Hub | 2026.07 | 확인 필요 | [계정 레벨 거버넌스 지표를 한눈에 모니터링하는 지능형 UI](https://www.databricks.com/blog/introducing-governance-hub-intelligent-account-level-governance-over-your-databricks-estate) |
+| ABAC GRANT Policies | 2026.06~08 | 확인 필요 | [거버넌스 태그 조건 기반 동적 권한 부여](https://docs.databricks.com/aws/en/release-notes/product/2026/june) |
+| Identity Attributes for ABAC | 2026.08 | 확인 필요 | [IdP 속성·컨텍스트 기반 ABAC·컬럼 마스킹](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
+| Fine-Grained DML Privileges | 2026.08 | 확인 필요 | [INSERT/UPDATE/DELETE를 MODIFY 대신 세분 부여](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
+| Business Concepts / Pages (business semantics) | 2026.08 | 확인 필요 | [용어·약어·KPI의 단일 표준 정의](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
+| Governed Tags system table + Tag Automations | 2026.07~08 | 확인 필요 | [태그 거버넌스 자동화·중앙 관리](https://docs.databricks.com/aws/en/release-notes/product/2026/july) |
+| AI Search (구 Vector Search) Retrieval Quality | 2026.04 | 미정 | 검색 전략 관련성 내장 평가 |
 | Discover Page & Domains | 2026.02 | 미정 | AI 추천 기반 자산 검색·비즈니스 도메인 |
 | MLflow Traces in Unity Catalog | 2026.01 | 미정 | MLflow 트레이스를 UC에 저장 |
 

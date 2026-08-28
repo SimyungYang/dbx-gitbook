@@ -3,12 +3,28 @@ title: "Data Engineering & Lakeflow"
 description: "Lakeflow, SDP, Auto Loader, Structured Streaming 등 데이터 엔지니어링 기능의 현재 상태와 로드맵"
 ---
 
+> **2026년 6~8월 업데이트 (DAIS 2026 이후)** — 아래 항목은 [Databricks 월별 릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/)를 기준으로 공개 확인된 기능만 반영했습니다.
+
 > **관련 가이드**: [Lakeflow 증분 처리 가이드](/blog/guides/lakeflow-incremental/overview) — SDP Streaming Table, Materialized View, CDC 체크리스트
 
 ## 현재 GA 기능
 
 | 기능 | GA 시점 | 서울 리전 | 설명 |
 |------|---------|-----------|------|
+| Apache Spark 4.2 | 2026.07 | 확인 필요 | [Databricks Runtime 19의 기반이 되는 새 Spark 릴리스](https://www.databricks.com/blog/introducing-apache-spark-42) |
+| Variant + Variant Shredding | 2026.07~08 | 확인 필요 | [반정형 데이터 타입, 쿼리 성능 최적화](https://www.databricks.com/blog/ingest-semi-structured-data-faster-and-more-efficiently-variant-now-generally-available) |
+| Multi-statement Transactions | 2026.07 | 확인 필요 | [UC 테이블 전반의 원자적 다중 문장 트랜잭션](https://docs.databricks.com/aws/en/release-notes/product/2026/july) |
+| Delta Parquet v2 | 2026.06 | 확인 필요 | [고급 인코딩으로 쿼리 성능 향상](https://docs.databricks.com/aws/en/release-notes/product/2026/june) |
+| Delta Auto Time-to-Live (TTL) | 2026.06 | 확인 필요 | [DATE/TIMESTAMP 컬럼 기반 행 자동 삭제](https://docs.databricks.com/aws/en/release-notes/product/2026/june) |
+| 파티션 테이블 → Liquid Clustering 전환 | 2026.06 | 확인 필요 | [기존 파티션 테이블을 Liquid Clustering으로 변경](https://docs.databricks.com/aws/en/release-notes/product/2026/june) |
+| Automatic Table Feature Upgrades | 2026.07 | 확인 필요 | [row tracking, Checkpoint V2 등 테이블 기능 자동 롤아웃](https://docs.databricks.com/aws/en/release-notes/product/2026/july) |
+| AUTO CDC Flows | 2026.06 | 확인 필요 | [복잡한 MERGE 없이 CDC 처리](https://docs.databricks.com/aws/en/release-notes/product/2026/june) |
+| REPLACE WHERE Flows | 2026.07 | 확인 필요 | [전체 이력 재처리 없이 조건 일치 행만 갱신](https://docs.databricks.com/aws/en/release-notes/product/2026/july) |
+| Lakeflow Designer | 2026.06~07 | 확인 필요 | [비주얼 노코드 데이터 준비 경험 (구 Beta 2026.05 → GA)](https://docs.databricks.com/aws/en/release-notes/product/2026/july) |
+| Lakeflow Connect Row Filtering | 2026.07 | 확인 필요 | [적재·증분 갱신 시 WHERE 조건 적용](https://docs.databricks.com/aws/en/release-notes/product/2026/july) |
+| Excel 파일 포맷 지원 | 2026.07 | 확인 필요 | [.xls/.xlsx/.xlsm 네이티브 수집·쿼리](https://docs.databricks.com/aws/en/release-notes/product/2026/july) |
+| Lakeflow Connect 신규·확장 커넥터 | 2026.08 | 확인 필요 (커넥터별 상이) | [Google Drive·SharePoint·NetSuite GA 등 (Dynamics 365, ServiceNow, MySQL CDC, RabbitMQ 확장)](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
+| Lakeflow Jobs 오케스트레이션 향상 | 2026.06~08 | 확인 필요 | [의존성 포함 부분 실행(+ modifier), SQL Alert 태스크, Table Update 트리거, Continuous Jobs](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
 | Lakeflow Pipelines Editor | 2026.05 | ✅ | 파이프라인 편집기 정식 출시 |
 | Compute Log Delivery to Volumes | 2026.04 | ✅ | [Spark 로그를 UC Volume에 저장](https://docs.databricks.com/aws/en/compute/configure#log-delivery) |
 | Declarative Automation Bundles | 2026.03 | ✅ | [(구 Asset Bundles) CI/CD 배포 패키지](https://docs.databricks.com/aws/en/dev-tools/bundles/) |
@@ -35,6 +51,11 @@ description: "Lakeflow, SDP, Auto Loader, Structured Streaming 등 데이터 엔
 
 | 기능 | Beta 시점 | 서울 리전 | 설명 |
 |------|----------|-----------|------|
+| REPLACE USING Flows | 2026.08 | 확인 필요 | [부분 스냅샷 키 기반 행 교체](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
+| Change Data Feed for Materialized Views | 2026.08 | 확인 필요 | [MV에서 CDC 읽기](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
+| Zerobus Ingest (C++ SDK) | 2026.07 | 확인 필요 | [고처리량 gRPC 레코드 수집 (컴플라이언스 기본 활성 2026.08)](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
+| Declarative Pipelines 단위 테스트 | 2026.07 | 확인 필요 | [mock 데이터로 Python 파이프라인 테스트](https://docs.databricks.com/aws/en/release-notes/product/2026/july) |
+| Lakehouse Real-Time | 2026.06 | 확인 필요 | [저지연·고동시성 워크로드용 서버리스 SQL 웨어하우스 유형](https://docs.databricks.com/aws/en/release-notes/product/2026/june) |
 | Lakeflow Designer | 2026.05 | 미정 | 드래그 앤 드롭 + 자연어 데이터 파이프라인 빌더 |
 | GitHub Managed Ingestion Connector | 2026.05 | 미정 | GitHub 활동/이슈/PR을 UC로 수집 |
 | SQL Pipelines Notifications | 2026.03 | 미정 | MV/ST 실패 알림 및 서버리스 성능 모드 |

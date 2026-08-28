@@ -5,10 +5,24 @@ description: "Foundation Model APIs, Agent Framework, MLflow, Vector Search 등 
 
 > **관련 가이드**: [AI 시장 트렌드 2026](/ai-trends/overview) — 주요 AI 기업 동향, 모델 선택 전략 | [Anthropic 동향](/ai-trends/anthropic-trends-2026) — Claude 모델 계보, MCP, Claude Code | [2026년 4월 핫 키워드](/ai-trends/hot-keywords-2026-04) — Claude Design, Harness Engineering, Agentic Engineering
 
+> **2026년 6~8월 업데이트 (DAIS 2026 이후)** — 아래 항목은 [Databricks 월별 릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/)를 기준으로 공개 확인된 기능만 반영했습니다.
+
 ## 현재 GA 기능
 
 | 기능 | GA 시점 | 서울 리전 | 설명 |
 |------|---------|-----------|------|
+| Unity AI Gateway (통합 AI 거버넌스 GA) | 2026.08 | 확인 필요 | [에이전트·모델·MCP·툴 전반의 AI 지출·보안·접근을 통합 거버넌스하는 Unity AI Gateway 정식 출시](https://www.databricks.com/blog/unity-ai-gateway-generally-available) |
+| Unity AI Gateway Budgets | 2026.07~08 | 확인 필요 | [에이전트/코딩 지출에 예산 및 하드 상한 설정](https://www.databricks.com/blog/how-databricks-manages-its-own-coding-agent-spend-unity-ai-gateway-budgets) |
+| Genie Agents (구 Genie Spaces) | 2026.07 (rename) | 확인 필요 | [제품명 리브랜딩 — Genie Spaces → Genie Agents](https://docs.databricks.com/aws/en/release-notes/product/2026/july) |
+| Genie 멀티 서피스 | 2026.06~08 | 확인 필요 | [Desktop 앱(macOS)·Google Sheets·Excel·Slack·Teams에서 자연어 데이터 Q&A (Sheets/Excel GA, Desktop/Teams Preview)](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
+| Genie Code 향상 | 2026.08 | 확인 필요 | [Agent-mode 전용, Auto-Approve, effort 레벨, 파일 업로드, 웹 검색, Lakeflow Jobs·스케줄 태스크, Full Page 커맨드 센터](https://www.databricks.com/blog/managing-ai-coding-costs-scale) |
+| Agent Bricks — Supervisor Agent 향상 | 2026.06 | 확인 필요 | [UC Volume을 서브에이전트 툴로 사용, 인용 포함 웹 검색](https://docs.databricks.com/aws/en/release-notes/product/2026/june) |
+| Foundation Model UC 권한 | 2026.06 | 확인 필요 | [Databricks 호스팅 파운데이션 모델의 조직 접근 제어](https://docs.databricks.com/aws/en/release-notes/product/2026/june) |
+| Priority Pay-Per-Token | 2026.07 | 확인 필요 | [지연 민감 앱을 위한 전용 용량 (파트너 모델 GA, 오픈소스 Preview)](https://docs.databricks.com/aws/en/release-notes/product/2026/july) |
+| AI Search High-QPS 확장 | 2026.07 | 확인 필요 | [고QPS 프로덕션 확장, 임베딩 없는 전문(full-text) 검색](https://www.databricks.com/blog/prototype-production-high-qps-databricks-ai-search) |
+| MLflow — Trace Storage in Unity Catalog (GA) | 2026.07 | 확인 필요 | [트레이스를 OpenTelemetry 포맷의 UC 객체로 저장](https://docs.databricks.com/aws/en/release-notes/product/2026/july) |
+| Databricks Model Serving 향상 | 2026.06~07 | 확인 필요 | [커스텀 모델 엔드포인트 텔레메트리, 빠른 inference table, Protobuf tensor 입력, Model Services 거버넌스 securable](https://docs.databricks.com/aws/en/release-notes/product/2026/july) |
+| Feature Store 서브초(sub-second) 신선도 | 2026.08 | 확인 필요 | [서브초(sub-second) 신선도로 피처 서빙](https://www.databricks.com/blog/how-databricks-feature-store-serves-features-sub-second-freshness) |
 | ai_parse_document | 2026.05 | ✅ (cross-geo) | [PDF/이미지/Word 파싱 정식 출시](https://docs.databricks.com/aws/en/large-language-models/ai-functions#ai_parse_document) |
 | Managed OAuth for MCP | 2026.03 | ✅ | [Glean, GitHub 등 외부 MCP 인증](https://docs.databricks.com/aws/en/genie/mcp) |
 | Genie Code | 2026.03 | ✅ | [에이전틱 데이터 분석 어시스턴트](https://docs.databricks.com/aws/en/genie/genie-code) |
@@ -16,7 +30,7 @@ description: "Foundation Model APIs, Agent Framework, MLflow, Vector Search 등 
 | Databricks Assistant + MCP | 2026.02 | ✅ | [MCP 서버 연동](https://docs.databricks.com/aws/en/genie/mcp) |
 | Knowledge Assistant | 2026.01 | 🔜 서울 지원 임박 (현재 미지원) | [문서 Q&A 에이전트](https://docs.databricks.com/aws/en/generative-ai/agent-framework/build-knowledge-assistant) |
 | Foundation Model APIs (Pay-per-token) | 2025 | ✅ (cross-geo) | [토큰당 과금 모델 접근](https://docs.databricks.com/aws/en/machine-learning/foundation-models/supported-models) |
-| Vector Search | 2025 | ✅ | [벡터 인덱스 및 유사도 검색](https://docs.databricks.com/aws/en/generative-ai/vector-search) |
+| AI Search (구 Vector Search) | 2025 | ✅ | [벡터 인덱스 및 유사도 검색](https://docs.databricks.com/aws/en/generative-ai/vector-search) |
 | Agent Framework & Evaluation | 2025 | ✅ | [에이전트 빌딩 및 평가](https://docs.databricks.com/aws/en/generative-ai/agent-framework/) |
 | Unity AI Gateway | 2025 | ✅ | [LLM 엔드포인트 통합 관리](https://docs.databricks.com/aws/en/generative-ai/ai-gateway/) |
 | Foundation Model Fine-tuning | 2025 | ✅ | [파운데이션 모델 파인튜닝](https://docs.databricks.com/aws/en/large-language-models/foundation-model-training/) |
@@ -30,6 +44,16 @@ description: "Foundation Model APIs, Agent Framework, MLflow, Vector Search 등 
 
 | 모델 | GA 시점 | Provisioned | Pay-per-token | Batch |
 |------|---------|-------------|---------------|-------|
+| Claude Opus 5 | 2026.07 | 확인 필요 | 확인 필요 | 확인 필요 |
+| Claude Sonnet 5 | 2026.06 | 확인 필요 | 확인 필요 | 확인 필요 |
+| Fable 5 | 2026.06 | 확인 필요 | 확인 필요 | 확인 필요 |
+| OpenAI GPT-5.6 | 2026.08 | 확인 필요 | 확인 필요 | 확인 필요 |
+| Google Gemini 3.6 / 3.7 Flash | 2026.08 | 확인 필요 | 확인 필요 | 확인 필요 |
+| GLM 5.2 / 5.3 | 2026.08 | 확인 필요 | 확인 필요 | 확인 필요 |
+| DeepSeek V4 | 2026.08 | 확인 필요 | 확인 필요 | 확인 필요 |
+| Kimi K3 (Moonshot) | 2026.08 | 확인 필요 | 확인 필요 | 확인 필요 |
+| Grok 4.6 | 2026.08 | 확인 필요 | 확인 필요 | 확인 필요 |
+| Thinking Machines Inkling (Preview) | 2026.08 (Preview) | 확인 필요 | 확인 필요 | 확인 필요 |
 | Qwen3.5 122B A10B (Alibaba) | 2026.05 (Public Preview) | ❌ | ✅ cross-geo | ❌ |
 | Claude Opus 4.7 | 2026.04 | ❌ (TBD Q3) | ✅ cross-geo | ❌ |
 | OpenAI GPT-5.4 | 2026.03 | ✅ cross-geo | ✅ cross-geo | ✅ cross-geo |
@@ -46,10 +70,15 @@ description: "Foundation Model APIs, Agent Framework, MLflow, Vector Search 등 
 **Claude 모델 Provisioned Throughput**: 서울 리전에서 Claude 모델의 프로비저닝 처리량 지원은 2026년 후반 예정입니다. Pay-per-token은 cross-geo로 즉시 사용 가능합니다.
 </Note>
 
+<Note>
+**2026년 6~8월 신규 호스팅 모델 출처**: [Databricks 2026년 8월 릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/august) · [Kimi K3 (Moonshot AI) — Unity AI Gateway 제공](https://www.databricks.com/blog/kimi-k3-moonshot-ai-now-available-databricks-through-unity-ai-gateway). 서울 리전 및 서빙 모드(Provisioned/Pay-per-token/Batch) 지원 여부는 확인이 필요합니다.
+</Note>
+
 ## Public Preview
 
 | 기능 | Preview 시점 | 서울 리전 | 설명 |
 |------|-------------|-----------|------|
+| Feature Views | 2026.07 | 확인 필요 | [ML 피처를 한 번 정의해 실험·배치·실시간 추론에 재사용](https://www.databricks.com/blog/introducing-feature-views) |
 | MLflow Trace Storage in Unity Catalog | 2026.05 | ✅ | OTel 포맷, UC 권한 적용 |
 | Classification & Information Extraction UI | 2026.03 | ❌ (US만) | 문서 분석 시각적 도구 |
 | ai_classify / ai_extract v2 | 2026.03 | ✅ (cross-geo) | 정확도 90%+ (v1 대비 40%↑) |
@@ -65,6 +94,10 @@ description: "Foundation Model APIs, Agent Framework, MLflow, Vector Search 등 
 
 | 기능 | Beta 시점 | 서울 리전 | 설명 |
 |------|----------|-----------|------|
+| Smart Routing (Unity AI Gateway) | 2026.08 | 확인 필요 | [작업당 30%+ 낮은 비용으로 프런티어 품질을 매칭하도록 최적 모델 라우팅](https://www.databricks.com/blog/smart-routing-unity-ai-gateway-match-frontier-quality-30-lower-cost-task) |
+| 관리형 MCP 커넥터 → Unity AI Gateway 편입 | 2026.08 | 확인 필요 | [Databricks 관리형 MCP 서버를 Unity AI Gateway 거버넌스로 이전](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
+| MLflow — Custom Trace Views | 2026.08 | 확인 필요 | [원하는 트레이스 뷰 레이아웃을 자연어로 기술](https://docs.databricks.com/aws/en/release-notes/product/2026/august) |
+| Agent Bricks — Managed Agent Memory | 2026.06 | 확인 필요 | [대화 전반의 장기 기억을 UC에 저장](https://docs.databricks.com/aws/en/release-notes/product/2026/june) |
 | AI Gateway for MCP Servers | 2026.04 | 미정 | MCP 서버 접근 제어·사용량 모니터링 |
 | AI Runtime 1xH100 Accelerator | 2026.04 | ❌ | H100 GPU 가속 |
 | vLLM Custom Model Serving | 2026.04 (Private Preview) | ❌ | 서버리스 GPU 컴퓨트 필요 |
