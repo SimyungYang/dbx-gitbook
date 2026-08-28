@@ -1,0 +1,473 @@
+---
+title: "Agent Bricks 에이전트"
+---
+
+| 항목 | 내용 |
+|------|------|
+| **소요 시간** | ~60분 |
+| **사전 조건** | [05. Genie 에이전트](05-genie-agent) 완료 (Genie Space 3개) + [06. 비정형 AI 함수](06-ai-functions-unstructured) 완료 (문서/지식 준비) |
+| **실습 환경** | Genie Code Agent Mode + AI Dev Kit MCP 연결 상태 |
+| **사용 MCP 도구** | `manage_ka`, `manage_mas`, `manage_vs_index`, `manage_serving_endpoint`, `manage_lakebase_database` |
+
+> **핵심 메시지**: "대시보드는 **보는 것**, Genie는 **묻는 것**, 에이전트는 **행동하는 것**"
+
+### 이 모듈에서 사용하는 Databricks 기능
+
+| 기능 | 설명 | 공식 문서 |
+|------|------|----------|
+| **Agent Bricks** | AI 에이전트를 코드 없이 UI/API로 생성·관리하는 플랫폼. Knowledge Assistant(문서 Q&A), Genie Agent(데이터 분석), Supervisor Agent(오케스트레이션)를 제공합니다. | [docs](https://docs.databricks.com/en/generative-ai/agent-bricks/index.html) |
+| **Vector Search** | 텍스트를 벡터로 임베딩하여 **의미적으로 유사한 문서**를 검색합니다. Knowledge Assistant의 RAG 검색 엔진입니다. | [docs](https://docs.databricks.com/en/generative-ai/vector-search.html) |
+| **Databricks Model Serving** | LLM·임베딩 모델을 API 엔드포인트로 서빙합니다. 에이전트의 추론 엔진입니다. | [docs](https://docs.databricks.com/en/machine-learning/model-serving/index.html) |
+| **Lakebase** | Databricks 내장 PostgreSQL 호환 OLTP DB. 대화 이력·피드백 저장에 사용합니다. (선택) | [docs](https://docs.databricks.com/en/oltp/index.html) |
+| **MLflow on Databricks** | 에이전트 응답 품질을 트레이싱·평가합니다. | [docs](https://docs.databricks.com/en/mlflow/index.html) |
+
+## 개요
+
+3가지 유형의 에이전트를 만들고, 하나의 **Supervisor Agent**로 통합합니다.
+
+| 에이전트 | 역할 | 데이터 소스 | 사용 시나리오 |
+|---------|------|-----------|-------------|
+| **Knowledge Assistant (KA)** | 제조 SOP·품질기준·설비 트러블슈팅 Q&A | 문서 (Vector Search) | "AA 틸트 규격은?", "리플로우 피크온도 기준은?" |
+| **Genie Agent** | 데이터 기반 분석 질의 | Gold 테이블 (Genie Space) | "이번 주 라인2 수율은?", "불량 파레토 Top5는?" |
+| **Supervisor Agent** | 위 에이전트 오케스트레이션 | 위 에이전트들 | 질문 의도에 따라 적절한 에이전트로 라우팅 |
+
+**Supervisor 라우팅 규칙**
+
+| 사용자 질문 유형 | 라우팅 대상 | 예시 |
+|---------------|-----------|------|
+| 규격/기준/사용법/트러블슈팅 | **KA** (문서 기반) | "AA 공정 틸트 허용 규격이 얼마야?" |
+| 데이터/통계/추이/비교 | **Genie Agent** (데이터 기반) | "라인2 이번 주 수율 추이는?" |
+| 복합 (원인 분석 + 대응) | **KA + Genie 둘 다** | "라인2 MTF 불량이 급증했는데 원인과 대응 방법은?" |
+
+---
+
+## Part A: Knowledge Assistant (KA) — 제조 지식 챗봇
+
+### 개념
+
+Knowledge Assistant는 **비정형 문서**(SOP, 품질기준서, 설비 매뉴얼)를 Vector Search로 인덱싱하여, 질문에 관련 문서를 찾아 답변하는 RAG 기반 에이전트입니다.
+
+> 💡 **왜 Vector Search인가?** SQL의 `LIKE '%틸트%'`는 정확히 "틸트"가 든 문서만 찾지만, Vector Search는 "광축 정렬 기울기 허용치"처럼 **의미가 비슷한 문서**도 찾아냅니다. 이것이 RAG(관련 문서를 먼저 검색 → LLM이 답변 생성)의 핵심입니다.
+
+### Step 1: 지식 문서 준비
+
+> [06. 비정형 AI 함수](06-ai-functions-unstructured)에서 SOP/매뉴얼 PDF를 파싱해 두었다면 그 결과를 활용합니다. 여기서는 KA용 지식 베이스 테이블을 직접 생성하는 경로를 제공합니다.
+
+#### Genie Code 프롬프트: 제조 지식 베이스 생성
+
+```
+카메라 모듈 제조 현장용 지식 베이스 문서를 생성해줘. Delta 테이블로 만들어줘.
+
+테이블: ccm_factory.bronze.mfg_knowledge_base
+
+컬럼:
+- doc_id: STRING (고유 문서 ID)
+- category: STRING (카테고리)
+- title: STRING (제목/질문)
+- content: STRING (본문, 500~1500자, 실제 제조 SOP 수준의 상세한 한국어)
+- tags: `ARRAY<STRING>` (관련 태그)
+- process_stage: STRING (관련 공정: SMT/DISPENSE/REFLOW/ALIGN/AOI/FINAL/COMMON)
+- last_updated: DATE
+
+카테고리별 문서 (총 90개):
+
+1. 공정 SOP (20개):
+   - SMT 실장 표준 작업 (노즐/피더 셋업, 실장 offset 관리 기준)
+   - 디스펜싱 도포량/압력 관리, UV 경화 조건 (LENS_BOND 경화량 규격)
+   - 리플로우 프로파일 설정 (존별 온도, 피크온도 240~250°C, TAL 관리)
+   - Active Alignment 정렬 절차 (focus/tilt/rotation, MTF 목표)
+   - AOI 검사 셋업, 최종 화질검사(MTF/데드픽셀/이물) 판정 기준
+
+2. 품질 기준 (20개):
+   - MTF SFR 규격 (모델별 target, 중심/코너 최소치)
+   - AA 틸트 허용 규격 (arcmin 기준), focus Z 허용 편차
+   - 데드픽셀/이물/얼룩 판정 기준, SNR/왜곡/주변광량비 규격
+   - Cpk 공정능력 관리 기준 (1.33 이상), SPC 관리한계
+
+3. 설비 트러블슈팅 (20개):
+   - SMT 노즐 잼/픽업불량/인식불량 대응
+   - 디스펜서 니들 막힘, 진공 누설 대응
+   - 리플로우 온도 편차, 컨베이어 이상 대응
+   - AA 장비 정렬 실패(RETRY 반복) 대응
+   - 설비 진동/온도 이상 전조 시 점검 절차
+
+4. 불량 대응 (20개):
+   - 불량코드별 원인/조치 (PLACEMENT/BONDING/ALIGNMENT/CONTAMINATION/IMAGE_QUALITY)
+   - 자재 로트 불량 발생 시 격리/추적 절차
+   - REWORK/SCRAP 판정 기준, 8D 리포트 작성 가이드
+
+5. 클린룸/환경 관리 (10개):
+   - 클린룸 등급/파티클 관리 기준, 온습도/차압 관리
+   - ESD 관리, 파티클 급증 시 대응
+
+Delta 테이블로 저장하고, 실제 제조 현장 SOP 수준의 상세하고 정확한 한국어 콘텐츠로 작성해줘.
+```
+
+### Step 2: Vector Search 엔드포인트 생성 (미리 시작)
+
+> ⚠️ Vector Search 엔드포인트/인덱스 생성은 **5~10분** 소요됩니다. KA 생성 전에 먼저 시작하세요.
+
+```
+Vector Search 엔드포인트를 만들어줘.
+- 이름: vs-endpoint-ccm
+- 타입: Managed (Databricks 관리)
+상태가 Online이 되면 알려줘.
+```
+
+### Step 3: Knowledge Assistant 생성
+
+#### Genie Code 프롬프트 (AI Dev Kit MCP: manage_ka)
+
+```
+Knowledge Assistant를 만들어줘.
+
+설정:
+- 이름: 카메라 모듈 제조 가이드
+- 설명: 카메라 모듈 제조 공정의 SOP, 품질 기준, 설비 트러블슈팅, 불량 대응에 대해 답변합니다.
+- 지식 소스: ccm_factory.bronze.mfg_knowledge_base 테이블
+  - 임베딩 대상 컬럼: content
+  - 메타데이터 컬럼: category, title, tags, process_stage
+- Vector Search 엔드포인트: vs-endpoint-ccm
+- Vector Search 인덱스: vs-index-mfg-knowledge
+- 임베딩 모델: databricks-gte-large-en
+- LLM 모델: databricks-claude-sonnet-4 (또는 databricks-meta-llama-3.3-70b-instruct)
+- System Prompt:
+
+"당신은 카메라 모듈 제조 공정 전문 어시스턴트입니다.
+규칙:
+1. 반드시 제공된 지식 문서에 기반하여 답변하세요.
+2. 문서에 없는 내용은 '해당 정보를 지식 베이스에서 찾을 수 없습니다'라고 답하세요.
+3. 한국어로 답변하되, 기술 용어는 영문 병기 (예: 광축 정렬(Active Alignment), 공정능력(Cpk))
+4. 규격/수치를 답할 때는 단위와 관리 기준(상/하한)을 명확히 하세요.
+5. 절차가 필요하면 번호 매기기를 사용하세요.
+6. 안전/품질 주의사항이 있으면 반드시 언급하세요."
+
+생성 후 테스트 질문 3개를 실행해줘:
+1. "Active Alignment 공정에서 틸트 허용 규격은 얼마인가요?"
+2. "리플로우 피크 온도 관리 기준을 알려주세요"
+3. "SMT 노즐 픽업 불량이 자주 발생할 때 어떻게 대응하나요?"
+```
+
+### KA 생성 확인
+
+```
+"카메라 모듈 제조 가이드" Knowledge Assistant가 정상 생성됐는지 확인해줘.
+Vector Search 엔드포인트 상태와 인덱스 문서 수도 알려줘.
+```
+
+> ⚠️ 인덱싱은 **5~10분** 소요됩니다. 인덱스 상태가 "PROVISIONING"이면 "ONLINE"이 될 때까지 기다린 뒤 테스트하세요. 인덱싱 전에 질문하면 "관련 문서를 찾을 수 없습니다"가 나옵니다.
+
+### Step 3: KA 테스트 & 평가
+
+```
+"카메라 모듈 제조 가이드" KA에 다음 질문을 보내고 답변 품질을 평가해줘.
+
+평가 기준 (각 1~5점):
+- 정확성: 규격/수치가 문서와 일치하는지
+- 완전성: 질문에 충분히 답했는지
+- 관련성: 검색된 문서가 질문과 관련있는지
+- 가독성: 답변이 읽기 쉬운지
+
+테스트 질문 10개:
+1. "MTF SFR 중심 규격은 모델마다 어떻게 다른가요?"
+2. "데드픽셀 몇 개부터 불량으로 판정하나요?"
+3. "디스펜싱 UV 경화량 규격은?"
+4. "Cpk 관리 기준은 얼마인가요?"
+5. "AA 장비가 RETRY를 반복하면 어떻게 하나요?"
+6. "이물(particle) 불량이 발생하면 원인을 어떻게 찾나요?"
+7. "리플로우 TAL이란 무엇이고 관리 기준은?"
+8. "자재 로트 불량이 확인되면 어떤 절차를 따르나요?"
+9. "클린룸 파티클이 급증하면 어떻게 대응하나요?"
+10. "8D 리포트는 어떻게 작성하나요?"
+
+각 질문의 4개 점수와 종합 평균을 표로 보여줘.
+평균 4점 미만 질문은 mfg_knowledge_base 문서 보강 후보야.
+```
+
+---
+
+## Part B: Genie Agent — 데이터 분석 에이전트
+
+### 개념
+
+Genie Agent는 [05. Genie 에이전트](05-genie-agent)에서 만든 **Genie Space**를 도구로 사용하여, 데이터 질문에 SQL로 답변합니다.
+
+#### Genie Code 프롬프트 (AI Dev Kit MCP)
+
+```
+다음 Genie Space들을 도구로 사용하는 Genie Agent를 만들어줘.
+
+설정:
+- 이름: 스마트팩토리 데이터 분석가
+- 설명: 카메라 모듈 생산 수율, 불량, 설비 OEE, 공정 품질을 분석합니다.
+- 연결할 Genie Space:
+  1. "생산/수율 분석" (수율/FPY/택트타임)
+  2. "품질/불량 분석" (불량 파레토/AA MTF/Cpk/자재 상관)
+  3. "설비 운영/OEE 분석" (OEE/설비건강/downtime)
+- LLM 모델: databricks-claude-sonnet-4
+
+System Prompt:
+"당신은 카메라 모듈 스마트팩토리 데이터 분석 전문가입니다.
+규칙:
+1. 수율/생산 질문 → '생산/수율 분석' Genie Space
+2. 불량/품질 질문 → '품질/불량 분석' Genie Space
+3. 설비/OEE 질문 → '설비 운영/OEE 분석' Genie Space
+4. 숫자 결과는 표로 정리, 추세/비교 시 증감률(%) 포함
+5. 한국어로 답변하되 전문 용어는 영문 병기"
+
+생성 후 테스트:
+1. "이번 주 라인2의 수율 추이를 분석해줘"
+2. "가장 많이 발생한 불량 코드 Top5는?"
+3. "OEE가 가장 낮은 설비 3대를 알려줘"
+```
+
+### Genie Agent 생성 확인
+
+```
+"스마트팩토리 데이터 분석가" Genie Agent가 정상 생성됐는지,
+연결된 Genie Space 3개가 모두 인식되는지 확인해줘.
+```
+
+---
+
+## Part C: Supervisor Agent — 멀티 에이전트 오케스트레이션
+
+### 개념
+
+Supervisor Agent는 사용자 질문의 **의도(intent)**를 파악하여 적절한 하위 에이전트로 라우팅합니다. 복합 질문은 여러 에이전트를 함께 호출합니다.
+
+#### Genie Code 프롬프트 (AI Dev Kit MCP: manage_mas)
+
+```
+Supervisor Agent를 만들어줘.
+
+설정:
+- 이름: 스마트팩토리 AI 어시스턴트
+- 설명: 카메라 모듈 제조에 관한 모든 질문에 답하는 통합 AI 어시스턴트. 공정 가이드, 데이터 분석, 불량 대응을 지원합니다.
+- 하위 에이전트:
+  1. "카메라 모듈 제조 가이드" (Knowledge Assistant) — 규격/SOP/트러블슈팅
+  2. "스마트팩토리 데이터 분석가" (Genie Agent) — 수율/불량/설비 데이터
+- LLM 모델: databricks-claude-sonnet-4
+
+System Prompt:
+"당신은 카메라 모듈 스마트팩토리 통합 AI 어시스턴트입니다.
+
+## 라우팅 규칙
+### Knowledge Assistant로 보낼 질문:
+- '~규격은?', '~기준은?', '~하는 방법', '~설정', '~대응'
+- 공정 SOP, 품질 기준, 설비 트러블슈팅, 불량 대응
+- 예: 'AA 틸트 규격', '리플로우 피크온도 기준', '노즐 픽업불량 대응'
+
+### Genie Agent(데이터 분석)로 보낼 질문:
+- '얼마나', '몇 개', '추이', '비교', '분석', '수율', 'OEE'
+- 숫자/통계/트렌드가 포함된 질문
+- 예: '이번 주 라인2 수율', '불량 Top5', '설비 OEE 순위'
+
+### 두 에이전트 모두 필요한 질문 (원인 분석 + 대응):
+- 예: '라인2 MTF 불량이 급증했는데 원인과 대응 방법은?'
+  → 먼저 Genie: 라인2 MTF 불량 통계/추세/설비·자재 상관 조회
+  → 그 다음 KA: MTF/AA 불량 원인 및 대응 SOP 제공
+
+## 답변 규칙
+1. 라우팅 결정을 사용자에게 노출하지 마세요
+2. 여러 에이전트 답변은 자연스럽게 하나로 통합
+3. 한국어로 답변하되 기술 용어는 영문 병기
+4. 답변 끝에 '🔍 관련 질문'으로 후속 질문 2~3개 제안"
+
+Supervisor Agent를 생성해줘.
+```
+
+### Step 2: Supervisor 통합 테스트
+
+> 💡 **테스트 전략**: 5개를 한꺼번에 하지 말고 **단순 → 복잡** 순서로 하나씩. 각 사이에 결과를 확인하고 문제가 있으면 먼저 해결하세요.
+
+| 순서 | 목적 | 프롬프트 | 기대 라우팅 |
+|------|------|---------|-----------|
+| 1 | KA 라우팅 | "Active Alignment 틸트 허용 규격은?" | → KA |
+| 2 | Genie 라우팅 | "이번 주 라인2 수율 추이는?" | → Genie |
+| 3 | 하이브리드 | "라인2 MTF 불량 급증, 현황과 대응은?" | → Genie + KA |
+| 4 | 의사결정 지원 | "Sup_S7 자재 로트 불량률과 격리 절차는?" | → Genie + KA |
+| 5 | 복합 분석 | "리플로우 온도 이상 설비의 불량 영향과 점검 절차" | → Genie + Genie + KA |
+
+```
+"스마트팩토리 AI 어시스턴트" Supervisor Agent에 다음 시나리오를 순서대로 테스트해줘:
+
+시나리오 1 — 순수 가이드:
+"Active Alignment 공정에서 틸트 허용 규격이 얼마인가요?"
+→ 기대: KA가 품질 기준 문서 기반 규격 제공
+
+시나리오 2 — 순수 데이터:
+"이번 주 라인2의 일별 수율 추이를 보여줘"
+→ 기대: Genie가 daily_yield_summary 조회
+
+시나리오 3 — 하이브리드:
+"최근 라인2에서 MTF 불량이 많이 늘어난 것 같은데, 현황과 대응 방법을 알려줘"
+→ 기대:
+  1. Genie → aa_quality_trend/defect_pareto에서 MTF 불량 추세 조회
+  2. KA → AA/MTF 불량 원인 및 대응 SOP 제공
+
+시나리오 4 — 의사결정 지원:
+"Sup_S7 공급사 자재 로트의 불량률이 높다는데, 실제 수치와 로트 격리 절차를 알려줘"
+→ 기대:
+  1. Genie → material_defect_correlation에서 Sup_S7 불량률
+  2. KA → 자재 로트 불량 격리/추적 절차
+
+시나리오 5 — 복합 분석 + 가이드:
+"리플로우 피크온도가 규격을 벗어난 설비에서 불량이 늘었는지, 원인과 점검 절차는?"
+→ 기대:
+  1. Genie → 해당 설비 불량 통계
+  2. Genie → reflow 파라미터 이상 분석
+  3. KA → 리플로우 온도 이상 점검 SOP
+
+각 시나리오별로 호출된 에이전트, 응답 시간(초), 답변 품질(1~5점), 라우팅 정확성을 표로 정리해줘.
+```
+
+---
+
+## Part D: Lakebase 연동 — 에이전트 세션 관리 (선택)
+
+> Lakebase 사용 가능한 환경에서만 진행합니다. 먼저 확인하세요:
+> ```
+> 내 환경에서 Lakebase(Databricks managed PostgreSQL)를 사용할 수 있는지 확인해줘.
+> ```
+> 사용 불가하면 이 Part를 건너뛰세요. 에이전트는 Lakebase 없이도 동작합니다.
+
+### 개념
+
+대화 이력을 Lakebase에 저장하면 컨텍스트 유지, 사용자별 선호 학습, 사용 패턴 분석이 가능합니다.
+
+#### Genie Code 프롬프트 (AI Dev Kit MCP: manage_lakebase_database)
+
+```
+Lakebase 데이터베이스를 만들어줘.
+
+설정:
+- 데이터베이스 이름: ccm_agent_db
+- 카탈로그: ccm_factory
+
+테이블:
+1. chat_sessions:
+   - session_id UUID PRIMARY KEY
+   - user_name VARCHAR(100)
+   - line_context VARCHAR(20)   -- 관심 라인
+   - started_at TIMESTAMP DEFAULT NOW()
+   - ended_at TIMESTAMP
+   - total_messages INT DEFAULT 0
+   - satisfaction_score INT
+
+2. chat_messages:
+   - message_id UUID PRIMARY KEY
+   - session_id UUID REFERENCES chat_sessions
+   - role VARCHAR(20)           -- 'user' or 'assistant'
+   - content TEXT
+   - agent_used VARCHAR(50)     -- 'ka', 'genie', 'supervisor'
+   - response_time_ms INT
+   - created_at TIMESTAMP DEFAULT NOW()
+
+3. agent_feedback:
+   - feedback_id UUID PRIMARY KEY
+   - message_id UUID REFERENCES chat_messages
+   - is_helpful BOOLEAN
+   - feedback_text TEXT
+   - created_at TIMESTAMP DEFAULT NOW()
+```
+
+---
+
+## Part E: 에이전트 고도화 팁
+
+### 1. Knowledge Assistant 정확도 향상
+
+| 방법 | 설명 | 효과 |
+|------|------|------|
+| **청킹 최적화** | content를 500자 단위 분할, 오버랩 100자 | 검색 정밀도 |
+| **메타데이터 필터** | process_stage/category 사전 필터 | 불필요 문서 제외 |
+| **Hybrid Search** | 키워드 + 벡터 결합 | 정확한 용어 매칭 + 의미 검색 |
+| **리랭킹** | 상위 20개를 LLM으로 재정렬 | 최종 답변 품질 |
+
+### 2. Genie Agent 정확도 향상
+
+| 방법 | 설명 |
+|------|------|
+| **샘플 질문 추가** | 실패한 질문을 Genie Space 샘플로 등록 |
+| **테이블 COMMENT 보강** | 컬럼 값 범위/단위 명시 |
+| **General Instructions** | 제조 용어 사전(수율/FPY/OEE/Cpk 정의) |
+| **Gold 단순화** | 복잡 조인을 사전 수행하여 SQL 복잡도 감소 |
+
+### 3. Supervisor 라우팅 정확도 향상
+
+| 방법 | 설명 |
+|------|------|
+| **의도 분류 예시 추가** | System Prompt에 더 많은 제조 도메인 예시 |
+| **Fallback** | 라우팅 불확실 시 둘 다 호출 후 통합 |
+| **피드백 루프** | agent_feedback 데이터로 지속 개선 |
+
+### 4. MLflow로 품질 평가
+
+```
+"스마트팩토리 AI 어시스턴트"의 최근 대화들을 MLflow Tracing으로 확인하고,
+라우팅 정확도와 응답 품질을 평가해줘. 개선이 필요한 질문 유형을 알려줘.
+```
+
+---
+
+## Part F: 실전 데모 시나리오
+
+교육 마무리 데모로 아래 대화를 시연합니다.
+
+```
+사용자: 최근 라인2에서 MTF 불량이 늘어난 것 같은데, 현황이 어때?
+
+AI: 최근 7일간 라인2의 MTF 관련 품질을 분석한 결과입니다:
+    - AA 공정 MTF 불량률: 6.8% (전주 대비 +2.3%p 증가)
+    - 평균 MTF 중심값: 79.2 (전주 82.5에서 하락)
+    - FAIL 집중 설비: EQ_L2_AA_02 (불량률 11.5%)
+    - 특정 자재 로트(Sup_S7 렌즈)와 상관 관찰됨
+
+사용자: 왜 늘었을까? 그리고 현장에 안내할 대응 방법은?
+
+AI: [데이터 분석]
+    EQ_L2_AA_02 설비에서 tilt_y 편차가 규격(±3 arcmin)을 초과하는 비율이 증가했습니다.
+    같은 기간 Sup_S7 렌즈 로트 투입 비율이 높았습니다.
+
+    [대응 가이드 — 제조 SOP]
+    1. AA 장비 점검: tilt 캘리브레이션 재수행 (EQ_L2_AA_02)
+    2. 자재 격리: Sup_S7 해당 로트 격리 후 수입검사 재확인
+    3. MTF 규격 재판정: 경계 로트 샘플 재측정
+    4. 8D 리포트 착수: root_cause = ALIGNMENT/MATERIAL 병행 조사
+
+    🔍 관련 질문:
+    - EQ_L2_AA_02의 최근 tilt 편차 추이를 볼 수 있나요?
+    - Sup_S7 로트가 투입된 다른 라인도 영향이 있나요?
+    - 이 설비의 최근 점검(PM) 이력은?
+```
+
+---
+
+## 핵심 포인트 정리
+
+| 배운 것 | Databricks 기능 | 비즈니스 가치 |
+|---------|----------------|-------------|
+| Knowledge Assistant | Vector Search, RAG | 24시간 제조 지식 셀프서비스, 매뉴얼 검색 자동화 |
+| Genie Agent | Genie Space (NL2SQL) | 비개발자 셀프서비스 데이터 분석 |
+| Supervisor Agent | Multi-Agent 오케스트레이션 | 단일 인터페이스로 분석+가이드 통합 |
+| Lakebase 연동 | PostgreSQL OLTP | 대화 이력·피드백 저장 |
+| 에이전트 평가 | MLflow on Databricks | 품질 모니터링·지속 개선 |
+
+---
+
+## 🎉 전체 워크샵 완료!
+
+이 워크샵을 통해 **Genie Code만으로** 구축한 것:
+
+| 단계 | 구축한 것 |
+|------|---------|
+| **데이터** | 카메라 모듈 공장 Bronze 17테이블 (~250만 건, 임포트 또는 생성) |
+| **EDA** | 프로파일링·품질 진단·상관 탐색 |
+| **파이프라인** | Bronze → Silver → Gold 자동화 (SDP + Expectations + Job) |
+| **분석** | AI/BI 대시보드 3개 + Genie Space 3개 |
+| **비정형** | AI 함수로 RMA·8D·SOP·불량이미지 처리 |
+| **AI 에이전트** | Supervisor Agent (Knowledge Assistant + Genie Agent) |
+| **도구** | 전 과정을 Genie Code + AI Dev Kit MCP로 구축 |
+
+> **마무리 메시지**: 코드를 직접 쓰지 않고도, 자연어 프롬프트만으로 데이터 플랫폼의 전 스택을 안전하게 구축했습니다. 이제 각자의 실제 제조 데이터에 적용해 보세요.

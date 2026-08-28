@@ -1,0 +1,1143 @@
+---
+title: "부록 — 샘플 프롬프트 모음"
+---
+
+이 페이지는 모듈 0~7에 나오는 **모든 Genie Code 프롬프트**를 용도별로 한곳에 모은 치트시트입니다. 실습 중 필요한 프롬프트를 여기서 바로 복사해 쓰세요. 각 프롬프트에는 출처 모듈과 실행 방식 배지를 붙였습니다.
+
+## 표기 범례
+
+| 배지 | 의미 |
+|------|------|
+| 🟢 **네이티브** | Genie Code 기본 기능만으로 실행 (AI Dev Kit MCP 불필요) — SQL·데이터 조회·CTAS·AI 함수 등 |
+| 🔵 **MCP/UI** | 크로스 프로덕트 생성. AI Dev Kit MCP가 있으면 한 대화로, 없으면 해당 **UI**(Genie · Dashboards · Agent Bricks · Lakeflow)에서 생성 |
+
+> **AI Dev Kit MCP는 선택입니다.** 대부분은 🟢 네이티브로 되고, 🔵는 MCP 없이도 UI에서 만들 수 있습니다(모듈 0 Part F 참조). 프롬프트는 필요에 맞게 표(테이블명·수치)를 바꿔 재사용하세요.
+
+---
+
+## 1. 환경 설정 · 사전점검
+
+**워크샵 사전 확인** 🟢 — 모듈 0 · Part C
+```
+워크샵 사전 확인을 해줘:
+1. 지금 Serverless 컴퓨트에 연결되어 있는지, Python/SQL 실행이 되는지 간단히 테스트
+2. 내가 접근 가능한 카탈로그 목록 (SHOW CATALOGS)
+3. %pip install faker 가 되는지 (pyspark 관련 패키지는 테스트하지 마)
+4. 현재 워크스페이스 리전과, AI 기능(Genie Code)이 활성 상태인지
+결과를 표로 요약해줘.
+```
+
+**Custom Instructions 적용 확인** 🟢 — 모듈 0 · Part E
+```
+Custom Instructions가 적용됐는지 테스트해줘.
+ccm_factory.bronze 스키마에 test_table 이름으로 1행짜리 Delta 테이블을 만들고 바로 삭제해줘.
+권한·컴퓨트가 정상인지 확인용이야.
+```
+
+**활성 MCP 도구 확인** 🔵 — 모듈 0 · Part F (MCP 사용 시)
+```
+현재 활성화된 MCP 도구가 몇 개이고 어떤 도구들인지 목록으로 보여줘. 20개 제한에 걸리지 않는지도 확인해줘.
+```
+
+**MCP 앱 warm-up** 🔵 — 모듈 0 · Part F (MCP 사용 시)
+```
+현재 사용자 정보 알려줘
+```
+
+---
+
+## 2. 카탈로그 · 스키마 · 볼륨 (Unity Catalog)
+
+**UC 환경 설정** 🟢 — 모듈 0 · Part D
+```
+Unity Catalog에 다음 환경을 설정해줘 (기존 오브젝트가 있으면 DROP하지 말고 스킵):
+
+- 카탈로그: ccm_factory
+- 스키마: bronze, silver, gold, quarantine
+- 볼륨: bronze 스키마에 raw_files 볼륨 (PDF/이미지 등 비정형 저장용)
+
+각 스키마에 COMMENT:
+- bronze: 'Raw 제조/공정/검사/설비 텔레메트리'
+- silver: '정제·표준화된 데이터'
+- gold: '수율·불량·OEE 등 비즈니스 집계'
+- quarantine: '데이터 품질 위반 격리'
+```
+
+**스키마/COMMENT 확인** 🟢 — 모듈 0 · Part D
+```
+ccm_factory 카탈로그의 모든 스키마와 COMMENT를 보여줘.
+```
+
+---
+
+## 3. 데이터 임포트 / 가상 데이터 생성
+
+> 실제 교육은 **임포트**(방식 1/2)가 기본. 생성 프롬프트는 "Genie Code로 이렇게 만들 수 있다" 시연용. (모듈 1 참조)
+
+**샘플 데이터 임포트 — 공유 볼륨 parquet** 🟢 — 모듈 1 · Part A
+```
+공유 볼륨의 카메라 모듈 공장 시드 데이터를 내 카탈로그로 임포트해줘.
+
+- 소스: /Volumes/main/shared/workshop_seed/ccm_factory/  (하위에 테이블별 parquet 폴더 17개)
+- 타겟: ccm_factory.bronze 스키마의 동일 이름 Delta 테이블 17개
+- 각 parquet 폴더를 읽어 CREATE OR REPLACE TABLE 로 Delta 저장
+- 원본 스키마/컬럼 코멘트를 최대한 보존하고, 없으면 테이블 코멘트를 추가
+- 완료 후 17개 테이블의 row count를 표로 보여줘
+```
+
+**샘플 데이터 임포트 — Delta Sharing/Marketplace** 🟢 — 모듈 1 · Part A
+```
+Delta Sharing으로 공유된 카탈로그 <shared_catalog>.ccm_seed 의 bronze 테이블 17개를
+내 ccm_factory.bronze 로 복제(CTAS)해줘. 완료 후 row count를 확인해줘.
+```
+
+**임포트 검증** 🟢 — 모듈 1 · Part A
+```
+ccm_factory.bronze 스키마의 테이블 17개가 모두 로드됐는지,
+각 테이블 row count와 참조 무결성(serial_id/equipment_id/material_lot_id)이 정상인지 요약해줘.
+```
+
+<Accordion title="데이터 생성 프롬프트 (시연용) — 마스터 3종 + 로그 테이블">
+
+**설비 마스터 생성** 🟢 — 모듈 1
+```
+카메라 모듈 조립 공장의 설비 마스터 300대를 생성해줘.
+
+조건:
+- 테이블: ccm_factory.bronze.equipment_master
+- 라인 LINE_1~LINE_6, 각 라인은 공정 스테이션 6종(SMT, DISPENSE, REFLOW, ALIGN, AOI, FINAL)을 보유
+- 스테이션별 설비 수를 다르게: SMT_MOUNTER 라인당 3~4대, 나머지는 라인당 1~2대
+- equipment_id 형식: "EQ_{line 약자}_{type 약자}_{2자리}" (예: EQ_L1_AA_01)
+- vendor는 type에 따라: SMT_MOUNTER→ASM/Fuji/Hanwha, DISPENSER→Nordson, AOI→Koh_Young, FINAL_TESTER/AA→TRIOPTICS
+- install_date: 2021-01 ~ 2024-12
+- rated_capacity_uph: SMT 1000~1500, 그 외 600~1000
+- status 분포: RUNNING(80%), IDLE(10%), MAINTENANCE(7%), DOWN(3%)
+
+Delta 테이블로 저장하고 모든 컬럼에 COMMENT를 달아줘.
+```
+
+**제품/모델 마스터 생성** 🟢 — 모듈 1
+```
+카메라 모듈 제품(모델) 마스터 60종을 생성해줘.
+
+조건:
+- 테이블: ccm_factory.bronze.product_master
+- 고객명은 익명으로: Global_A(35%), Global_B(25%), Global_C(20%), Domestic_D(20%)
+- module_type 분포: OIS(40%), AF(45%), ToF(15%)
+- resolution_mp: 12/48/50/108 중, OIS/ToF는 고화소 비중 높게
+- model_code 형식: "CCM_{고객약자}_{화소}MP_{모듈타입}" (예: CCM_A_48MP_OIS)
+- target_mtf_center: 80~90, spec_mtf_min: target - 12~18
+- lens_count: 5~7 (고화소일수록 많게)
+- launch_date: 2023-01 ~ 2025-06
+
+Delta 테이블로 저장하고 COMMENT를 달아줘.
+```
+
+**자재 로트 마스터 생성** 🟢 — 모듈 1
+```
+카메라 모듈용 자재 입고 로트 20,000건을 생성해줘.
+
+조건:
+- 테이블: ccm_factory.bronze.material_lot_master
+- material_type 분포: LENS(25%), IMAGE_SENSOR(20%), VCM(15%), PCB(15%), IR_FILTER(15%), ADHESIVE(10%)
+- supplier: Sup_S1~Sup_S8 (일부 공급사는 defect_rate가 의도적으로 높게 — Sup_S7, Sup_S8은 평균의 2~3배)
+- material_lot_id 형식: "MLOT_{type약자}_{YYYYMMDD}_{4자리}"
+- incoming_date: 2024-06 ~ 2025-12
+- incoming_inspection_result: PASS(90%), CONDITIONAL_PASS(8%), FAIL(2%)
+- defect_rate_incoming_pct: 대부분 0~2%, 일부 공급사/로트는 3~8%
+- spec_grade: A(60%), B(30%), C(10%)
+
+Delta 테이블로 저장하고 COMMENT를 달아줘.
+```
+
+**작업지시 생성** 🟢 — 모듈 1
+```
+작업지시(work_orders) 15,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.work_orders
+- model_code는 product_master에서 샘플링, line_id는 LINE_1~6
+- planned_qty: 3,000~10,000
+- shift: DAY(40%), SWING(35%), NIGHT(25%)
+- planned_start: 2025-01-01~2025-12-31, planned_end는 start + 8시간
+- wo_status: COMPLETED(85%), IN_PROGRESS(10%), HOLD(5%)
+Delta로 저장, COMMENT 추가.
+```
+
+**제품 추적성 생성** 🟢 — 모듈 1
+```
+제품 추적성(traceability) 500,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.traceability
+- serial_id는 production_events의 시리얼과 정합, model_code/wo_id 연결
+- material_lot_ids: material_lot_master에서 유형별로 하나씩 매핑(IMAGE_SENSOR/LENS/VCM/PCB/IR_FILTER/ADHESIVE)
+- station_equipment: 각 스테이션에서 실제 사용된 설비 ID
+- final_result: PASS(92%), FAIL(5%), REWORK(3%)
+Delta로 저장, COMMENT 추가.
+```
+
+**SMT 실장 로그 생성** 🟢 — 모듈 1
+```
+SMT 실장 로그(smt_placement_logs) 300,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.smt_placement_logs
+- serial_id/equipment_id는 SMT 스테이션 설비와 정합
+- placement_offset_x/y_um: 정상 -30~30µm(평균0), 일부 설비/노즐은 드리프트로 편향
+- pickup_result: OK(97%), PICKUP_FAIL(2%), RECOGNITION_FAIL(1%)
+- [의도적 이슈] 약 0.5% 레코드는 offset이 mm 단위로 잘못 기록(값이 1000배)
+Delta로 저장, COMMENT 추가.
+```
+
+**Active Alignment 생성** 🟢 — 모듈 1 (핵심 공정)
+```
+Active Alignment 공정(active_alignment) 250,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.active_alignment
+- serial_id/equipment_id는 ALIGN 스테이션과 정합, model_code 조인으로 target_mtf 참조
+- mtf_center_pct: 정상 78~92 (모델 target 근처), FAIL은 60~75
+- mtf_corner_pct: center보다 8~15 낮음
+- tilt_x/y_arcmin: 정상 -3~3, 불량은 절대값 5 이상
+- focus_z_um: 목표 대비 ±5µm 분포, uv_cure_dose_mj: 800~1600
+- aa_result: PASS(90%), FAIL(7%), RETRY(3%). FAIL은 MTF 낮거나 tilt 큰 경우
+- [의도적 이슈] 약 0.3%는 mtf_center_pct > 100 (센서 오류값)
+Delta로 저장, COMMENT 추가.
+```
+
+**설비 센서 텔레메트리 생성** 🟢 — 모듈 1
+```
+설비 센서 텔레메트리(equipment_sensor_logs) 300,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.equipment_sensor_logs
+- equipment_id는 equipment_master에서 샘플링(활성 설비), 1분 간격
+- temperature_c: 정상 25~45, 노후 설비는 서서히 상승 추세
+- vibration_mm_s: 정상 0.5~3.0, 고장 전조 설비는 5 이상 스파이크
+- vacuum_kpa: -80~-60(음압), motor_current_a: 2~8
+- [의도적 이슈] 약 0.2%는 temperature_c > 200 (센서 스파이크 이상치)
+Delta로 저장, COMMENT 추가.
+```
+
+**AOI 검사 생성** 🟢 — 모듈 1
+```
+AOI 검사(aoi_inspection) 300,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.aoi_inspection
+- 컬럼: event_id, serial_id, equipment_id, timestamp, inspect_stage, defect_flag, defect_type, component_ref, confidence
+- inspect_stage: POST_SMT / POST_DISPENSE
+- defect_flag: false(95%), true(5%)
+- defect_type: defect_flag=true일 때 SOLDER/PLACEMENT/FOREIGN_MATERIAL/POLARITY 중, false면 NULL
+- confidence: 0.7~0.99
+- [의도적 이슈] 약 0.5%는 defect_flag=false인데 defect_type이 채워짐(비즈니스 규칙 위반)
+Delta로 저장, COMMENT 추가.
+```
+
+**최종 화질검사 생성** 🟢 — 모듈 1 (최종 판정)
+```
+최종 화질검사(final_image_test) 250,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.final_image_test
+- serial_id는 FINAL 스테이션 통과 시리얼, model_code 조인으로 spec 참조
+- mtf_sfr_center: PASS 75~92 / FAIL 55~72, corner는 center-10 내외
+- dead_pixel_count: 대부분 0~2, 불량은 3 이상
+- particle_count/blemish_count: 대부분 0~1, 이물 불량은 5 이상
+- snr_db: 34~42, distortion_pct: -2~2, relative_illumination_pct: 45~65
+- test_result: PASS(93%), FAIL(7%) — MTF/데드픽셀/이물 규격 위반 시 FAIL
+- [의도적 이슈] 약 4% 레코드는 snr_db가 NULL (구형 테스터)
+Delta로 저장, COMMENT 추가.
+```
+
+**클린룸 환경 생성** 🟢 — 모듈 1
+```
+클린룸 환경(cleanroom_environment) 150,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.cleanroom_environment
+- 컬럼: line_id, zone, timestamp, temperature_c, humidity_pct, particle_0_3um, particle_0_5um, diff_pressure_pa, esd_voltage_v
+- temperature_c: 22±1.5, humidity_pct: 45±8
+- particle_0_3um: 대부분 100~3000/㎥, 도어 개폐/이상 시 스파이크
+- diff_pressure_pa: 양압 5~15, esd_voltage_v: -50~50
+- 파티클 급증 구간은 이후 CONTAMINATION 불량과 시간 상관되게
+Delta로 저장, COMMENT 추가.
+```
+
+**필드 리턴/RMA 생성 (비정형)** 🟢 — 모듈 1
+```
+필드 리턴/RMA(field_returns) 10,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.field_returns
+- 컬럼: rma_id, serial_id, model_code, customer, return_date, failure_symptom(자연어 한국어), analysis_result(자연어 한국어), root_cause_code, cost_usd
+- failure_symptom 예: "저조도에서 초점이 맞지 않음", "화면 모서리 흐림", "간헐적 화면 흔들림(OIS 불량 의심)", "이물 혼입으로 검은 점", "고온에서 색감 이상"
+- analysis_result 예: "AA 틸트 규격 초과 확인", "VCM 액추에이터 응답 지연", "렌즈 본딩부 UV 경화 부족", "센서 표면 파티클"
+- root_cause_code: ALIGNMENT/ACTUATOR/BONDING/CONTAMINATION/SENSOR
+- return_date: 2025년, cost_usd: 5~50
+Delta로 저장, COMMENT 추가.
+```
+
+> 여기 없는 나머지 로그 테이블(dispensing_process, reflow_profiles, input_switch 등)은 위 패턴을 그대로 따라 모듈 1의 표를 참고해 생성하세요.
+
+</Accordion>
+
+**마스터 생성 확인** 🟢 — 모듈 1
+```
+ccm_factory.bronze의 마스터 3개 테이블(equipment_master, product_master, material_lot_master)의
+row 수와 주요 컬럼 분포(설비 type별, 고객별, 자재 type별)를 요약해서 보여줘.
+```
+
+**Bronze 종합 검증** 🟢 — 모듈 1
+```
+ccm_factory.bronze 스키마의 모든 테이블에 대해 확인해줘:
+1. 각 테이블 row count
+2. serial_id / equipment_id / material_lot_id 의 참조 무결성 (마스터에 없는 값 건수)
+3. timestamp 범위가 2025년 위주인지
+4. 의도적으로 심은 이슈가 실제로 존재하는지:
+   - active_alignment.mtf_center_pct > 100 건수
+   - equipment_sensor_logs.temperature_c > 200 건수
+   - final_image_test.snr_db NULL 비율
+   - production_events 중복(serial+timestamp) 건수
+결과를 데이터 품질 요약 표로 보여줘.
+```
+
+---
+
+## 4. 데이터 탐색 · 프로파일링 (EDA)
+
+**전체 테이블 개요** 🟢 — 모듈 2 · Part A
+```
+ccm_factory.bronze 스키마의 모든 테이블에 대해 다음을 표로 보여줘:
+1. 테이블명, row count, 컬럼 수
+2. 각 테이블의 대략적 용도 (COMMENT 기반)
+3. 시간 컬럼이 있으면 min/max 타임스탬프 범위
+읽기 전용으로만 조회하고, 큰 테이블은 근사치(예: 샘플 또는 메타데이터)를 활용해도 좋아.
+```
+
+**핵심 테이블 컬럼 통계** 🟢 — 모듈 2 · Part A
+```
+다음 3개 핵심 테이블의 수치형 컬럼 통계(count, mean, stddev, min, 25%, 50%, 75%, max)를 보여줘:
+- ccm_factory.bronze.active_alignment (mtf_center_pct, mtf_corner_pct, tilt_x_arcmin, tilt_y_arcmin, focus_z_um)
+- ccm_factory.bronze.final_image_test (mtf_sfr_center, dead_pixel_count, particle_count, snr_db, distortion_pct)
+- ccm_factory.bronze.equipment_sensor_logs (temperature_c, vibration_mm_s, vacuum_kpa, motor_current_a)
+각 컬럼의 값 범위가 물리적으로 말이 되는지(예: MTF는 0~100%) 코멘트도 붙여줘.
+```
+
+**NULL 비율 상위 컬럼** 🟢 — 모듈 2 · Part A
+```
+ccm_factory.bronze의 주요 테이블(final_image_test, dispensing_process, active_alignment, aoi_inspection)에 대해
+컬럼별 NULL 비율을 계산하고, NULL 비율이 높은 상위 5개 컬럼을 테이블별로 보여줘.
+```
+
+**수율/판정 분포** 🟢 — 모듈 2 · Part B
+```
+카메라 모듈 최종 판정 현황을 분석해줘:
+1. final_image_test.test_result (PASS/FAIL) 비율
+2. active_alignment.aa_result (PASS/FAIL/RETRY) 비율
+3. traceability.final_result (PASS/FAIL/REWORK) 비율
+4. 라인(line_id)별, 모델(model_code)별 FAIL 비율 상위 10개
+결과를 막대 차트로 시각화해줘.
+```
+
+**MTF(해상력) 분포** 🟢 — 모듈 2 · Part B
+```
+active_alignment의 mtf_center_pct 와 final_image_test의 mtf_sfr_center 분포를 히스토그램으로 보여줘.
+- product_master의 spec_mtf_min 규격선을 기준으로, 규격 미달 비율도 계산
+- module_type(AF/OIS/ToF)별로 MTF 분포가 어떻게 다른지 비교
+- 규격을 넘는 이상치(mtf > 100 등)가 보이면 표시
+```
+
+**설비/라인/모델 차원 분포** 🟢 — 모듈 2 · Part B
+```
+생산·불량을 여러 차원으로 쪼개서 보여줘:
+1. 라인(line_id)별 생산량(traceability 기준)과 불량률
+2. 설비 유형(equipment_type)별 처리 건수 (production_events 조인)
+3. 모델(model_code)별·고객(customer)별 생산 비중 (도넛 차트)
+4. 근무조(shift)별 불량률 비교 (DAY/SWING/NIGHT)
+시각화도 함께 만들어줘.
+```
+
+### 상관 · 인사이트 탐색
+
+**자재 로트 ↔ 불량 상관** 🟢 — 모듈 2 · Part D
+```
+특정 자재 공급사/로트가 불량과 상관있는지 분석해줘:
+- traceability 로 시리얼별 사용 자재 로트(material_lot_ids)를 펼치고, defect_events / final_image_test 의 불량과 조인
+- 공급사(supplier)별 불량률을 계산하고, 평균 대비 유의하게 높은 공급사를 찾아줘
+- material_lot_master.defect_rate_incoming(수입검사 불량률)과 실제 생산 불량률의 상관도 봐줘
+결과를 공급사별 불량률 막대 차트로 보여줘.
+```
+
+**설비 상태 ↔ 고장(비가동) 상관** 🟢 — 모듈 2 · Part D
+```
+설비 노후/이상 신호가 고장으로 이어지는지 분석해줘:
+- equipment_sensor_logs 에서 설비별 temperature_c, vibration_mm_s 의 일별 추세를 계산
+- equipment_downtime 에서 downtime_type='BREAKDOWN' 발생 설비/시점과 비교
+- BREAKDOWN 직전 구간에서 온도/진동이 상승 추세였는지 확인
+온도·진동 추세와 고장 시점을 같이 볼 수 있는 시각화를 만들어줘.
+```
+
+**클린룸 환경 ↔ 오염 불량 시간 상관** 🟢 — 모듈 2 · Part D
+```
+클린룸 파티클 급증이 오염 불량과 시간적으로 연관되는지 분석해줘:
+- cleanroom_environment 의 particle_0_3um 이 급증한 라인×시간대를 찾고
+- 같은 라인×시간대의 defect_events 중 defect_category='CONTAMINATION' 건수와 비교
+- 파티클 스파이크 이후 일정 시간 내 오염 불량이 증가하는 패턴이 있는지 확인해줘
+```
+
+**AA 공정 ↔ 최종 화질 결과 연계** 🟢 — 모듈 2 · Part D
+```
+Active Alignment 품질이 최종 화질 판정으로 이어지는지 검증해줘:
+- active_alignment.mtf_center_pct, tilt_x/y_arcmin 과 final_image_test.test_result 를 serial 기준 조인
+- AA 단계 MTF가 낮거나 tilt가 큰 시리얼이 최종에서 FAIL 되는 비율이 높은지 확인
+- tilt 절대값 구간별 최종 FAIL률을 표로 보여줘
+```
+
+---
+
+## 5. 데이터 품질 진단
+
+**품질 스코어카드** 🟢 — 모듈 2 · Part C
+```
+ccm_factory.bronze 전체에 대해 데이터 품질 리포트를 만들어줘:
+
+1. 참조 무결성:
+   - production_events / active_alignment / aoi_inspection / final_image_test 의 equipment_id 가 equipment_master 에 없는 건수
+   - traceability / production_events 의 serial 관련 참조가 어긋나는 건수
+   - defect_events 등의 material 참조가 material_lot_master 에 없는 건수
+2. 중복: production_events 에서 동일 (serial_id, timestamp) 중복 건수
+3. 이상치:
+   - active_alignment.mtf_center_pct > 100 건수
+   - equipment_sensor_logs.temperature_c > 200 건수
+   - smt_placement_logs.placement_offset_x_um 이 비정상적으로 큰 값(예: 절대값 500 초과 — mm 단위 혼입 의심) 건수
+4. 결측: final_image_test.snr_db NULL 비율, dispensing_process 에서 LENS_BOND 인데 uv_dose_mj NULL 인 비율
+5. 시간 역전: production_events 에서 같은 serial+station 의 OUT timestamp < IN timestamp 건수
+6. 비즈니스 규칙 위반: aoi_inspection 에서 defect_flag=false 인데 defect_type 이 채워진 건수
+
+결과를 "이슈 유형 | 테이블 | 위반 건수 | 위반 비율 | 영향" 스코어카드 표로 정리해줘.
+```
+
+**진단 결과 해석 & 우선순위** 🟢 — 모듈 2 · Part C
+```
+위 품질 리포트 결과를 보고, Silver 변환에서 먼저 처리해야 할 이슈를 우선순위로 정리해줘.
+각 이슈에 대해: (1) 왜 문제인지 (2) 어떤 분석/집계를 왜곡시키는지 (3) 권장 처리 방법(제거/보정/플래그/격리)을 알려줘.
+```
+
+**Silver 변환 전 최종 스코어카드** 🟢 — 모듈 3 · Part A
+```
+ccm_factory.bronze의 핵심 테이블에 대해 Silver 변환 전 최종 품질 스코어카드를 만들어줘:
+1. final_image_test.snr_db, dispensing_process.uv_dose_mj NULL 비율
+2. production_events 중복(serial_id+timestamp+event_type) 및 OUT<IN 역전 건수
+3. active_alignment.mtf_center_pct>100, equipment_sensor_logs.temperature_c>200 이상치 건수
+4. smt_placement_logs 단위혼입 의심(|offset|>500µm) 건수
+5. serial_id/equipment_id/material_lot_id 참조 무결성 위반 건수
+6. aoi_inspection 비즈니스 규칙 위반(defect_flag=false & defect_type NOT NULL) 건수
+결과를 표로 보여주고, Silver에서 처리 우선순위를 제안해줘.
+```
+
+---
+
+## 6. Silver/Gold 변환 · SDP 파이프라인 · Job
+
+### Silver 정제 (CTAS)
+
+**Silver: aa_measurements** 🟢 — 모듈 3 · Part B
+```
+ccm_factory.bronze.active_alignment를 정제하여 ccm_factory.silver.aa_measurements를 만들어줘.
+
+변환 규칙:
+1. event_id 기준 중복 제거 (최신 timestamp 유지)
+2. serial_id/equipment_id가 마스터에 없으면 ccm_factory.quarantine.aa_orphans로 분리
+3. mtf_center_pct > 100 또는 < 0 인 레코드는 ccm_factory.quarantine.aa_bad_mtf로 분리 (센서 오류)
+4. product_master 조인으로 target_mtf_center, spec_mtf_min 추가
+5. 추가 컬럼:
+   - event_date: timestamp에서 DATE
+   - mtf_margin: mtf_center_pct - spec_mtf_min
+   - tilt_abs_max: GREATEST(ABS(tilt_x_arcmin), ABS(tilt_y_arcmin))
+   - is_tilt_out: tilt_abs_max > 5 (틸트 규격 초과)
+   - aa_pass_recalc: mtf_center_pct >= spec_mtf_min AND tilt_abs_max <= 5
+6. event_date 파티셔닝, (equipment_id, event_date) Z-ORDER
+7. 테이블/컬럼 COMMENT 추가
+
+CREATE OR REPLACE TABLE, CTAS SQL로 만들어줘.
+```
+
+**Silver: production_flow (IN/OUT 쌍 매칭)** 🟢 — 모듈 3 · Part B
+```
+ccm_factory.bronze.production_events를 정제하여 ccm_factory.silver.production_flow를 만들어줘.
+
+변환 규칙:
+1. (serial_id, timestamp, event_type) 기준 중복 제거 (재전송 제거)
+2. serial_id별·station별 IN/OUT 쌍 매칭:
+   - 같은 serial_id+station의 IN과 다음 OUT을 페어링
+   - OUT < IN(시간 역전) 쌍은 ccm_factory.quarantine.flow_time_reversed로 분리
+   - 짝이 없는 고아 이벤트는 flag
+3. equipment_id 참조 무결성 검증
+4. 산출 컬럼 (그레인: serial_id × station 1행):
+   - in_time, out_time, station, equipment_id, wo_id
+   - dwell_time_sec: out_time - in_time (초)
+   - event_date (in_time의 DATE)
+5. dwell_time_sec이 음수이거나 station 표준 범위의 10배 초과면 이상치 flag
+6. event_date 파티셔닝, (station, event_date) Z-ORDER, COMMENT 추가
+
+CREATE OR REPLACE TABLE, CTAS SQL로.
+```
+
+> 나머지 Silver(serials_cleaned, aoi_defects, final_test_clean, sensor_metrics_5min, defect_normalized, downtime_clean, dispensing_clean 등)는 위 두 패턴을 따라 동일 요청으로 생성. (모듈 3 참조)
+
+**Silver 전체 확인** 🟢 — 모듈 3 · Part B
+```
+ccm_factory.silver의 모든 테이블 목록과 row count를 보여줘.
+bronze 원본 대비 필터링/격리된 비율과, quarantine 스키마에 격리된 건수도 테이블별로 알려줘.
+```
+
+### Gold 집계 (CTAS)
+
+**Gold: daily_yield_summary** 🟢 — 모듈 3 · Part C
+```
+silver.final_test_clean, silver.serials_cleaned, silver.production_flow를 결합하여 ccm_factory.gold.daily_yield_summary를 만들어줘.
+
+그레인: line_id × model_code × event_date
+
+컬럼:
+- line_id, model_code, event_date
+- input_qty: 투입 시리얼 수, output_qty: FINAL 통과(PASS) 수
+- yield_pct: output_qty / input_qty * 100
+- fail_qty, scrap_qty, rework_qty
+- avg_mtf_center, avg_snr_db
+- top_defect_category: 최다 불량 카테고리
+
+product_master/equipment 조인으로 customer, module_type 추가.
+event_date 파티셔닝, COMMENT 추가.
+```
+
+**Gold: first_pass_yield (FPY)** 🟢 — 모듈 3 · Part C
+```
+silver.production_flow, silver.aoi_defects, silver.final_test_clean을 결합하여 ccm_factory.gold.first_pass_yield를 만들어줘.
+
+그레인: station × event_date
+
+정의: FPY = (재작업/재검 없이 한 번에 통과한 수) / (해당 스테이션 투입 수) * 100
+
+컬럼:
+- station, event_date
+- input_count, first_pass_count, rework_count
+- fpy_pct: first_pass_count / input_count * 100
+- rolled_throughput_yield: 전 스테이션 FPY의 곱 (라인 전체 직행률, 별도 컬럼 또는 요약행)
+
+event_date 파티셔닝, COMMENT 추가.
+```
+
+**Gold: defect_pareto** 🟢 — 모듈 3 · Part C
+```
+silver.defect_normalized를 집계하여 ccm_factory.gold.defect_pareto를 만들어줘.
+
+그레인: defect_code × line_id × event_date
+
+컬럼:
+- defect_code, defect_category, line_id, event_date
+- defect_count, scrap_count, critical_count
+- pct_of_total: 해당 라인/일 전체 불량 대비 비율
+- cum_pct: 불량 많은 순 누적 비율 (파레토 80/20 분석용, Window)
+- top_root_cause: 최다 root_cause_code
+
+event_date 파티셔닝, COMMENT 추가.
+```
+
+**Gold: oee_by_equipment** 🟢 — 모듈 3 · Part C
+```
+silver.downtime_clean, silver.production_flow, silver.final_test_clean, bronze.equipment_master를 결합하여 ccm_factory.gold.oee_by_equipment를 만들어줘.
+
+그레인: equipment_id × event_date
+
+OEE = 가용성(Availability) × 성능(Performance) × 품질(Quality)
+- availability = (계획가동시간 - 비가동시간) / 계획가동시간
+  · 비가동시간 = downtime_clean의 BREAKDOWN+CHANGEOVER+IDLE 합 (PM 제외 또는 옵션)
+- performance = (실제 처리수 × 이상택트) / 실제가동시간  또는  실제UPH / rated_capacity_uph
+- quality = 양품수 / 총생산수
+
+컬럼:
+- equipment_id, equipment_type, line_id, event_date
+- planned_time_min, downtime_min, run_time_min
+- availability_pct, performance_pct, quality_pct
+- oee_pct: 세 값의 곱
+- breakdown_min, changeover_min, pm_min (유형별 비가동)
+
+event_date 파티셔닝, (equipment_id) Z-ORDER, COMMENT 추가.
+```
+
+**Gold: spc_process_capability (Cpk)** 🟢 — 모듈 3 · Part C
+```
+silver.aa_measurements(및 dispensing_clean)를 집계하여 ccm_factory.gold.spc_process_capability를 만들어줘.
+
+그레인: process × parameter × model_code × event_date
+- process/parameter 예: ALIGN/mtf_center_pct, ALIGN/tilt_abs_max, DISPENSE/volume_mg
+
+각 파라미터에 대해:
+- n, mean, stddev
+- usl, lsl: 규격 상/하한 (파라미터별 정의; 예 mtf_center_pct의 LSL = spec_mtf_min, tilt은 USL=5)
+- cp = (USL - LSL) / (6*stddev)
+- cpk = MIN((USL-mean)/(3*stddev), (mean-LSL)/(3*stddev))
+- capability_grade: cpk>=1.33 '우수', 1.0~1.33 '보통', <1.0 '개선필요'
+
+한쪽 규격만 있는 경우 단측 Cpk로 계산. event_date 파티셔닝, COMMENT 추가.
+```
+
+**Gold: equipment_health_score** 🟢 — 모듈 3 · Part C
+```
+silver.sensor_metrics_5min, silver.downtime_clean, silver.defect_normalized를 결합하여 ccm_factory.gold.equipment_health_score를 만들어줘.
+
+그레인: equipment_id × event_date
+
+컬럼:
+- equipment_id, equipment_type, line_id, event_date
+- avg_temp, max_temp, avg_vibration, max_vibration, spike_count
+- breakdown_count, breakdown_min
+- defect_attributed_count: 해당 설비 스테이션에서 발생한 불량 수
+- health_score (0~100): 100에서 감점
+  · max_temp>80 -10, max_vibration>5 -15, spike_count>0 -10, breakdown -20/건, vib 상승추세 -10
+- health_grade: A(90~100) B(70~89) C(50~69) D(30~49) F(0~29)
+- risk_factors: 위험요인 배열 (예: ["high_vibration","thermal_spike","frequent_breakdown"])
+
+equipment_master 조인으로 vendor, install_date 추가.
+event_date 파티셔닝, equipment_id Z-ORDER, COMMENT 추가.
+```
+
+**Gold 확인** 🟢 — 모듈 3 · Part C
+```
+ccm_factory.gold의 모든 테이블 목록과 row count, 각 테이블 그레인을 표로 보여줘.
+daily_yield_summary의 라인별 평균 수율과, defect_pareto 상위 5개 불량코드도 함께 보여줘.
+```
+
+### SDP 파이프라인 · Job
+
+**SDP 파이프라인 생성·실행** 🔵 — 모듈 3 · Part D
+```
+방금 만든 SDP 파이프라인 노트북으로:
+1. ccm_factory_pipeline 이름의 파이프라인 생성
+2. 서버리스 컴퓨트 사용
+3. Continuous 대신 Triggered 모드
+4. 실행하고 각 테이블 row count와 Expectations 통과율을 보여줘
+```
+
+**파이프라인 실행 결과 확인** 🔵 — 모듈 3 · Part D
+```
+ccm_factory_pipeline의 최근 실행 결과를 보여줘.
+각 테이블 row count, Expectations 통과율, 실패한 테이블이 있으면 에러 메시지를 알려줘.
+```
+
+**Job 스케줄 생성** 🔵 — 모듈 3 · Part E
+```
+ccm_factory_pipeline을 매일 자동 실행하는 Job을 만들어줘.
+
+설정:
+- Job 이름: ccm_factory_daily_refresh
+- 스케줄: 매일 오전 6시 KST (cron: 0 21 * * * UTC)
+- 재시도: 최대 2회, 간격 10분
+- 알림: 실패 시 이메일 알림
+- 클러스터: 서버리스
+- 타임아웃: 2시간
+```
+
+**Job 확인·수동 실행** 🔵 — 모듈 3 · Part E
+```
+방금 만든 ccm_factory_daily_refresh Job의 설정과 다음 실행 예정 시각을 확인해줘.
+지금 한 번 수동 실행(trigger)해서 정상 동작하는지도 확인해줘.
+```
+
+---
+
+## 7. AI/BI 대시보드
+
+> 🔵 MCP(`manage_dashboard`)가 있으면 한 대화로 생성, 없으면 **Dashboards → + Create** 후 사이드 패널 Genie Code로 위젯을 추가하세요.
+
+**생산/수율 운영 대시보드** 🔵 — 모듈 4 · Part A
+```
+gold.daily_yield_summary, gold.first_pass_yield, gold.station_cycle_time 테이블로
+"생산/수율 운영 대시보드"를 AI/BI 대시보드로 만들어줘.
+
+위젯 (총 12개):
+
+Row 1 — KPI 카운터 (4개):
+1. 오늘 총 생산 수량 (합계)
+2. 전체 수율 % (양품/투입, 게이지)
+3. 직행률(FPY) % (게이지)
+4. 활성 라인 수 (오늘 실적 있는 라인)
+
+Row 2 — 추이 (2개):
+5. 일별 수율 추이 (최근 30일, 꺾은선, 라인별 색상 구분)
+6. 일별 FPY 추이 (최근 30일, 꺾은선)
+
+Row 3 — 분포 (3개):
+7. 모델별 수율 비교 (가로 막대, Top 10 model_code)
+8. 라인별 생산 수량 (막대: LINE_1~LINE_6)
+9. 스테이션별 평균 택트타임 (막대: SMT/DISPENSE/REFLOW/ALIGN/AOI/FINAL)
+
+Row 4 — 운영 지표 (3개):
+10. 라인×일 수율 히트맵 (X축 날짜, Y축 라인, 색상 수율)
+11. 근무조(shift)별 수율 비교 (막대: DAY/SWING/NIGHT)
+12. 고객(customer)별 생산 비중 (도넛)
+
+필터: 날짜 범위(기본 최근 30일), 라인(line_id), 모델(model_code), 근무조(shift)
+```
+
+**품질/불량 분석 대시보드** 🔵 — 모듈 4 · Part B
+```
+gold.defect_pareto, gold.material_defect_correlation, gold.aa_quality_trend, gold.spc_process_capability 테이블로
+"품질/불량 분석 대시보드"를 AI/BI 대시보드로 만들어줘.
+
+위젯 (총 11개):
+
+Row 1 — KPI 카운터 (3개):
+1. 전체 불량률 % (게이지)
+2. CRITICAL 불량 건수 (오늘)
+3. 평균 공정능력 Cpk (핵심 공정 평균)
+
+Row 2 — 불량 파레토 (2개):
+4. 불량 코드별 파레토 (막대+누적선, defect_code 상위 15, 누적 % 라인)
+5. 불량 카테고리 × severity 분포 (Stacked Bar)
+
+Row 3 — 상관 분석 (3개):
+6. 자재 공급사별 불량률 (가로 막대, supplier별 — Sup_S7/S8 부각 예상)
+7. 자재 로트↔불량 상관 상위 (막대: material_defect_correlation 상위 10)
+8. root_cause 분포 (파이: MATERIAL/EQUIPMENT/PROCESS/OPERATOR/ENVIRONMENT)
+
+Row 4 — AA 화질 & 공정능력 (3개):
+9. 모델별 MTF(center) 분포 (박스플롯 또는 분포 막대, aa_quality_trend)
+10. AA 틸트 산포 추이 (일별 tilt 표준편차 꺾은선)
+11. 공정 파라미터별 Cpk 히트맵 (X축 날짜, Y축 공정, 색상 Cpk — 1.33 미만 경고색)
+
+필터: 날짜 범위, 라인, 모델, 불량 카테고리(defect_category)
+```
+
+**설비 운영/OEE 대시보드** 🔵 — 모듈 4 · Part C
+```
+gold.oee_by_equipment, gold.equipment_health_score 테이블로
+"설비 운영/OEE 대시보드"를 AI/BI 대시보드로 만들어줘.
+
+위젯 (총 11개):
+
+Row 1 — KPI 카운터 (4개):
+1. 전체 평균 OEE % (게이지)
+2. 평균 가용성(Availability) %
+3. 평균 성능(Performance) %
+4. 평균 품질(Quality) %
+
+Row 2 — 추이 (2개):
+5. 일별 OEE 추이 (최근 30일, 꺾은선, 라인별 색상)
+6. OEE 3요소(가용성/성능/품질) 추이 (Multi-line)
+
+Row 3 — 설비 분석 (3개):
+7. 설비 유형별 평균 OEE (막대)
+8. 설비별 OEE 랭킹 (가로 막대, 하위 15개 — 개선 대상)
+9. 비가동(downtime) 사유별 시간 파레토 (막대: BREAKDOWN/PM/CHANGEOVER/IDLE)
+
+Row 4 — 설비 건강 (2개):
+10. 설비 건강점수 히트맵 (X축 날짜, Y축 설비, 색상 health_score)
+11. 위험 설비 Top 10 (health_grade D/F, 주요 위험요인 표시)
+
+필터: 날짜 범위, 라인, 설비 유형(equipment_type)
+```
+
+**대시보드 생성 확인 (공통 템플릿)** 🔵 — 모듈 4
+```
+방금 만든 "<대시보드 이름>"이 잘 생성됐는지 확인해줘. 대시보드 URL과 포함된 위젯 목록을 보여줘.
+```
+
+**대시보드를 App으로 배포** 🔵 — 모듈 4 · 보너스
+```
+"설비 운영/OEE 대시보드"를 Databricks Apps로 배포해줘. 완료되면 앱 URL을 알려줘.
+```
+
+---
+
+## 8. Genie Space 생성 · 정확도 튜닝
+
+> 🔵 MCP(`manage_genie`)가 있으면 한 대화로 생성, 없으면 **Genie → + New**에서 만드세요. 정확도 튜닝의 COMMENT 추가는 🟢 네이티브 SQL로 가능합니다.
+
+**Genie Space 1: 생산·수율 분석** 🔵 — 모듈 5 · Part A
+```
+다음 설정으로 Genie Space를 만들어줘.
+
+이름: 생산·수율 분석
+설명: 카메라 모듈 라인의 생산 실적, 수율, 직행률(FPY), 택트타임을 자연어로 분석합니다.
+
+포함 테이블:
+- ccm_factory.gold.daily_yield_summary
+- ccm_factory.gold.first_pass_yield
+- ccm_factory.gold.station_cycle_time
+- ccm_factory.bronze.product_master
+- ccm_factory.bronze.equipment_master
+
+General Instructions:
+- 수율(yield)은 % 단위, 소수점 1자리로 표시
+- 날짜 필터가 없으면 최근 7일 기준
+- 라인은 LINE_1~LINE_6, 모델은 model_code로 식별
+- 결과가 10행 이상이면 Top 10으로 제한하고 "전체 N건 중 Top 10" 표시
+- 고객명은 익명(Global_A/B/C, Domestic_D)이므로 그대로 사용
+```
+
+**Genie Space 2: 품질·불량 분석** 🔵 — 모듈 5 · Part A
+```
+다음 설정으로 Genie Space를 만들어줘.
+
+이름: 품질·불량 분석
+설명: 불량 파레토, 자재 로트별 불량 상관, AA(Active Alignment) MTF 품질, 공정능력(Cpk)을 분석합니다.
+
+포함 테이블:
+- ccm_factory.gold.defect_pareto
+- ccm_factory.gold.material_defect_correlation
+- ccm_factory.gold.aa_quality_trend
+- ccm_factory.gold.spc_process_capability
+- ccm_factory.silver.final_test_clean
+- ccm_factory.bronze.material_lot_master
+
+General Instructions:
+- 불량률은 % 단위, MTF는 pct 단위(0~100)
+- "규격 미달"은 mtf_center < 모델의 spec_mtf_min 기준
+- Cpk는 소수점 2자리, "공정능력 부족"은 Cpk < 1.33
+- 자재 공급사는 Sup_S1~S8로 식별
+- 날짜 미지정 시 최근 7일
+```
+
+**Genie Space 3: 설비·OEE 분석** 🔵 — 모듈 5 · Part A
+```
+다음 설정으로 Genie Space를 만들어줘.
+
+이름: 설비·OEE 분석
+설명: 설비별 OEE(종합설비효율), 설비 건강 점수, 비가동(downtime)을 분석합니다.
+
+포함 테이블:
+- ccm_factory.gold.oee_by_equipment
+- ccm_factory.gold.equipment_health_score
+- ccm_factory.bronze.equipment_downtime
+- ccm_factory.bronze.equipment_master
+
+General Instructions:
+- OEE = 가용성 × 성능 × 품질, % 단위 소수점 1자리
+- "문제 설비"는 OEE < 75% 또는 health_score < 60
+- downtime은 분(min) 단위, 유형은 BREAKDOWN/PM/CHANGEOVER/IDLE
+- 설비는 equipment_id로 식별, 라인/유형 질문 시 equipment_master 조인
+```
+
+**Genie Space 생성 확인 & 첫 테스트** 🔵 — 모듈 5 · Part A
+```
+방금 만든 "생산·수율 분석" Genie Space에 테스트 질문을 해줘:
+"최근 7일간 수율이 가장 낮은 라인 Top 3는?"
+SQL이 정상 생성되고 결과가 나오는지 확인해줘.
+```
+
+**컬럼 COMMENT 일괄 추가 (정확도↑)** 🟢 — 모듈 5 · Part B
+```
+ccm_factory.gold 스키마의 모든 테이블과 컬럼에 한국어 COMMENT를 추가해줘.
+
+규칙:
+- 테이블 COMMENT: 비즈니스 담당자가 이해할 수 있는 설명 (50자 이내)
+- 컬럼 COMMENT: 값의 의미, 단위, 범위 포함
+
+예시:
+COMMENT ON COLUMN ccm_factory.gold.daily_yield_summary.yield_pct IS
+  '일 수율(%). (양품 수 / 투입 수) × 100. 범위 0~100';
+COMMENT ON COLUMN ccm_factory.gold.oee_by_equipment.oee_pct IS
+  '종합설비효율(%). 가용성×성능×품질. 85 이상이 World Class';
+COMMENT ON COLUMN ccm_factory.gold.spc_process_capability.cpk IS
+  '공정능력지수. 1.33 이상이 관리 기준, 1.0 미만은 개선 필요';
+
+모든 Gold 테이블의 모든 컬럼에 COMMENT를 달아줘.
+```
+
+**샘플 질문(Curated) 등록** 🔵 — 모듈 5 · Part B
+```
+"생산·수율 분석"과 "품질·불량 분석" Genie Space에 아래 샘플 질문과 검증된 SQL을 등록해줘.
+(질문·SQL 쌍은 모듈 5 Part B의 15개 목록 참조)
+```
+
+**General Instructions (임의 정의 방지 포함) — Genie Space 설정에 붙여넣기** 🔵 — 모듈 5 · Part B
+```
+## 비즈니스 용어 정의
+- "수율(Yield)": (양품 수 / 투입 수) × 100
+- "직행률(FPY, First Pass Yield)": 재작업 없이 한 번에 통과한 비율
+- "OEE": 가용성 × 성능 × 품질 (종합설비효율)
+- "Cpk": 공정능력지수. 1.33 이상 관리기준, 1.0 미만 개선 필요
+- "규격 미달": mtf_center가 해당 모델 spec_mtf_min 미만
+- "문제 설비": OEE < 75% 또는 health_score < 60
+- "프라임 시프트": DAY 근무조(주간)
+
+## 계산 규칙
+- 비율 계산 시 분모가 0이면 NULLIF 사용
+- 날짜 필터 미지정 시 최근 7일
+- 수율/OEE/불량률은 % 소수점 1자리, Cpk는 소수점 2자리
+- 공급사는 Sup_S1~S8, 라인은 LINE_1~6로 식별
+
+## 분석 규칙 (임의 정의 방지) ★
+- 기준이 명확하지 않으면 임의로 정의해서 분석하지 말 것
+- 더 정확한 정보가 필요하면 사용자에게 반드시 질문할 것
+  (예: "'품질이 나쁘다'의 기준을 수율/불량률/MTF 중 무엇으로 볼까요?")
+```
+
+**Genie Agent 생성 확인** 🔵 — 모듈 5 · Part C
+```
+"스마트팩토리 데이터 분석가" Genie Agent가 정상 생성됐고, 연결된 Genie Space 3개를 모두 인식하는지 확인해줘.
+```
+
+**인사이트 도출 체인 (Genie Space Agent 모드)** 🔵 — 모듈 5 · Part D
+```
+① 전체 데이터셋에서 흥미로운 인사이트를 3가지 뽑아줘.
+② 방금 도출한 인사이트를 바탕으로 수율 향상 우선순위 3가지를 제안해줘.
+③ 그 중 데이터로 검증 가능한 것을 골라, 검증에 필요한 추가 분석 쿼리를 만들고 실행해줘.
+```
+
+---
+
+## 9. 비정형 데이터 AI 함수
+
+> 🟢 모두 네이티브 SQL AI 함수(`ai_*`)로 실행. 서빙 엔드포인트 과금이 있으니 항상 `LIMIT`으로 소량 테스트 후 확대.
+
+**필드 리턴 데이터 훑어보기** 🟢 — 모듈 6 · Part A
+```
+ccm_factory.bronze.field_returns에서 failure_symptom, analysis_result, root_cause_code를
+10건만 보여줘. 어떤 자연어 텍스트가 들어있는지 확인하고 싶어.
+```
+
+**ai_classify — 증상을 근본원인으로 분류** 🟢 — 모듈 6 · Part A
+```
+ccm_factory.bronze.field_returns의 failure_symptom(한국어 증상 텍스트)을
+ai_classify로 다음 5개 근본원인 카테고리 중 하나로 분류해줘:
+ALIGNMENT, ACTUATOR, BONDING, CONTAMINATION, SENSOR
+
+- 먼저 LIMIT 20으로 테스트
+- 결과 컬럼: rma_id, failure_symptom, 기존 root_cause_code, ai_predicted_cause
+- 실제 사용할 SQL도 보여줘
+```
+
+**ai_extract — 구조화 추출** 🟢 — 모듈 6 · Part A
+```
+field_returns.failure_symptom + analysis_result를 결합한 텍스트에서
+ai_extract로 다음 3개 항목을 구조화 추출해줘 (LIMIT 20):
+- symptom(증상), defect_location(불량 부위), suspected_cause(의심 원인)
+결과를 표로 보여주고 SQL도 알려줘.
+```
+
+**ai_summarize — 모델별 리턴 요약** 🟢 — 모듈 6 · Part A
+```
+모델(model_code)별로 최근 필드 리턴 증상들을 ai_summarize로 3문장 요약해줘.
+model_code, return_count, summary 컬럼으로. Global_A 고객 모델 위주로 LIMIT 10.
+```
+
+**AI 분류 vs 기존 코드 일치율 검증** 🟢 — 모듈 6 · Part A
+```
+방금 ai_classify로 예측한 ai_predicted_cause와 기존 root_cause_code의 일치율을 계산해줘.
+- 전체 일치율(%)
+- 카테고리별 혼동행렬(confusion matrix)
+- 가장 자주 틀리는 카테고리 쌍
+불일치가 많으면 원인(레이블 정의 모호 등)도 추정해줘.
+```
+
+**8D 리포트 샘플 PDF 생성** 🟢 — 모듈 6 · Part B
+```
+카메라 모듈 품질 8D 리포트 샘플 PDF 10건을 만들어서 ccm_factory.bronze.raw_files 볼륨의
+8d_reports/ 폴더에 저장해줘.
+
+각 리포트는 8D 구조(D1~D8)를 갖고, 한국어로 작성:
+- 문제 정의(불량 현상, 발생 로트/모델)
+- 봉쇄 조치, 근본 원인(예: AA 틸트 규격 초과, 렌즈 본딩 UV 부족)
+- 시정/예방 조치
+불량 유형은 ALIGNMENT/BONDING/CONTAMINATION/SENSOR/ACTUATOR로 다양하게.
+```
+
+**ai_parse_document — PDF 텍스트 추출** 🟢 — 모듈 6 · Part B
+```
+ccm_factory.bronze.raw_files 볼륨의 8d_reports/ 아래 PDF들을 ai_parse_document로 파싱해서
+텍스트를 추출하고, ccm_factory.silver.parsed_8d_reports 테이블로 저장해줘.
+컬럼: file_path, parsed_text, parsed_at. 먼저 1개로 테스트하고 결과 미리보기.
+```
+
+**ai_extract — 8D 항목 구조화** 🟢 — 모듈 6 · Part B
+```
+silver.parsed_8d_reports의 parsed_text에서 ai_extract로 8D 핵심 항목을 구조화해줘:
+- problem_definition(문제 정의)
+- root_cause(근본 원인)
+- corrective_action(시정 조치)
+- affected_model(영향 모델)
+결과를 ccm_factory.gold.quality_8d_structured 테이블로 저장. LIMIT으로 먼저 테스트.
+```
+
+**AOI 불량 이미지 목록 확인** 🟢 — 모듈 6 · Part C
+```
+ccm_factory.bronze.raw_files 볼륨의 aoi_defect_images/ 폴더에 있는 불량 이미지 목록을 보여줘.
+(없으면) 강사가 공유한 AOI 불량 이미지 샘플을 이 폴더에 업로드하는 방법을 안내해줘.
+```
+
+**ai_query (Vision) — 불량 이미지 분류** 🟢 — 모듈 6 · Part C
+```
+aoi_defect_images/ 의 이미지들을 ai_query에 Vision 모델로 넣어
+불량 유형을 분류하고 한 줄 설명을 생성해줘.
+
+- 분류 레이블: SOLDER_DEFECT, FOREIGN_MATERIAL, PLACEMENT_SHIFT, POLARITY_ERROR, SCRATCH, NORMAL
+- 결과 컬럼: image_path, defect_type, description
+- 먼저 이미지 3장으로 테스트하고 SQL도 보여줘
+- 이 워크스페이스에서 ai_query로 이미지를 처리하는 정확한 구문과 사용 가능한 Vision 엔드포인트를 먼저 확인해줘
+```
+
+**배치 적용 — field_return_insights 생성** 🟢 — 모듈 6 · Part D
+```
+검증이 끝났으니 field_returns 전체(1만 건)에 ai_classify를 배치 적용해서
+ccm_factory.gold.field_return_insights 테이블을 만들어줘.
+
+컬럼:
+- rma_id, serial_id, model_code, customer, return_date
+- ai_predicted_cause (ai_classify 결과)
+- extracted_symptom, extracted_location, suspected_cause (ai_extract 결과)
+- root_cause_code (원본)
+
+주의: 서빙 엔드포인트 과금이 발생하므로, 배치 실행 전 예상 호출 수를 알려주고
+확인받은 뒤 진행해줘. event_date 파티션, 모든 컬럼 COMMENT.
+```
+
+**배치 결과 활용 확인** 🟢 — 모듈 6 · Part D
+```
+gold.field_return_insights를 활용해서:
+- ai_predicted_cause별 리턴 건수 Top 5
+- 모델(model_code)별 최다 근본원인
+- Global_A 고객의 최근 3개월 주요 불량 원인
+을 보여줘. 이 결과가 대시보드나 Genie Space로 쓸 만한지도 코멘트해줘.
+```
+
+---
+
+## 10. Agent Bricks (Knowledge Assistant · Supervisor)
+
+> KA/Supervisor 생성은 🔵 MCP(`manage_ka`/`manage_mas`) 또는 **Agent Bricks** UI. 지식 문서 생성은 🟢 네이티브.
+
+**제조 지식 베이스 생성** 🟢 — 모듈 7 · Part A
+```
+카메라 모듈 제조 현장용 지식 베이스 문서를 생성해줘. Delta 테이블로 만들어줘.
+
+테이블: ccm_factory.bronze.mfg_knowledge_base
+
+컬럼:
+- doc_id: STRING (고유 문서 ID)
+- category: STRING (카테고리)
+- title: STRING (제목/질문)
+- content: STRING (본문, 500~1500자, 실제 제조 SOP 수준의 상세한 한국어)
+- tags: `ARRAY<STRING>` (관련 태그)
+- process_stage: STRING (관련 공정: SMT/DISPENSE/REFLOW/ALIGN/AOI/FINAL/COMMON)
+- last_updated: DATE
+
+카테고리별 문서 (총 90개):
+1. 공정 SOP (20개): SMT 실장, 디스펜싱/UV 경화, 리플로우 프로파일, Active Alignment 정렬, AOI/최종 화질검사 판정 기준
+2. 품질 기준 (20개): MTF SFR 규격, AA 틸트/focus 허용, 데드픽셀/이물/SNR 규격, Cpk 관리 기준
+3. 설비 트러블슈팅 (20개): SMT 노즐 잼/픽업불량, 디스펜서 니들 막힘, 리플로우 온도 편차, AA RETRY 반복, 진동/온도 이상 전조
+4. 불량 대응 (20개): 불량코드별 원인/조치, 자재 로트 격리/추적, REWORK/SCRAP 기준, 8D 작성 가이드
+5. 클린룸/환경 관리 (10개): 파티클 관리, 온습도/차압, ESD, 파티클 급증 대응
+
+Delta 테이블로 저장하고, 실제 제조 현장 SOP 수준의 상세하고 정확한 한국어 콘텐츠로 작성해줘.
+```
+
+**Vector Search 엔드포인트 생성** 🔵 — 모듈 7 · Part A
+```
+Vector Search 엔드포인트를 만들어줘.
+- 이름: vs-endpoint-ccm
+- 타입: Managed (Databricks 관리)
+상태가 Online이 되면 알려줘.
+```
+
+**Knowledge Assistant 생성** 🔵 — 모듈 7 · Part A
+```
+Knowledge Assistant를 만들어줘.
+
+설정:
+- 이름: 카메라 모듈 제조 가이드
+- 설명: 카메라 모듈 제조 공정의 SOP, 품질 기준, 설비 트러블슈팅, 불량 대응에 대해 답변합니다.
+- 지식 소스: ccm_factory.bronze.mfg_knowledge_base 테이블
+  - 임베딩 대상 컬럼: content
+  - 메타데이터 컬럼: category, title, tags, process_stage
+- Vector Search 엔드포인트: vs-endpoint-ccm
+- Vector Search 인덱스: vs-index-mfg-knowledge
+- 임베딩 모델: databricks-gte-large-en
+- LLM 모델: (워크스페이스에서 사용 가능한 최신 Claude/Llama 서빙 엔드포인트 확인 후 지정)
+- System Prompt:
+"당신은 카메라 모듈 제조 공정 전문 어시스턴트입니다.
+1. 반드시 제공된 지식 문서에 기반하여 답변하세요.
+2. 문서에 없는 내용은 '해당 정보를 지식 베이스에서 찾을 수 없습니다'라고 답하세요.
+3. 한국어로 답변하되, 기술 용어는 영문 병기 (예: 광축 정렬(Active Alignment), 공정능력(Cpk))
+4. 규격/수치를 답할 때는 단위와 관리 기준(상/하한)을 명확히 하세요.
+5. 절차가 필요하면 번호 매기기를 사용하세요.
+6. 안전/품질 주의사항이 있으면 반드시 언급하세요."
+
+생성 후 테스트 질문 3개를 실행해줘:
+1. "Active Alignment 공정에서 틸트 허용 규격은 얼마인가요?"
+2. "리플로우 피크 온도 관리 기준을 알려주세요"
+3. "SMT 노즐 픽업 불량이 자주 발생할 때 어떻게 대응하나요?"
+```
+
+**KA 생성 확인** 🔵 — 모듈 7 · Part A
+```
+"카메라 모듈 제조 가이드" Knowledge Assistant가 정상 생성됐는지 확인해줘.
+Vector Search 엔드포인트 상태와 인덱스 문서 수도 알려줘.
+```
+
+**KA 품질 평가** 🔵 — 모듈 7 · Part A
+```
+"카메라 모듈 제조 가이드" KA에 아래 10개 질문을 보내고 답변 품질을 평가해줘.
+평가 기준(각 1~5점): 정확성 / 완전성 / 관련성 / 가독성.
+테스트 질문: MTF SFR 중심 규격, 데드픽셀 판정 기준, UV 경화량 규격, Cpk 관리 기준, AA RETRY 대응,
+이물 불량 원인 추적, 리플로우 TAL, 자재 로트 불량 절차, 클린룸 파티클 대응, 8D 작성.
+각 질문의 4개 점수와 종합 평균을 표로 보여줘. 평균 4점 미만은 문서 보강 후보야.
+```
+
+**Supervisor Agent 생성 (KA + Genie Agent 통합)** 🔵 — 모듈 7 · Part C
+```
+Supervisor Agent를 만들어줘.
+- 이름: 스마트팩토리 AI 어시스턴트
+- 하위 에이전트: "카메라 모듈 제조 가이드"(KA) + "스마트팩토리 데이터 분석가"(Genie Agent)
+- 라우팅 규칙:
+  · 사용법/규격/트러블슈팅/절차 → KA
+  · 수율/불량/OEE/추이/통계 → Genie Agent
+  · 복합(데이터+가이드) → 둘 다 호출 후 통합
+- 답변은 한국어(기술용어 영문 병기), 라우팅 결정은 노출하지 말고, 끝에 '🔍 관련 질문' 2~3개 제안
+생성 후 단순→복합 순으로 5개 시나리오를 테스트해줘.
+```
+
+**Genie Agent 생성 확인** 🔵 — 모듈 7 · Part B
+```
+"스마트팩토리 데이터 분석가" Genie Agent가 정상 생성됐는지,
+연결된 Genie Space 3개가 모두 인식되는지 확인해줘.
+```
+
+**Lakebase 세션 저장소 생성 (선택)** 🔵 — 모듈 7 · Part D
+```
+Lakebase 데이터베이스를 만들어줘.
+- 데이터베이스 이름: ccm_agent_db, 카탈로그: ccm_factory
+테이블:
+1. chat_sessions(session_id UUID PK, user_name, line_context, started_at, ended_at, total_messages, satisfaction_score)
+2. chat_messages(message_id UUID PK, session_id FK, role, content, agent_used, response_time_ms, created_at)
+3. agent_feedback(feedback_id UUID PK, message_id FK, is_helpful, feedback_text, created_at)
+```
+
+**MLflow로 에이전트 품질 평가** 🔵 — 모듈 7 · Part E
+```
+"스마트팩토리 AI 어시스턴트"의 최근 대화들을 MLflow Tracing으로 확인하고,
+라우팅 정확도와 응답 품질을 평가해줘. 개선이 필요한 질문 유형을 알려줘.
+```
+
+---
+
+## 11. 검증 · 디버깅 · 재사용 범용 템플릿
+
+여러 모듈에서 반복되는 범용 프롬프트입니다. 표/테이블명만 바꿔 어디서든 쓰세요. 모두 🟢 네이티브.
+
+**방금 만든 결과 확인**
+```
+방금 만든 <테이블/오브젝트>의 row 수와 주요 컬럼 분포를 확인해줘.
+```
+
+**조건대로 만들어졌는지 교차검증** (AI 결과에 도전)
+```
+방금 생성한 <테이블>이 내가 요청한 조건과 일치하는지 교차 검증해줘.
+<검증할 규칙>을 만족하는지 확인하고, 불일치가 있으면 건수와 함께 알려줘.
+```
+
+**에러 진단**
+```
+방금 발생한 이 에러를 진단해줘. 원인과 해결 방법을 알려주고, Serverless 제약이나 권한 문제인지도 확인해줘.
+```
+
+**참조 무결성/품질 빠른 점검**
+```
+<테이블>의 <FK 컬럼>이 <마스터 테이블>에 모두 존재하는지, NULL/중복/이상치가 있는지 요약해줘.
+```
+
+**MCP 상태 점검** 🔵 (MCP 사용 시)
+```
+MCP 서버 상태를 확인해줘: 연결된 서버 목록·상태, 활성 도구 수(20개 제한 대비),
+manage_uc_objects로 ccm_factory 카탈로그 조회 테스트. 문제가 있으면 원인·해결을 알려줘.
+```
+
+---
+
+> **다시 강조:** 🔵 프롬프트도 AI Dev Kit MCP 없이 각 제품 UI에서 만들 수 있습니다. MCP는 "한 대화로 여러 개를 자동으로" 만들 때의 편의 기능이며, 워크샵 완주에 필수가 아닙니다.

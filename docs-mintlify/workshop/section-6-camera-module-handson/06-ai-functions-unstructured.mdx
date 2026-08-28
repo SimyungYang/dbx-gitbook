@@ -1,0 +1,276 @@
+---
+title: "비정형 데이터 AI 함수"
+---
+
+| 항목 | 내용 |
+|------|------|
+| **소요 시간** | ~50분 |
+| **사전 조건** | [01. 데이터 생성](01-data-generation) 완료 (`field_returns` 테이블) 또는 샘플 임포트 |
+| **실습 환경** | Genie Code Agent Mode + AI Dev Kit MCP, Serverless / SQL Warehouse |
+| **사용 MCP 도구** | `execute_sql` |
+
+> **핵심 메시지**: "정형 SQL로는 못 답하던 '왜'를, 비정형 데이터에서 캔다."
+
+### 이 모듈에서 사용하는 Databricks 기능
+
+| 기능 | 설명 | 공식 문서 |
+|------|------|----------|
+| **SQL AI 함수 (Databricks Document Intelligence)** | SQL 한 줄로 LLM을 호출해 비정형을 정형화. 구 *Mosaic AI Functions* / *Serverless Batch Inference* 통합 브랜드. | [docs](https://docs.databricks.com/en/large-language-models/ai-functions.html) |
+| **`ai_query`** | 임의의 서빙 엔드포인트(LLM/Vision)를 SQL에서 직접 호출. 이미지·긴 프롬프트도 처리. | [docs](https://docs.databricks.com/en/sql/language-manual/functions/ai_query.html) |
+| **`ai_classify`** | 텍스트를 주어진 레이블 집합으로 분류. | [docs](https://docs.databricks.com/en/large-language-models/ai-functions.html) |
+| **`ai_extract`** | 텍스트에서 지정한 항목(엔티티)을 구조화 추출. | [docs](https://docs.databricks.com/en/large-language-models/ai-functions.html) |
+| **`ai_gen` / `ai_summarize`** | 생성/요약. 자유형 지시. | [docs](https://docs.databricks.com/en/large-language-models/ai-functions.html) |
+| **`ai_parse_document`** | PDF/문서를 텍스트·구조(표/섹션)로 파싱. | [docs](https://docs.databricks.com/en/large-language-models/ai-functions.html) |
+| **Agent Bricks Foundation Model API** | 위 함수들이 호출하는 파운데이션 모델(구 *Mosaic AI FM API*). Claude·Llama·GTE 등. | [docs](https://docs.databricks.com/en/machine-learning/foundation-models/index.html) |
+
+## 개요
+
+지금까지(모듈 2~5)는 **정형 데이터**(수율·불량·OEE 수치)를 다뤘습니다. 하지만 현장 지식의 상당 부분은 **비정형**입니다 — 필드 리턴 리포트의 증상 서술, 8D 품질 리포트 PDF, 설비/공정 SOP 문서, AOI 불량 이미지.
+
+이 모듈에서는 SQL **AI 함수**로 비정형을 정형화·분류·추출하여, 대시보드·Genie·RAG가 소비할 수 있는 **AI Ready Data**로 만듭니다.
+
+| 다룰 비정형 | 소스 | AI 함수 |
+|-----------|------|---------|
+| 필드 리턴 증상/분석 (자연어) | `bronze.field_returns` | `ai_classify`, `ai_extract`, `ai_summarize` |
+| 8D 품질 리포트 (PDF) | `bronze.raw_files` 볼륨 | `ai_parse_document` → `ai_extract` |
+| AOI 불량 이미지 | `bronze.raw_files` 볼륨 | `ai_query` (Vision LLM) |
+
+> 이 모듈의 산출물(정형화된 인사이트, 파싱된 문서)은 **[모듈 7 Agent Bricks](07-agent-bricks)** 의 Knowledge Assistant 지식 소스가 됩니다.
+
+> **Tip**: AI 함수는 서빙 엔드포인트를 호출하므로 과금됩니다. **항상 `LIMIT`으로 소량 테스트 후** 전체에 적용하세요.
+
+---
+
+## Part A: 텍스트 AI 함수 — 필드 리턴 분석
+
+`field_returns.failure_symptom`(자연어 증상)과 `analysis_result`(자연어 분석)를 AI로 분류·추출합니다.
+
+### A-1. 데이터 훑어보기
+
+```
+ccm_factory.bronze.field_returns에서 failure_symptom, analysis_result, root_cause_code를
+10건만 보여줘. 어떤 자연어 텍스트가 들어있는지 확인하고 싶어.
+```
+
+### A-2. `ai_classify` — 증상을 근본원인 카테고리로 분류
+
+Genie Code에 아래를 요청하면 SQL AI 함수를 생성·실행합니다:
+
+```
+ccm_factory.bronze.field_returns의 failure_symptom(한국어 증상 텍스트)을
+ai_classify로 다음 5개 근본원인 카테고리 중 하나로 분류해줘:
+ALIGNMENT, ACTUATOR, BONDING, CONTAMINATION, SENSOR
+
+- 먼저 LIMIT 20으로 테스트
+- 결과 컬럼: rma_id, failure_symptom, 기존 root_cause_code, ai_predicted_cause
+- 실제 사용할 SQL도 보여줘
+```
+
+생성될 SQL 형태(참고):
+
+```sql
+SELECT
+  rma_id,
+  failure_symptom,
+  root_cause_code,
+  ai_classify(failure_symptom,
+    ARRAY('ALIGNMENT','ACTUATOR','BONDING','CONTAMINATION','SENSOR')
+  ) AS ai_predicted_cause
+FROM ccm_factory.bronze.field_returns
+LIMIT 20
+```
+
+### A-3. `ai_extract` — 구조화 추출
+
+```
+field_returns.failure_symptom + analysis_result를 결합한 텍스트에서
+ai_extract로 다음 3개 항목을 구조화 추출해줘 (LIMIT 20):
+- symptom(증상), defect_location(불량 부위), suspected_cause(의심 원인)
+결과를 표로 보여주고 SQL도 알려줘.
+```
+
+참고 SQL:
+
+```sql
+SELECT
+  rma_id,
+  ai_extract(
+    CONCAT(failure_symptom, ' / ', analysis_result),
+    ARRAY('symptom', 'defect_location', 'suspected_cause')
+  ) AS extracted
+FROM ccm_factory.bronze.field_returns
+LIMIT 20
+```
+
+### A-4. `ai_summarize` — 모델별 리턴 요약
+
+```
+모델(model_code)별로 최근 필드 리턴 증상들을 ai_summarize로 3문장 요약해줘.
+model_code, return_count, summary 컬럼으로. Global_A 고객 모델 위주로 LIMIT 10.
+```
+
+### A-5. 검증 — AI 분류 vs 기존 root_cause_code 일치율
+
+```
+방금 ai_classify로 예측한 ai_predicted_cause와 기존 root_cause_code의 일치율을 계산해줘.
+- 전체 일치율(%)
+- 카테고리별 혼동행렬(confusion matrix)
+- 가장 자주 틀리는 카테고리 쌍
+불일치가 많으면 원인(레이블 정의 모호 등)도 추정해줘.
+```
+
+> 💡 **AI 결과에 도전하기**: 일치율이 낮은 카테고리는 레이블 설명을 프롬프트에 추가(`ai_classify`에 few-shot 힌트)하면 개선됩니다. "ACTUATOR = VCM/OIS 액추에이터 응답·구동 불량" 같은 정의를 붙여 재실행해 보세요.
+
+---
+
+## Part B: 문서 파싱 — 8D 품질 리포트 PDF
+
+품질 부서의 8D 리포트(PDF)를 `ai_parse_document`로 텍스트화하고, 8D 핵심 항목을 구조화합니다.
+
+### B-1. 샘플 문서 준비
+
+실제 교육에서는 강사가 공유한 샘플 PDF를 볼륨에 올려둡니다. 없으면 Genie Code로 샘플을 생성할 수 있습니다:
+
+```
+카메라 모듈 품질 8D 리포트 샘플 PDF 10건을 만들어서 ccm_factory.bronze.raw_files 볼륨의
+8d_reports/ 폴더에 저장해줘.
+
+각 리포트는 8D 구조(D1~D8)를 갖고, 한국어로 작성:
+- 문제 정의(불량 현상, 발생 로트/모델)
+- 봉쇄 조치, 근본 원인(예: AA 틸트 규격 초과, 렌즈 본딩 UV 부족)
+- 시정/예방 조치
+불량 유형은 ALIGNMENT/BONDING/CONTAMINATION/SENSOR/ACTUATOR로 다양하게.
+```
+
+> PDF 생성이 서버리스 제약에 걸리면, 강사가 준비한 PDF를 볼륨에 업로드하는 방식으로 대체하세요 (Catalog Explorer → Volume → Upload).
+
+### B-2. `ai_parse_document`로 텍스트 추출
+
+```
+ccm_factory.bronze.raw_files 볼륨의 8d_reports/ 아래 PDF들을 ai_parse_document로 파싱해서
+텍스트를 추출하고, ccm_factory.silver.parsed_8d_reports 테이블로 저장해줘.
+컬럼: file_path, parsed_text, parsed_at. 먼저 1개로 테스트하고 결과 미리보기.
+```
+
+참고 SQL 형태:
+
+```sql
+SELECT
+  path AS file_path,
+  ai_parse_document(content) AS parsed
+FROM READ_FILES('/Volumes/ccm_factory/bronze/raw_files/8d_reports/', format => 'binaryFile')
+LIMIT 1
+```
+
+### B-3. `ai_extract`로 8D 항목 구조화
+
+```
+silver.parsed_8d_reports의 parsed_text에서 ai_extract로 8D 핵심 항목을 구조화해줘:
+- problem_definition(문제 정의)
+- root_cause(근본 원인)
+- corrective_action(시정 조치)
+- affected_model(영향 모델)
+결과를 ccm_factory.gold.quality_8d_structured 테이블로 저장. LIMIT으로 먼저 테스트.
+```
+
+---
+
+## Part C: 이미지 AI — AOI 불량 이미지 분류
+
+AOI가 촬영한 불량 이미지를 Vision LLM(`ai_query`)으로 분류·설명합니다.
+
+### C-1. 샘플 이미지 준비
+
+```
+ccm_factory.bronze.raw_files 볼륨의 aoi_defect_images/ 폴더에 있는 불량 이미지 목록을 보여줘.
+(없으면) 강사가 공유한 AOI 불량 이미지 샘플을 이 폴더에 업로드하는 방법을 안내해줘.
+```
+
+### C-2. Vision LLM으로 불량 유형 분류
+
+```
+aoi_defect_images/ 의 이미지들을 ai_query에 Vision 모델(databricks-claude-sonnet-4)로 넣어
+불량 유형을 분류하고 한 줄 설명을 생성해줘.
+
+- 분류 레이블: SOLDER_DEFECT, FOREIGN_MATERIAL, PLACEMENT_SHIFT, POLARITY_ERROR, SCRATCH, NORMAL
+- 결과 컬럼: image_path, defect_type, description
+- 먼저 이미지 3장으로 테스트하고 SQL도 보여줘
+```
+
+참고 SQL 형태(이미지 바이트 전달):
+
+```sql
+SELECT
+  path AS image_path,
+  ai_query(
+    'databricks-claude-sonnet-4',
+    '이 카메라 모듈 AOI 이미지의 불량 유형을 SOLDER_DEFECT/FOREIGN_MATERIAL/PLACEMENT_SHIFT/POLARITY_ERROR/SCRATCH/NORMAL 중 하나로 분류하고 한 줄로 설명해줘.',
+    files => ARRAY(content)
+  ) AS ai_result
+FROM READ_FILES('/Volumes/ccm_factory/bronze/raw_files/aoi_defect_images/', format => 'binaryFile')
+LIMIT 3
+```
+
+> Vision 지원 엔드포인트/구문은 워크스페이스 버전에 따라 다를 수 있습니다. Genie Code에 "이 워크스페이스에서 ai_query로 이미지를 처리하는 정확한 구문을 알려줘"라고 물어 최신 형태를 확인하세요.
+
+---
+
+## Part D: 배치 적용 — AI Ready Data 만들기
+
+소량 테스트가 끝나면 전체에 적용하여 **정형화된 인사이트 테이블**을 만듭니다. 이 결과가 대시보드·Genie·RAG의 소스가 됩니다.
+
+```
+검증이 끝났으니 field_returns 전체(1만 건)에 ai_classify를 배치 적용해서
+ccm_factory.gold.field_return_insights 테이블을 만들어줘.
+
+컬럼:
+- rma_id, serial_id, model_code, customer, return_date
+- ai_predicted_cause (ai_classify 결과)
+- extracted_symptom, extracted_location, suspected_cause (ai_extract 결과)
+- root_cause_code (원본)
+
+주의: 서빙 엔드포인트 과금이 발생하므로, 배치 실행 전 예상 호출 수를 알려주고
+확인받은 뒤 진행해줘. event_date 파티션, 모든 컬럼 COMMENT.
+```
+
+> **Databricks Document Intelligence 배치추론**: 대량 문서/이미지는 SQL AI 함수의 배치 추론으로 스케줄 처리할 수 있습니다. 정기적으로 신규 필드 리턴을 자동 분류하려면 이 결과 생성 SQL을 [모듈 3](03-transformation-pipeline)의 Job/파이프라인에 편입하세요.
+
+### 활용 확인
+
+```
+gold.field_return_insights를 활용해서:
+- ai_predicted_cause별 리턴 건수 Top 5
+- 모델(model_code)별 최다 근본원인
+- Global_A 고객의 최근 3개월 주요 불량 원인
+을 보여줘. 이 결과가 대시보드나 Genie Space로 쓸 만한지도 코멘트해줘.
+```
+
+---
+
+## Part E: 비용 & 안전
+
+| 항목 | 지침 |
+|------|------|
+| **과금** | AI 함수는 서빙 엔드포인트(FM API) **호출당 과금** — 대량 행에 돌리면 호출 수만큼 비용 증가. Genie Code 사용·코드 실행도 각각 과금됨 |
+| **테스트 우선** | 반드시 `LIMIT 10~20`으로 결과·비용 확인 후 전체 적용 |
+| **배치 확인** | 전체 배치 전 예상 호출 수를 Genie Code에 확인시키기 |
+| **PII** | 자연어 텍스트에 개인정보가 섞이면 마스킹/필터 후 처리 (AI Gateway Guardrails) |
+| **모델 선택** | 분류·추출은 경량 모델로도 충분, Vision·복잡 추론만 대형 모델 |
+
+---
+
+## 핵심 포인트 정리
+
+| 배운 것 | 기능 | 비즈니스 가치 |
+|---------|------|-------------|
+| 자연어 증상 분류 | `ai_classify` | 필드 리턴 근본원인 자동 태깅 |
+| 구조화 추출 | `ai_extract` | 비정형 → 분석 가능한 정형 |
+| 문서 파싱 | `ai_parse_document` | 8D/SOP 지식의 데이터화 |
+| 이미지 분류 | `ai_query` (Vision) | AOI 불량 자동 판독 보조 |
+| 배치 인사이트 | Document Intelligence 배치 | 대시보드·Genie·RAG용 AI Ready Data |
+
+---
+
+## 다음 단계
+
+- **[07. Agent Bricks 에이전트](07-agent-bricks)** — 이 모듈에서 정형화·파싱한 비정형 지식(8D·SOP·인사이트)을 Knowledge Assistant의 지식 소스로 삼아, Genie Agent와 함께 통합 스마트팩토리 어시스턴트를 만듭니다.

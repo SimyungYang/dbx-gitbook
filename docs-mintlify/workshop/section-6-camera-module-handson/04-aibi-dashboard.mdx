@@ -1,0 +1,218 @@
+---
+title: "AI/BI 대시보드"
+---
+
+| 항목 | 내용 |
+|------|------|
+| **소요 시간** | ~50분 |
+| **사전 조건** | [03. 변환 파이프라인](03-transformation-pipeline) 완료 (Gold 테이블 10개 필요) |
+| **실습 환경** | Genie Code Agent Mode + AI Dev Kit MCP |
+| **사용 MCP 도구** | `manage_dashboard` (보조: `execute_sql`, `get_table_stats_and_schema`, `manage_app`) |
+
+> **핵심 메시지**: "대시보드는 **'아는 질문'** 에 답한다. (아직 모르는 질문은 다음 모듈의 Genie가 답한다.)"
+
+### 이 모듈에서 사용하는 Databricks 기능
+
+| 기능 | 설명 | 공식 문서 |
+|------|------|----------|
+| **AI/BI Dashboard** | 코드 없이 SQL 기반 대시보드를 만드는 기능. KPI 카운터·차트·필터를 조합해 운영 대시보드를 구성. | [docs](https://docs.databricks.com/en/dashboards/index.html) |
+| **Genie Code로 대시보드 생성** | 자연어 한 줄로 여러 위젯을 가진 대시보드를 생성/수정. MCP `manage_dashboard`로 크로스 프로덕트 생성. | [AI Dev Kit](https://github.com/databricks-solutions/ai-dev-kit) |
+
+## 개요
+
+[모듈 3](03-transformation-pipeline)에서 만든 **Gold 테이블 10개**를 소비하여, 카메라 모듈 공장의 세 이해관계자가 매일 확인하는 대시보드를 만듭니다.
+
+| 대시보드 | 대상 | 핵심 Gold 테이블 |
+|----------|------|-----------------|
+| **생산/수율 운영** | 생산기술·라인 운영팀 | `daily_yield_summary`, `first_pass_yield`, `station_cycle_time` |
+| **품질/불량 분석** | 품질(QA)·공정기술팀 | `defect_pareto`, `material_defect_correlation`, `aa_quality_trend`, `spc_process_capability` |
+| **설비 운영/OEE** | 설비보전·제조운영팀 | `oee_by_equipment`, `equipment_health_score` |
+
+> **Tip**: 대시보드 생성은 `manage_dashboard` MCP 도구를 사용합니다. 무거운 도구이니 시작 전 `현재 사용자 정보 알려줘`로 MCP 앱을 깨워두세요. 코드/위젯 생성 시 **Plan 확인 → "Allow in this thread"** (Always Allow 금지).
+
+---
+
+## Part A: 생산/수율 운영 대시보드
+
+> 라인·모델별 수율과 직행률(FPY), 택트타임을 한눈에 보는 운영 현황판.
+
+### Genie Code 프롬프트
+
+```
+gold.daily_yield_summary, gold.first_pass_yield, gold.station_cycle_time 테이블로
+"생산/수율 운영 대시보드"를 AI/BI 대시보드로 만들어줘.
+
+위젯 (총 12개):
+
+Row 1 — KPI 카운터 (4개):
+1. 오늘 총 생산 수량 (합계)
+2. 전체 수율 % (양품/투입, 게이지)
+3. 직행률(FPY) % (게이지)
+4. 활성 라인 수 (오늘 실적 있는 라인)
+
+Row 2 — 추이 (2개):
+5. 일별 수율 추이 (최근 30일, 꺾은선, 라인별 색상 구분)
+6. 일별 FPY 추이 (최근 30일, 꺾은선)
+
+Row 3 — 분포 (3개):
+7. 모델별 수율 비교 (가로 막대, Top 10 model_code)
+8. 라인별 생산 수량 (막대: LINE_1~LINE_6)
+9. 스테이션별 평균 택트타임 (막대: SMT/DISPENSE/REFLOW/ALIGN/AOI/FINAL)
+
+Row 4 — 운영 지표 (3개):
+10. 라인×일 수율 히트맵 (X축 날짜, Y축 라인, 색상 수율)
+11. 근무조(shift)별 수율 비교 (막대: DAY/SWING/NIGHT)
+12. 고객(customer)별 생산 비중 (도넛)
+
+필터: 날짜 범위(기본 최근 30일), 라인(line_id), 모델(model_code), 근무조(shift)
+```
+
+### 생성 확인
+
+```
+방금 만든 "생산/수율 운영 대시보드"가 잘 생성됐는지 확인해줘. 대시보드 URL과 포함된 위젯 목록을 보여줘.
+```
+
+> ✅ 12개 위젯과 4개 필터가 보이면 정상입니다.
+
+---
+
+## Part B: 품질/불량 분석 대시보드
+
+> 불량 파레토와 자재·공정 상관, AA(Active Alignment) 화질 지표를 다루는 품질 분석판.
+
+### Genie Code 프롬프트
+
+```
+gold.defect_pareto, gold.material_defect_correlation, gold.aa_quality_trend, gold.spc_process_capability 테이블로
+"품질/불량 분석 대시보드"를 AI/BI 대시보드로 만들어줘.
+
+위젯 (총 11개):
+
+Row 1 — KPI 카운터 (3개):
+1. 전체 불량률 % (게이지)
+2. CRITICAL 불량 건수 (오늘)
+3. 평균 공정능력 Cpk (핵심 공정 평균)
+
+Row 2 — 불량 파레토 (2개):
+4. 불량 코드별 파레토 (막대+누적선, defect_code 상위 15, 누적 % 라인)
+5. 불량 카테고리 × severity 분포 (Stacked Bar: PLACEMENT/BONDING/ALIGNMENT/CONTAMINATION/IMAGE_QUALITY × CRITICAL/MAJOR/MINOR)
+
+Row 3 — 상관 분석 (3개):
+6. 자재 공급사별 불량률 (가로 막대, supplier별 — Sup_S7/S8 부각 예상)
+7. 자재 로트↔불량 상관 상위 (막대: material_defect_correlation 상위 10)
+8. root_cause 분포 (파이: MATERIAL/EQUIPMENT/PROCESS/OPERATOR/ENVIRONMENT)
+
+Row 4 — AA 화질 & 공정능력 (3개):
+9. 모델별 MTF(center) 분포 (박스플롯 또는 분포 막대, aa_quality_trend)
+10. AA 틸트 산포 추이 (일별 tilt 표준편차 꺾은선)
+11. 공정 파라미터별 Cpk 히트맵 (X축 날짜, Y축 공정, 색상 Cpk — 1.33 미만 경고색)
+
+필터: 날짜 범위, 라인, 모델, 불량 카테고리(defect_category)
+```
+
+### 생성 확인
+
+```
+"품질/불량 분석 대시보드"의 URL과 위젯 목록을 보여줘. Cpk 히트맵에서 1.33 미만 구간이 경고색으로 표시되는지 확인해줘.
+```
+
+> 💡 **Cpk 1.33**은 일반적인 공정능력 관리 기준선입니다. 미만 구간이 눈에 띄면 대시보드가 의도대로 만들어진 것입니다.
+
+---
+
+## Part C: 설비 운영/OEE 대시보드
+
+> 설비별 OEE(가용성×성능×품질)와 예측정비용 건강점수를 보는 설비 운영판.
+
+### Genie Code 프롬프트
+
+```
+gold.oee_by_equipment, gold.equipment_health_score 테이블로
+"설비 운영/OEE 대시보드"를 AI/BI 대시보드로 만들어줘.
+
+위젯 (총 11개):
+
+Row 1 — KPI 카운터 (4개):
+1. 전체 평균 OEE % (게이지)
+2. 평균 가용성(Availability) %
+3. 평균 성능(Performance) %
+4. 평균 품질(Quality) %
+
+Row 2 — 추이 (2개):
+5. 일별 OEE 추이 (최근 30일, 꺾은선, 라인별 색상)
+6. OEE 3요소(가용성/성능/품질) 추이 (Multi-line)
+
+Row 3 — 설비 분석 (3개):
+7. 설비 유형별 평균 OEE (막대: SMT_MOUNTER/DISPENSER/REFLOW/AA/AOI/FINAL_TESTER)
+8. 설비별 OEE 랭킹 (가로 막대, 하위 15개 — 개선 대상)
+9. 비가동(downtime) 사유별 시간 파레토 (막대: BREAKDOWN/PM/CHANGEOVER/IDLE)
+
+Row 4 — 설비 건강 (2개):
+10. 설비 건강점수 히트맵 (X축 날짜, Y축 설비, 색상 health_score — 낮을수록 경고색)
+11. 위험 설비 Top 10 (health_grade D/F, 주요 위험요인 표시)
+
+필터: 날짜 범위, 라인, 설비 유형(equipment_type)
+```
+
+### 생성 확인
+
+```
+"설비 운영/OEE 대시보드"의 URL과 위젯 목록을 보여줘.
+건강점수 히트맵에서 D/F 등급 설비가 경고색으로 구분되는지 확인해줘.
+```
+
+---
+
+## 차트 유형 가이드 (제조 지표에 맞게)
+
+| 지표 | 권장 차트 | 이유 |
+|------|----------|------|
+| 수율 / OEE (목표 대비) | 게이지 + 추이 꺾은선 | 목표 달성도와 추세를 동시에 |
+| 불량 코드/사유 | 파레토(막대+누적선) | "상위 몇 개가 전체의 80%"를 드러냄 |
+| 공정능력 Cpk | 히트맵 / 분포 | 시간·공정별 능력 저하 구간 포착 |
+| MTF·틸트 산포 | 박스플롯 / 분포 막대 | 규격 대비 산포·이상 확인 |
+| 설비 건강점수 | 히트맵 | 다수 설비×시간을 한 화면에 |
+| 구성비(고객/카테고리) | 도넛 / Stacked Bar | 비중 비교 |
+
+> ⚠️ **3D 차트·파이 남발 금지**. 비교가 목적이면 막대, 추세면 꺾은선, 다수×시간이면 히트맵이 정확합니다.
+
+---
+
+## 보너스: 대시보드를 Databricks App으로 배포
+
+만든 대시보드를 독립 웹 앱으로 배포할 수 있습니다.
+
+```
+"설비 운영/OEE 대시보드"를 Databricks Apps로 배포해줘. 완료되면 앱 URL을 알려줘.
+```
+
+> 실행 중 Code execution 블록이 나오면 **Run**으로 계속 진행합니다. 화면이 정상이 아니면 증상을 요약해 Genie Code에 디버깅을 요청하세요.
+
+---
+
+## MCP 실패 시 UI 우회
+
+`manage_dashboard` 호출이 계속 실패하면 당황하지 말고 UI로 만듭니다:
+
+- 왼쪽 사이드바 → **Dashboards → + Create**
+- 데이터셋(SQL)을 추가하고, Genie Code 사이드 패널에 "이 대시보드에 라인별 수율 막대 위젯 추가해줘"처럼 요청하면 위젯 단위로도 도와줍니다.
+
+> 💡 워크샵의 핵심은 **Genie Code로 자연어로 만든다**는 경험입니다. MCP는 편의 기능이므로, 안 되면 UI + 사이드 패널 조합으로 진행하세요.
+
+---
+
+## 핵심 포인트 정리
+
+| 배운 것 | 왜 중요한가 |
+|---------|-----------|
+| 자연어로 대시보드 생성 | 12개 위젯 대시보드를 몇 분 만에 |
+| Gold → 대시보드 직결 | 집계 테이블이 있으면 시각화가 즉시 |
+| 제조 지표별 차트 선택 | 수율=게이지, 불량=파레토, 능력=히트맵 |
+| App 배포 | 대시보드를 독립 웹으로 공유 |
+
+---
+
+## 다음 단계
+
+- **[05. Genie 에이전트](05-genie-agent)** — 대시보드가 답하지 못하는 "즉석 질문"을 자연어로 답하는 Genie Space를 만들고 정확도를 끌어올립니다.

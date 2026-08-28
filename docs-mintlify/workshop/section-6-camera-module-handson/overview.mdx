@@ -1,0 +1,92 @@
+---
+title: "카메라 모듈 스마트팩토리 E2E"
+---
+
+> **소요**: 1일 (약 6~7시간) | **대상**: 데이터 분석 경험 보유(L200) | **환경**: Genie Code Agent Mode + AI Dev Kit MCP · Serverless
+
+Databricks **Genie Code**로 자연어 프롬프트만으로 데이터 파이프라인부터 AI 에이전트까지 End-to-End로 구축하는 1일 핸즈온입니다.
+
+**카메라 모듈(CCM, Compact Camera Module) 스마트팩토리** 데이터를 소재로, 있을 법한 Bronze 원천 데이터를 만들고 → 정제 파이프라인 → 대시보드/Genie → 비정형 처리 → Agent Bricks 에이전트까지 이어집니다.
+
+---
+
+## 이 워크샵의 목표
+
+- **Genie Code = 만능 빌더**: SQL/Python을 직접 쓰지 않고, 자연어 프롬프트만으로 Databricks의 다양한 기능을 빠르고 안전하게 구축한다
+- **안전한 구성 우선**: Agent Mode의 "Allow in this thread", Custom Instructions 안전 규칙, Serverless 제약, MCP 도구 최소권한 프로필을 지킨다
+- **제조 도메인 체감**: 수율·불량·OEE·예측정비 같은 실제 스마트팩토리 질문을 데이터로 답하는 경험
+
+---
+
+## 진행 순서 (모듈 0~7)
+
+| # | 모듈 | 소요 | 핵심 |
+|---|------|------|------|
+| **0** | [환경 설정 & 안전 구성](00-genie-code-intro-setup) | ~45분 | Agent Mode, 안전 규칙, Custom Instructions, AI Dev Kit MCP 연결 |
+| **1** | [가상 데이터 생성](01-data-generation) | ~40분 | 카메라 모듈 공장 Bronze 17테이블 (~250만 건) |
+| **2** | [데이터 EDA](02-eda) | ~40분 | 프로파일링, 품질 진단, 이상치·결측·상관 탐색 |
+| **3** | [변환 파이프라인 (Job & SDP)](03-transformation-pipeline) | ~70분 | Bronze→Silver→Gold, Expectations, Job 스케줄 |
+| **4** | [AI/BI 대시보드](04-aibi-dashboard) | ~50분 | 수율/불량/설비 운영 대시보드 |
+| **5** | [Genie 에이전트](05-genie-agent) | ~60분 | Genie Space 생성 + 정확도 고도화 + Genie Agent |
+| **6** | [비정형 데이터 AI 함수](06-ai-functions-unstructured) | ~50분 | `ai_parse_document`·`ai_extract`·`ai_query` (8D·SOP·불량이미지) |
+| **7** | [Agent Bricks 에이전트](07-agent-bricks) | ~60분 | Knowledge Assistant + Supervisor 통합 어시스턴트 |
+
+> 커리큘럼 전체 프롬프트는 [부록 — 샘플 프롬프트 모음](prompt-catalog)에 용도별로 정리돼 있습니다.
+
+---
+
+## 시나리오 — 왜 카메라 모듈인가
+
+카메라 모듈(CCM) 조립 라인에서 발생하는 제조 실행(MES)·공정(SPC)·검사·설비 텔레메트리 데이터를 소재로 합니다.
+
+- **한 줄 스토리**: "원천 로그가 파편화된 스마트팩토리에서, Genie Code로 신뢰할 수 있는 수율·품질·설비 데이터를 만들고, 누구나 자연어로 물어보고, 에이전트가 대신 분석·안내하게 만든다."
+- SMT 실장 → 디스펜싱/본딩 → 리플로우 → Active Alignment(AA) → AOI 검사 → 최종 화질검사로 이어지는 공정 흐름이 명확해 Medallion 아키텍처와 잘 맞습니다.
+
+### 공정 흐름 (데이터가 생성되는 순서)
+
+| 단계 | 공정 | 대표 원천 테이블 |
+|------|------|-----------------|
+| 1 | 자재 입고 | `material_lot_master` |
+| 2 | SMT 실장 | `smt_placement_logs` |
+| 3 | 디스펜싱/본딩 | `dispensing_process` |
+| 4 | 리플로우 | `reflow_profiles` |
+| 5 | Active Alignment (AA) | `active_alignment` |
+| 6 | AOI 검사 | `aoi_inspection` |
+| 7 | 최종 화질검사 | `final_image_test` |
+| — | 전 공정 관통 | `equipment_sensor_logs` / `cleanroom_environment` / `traceability` |
+
+---
+
+## Unity Catalog 구조
+
+| 항목 | 값 |
+|------|-----|
+| 카탈로그 | `ccm_factory` |
+| Bronze 스키마 | `ccm_factory.bronze` (17개 원천 테이블) |
+| Silver 스키마 | `ccm_factory.silver` (정제/표준화 ~15개) |
+| Gold 스키마 | `ccm_factory.gold` (비즈니스 집계 ~10개) |
+| Quarantine 스키마 | `ccm_factory.quarantine` (품질 위반 격리) |
+| 볼륨 | `ccm_factory.bronze.raw_files` (PDF/이미지 등 비정형) |
+| 컴퓨트 | Serverless |
+| Genie Code 모드 | Agent Mode |
+
+> 네이밍은 `snake_case`, 테이블/컬럼 전부 COMMENT 필수 (Genie 정확도의 핵심).
+
+---
+
+## 안전 구성 원칙 (전 모듈 공통)
+
+Genie Code로 "안전하게" 구성하기 위한 규칙. [모듈 0](00-genie-code-intro-setup)에서 설정하고 끝까지 유지합니다.
+
+| 영역 | 규칙 |
+|------|------|
+| **실행 승인** | Agent Mode에서 **"Allow in this thread"**만 사용. **"Always Allow" 금지**. DROP/DELETE/ALTER는 매번 계획 확인 후 승인 |
+| **Custom Instructions** | 기존 테이블 DROP/DELETE 금지, `CREATE OR REPLACE` 사용, 테스트 `LIMIT 1000`, 모든 테이블 COMMENT, Delta·`event_date` 파티션 기본 |
+| **Serverless 제약** | R/Scala/RDD/DBFS mount/init script 불가 → Python·SQL·UC Volumes만. `%pip install pyspark` 금지 |
+| **MCP 도구** | 워크샵 프로필만 ON. `execute_code`보다 `execute_sql` 우선. "Always allow" 아님 |
+| **권한** | 본인 권한 테이블만. Genie Space ≤ 30테이블(GCP 25) |
+| **비용** | Genie Code는 소비량 기반 과금 + 실행 컴퓨트 과금. 개발 중 `LIMIT` 습관화 |
+
+---
+
+준비가 되었으면 [모듈 0 — 환경 설정 & 안전 구성](00-genie-code-intro-setup)부터 시작하세요.

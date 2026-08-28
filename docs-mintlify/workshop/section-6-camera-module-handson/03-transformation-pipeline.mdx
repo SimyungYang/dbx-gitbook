@@ -1,0 +1,494 @@
+---
+title: "변환 파이프라인 (Job & SDP)"
+---
+
+| 항목 | 내용 |
+|------|------|
+| **소요 시간** | ~70분 |
+| **사전 조건** | [02. 데이터 EDA](02-eda) 완료 (Bronze 17테이블 + 품질 이슈 파악) |
+| **실습 환경** | Genie Code Agent Mode + AI Dev Kit MCP, Serverless |
+| **사용 MCP 도구** | `manage_pipeline`, `manage_jobs`, `manage_job_runs` |
+
+> **핵심 메시지**: "Raw 로그를 신뢰할 수 있는 수율·품질·설비 데이터로 바꾸는 과정을, 자연어 한 줄로 선언하고 자동화한다."
+
+### 이 모듈에서 사용하는 Databricks 기능
+
+| 기능 | 설명 | 공식 문서 |
+|------|------|----------|
+| **SDP (Spark Declarative Pipelines)** | 이전 이름 DLT(Delta Live Tables). 파이프라인을 SQL/Python으로 "선언"하면 실행 순서·증분·에러 복구를 Databricks가 자동 관리. Lakeflow의 파이프라인 엔진. | [docs](https://docs.databricks.com/en/delta-live-tables/index.html) |
+| **Expectations** | SDP의 데이터 품질 규칙. `expect("규칙", "조건")`으로 위반 레코드를 감지·격리·중단. | [docs](https://docs.databricks.com/en/delta-live-tables/expectations.html) |
+| **Medallion Architecture** | Bronze(원본)→Silver(정제)→Gold(집계) 3계층. 원본을 보존하며 단계적으로 신뢰도를 높임. | [docs](https://docs.databricks.com/en/lakehouse/medallion.html) |
+| **Databricks Jobs** | 노트북/파이프라인을 스케줄·자동 실행. 매일 새벽 리프레시 같은 자동화. | [docs](https://docs.databricks.com/en/workflows/jobs/create-run-jobs.html) |
+
+## 개요
+
+17개 Bronze 테이블의 Raw 로그에는 결측·중복·이상치·단위불일치·참조 깨짐 등 현실의 품질 문제가 있습니다(모듈 2에서 확인). 이 모듈에서는:
+
+1. **수동 CTAS**로 Bronze→Silver→Gold 변환 로직을 이해한 뒤
+2. **SDP**로 동일 로직을 선언적으로 자동화하고
+3. **Job**으로 매일 자동 리프레시합니다.
+
+> 품질 위반 레코드를 격리하는 `quarantine` 스키마는 [모듈 0](00-genie-code-intro-setup)에서 이미 생성했습니다.
+
+> **작업 흐름(전 모듈 공통)**: Genie Code가 코드를 생성하면 **Plan 확인 → "Allow in this thread"(절대 Always Allow 아님) → Accept all → Run**. 기존 테이블은 DROP하지 말고 `CREATE OR REPLACE`. 무거운 변환도 SQL로 되면 `execute_code`보다 `execute_sql`을 우선(클러스터 대기·타임아웃 회피).
+
+---
+
+## Part A: 데이터 품질 문제 이해하기
+
+모듈 2에서 확인한, Bronze에 **의도적으로 심어진** 품질 이슈입니다. Silver 변환에서 이걸 어떻게 처리하는지가 이 파이프라인의 핵심입니다.
+
+| 이슈 유형 | 테이블 | 구체적 문제 | Silver 처리 |
+|----------|--------|-----------|------------|
+| **결측 (NULL)** | final_image_test | `snr_db` NULL (구형 테스터) | 모델 평균으로 대체 + `snr_imputed` 플래그 |
+| **결측 (NULL)** | dispensing_process | `uv_dose_mj` NULL (LENS_BOND UV 미조사) | 잠재불량 플래그 `uv_missing=true` 부여 |
+| **중복** | production_events | 동일 serial+timestamp 재전송 | `event_id`/`(serial_id,timestamp,event_type)` 기준 DEDUP |
+| **이상치** | active_alignment | `mtf_center_pct > 100` (센서 오류) | 100 초과 → NULL 후 격리 |
+| **이상치** | equipment_sensor_logs | `temperature_c > 200` (스파이크) | 물리적 상한 클리핑 + `is_spike` 플래그 |
+| **단위 혼입** | smt_placement_logs | `placement_offset_x_um` mm/um 혼입(값 1000배) | 절대값 500µm 초과 → 1000으로 나눠 보정 |
+| **참조 무결성** | 전 테이블 | 존재하지 않는 `equipment_id`/`material_lot_id` | 마스터에 없으면 `quarantine`으로 분리 |
+| **시간 역전** | production_events | OUT < IN | 쌍 매칭 시 역전 레코드 격리 |
+| **비즈니스 규칙** | aoi_inspection | `defect_flag=false`인데 `defect_type` 존재 | 규칙 위반 → `quarantine` |
+
+### 데이터 품질 진단 프롬프트 (모듈 2 연계 요약)
+
+```
+ccm_factory.bronze의 핵심 테이블에 대해 Silver 변환 전 최종 품질 스코어카드를 만들어줘:
+1. final_image_test.snr_db, dispensing_process.uv_dose_mj NULL 비율
+2. production_events 중복(serial_id+timestamp+event_type) 및 OUT<IN 역전 건수
+3. active_alignment.mtf_center_pct>100, equipment_sensor_logs.temperature_c>200 이상치 건수
+4. smt_placement_logs 단위혼입 의심(|offset|>500µm) 건수
+5. serial_id/equipment_id/material_lot_id 참조 무결성 위반 건수
+6. aoi_inspection 비즈니스 규칙 위반(defect_flag=false & defect_type NOT NULL) 건수
+결과를 표로 보여주고, Silver에서 처리 우선순위를 제안해줘.
+```
+
+---
+
+## Part B: Silver Layer — 정제 & 표준화
+
+### Silver 변환 공통 원칙
+
+| 원칙 | 규칙 |
+|------|------|
+| **중복 제거** | `event_id` 또는 비즈니스 키 기준 DEDUP (최신 timestamp 우선) |
+| **참조 무결성** | 마스터(equipment/product/material_lot)에 없는 키 → `quarantine`으로 분리 |
+| **이상치** | 물리적 불가값은 클리핑/격리, 통계적 이상치는 플래그 컬럼 추가 |
+| **단위 표준화** | offset은 µm 통일(mm 혼입 보정), 온도 °C, 시간 UTC |
+| **결측 처리** | 비즈니스 키 결측은 격리, 분석 컬럼은 대체값 + 플래그 |
+| **파티셔닝** | `event_date`(DATE) 파티션, 주요 조회키 Z-ORDER |
+
+### Silver 테이블 목록
+
+| Silver 테이블 | 원본 Bronze | 주요 변환 |
+|--------------|------------|----------|
+| `serials_cleaned` | traceability | 중복 제거, final_result 표준화, 마스터 조인 |
+| `aa_measurements` | active_alignment | mtf>100 격리, tilt 이상 플래그, 모델 target 조인 |
+| `final_test_clean` | final_image_test | snr NULL 대체+플래그, 규격 판정 재검증 |
+| `sensor_metrics_5min` | equipment_sensor_logs | 온도 스파이크 클리핑, 1분→5분 집계, 추세 플래그 |
+| `production_flow` | production_events | IN/OUT 쌍 매칭, 택트타임 산출, 역전/중복 격리 |
+| `defect_normalized` | defect_events | severity/category 표준화, 마스터 조인 |
+| `aoi_defects` | aoi_inspection | 규칙위반 격리, defect_type 표준화 |
+| `smt_placement_clean` | smt_placement_logs | offset 단위 보정, pickup 결과 정규화 |
+| `dispensing_clean` | dispensing_process | uv_missing 플래그, 파라미터 범위 검증 |
+| `downtime_clean` | equipment_downtime | 유형/사유 표준화, duration 검증 |
+| `cleanroom_5min` | cleanroom_environment | 1분→5분 집계, 파티클 급증 플래그 |
+
+### Genie Code 코드 생성 → 확인 → 적용 흐름
+
+1. **Plan 확인**: Genie Code가 실행 계획을 보여줍니다. 의도와 맞는지 읽습니다.
+2. **Allow in this thread** 클릭 (Always allow 금지)
+3. 노트북에 초록색 새 코드 표시 → 우측 패널 **Accept all**
+4. 상단 **Run all** 또는 셀 실행(▶)
+
+> 💡 마음에 안 들면 **Reject all** 후 구체적 수정사항을 프롬프트로 요청하세요.
+
+### Silver 핵심 5개 테이블 프롬프트
+
+#### Silver 1: aa_measurements (Active Alignment 측정 — 핵심 공정)
+
+```
+ccm_factory.bronze.active_alignment를 정제하여 ccm_factory.silver.aa_measurements를 만들어줘.
+
+변환 규칙:
+1. event_id 기준 중복 제거 (최신 timestamp 유지)
+2. serial_id/equipment_id가 마스터에 없으면 ccm_factory.quarantine.aa_orphans로 분리
+3. mtf_center_pct > 100 또는 < 0 인 레코드는 ccm_factory.quarantine.aa_bad_mtf로 분리 (센서 오류)
+4. product_master 조인으로 target_mtf_center, spec_mtf_min 추가
+5. 추가 컬럼:
+   - event_date: timestamp에서 DATE
+   - mtf_margin: mtf_center_pct - spec_mtf_min
+   - tilt_abs_max: GREATEST(ABS(tilt_x_arcmin), ABS(tilt_y_arcmin))
+   - is_tilt_out: tilt_abs_max > 5 (틸트 규격 초과)
+   - aa_pass_recalc: mtf_center_pct >= spec_mtf_min AND tilt_abs_max <= 5
+6. event_date 파티셔닝, (equipment_id, event_date) Z-ORDER
+7. 테이블/컬럼 COMMENT 추가
+
+CREATE OR REPLACE TABLE, CTAS SQL로 만들어줘.
+```
+
+#### Silver 2: final_test_clean (최종 화질검사 정제)
+
+```
+ccm_factory.bronze.final_image_test를 정제하여 ccm_factory.silver.final_test_clean을 만들어줘.
+
+변환 규칙:
+1. event_id 중복 제거, serial_id 참조 무결성(없으면 quarantine.final_orphans)
+2. snr_db가 NULL이면 같은 model_code의 중앙값으로 대체하고 snr_imputed=true 플래그 (원본 NULL 여부 보존)
+3. product_master 조인으로 model_code, spec_mtf_min 추가
+4. 추가 컬럼:
+   - event_date (DATE)
+   - defect_summary: dead_pixel_count>2 OR particle_count>=5 OR blemish_count>=5 → true
+   - result_recalc: mtf_sfr_center >= spec_mtf_min AND NOT defect_summary → 'PASS' else 'FAIL'
+   - result_mismatch: test_result != result_recalc (원본 판정과 재계산 불일치 감지)
+5. event_date 파티셔닝, model_code Z-ORDER, COMMENT 추가
+
+CREATE OR REPLACE TABLE, CTAS SQL로.
+```
+
+#### Silver 3: sensor_metrics_5min (설비 센서 5분 집계 — 예측정비 기반)
+
+```
+ccm_factory.bronze.equipment_sensor_logs를 정제·집계하여 ccm_factory.silver.sensor_metrics_5min을 만들어줘.
+
+변환 규칙:
+1. temperature_c > 120 또는 < 0 → 물리적 상한 120으로 클리핑하고 is_temp_spike=true 플래그
+2. equipment_id 참조 무결성 (없으면 제거)
+3. 5분 단위 집계 (equipment_id × 5분 버킷):
+   - AVG/MAX temperature_c, AVG/MAX vibration_mm_s, AVG motor_current_a, AVG vacuum_kpa, AVG air_pressure_kpa
+   - BOOL_OR(is_temp_spike) as any_spike
+4. 추가 컬럼:
+   - event_date (DATE)
+   - health_flag: max_temperature_c > 80 OR max_vibration_mm_s > 5 → 'warning', 그 이상이면 'critical', else 'normal'
+   - vib_trend: 직전 5분 대비 vibration 증가율 (Window LAG)
+5. event_date 파티셔닝, equipment_id Z-ORDER, COMMENT 추가
+
+CREATE OR REPLACE TABLE, CTAS SQL로.
+```
+
+#### Silver 4: production_flow (스테이션 흐름 & 택트타임)
+
+```
+ccm_factory.bronze.production_events를 정제하여 ccm_factory.silver.production_flow를 만들어줘.
+
+변환 규칙:
+1. (serial_id, timestamp, event_type) 기준 중복 제거 (재전송 제거)
+2. serial_id별·station별 IN/OUT 쌍 매칭:
+   - 같은 serial_id+station의 IN과 다음 OUT을 페어링
+   - OUT < IN(시간 역전) 쌍은 ccm_factory.quarantine.flow_time_reversed로 분리
+   - 짝이 없는 고아 이벤트는 flag
+3. equipment_id 참조 무결성 검증
+4. 산출 컬럼 (그레인: serial_id × station 1행):
+   - in_time, out_time, station, equipment_id, wo_id
+   - dwell_time_sec: out_time - in_time (초)
+   - event_date (in_time의 DATE)
+5. dwell_time_sec이 음수이거나 station 표준 범위의 10배 초과면 이상치 flag
+6. event_date 파티셔닝, (station, event_date) Z-ORDER, COMMENT 추가
+
+CREATE OR REPLACE TABLE, CTAS SQL로.
+```
+
+#### Silver 5: defect_normalized (불량 표준화)
+
+```
+ccm_factory.bronze.defect_events를 정제하여 ccm_factory.silver.defect_normalized를 만들어줘.
+
+변환 규칙:
+1. event_id 중복 제거, serial_id 참조 무결성
+2. 표준화: severity 대문자 통일(CRITICAL/MAJOR/MINOR 외 → 'UNKNOWN'), defect_category/disposition/root_cause_code 정규화
+3. traceability 조인으로 model_code, 사용 material_lot_ids 추가 (자재↔불량 상관 분석 대비)
+4. 추가 컬럼:
+   - event_date (DATE)
+   - is_scrap: disposition = 'SCRAP'
+   - is_critical: severity = 'CRITICAL'
+5. event_date 파티셔닝, (station, defect_category) Z-ORDER, COMMENT 추가
+
+CREATE OR REPLACE TABLE, CTAS SQL로.
+```
+
+### 나머지 Silver 테이블 (6개) — 동일 패턴 일괄
+
+```
+위 5개 Silver와 동일한 공통 원칙(event_id 중복제거, 참조무결성→quarantine, 이상치 클리핑/플래그, event_date 파티션, 단위표준화, COMMENT)을 적용하여 나머지 6개도 만들어줘:
+
+1. silver.serials_cleaned ← bronze.traceability: 중복제거, final_result 표준화, 마스터 조인
+2. silver.aoi_defects ← bronze.aoi_inspection: defect_flag=false인데 defect_type 있는 규칙위반 → quarantine.aoi_rule_violation, defect_type 표준화
+3. silver.smt_placement_clean ← bronze.smt_placement_logs: |offset|>500µm는 mm 혼입으로 보고 1000으로 나눠 보정 + offset_corrected 플래그, pickup_result 정규화
+4. silver.dispensing_clean ← bronze.dispensing_process: LENS_BOND인데 uv_dose_mj NULL이면 uv_missing=true, 파라미터 범위 검증
+5. silver.downtime_clean ← bronze.equipment_downtime: 유형/사유코드 표준화, duration_min<=0 제거
+6. silver.cleanroom_5min ← bronze.cleanroom_environment: 1분→5분 집계, particle_0_3um 급증(직전대비 3배↑) 플래그
+
+3~4개씩 나눠서 요청할게. 먼저 1~3번을 CREATE OR REPLACE로 만들어줘.
+```
+
+> 💡 한 번에 6개를 다 만들면 오래 걸립니다. 3개씩 나눠 요청하세요.
+
+### Silver 전체 확인
+
+```
+ccm_factory.silver의 모든 테이블 목록과 row count를 보여줘.
+bronze 원본 대비 필터링/격리된 비율과, quarantine 스키마에 격리된 건수도 테이블별로 알려줘.
+```
+
+---
+
+## Part C: Gold Layer — 비즈니스 집계
+
+Gold는 **대시보드·Genie·에이전트·ML이 직접 소비**하는 테이블입니다.
+
+| Gold 테이블 | 그레인 | 설명 |
+|------------|--------|------|
+| `daily_yield_summary` | 라인 × 모델 × 일 | 일별 수율 요약 |
+| `first_pass_yield` | 스테이션 × 일 | 직행률(FPY) |
+| `defect_pareto` | 불량코드 × 라인 × 일 | 불량 파레토 |
+| `oee_by_equipment` | 설비 × 일 | 설비 종합효율 (가용성×성능×품질) |
+| `spc_process_capability` | 공정 × 파라미터 × 일 | 공정능력지수 Cpk |
+| `aa_quality_trend` | 모델 × 일 | MTF/틸트 분포 추이 |
+| `equipment_health_score` | 설비 × 일 | 예측정비 건강 점수 |
+| `material_defect_correlation` | 자재로트 × 불량 | 자재↔불량 상관 |
+| `station_cycle_time` | 스테이션 × 일 | 택트타임 |
+| `product_traceability_360` | 시리얼 | 제품 360 이력 |
+
+### Gold 핵심 6개 프롬프트
+
+#### Gold 1: daily_yield_summary
+
+```
+silver.final_test_clean, silver.serials_cleaned, silver.production_flow를 결합하여 ccm_factory.gold.daily_yield_summary를 만들어줘.
+
+그레인: line_id × model_code × event_date
+
+컬럼:
+- line_id, model_code, event_date
+- input_qty: 투입 시리얼 수, output_qty: FINAL 통과(PASS) 수
+- yield_pct: output_qty / input_qty * 100
+- fail_qty, scrap_qty, rework_qty
+- avg_mtf_center, avg_snr_db
+- top_defect_category: 최다 불량 카테고리
+
+product_master/equipment 조인으로 customer, module_type 추가.
+event_date 파티셔닝, COMMENT 추가.
+```
+
+#### Gold 2: first_pass_yield (FPY 직행률)
+
+```
+silver.production_flow, silver.aoi_defects, silver.final_test_clean을 결합하여 ccm_factory.gold.first_pass_yield를 만들어줘.
+
+그레인: station × event_date
+
+정의: FPY = (재작업/재검 없이 한 번에 통과한 수) / (해당 스테이션 투입 수) * 100
+
+컬럼:
+- station, event_date
+- input_count, first_pass_count, rework_count
+- fpy_pct: first_pass_count / input_count * 100
+- rolled_throughput_yield: 전 스테이션 FPY의 곱 (라인 전체 직행률, 별도 컬럼 또는 요약행)
+
+event_date 파티셔닝, COMMENT 추가.
+```
+
+#### Gold 3: defect_pareto
+
+```
+silver.defect_normalized를 집계하여 ccm_factory.gold.defect_pareto를 만들어줘.
+
+그레인: defect_code × line_id × event_date
+
+컬럼:
+- defect_code, defect_category, line_id, event_date
+- defect_count, scrap_count, critical_count
+- pct_of_total: 해당 라인/일 전체 불량 대비 비율
+- cum_pct: 불량 많은 순 누적 비율 (파레토 80/20 분석용, Window)
+- top_root_cause: 최다 root_cause_code
+
+event_date 파티셔닝, COMMENT 추가.
+```
+
+#### Gold 4: oee_by_equipment (설비 종합효율)
+
+```
+silver.downtime_clean, silver.production_flow, silver.final_test_clean, bronze.equipment_master를 결합하여 ccm_factory.gold.oee_by_equipment를 만들어줘.
+
+그레인: equipment_id × event_date
+
+OEE = 가용성(Availability) × 성능(Performance) × 품질(Quality)
+- availability = (계획가동시간 - 비가동시간) / 계획가동시간
+  · 비가동시간 = downtime_clean의 BREAKDOWN+CHANGEOVER+IDLE 합 (PM 제외 또는 옵션)
+- performance = (실제 처리수 × 이상택트) / 실제가동시간  또는  실제UPH / rated_capacity_uph
+- quality = 양품수 / 총생산수
+
+컬럼:
+- equipment_id, equipment_type, line_id, event_date
+- planned_time_min, downtime_min, run_time_min
+- availability_pct, performance_pct, quality_pct
+- oee_pct: 세 값의 곱
+- breakdown_min, changeover_min, pm_min (유형별 비가동)
+
+event_date 파티셔닝, (equipment_id) Z-ORDER, COMMENT 추가.
+```
+
+#### Gold 5: spc_process_capability (Cpk 공정능력)
+
+```
+silver.aa_measurements(및 dispensing_clean)를 집계하여 ccm_factory.gold.spc_process_capability를 만들어줘.
+
+그레인: process × parameter × model_code × event_date
+- process/parameter 예: ALIGN/mtf_center_pct, ALIGN/tilt_abs_max, DISPENSE/volume_mg
+
+각 파라미터에 대해:
+- n, mean, stddev
+- usl, lsl: 규격 상/하한 (파라미터별 정의; 예 mtf_center_pct의 LSL = spec_mtf_min, tilt은 USL=5)
+- cp = (USL - LSL) / (6*stddev)
+- cpk = MIN((USL-mean)/(3*stddev), (mean-LSL)/(3*stddev))
+- capability_grade: cpk>=1.33 '우수', 1.0~1.33 '보통', <1.0 '개선필요'
+
+한쪽 규격만 있는 경우 단측 Cpk로 계산. event_date 파티셔닝, COMMENT 추가.
+```
+
+#### Gold 6: equipment_health_score (예측정비 점수)
+
+```
+silver.sensor_metrics_5min, silver.downtime_clean, silver.defect_normalized를 결합하여 ccm_factory.gold.equipment_health_score를 만들어줘.
+
+그레인: equipment_id × event_date
+
+컬럼:
+- equipment_id, equipment_type, line_id, event_date
+- avg_temp, max_temp, avg_vibration, max_vibration, spike_count
+- breakdown_count, breakdown_min
+- defect_attributed_count: 해당 설비 스테이션에서 발생한 불량 수
+- health_score (0~100): 100에서 감점
+  · max_temp>80 -10, max_vibration>5 -15, spike_count>0 -10, breakdown -20/건, vib 상승추세 -10
+- health_grade: A(90~100) B(70~89) C(50~69) D(30~49) F(0~29)
+- risk_factors: 위험요인 배열 (예: ["high_vibration","thermal_spike","frequent_breakdown"])
+
+devices 대신 equipment_master 조인으로 vendor, install_date 추가.
+event_date 파티셔닝, equipment_id Z-ORDER, COMMENT 추가.
+```
+
+### 나머지 Gold (4개) — 동일 패턴
+
+```
+동일 방식으로 나머지 Gold 4개도 만들어줘 (각 그레인 준수, COMMENT):
+1. gold.aa_quality_trend (모델×일): mtf_center/corner 평균·P5·P95, tilt 불량률, aa FAIL율 추이
+2. gold.material_defect_correlation (자재로트×불량): traceability로 로트별 사용 시리얼의 불량률 → 공급사/로트별 불량 상관 (Sup_S7/S8 부각)
+3. gold.station_cycle_time (스테이션×일): production_flow 기반 평균/중앙/P95 dwell_time, 목표택트 대비 편차
+4. gold.product_traceability_360 (시리얼): 시리얼별 모델·자재로트·처리설비·각 공정 측정치(MTF/SNR)·최종판정·불량이력을 한 행으로 (에이전트/ML 소비용)
+```
+
+### Gold 확인
+
+```
+ccm_factory.gold의 모든 테이블 목록과 row count, 각 테이블 그레인을 표로 보여줘.
+daily_yield_summary의 라인별 평균 수율과, defect_pareto 상위 5개 불량코드도 함께 보여줘.
+```
+
+---
+
+## Part D: SDP 파이프라인으로 자동화
+
+### 수동 CTAS → SDP 전환의 의미
+
+| 항목 | 수동 CTAS | SDP (Lakeflow) |
+|------|----------|----------------|
+| 실행 | 노트북 수동 Run | 파이프라인 자동 스케줄 |
+| 증분 처리 | 전체 재처리 | 자동 증분(Streaming Table) |
+| 데이터 품질 | 코드에서 직접 필터 | `expect` 선언적 규칙 |
+| 의존성 | 실행 순서 수동 | DAG 자동 해석 |
+| 에러 복구 | 수동 재실행 | 자동 재시도 + 격리 |
+
+### SDP 파이프라인 생성 프롬프트
+
+```
+위에서 만든 Bronze → Silver → Gold 변환 로직을 SDP(Spark Declarative Pipeline)로 전환해줘.
+
+파이프라인 이름: ccm_factory_pipeline
+타겟 카탈로그: ccm_factory
+타겟 스키마: silver, gold
+
+요구사항:
+1. Bronze → Silver를 Streaming Table로 (증분 처리)
+2. Silver → Gold를 Materialized View로 (자동 리프레시)
+3. Expectations 추가:
+   - aa_measurements: expect_or_drop("valid_mtf", "mtf_center_pct BETWEEN 0 AND 100")
+   - aa_measurements: expect("valid_tilt", "tilt_abs_max <= 8")
+   - sensor_metrics_5min: expect_or_drop("valid_temp", "max_temperature_c <= 120")
+   - production_flow: expect_or_drop("valid_dwell", "dwell_time_sec > 0")
+   - aoi_defects: expect_or_drop("aoi_rule", "NOT (defect_flag = false AND defect_type IS NOT NULL)")
+   - final_test_clean: expect("valid_result", "test_result IN ('PASS','FAIL')")
+4. 참조 무결성/규칙 위반 레코드는 ccm_factory.quarantine 스키마로 분리
+5. 품질 위반 처리:
+   - Silver: expect_or_drop (위반 시 제거·격리)
+   - Gold: expect_or_fail (위반 시 파이프라인 중단)
+
+노트북 코드를 생성해줘 (Python + SQL 혼합 가능).
+```
+
+### SDP 파이프라인 실행
+
+```
+방금 만든 SDP 파이프라인 노트북으로:
+1. ccm_factory_pipeline 이름의 파이프라인 생성
+2. 서버리스 컴퓨트 사용
+3. Continuous 대신 Triggered 모드
+4. 실행하고 각 테이블 row count와 Expectations 통과율을 보여줘
+```
+
+### 실행 결과 확인
+
+```
+ccm_factory_pipeline의 최근 실행 결과를 보여줘.
+각 테이블 row count, Expectations 통과율, 실패한 테이블이 있으면 에러 메시지를 알려줘.
+```
+
+> **참고**: SDP는 Databricks UI의 **Pipelines** 메뉴에서 DAG로 테이블 의존성과 품질 상태를 시각적으로 확인할 수 있습니다.
+
+### 기대 결과: Expectations 통과율(예시)
+
+| 테이블 | Expectation | 통과율 | 위반 |
+|--------|------------|--------|------|
+| aa_measurements | valid_mtf | ~99.7% | ~750 |
+| sensor_metrics_5min | valid_temp | ~99.8% | ~600 |
+| production_flow | valid_dwell | ~99.5% | ~2,000 |
+| aoi_defects | aoi_rule | ~99.5% | ~1,500 |
+
+---
+
+## Part E: 파이프라인 Job 스케줄링
+
+```
+ccm_factory_pipeline을 매일 자동 실행하는 Job을 만들어줘.
+
+설정:
+- Job 이름: ccm_factory_daily_refresh
+- 스케줄: 매일 오전 6시 KST (cron: 0 21 * * * UTC)
+- 재시도: 최대 2회, 간격 10분
+- 알림: 실패 시 이메일 알림
+- 클러스터: 서버리스
+- 타임아웃: 2시간
+```
+
+```
+방금 만든 ccm_factory_daily_refresh Job의 설정과 다음 실행 예정 시각을 확인해줘.
+지금 한 번 수동 실행(trigger)해서 정상 동작하는지도 확인해줘.
+```
+
+---
+
+## 핵심 포인트 정리
+
+| 배운 것 | Databricks 기능 | 비즈니스 가치 |
+|---------|----------------|-------------|
+| 데이터 품질 진단·처리 | SQL, Window 함수 | Raw 로그의 신뢰성 확보 |
+| 참조 무결성·격리 | Quarantine 스키마 | 오염 데이터가 분석을 왜곡하지 않음 |
+| 선언적 파이프라인 | SDP (Lakeflow) | 증분 처리·운영 부담 최소화 |
+| 품질 규칙 자동화 | Expectations | 위반 자동 감지·격리·중단 |
+| 수율/FPY/OEE/Cpk 집계 | Materialized View | 대시보드·Genie·ML이 바로 소비 |
+| 일일 자동 리프레시 | Databricks Jobs | 무인 운영 |
+
+---
+
+## 다음 단계
+
+- **[04. AI/BI 대시보드](04-aibi-dashboard)** — Gold 테이블로 수율·불량·설비 운영 대시보드를 자연어로 생성합니다.
