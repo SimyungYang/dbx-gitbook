@@ -1803,7 +1803,7 @@
         ]
       },
       {
-        "tab": "Genie Code 워크샵",
+        "tab": "AI-DEV-KIT 핸즈온",
         "groups": [
           {
             "group": "워크샵 개요",
@@ -1875,11 +1875,21 @@
               "workshop/section-5-appliance-handson/05-dashboard-genie",
               "workshop/section-5-appliance-handson/06-agent-development"
             ]
+          }
+        ]
+      },
+      {
+        "tab": "Genie Code 핸즈온 워크샵",
+        "groups": [
+          {
+            "group": "워크샵 개요",
+            "pages": [
+              "workshop/section-6-camera-module-handson/overview"
+            ]
           },
           {
-            "group": "Section 6: 카메라 모듈 E2E",
+            "group": "핸즈온 모듈",
             "pages": [
-              "workshop/section-6-camera-module-handson/overview",
               "workshop/section-6-camera-module-handson/00-genie-code-intro-setup",
               "workshop/section-6-camera-module-handson/01-data-generation",
               "workshop/section-6-camera-module-handson/02-eda",
@@ -1887,7 +1897,12 @@
               "workshop/section-6-camera-module-handson/04-aibi-dashboard",
               "workshop/section-6-camera-module-handson/05-genie-agent",
               "workshop/section-6-camera-module-handson/06-ai-functions-unstructured",
-              "workshop/section-6-camera-module-handson/07-agent-bricks",
+              "workshop/section-6-camera-module-handson/07-agent-bricks"
+            ]
+          },
+          {
+            "group": "부록",
+            "pages": [
               "workshop/section-6-camera-module-handson/prompt-catalog"
             ]
           }
