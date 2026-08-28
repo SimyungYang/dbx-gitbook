@@ -82,6 +82,14 @@ Precision Mode 를 검증하기 위해, 우리는 기존 접근법을 한계까�
 
 가장 복잡한 문서 추출 작업을 위한 AI Extract Precision Mode 를 이제 사용할 수 있습니다. [ai_extract 함수](https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_extract)를 호출할 때 mode 를 `precision` 으로 설정하거나, Agents 페이지의 [Information Extraction UI](https://docs.databricks.com/aws/en/agents/agent-bricks/info-extraction) 에서 precision mode 토글을 켜면 됩니다.
 
+```sql
+SELECT ai_extract(
+  content,
+  schema,
+  options => map('mode', 'precision')
+);
+```
+
 ![Information Extraction UI 에서 Precision Mode 사용](https://www.databricks.com/sites/default/files/blog_images/databricks-document-intelligence-pushing-the-frontier-for-blog-img-9.gif)
 
 **[AI Extract Precision Mode 사용해 보기](https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_extract)**

@@ -31,18 +31,21 @@ description: "TML의 첫 오픈 웨이트 모델 Inkling을 Unity AI Gateway로 
 
 ## Inkling을 엔터프라이즈 데이터에 적용하기 (Apply Inkling to enterprise data)
 
-Inkling은 보안, 비용 제어, 관측 가능성을 위한 통합 거버넌스 레이어인 Unity AI Gateway에서 사용할 수 있습니다. REST API를 통해 Inkling을 호출하세요:
+Inkling은 보안, 비용 제어, 관측 가능성을 위한 통합 거버넌스 레이어인 Unity AI Gateway에서 사용할 수 있습니다.
 
-```bash
-curl -X POST \
-  https://<workspace-host>/serving-endpoints/<inkling-endpoint>/invocations \
-  -H "Authorization: Bearer $DATABRICKS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [
-      {"role": "user", "content": "Write a Python function to parse a JSON log file."}
-    ]
-  }'
+```python
+response = client.chat.completions.create(
+    model="databricks-inkling",
+    messages=[
+        {
+            "role": "user",
+            "content": "What is Databricks Unity AI Gateway?"
+        }
+    ],
+    max_tokens=5000
+)
+
+print(response.choices[0].message.content)
 ```
 
 SQL로 쿼리하는 기능은 곧 지원될 예정입니다.

@@ -36,6 +36,21 @@ description: "SQL만으로 정형·비정형 데이터에 AI를 적용하는 6�
 
 이 사용 사례에서는 인보이스가 담긴 Databricks 볼륨을 [`ai_parse_document`](https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_parse_document)로 가리킵니다. 인보이스가 파싱되면 ai_parse_document는 결과를 JSON으로 만들어 내고, 이 결과는 다시 [`ai_extract`](https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_extract) 함수로 전달됩니다. 여기서 우리는 인보이스에서 어떤 엔터티를 추출할지 정의합니다. 그 결과는 인보이스에서 원하는 필드가 추출된 정형 테이블입니다.
 
+```sql
+SELECT
+  document_path,
+  ai_extract(
+    parsed_content,
+    '["vendor_name","invoice_no","invoice_date","total_amount","currency","line_items"]'
+  ) AS extracted
+FROM (
+  SELECT
+    path AS document_path,
+    ai_parse_document(content) AS parsed_content
+  FROM read_files('s3://invoices/inbox/', format => 'binaryFile')
+);
+```
+
 이제 리니지(lineage)가 원시 PDF에서 추출된 행까지 하나의 쿼리 플랜 안에서 이어집니다. 사람들이 이를 위해 손으로 만들던 다리 — Python OCR 서비스, LLM 호출, JSON 평탄화 단계 — 가 모두 쿼리 하나로 접힙니다.
 
 [데모 노트북: 문서 인텔리전스](https://github.com/databricks-solutions/databricks-blogposts/blob/main/2026-05-ai-functions-data-warehouse-use-cases/02_document_intelligence.py)
@@ -46,6 +61,27 @@ description: "SQL만으로 정형·비정형 데이터에 AI를 적용하는 6�
 
 이 예시에서는 bronze.nps_responses 테이블의 고객 리뷰를 positive, negative, neutral, mixed로 분류하려 합니다.
 
+```sql
+SELECT
+  response_id,
+  customer_id,
+  survey_channel,
+  ai_classify(
+    verbatim_text,
+    '["positive","negative","neutral","mixed"]'
+  ):response[0]::STRING AS sentiment,
+  ai_classify(
+    verbatim_text,
+    '["pricing_complaint","feature_request","performance_issue","support_experience","cancel_signal"]'
+  ):response[0]::STRING AS feedback_topic,
+  ai_classify(
+    verbatim_text,
+    '["high_urgency","medium_urgency","low_urgency"]'
+  ):response[0]::STRING AS urgency_level
+FROM bronze.nps_responses
+WHERE survey_date >= current_date - 30;
+```
+
 [데모 노트북: 감성 분석](https://github.com/databricks-solutions/databricks-blogposts/blob/main/2026-05-ai-functions-data-warehouse-use-cases/03_sentiment_analysis.py)
 
 ## 사용 사례 3: 다국어 데이터의 인라인 번역
@@ -53,6 +89,19 @@ description: "SQL만으로 정형·비정형 데이터에 AI를 적용하는 6�
 [`ai_translate`](https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_translate)를 사용하면 다국어 데이터를 쿼리 계층 안에서 곧바로 하나의 대상 언어로 정규화할 수 있습니다. 이는 데이터 사일로와 파편화를 막아, 모든 다운스트림 분석(분류와 추출 포함)이 영어 데이터만 처리하는 것이 아니라 전 세계 데이터셋 전체를 동시에 다룰 수 있게 합니다.
 
 이 예시에서는 서로 다른 고객 리뷰에서 감성을 추출한 뒤, 이를 영어로 번역합니다.
+
+```sql
+SELECT
+  review_id,
+  product_id,
+  source_locale,
+  ai_translate(review_text, 'en') AS review_en,
+  CAST(ai_extract(
+    ai_translate(review_text, 'en'),
+    '["overall_sentiment","packaging_issue","delivery_issue","customer_service_mentioned","would_repurchase"]'
+  ) AS STRING) AS attributes
+FROM demo_product_reviews;
+```
 
 [데모 노트북: 번역과 정규화](https://github.com/databricks-solutions/databricks-blogposts/blob/main/2026-05-ai-functions-data-warehouse-use-cases/04_translation_normalization.py)
 
@@ -62,6 +111,21 @@ description: "SQL만으로 정형·비정형 데이터에 AI를 적용하는 6�
 
 아래 사용 사례에서는 테이블에서 서로 다른 지원 티켓을 수집한 뒤, [`ai_classify`](https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_classify)로 티켓의 사용자 의도와 긴급도를 판단합니다.
 
+```sql
+SELECT
+  ticket_id,
+  customer_segment,
+  ai_classify(
+    ticket_body,
+    '["billing","outage","product_question","cancel_request","praise"]'
+  ):response[0]::STRING AS intent,
+  ai_classify(
+    ticket_body,
+    '["high","medium","low"]'
+  ):response[0]::STRING AS urgency
+FROM bronze.support_tickets;
+```
+
 [데모 노트북: 분류와 라우팅](https://github.com/databricks-solutions/databricks-blogposts/blob/main/2026-05-ai-functions-data-warehouse-use-cases/05_communication_triage.py)
 
 ## 사용 사례 5: ai_extract로 영업 통화 정형 추출
@@ -70,6 +134,19 @@ description: "SQL만으로 정형·비정형 데이터에 AI를 적용하는 6�
 
 이 사용 사례에서는 긴 녹취를 캐내어 다음 단계(next step), 딜 단계, 리스크 플래그, 리스크 사유(risk reason)를 식별합니다. 그러면 영업 담당자는 그 미팅에서 나온 녹취의 결과를 바탕으로 실제 행동을 취할 수 있습니다.
 
+```sql
+SELECT
+  call_id,
+  account_id,
+  call_date,
+  ai_extract(
+    transcript,
+    '["next_step","owner","deal_stage","risk_flag","risk_reason"]'
+  ) AS facts
+FROM gold.call_transcripts
+WHERE call_date >= current_date - 7;
+```
+
 [데모 노트북: 영업 통화 추출](https://github.com/databricks-solutions/databricks-blogposts/blob/main/2026-05-ai-functions-data-warehouse-use-cases/06_sales_call_extraction.py)
 
 ## 사용 사례 6: ai_query로 생성형 초안 작성
@@ -77,6 +154,31 @@ description: "SQL만으로 정형·비정형 데이터에 AI를 적용하는 6�
 [`ai_query`](https://docs.databricks.com/aws/en/large-language-models/ai-query)는 가장 범용적인 함수이자 나머지 함수들의 토대입니다. 접근 권한이 있는 어떤 [Databricks 호스팅 Foundation Model](https://docs.databricks.com/aws/en/machine-learning/model-serving/foundation-model-overview) 서빙 엔드포인트로든 프롬프트를 보낼 수 있고, 각 행에 대해 모델의 답변을 돌려줍니다.
 
 이 사용 사례에서는, 어떤 계정이 갱신(renewal) 준비가 되었는지 보여 주는 가상의 `gold.renewal_signals` 테이블의 모든 고객 계정에 대해 ai_query로 갱신 아웃리치 이메일 초안을 작성할 수 있습니다.
+
+```sql
+SELECT
+  account_id,
+  account_name,
+  account_owner_email,
+  ai_query(
+    'databricks-gpt-oss-120b',
+    CONCAT(
+      'You are drafting a renewal-outreach email. Return a JSON object with exactly three fields: subject, body, suggested_send_date. ',
+      'subject: one short subject line under 70 characters, no greeting. ',
+      'body: the email body, 4 to 8 sentences, addressed to the account owner by first name, referencing the open risks and the recent engagement. ',
+      'suggested_send_date: a date string in YYYY-MM-DD format within the next 14 days; pick sooner dates when days_to_renewal is short or open_risk_flags are active. ',
+      'Tone: professional, concise, no marketing fluff. ',
+      'Account context: name=', account_name,
+      ', mrr_usd=', mrr_usd,
+      ', days_to_renewal=', days_to_renewal,
+      ', open_risk_flags=', open_risk_flags,
+      ', last_engagement_summary=', last_engagement_summary
+    ),
+    responseFormat => '{"type":"json_schema","json_schema":{"name":"renewal_outreach_draft","schema":{"type":"object","properties":{"subject":{"type":"string"},"body":{"type":"string"},"suggested_send_date":{"type":"string"}},"required":["subject","body","suggested_send_date"]},"strict":true}}'
+  ) AS outreach_json
+FROM gold.renewal_signals
+WHERE days_to_renewal <= 60;
+```
 
 프롬프트를 직접 작성하므로 모델이 할 수 있는 무엇이든 수행할 수 있고, 그렇기에 더 구체적인 함수들이 다루지 못하는 경우까지 처리합니다.
 

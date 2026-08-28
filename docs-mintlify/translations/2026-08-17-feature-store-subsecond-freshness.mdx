@@ -55,13 +55,13 @@ Databricks Feature Store는 세 가지 서로 다른 시간 윈도우를 지원�
 Feature Store 선언형(declarative) API로 롤링 윈도우 피처를 정의하는 것이 얼마나 간단한지 다음과 같습니다.
 
 ```python
-# 지난 10분간 사용자 거래 금액의 합계를 롤링 윈도우로 정의
+# 지난 10분간 고객 거래 금액의 합계를 롤링 윈도우로 정의
 # RollingWindow는 각 이벤트마다 윈도우가 이동하여 항상 최신 값을 유지
-sum_txn_10m = Aggregation(
-    column="amount",
-    function="sum",
-    window=RollingWindow(duration="10 minutes"),  # 이벤트 기준 뒤로 10분, 밀리초 해상도
-    group_by="user_id",
+feature = Feature(
+    source=StreamSource(stream_source="prod.transaction_events.transaction_stream"),
+    entity_columns=["customer_id"],
+    timeseries_column="event_time",
+    function=Sum(col="amount", window=RollingWindow(window_duration=timedelta(minutes=10))),
 )
 ```
 

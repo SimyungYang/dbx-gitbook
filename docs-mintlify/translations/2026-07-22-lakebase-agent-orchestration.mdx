@@ -68,12 +68,12 @@ Postgres 테이블 한 쌍 그 자체만으로는 아직 태스크 큐가 아닙
 
 ```sql
 -- 우선순위 순 + 동시성 안전 디큐: 잠긴 행은 건너뛰어 워커 간 경합 방지
-SELECT *
+SELECT task_id
 FROM tasks
 WHERE status = 'enqueued'
 ORDER BY priority DESC, created_at   -- 우선순위 높은 태스크 우선, 동일 우선순위 내 FIFO
-LIMIT batch_size
-FOR UPDATE SKIP LOCKED;
+FOR UPDATE SKIP LOCKED
+LIMIT batch_size;
 ```
 
 ### 리스 기반 잠금을 통한 크래시 복구
@@ -84,9 +84,9 @@ FOR UPDATE SKIP LOCKED;
 -- 디큐 시 리스 만료 시각을 기록해, 워커가 죽으면 자동 회수 가능하게 함
 UPDATE tasks
 SET status = 'processing',
-    locked_by = :worker_id,
-    lease_expires_at = now() + :lease_duration   -- 리스 유효 기간(초과 시 재인큐 대상)
-WHERE id = :task_id;
+locked_by = $worker_id,
+lease_expires_at = NOW() + INTERVAL '%(lease_minutes)s minutes'   -- 리스 유효 기간(초과 시 재인큐 대상)
+WHERE task_id = $task_id;
 ```
 
 주기적인 스위퍼(sweeper)가 `lease_expires_at`이 지난 모든 태스크를 다시 인큐합니다. 종료된 워커가 점유하던 태스크는 외부 조정 서비스 없이도 몇 분 안에 자동으로 복구됩니다.
