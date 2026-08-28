@@ -52,15 +52,25 @@ title: "개요 & 품질 문제 이해"
 
 ### 데이터 품질 진단 프롬프트 (모듈 2 연계 요약)
 
+**1단계 —** 스코어카드 뼈대부터.
 ```
-ccm_factory.bronze의 핵심 테이블에 대해 Silver 변환 전 최종 품질 스코어카드를 만들어줘:
-1. final_image_test.snr_db, dispensing_process.uv_dose_mj NULL 비율
-2. production_events 중복(serial_id+timestamp+event_type) 및 OUT<IN 역전 건수
-3. active_alignment.mtf_center_pct>100, equipment_sensor_logs.temperature_c>200 이상치 건수
-4. smt_placement_logs 단위혼입 의심(|offset|>500µm) 건수
-5. serial_id/equipment_id/material_lot_id 참조 무결성 위반 건수
-6. aoi_inspection 비즈니스 규칙 위반(defect_flag=false & defect_type NOT NULL) 건수
-결과를 표로 보여주고, Silver에서 처리 우선순위를 제안해줘.
+ccm_factory.bronze의 핵심 테이블에 대해 Silver 변환 전 최종 품질 스코어카드를 만들려고 해. 먼저 어떤 항목을 점검하면 좋을지 제안해줘.
+```
+**2단계 —** 결측·중복 점검 추가.
+```
+스코어카드에 추가: final_image_test.snr_db, dispensing_process.uv_dose_mj NULL 비율, 그리고 production_events 중복(serial_id+timestamp+event_type) 및 OUT<IN 역전 건수.
+```
+**3단계 —** 이상치·단위혼입 추가.
+```
+이상치도 추가: active_alignment.mtf_center_pct>100, equipment_sensor_logs.temperature_c>200 건수, smt_placement_logs 단위혼입 의심(|offset|>500µm) 건수.
+```
+**4단계 —** 참조무결성·규칙위반 추가.
+```
+참조 무결성 위반(serial_id/equipment_id/material_lot_id) 건수와 aoi_inspection 비즈니스 규칙 위반(defect_flag=false & defect_type NOT NULL) 건수도 더해줘.
+```
+**5단계 —** 표 정리 + 우선순위.
+```
+전체 결과를 표로 보여주고, Silver에서 처리 우선순위를 제안해줘.
 ```
 
 ---

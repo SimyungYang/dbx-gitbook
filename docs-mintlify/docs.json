@@ -1895,6 +1895,7 @@
               "workshop/genie-code-handson/00-genie-code-setup",
               "workshop/genie-code-handson/00-catalog-setup",
               "workshop/genie-code-handson/00-custom-instructions",
+              "workshop/genie-code-handson/00-skills",
               "workshop/genie-code-handson/00-mcp-setup"
             ]
           },
@@ -1913,8 +1914,15 @@
             "group": "2. 데이터 EDA",
             "pages": [
               "workshop/genie-code-handson/02-eda",
+              "workshop/genie-code-handson/02-eda-distribution",
               "workshop/genie-code-handson/02-eda-quality",
-              "workshop/genie-code-handson/02-eda-correlation"
+              "workshop/genie-code-handson/02-eda-correlation",
+              "workshop/genie-code-handson/02-eda-timeseries",
+              "workshop/genie-code-handson/02-eda-spc-pareto",
+              "workshop/genie-code-handson/02-eda-oee",
+              "workshop/genie-code-handson/02-eda-anomaly",
+              "workshop/genie-code-handson/02-eda-multivariate",
+              "workshop/genie-code-handson/02-eda-silver-rules"
             ]
           },
           {

@@ -20,20 +20,25 @@ title: "마스터 3종 생성"
 | `rated_capacity_uph` | INT | 정격 UPH(시간당 생산) | `1200` |
 | `status` | STRING | 상태 | `RUNNING`, `IDLE`, `MAINTENANCE`, `DOWN` |
 
+**1단계 —** 먼저 뼈대만.
 ```
-카메라 모듈 조립 공장의 설비 마스터 300대를 생성해줘.
-
-조건:
-- 테이블: ccm_factory.bronze.equipment_master
-- 라인 LINE_1~LINE_6, 각 라인은 공정 스테이션 6종(SMT, DISPENSE, REFLOW, ALIGN, AOI, FINAL)을 보유
-- 스테이션별 설비 수를 다르게: SMT_MOUNTER 라인당 3~4대, 나머지는 라인당 1~2대
-- equipment_id 형식: "EQ_{line 약자}_{type 약자}_{2자리}" (예: EQ_L1_AA_01)
-- vendor는 type에 따라: SMT_MOUNTER→ASM/Fuji/Hanwha, DISPENSER→Nordson, AOI→Koh_Young, FINAL_TESTER/AA→TRIOPTICS
-- install_date: 2021-01 ~ 2024-12
-- rated_capacity_uph: SMT 1000~1500, 그 외 600~1000
-- status 분포: RUNNING(80%), IDLE(10%), MAINTENANCE(7%), DOWN(3%)
-
-Delta 테이블로 저장하고 모든 컬럼에 COMMENT를 달아줘.
+카메라 모듈 조립 공장의 설비 마스터 테이블 ccm_factory.bronze.equipment_master 를 만들려고 해. 컬럼 구성을 먼저 제안해줘.
+```
+**2단계 —** 건수와 라인·스테이션 구조를 지정.
+```
+좋아. 300대를 생성해줘. 라인은 LINE_1~LINE_6이고, 각 라인은 공정 스테이션 6종(SMT, DISPENSE, REFLOW, ALIGN, AOI, FINAL)을 보유해.
+```
+**3단계 —** 스테이션별 수량과 ID 규칙을 추가.
+```
+스테이션별 설비 수는 다르게 — SMT_MOUNTER는 라인당 3~4대, 나머지는 라인당 1~2대. equipment_id 형식은 "EQ_{line 약자}_{type 약자}_{2자리}" (예: EQ_L1_AA_01).
+```
+**4단계 —** vendor 매핑과 스펙 범위를 추가.
+```
+vendor는 type에 따라 SMT_MOUNTER→ASM/Fuji/Hanwha, DISPENSER→Nordson, AOI→Koh_Young, FINAL_TESTER/AA→TRIOPTICS. install_date는 2021-01~2024-12, rated_capacity_uph는 SMT 1000~1500 / 그 외 600~1000.
+```
+**5단계 —** 상태 분포와 저장.
+```
+status 분포는 RUNNING 80% / IDLE 10% / MAINTENANCE 7% / DOWN 3%. Delta 테이블로 저장하고 모든 컬럼에 COMMENT를 달아줘.
 ```
 
 ### 테이블 2: product_master (제품/모델 마스터)
@@ -50,20 +55,21 @@ Delta 테이블로 저장하고 모든 컬럼에 COMMENT를 달아줘.
 | `spec_mtf_min` | DOUBLE | MTF 최소규격 | `70.0` |
 | `launch_date` | DATE | 양산 시작 | `2024-03-01` |
 
+**1단계 —** 먼저 뼈대만.
 ```
-카메라 모듈 제품(모델) 마스터 60종을 생성해줘.
-
-조건:
-- 테이블: ccm_factory.bronze.product_master
-- 고객명은 익명으로: Global_A(35%), Global_B(25%), Global_C(20%), Domestic_D(20%)
-- module_type 분포: OIS(40%), AF(45%), ToF(15%)
-- resolution_mp: 12/48/50/108 중, OIS/ToF는 고화소 비중 높게
-- model_code 형식: "CCM_{고객약자}_{화소}MP_{모듈타입}" (예: CCM_A_48MP_OIS)
-- target_mtf_center: 80~90, spec_mtf_min: target - 12~18
-- lens_count: 5~7 (고화소일수록 많게)
-- launch_date: 2023-01 ~ 2025-06
-
-Delta 테이블로 저장하고 COMMENT를 달아줘.
+카메라 모듈 제품(모델) 마스터 테이블 ccm_factory.bronze.product_master 를 만들려고 해. 컬럼 구성을 먼저 제안해줘.
+```
+**2단계 —** 건수와 고객·모듈 분포를 지정.
+```
+좋아, 60종 생성해줘. 고객명은 익명으로 Global_A 35% / Global_B 25% / Global_C 20% / Domestic_D 20%, module_type은 OIS 40% / AF 45% / ToF 15% 비율로.
+```
+**3단계 —** 해상도와 model_code 규칙을 추가.
+```
+resolution_mp는 12/48/50/108 중에서 고르되 OIS/ToF는 고화소 비중을 높게. model_code 형식은 "CCM_{고객약자}_{화소}MP_{모듈타입}" (예: CCM_A_48MP_OIS).
+```
+**4단계 —** MTF 스펙·렌즈·양산일과 저장.
+```
+target_mtf_center는 80~90, spec_mtf_min은 target - 12~18, lens_count는 5~7 (고화소일수록 많게), launch_date는 2023-01~2025-06. Delta 테이블로 저장하고 COMMENT를 달아줘.
 ```
 
 ### 테이블 3: material_lot_master (자재 로트 마스터)
@@ -81,20 +87,25 @@ Delta 테이블로 저장하고 COMMENT를 달아줘.
 | `defect_rate_incoming_pct` | DOUBLE | 수입검사 불량률 | `0.8` |
 | `spec_grade` | STRING | 등급 | `A`, `B`, `C` |
 
+**1단계 —** 먼저 뼈대만.
 ```
-카메라 모듈용 자재 입고 로트 20,000건을 생성해줘.
-
-조건:
-- 테이블: ccm_factory.bronze.material_lot_master
-- material_type 분포: LENS(25%), IMAGE_SENSOR(20%), VCM(15%), PCB(15%), IR_FILTER(15%), ADHESIVE(10%)
-- supplier: Sup_S1~Sup_S8 (일부 공급사는 defect_rate가 의도적으로 높게 — Sup_S7, Sup_S8은 평균의 2~3배)
-- material_lot_id 형식: "MLOT_{type약자}_{YYYYMMDD}_{4자리}"
-- incoming_date: 2024-06 ~ 2025-12
-- incoming_inspection_result: PASS(90%), CONDITIONAL_PASS(8%), FAIL(2%)
-- defect_rate_incoming_pct: 대부분 0~2%, 일부 공급사/로트는 3~8%
-- spec_grade: A(60%), B(30%), C(10%)
-
-Delta 테이블로 저장하고 COMMENT를 달아줘.
+카메라 모듈용 자재 입고 로트 테이블 ccm_factory.bronze.material_lot_master 를 만들려고 해. 컬럼 구성을 먼저 제안해줘.
+```
+**2단계 —** 건수와 자재 유형 분포를 지정.
+```
+20,000건 생성해줘. material_type 분포는 LENS 25% / IMAGE_SENSOR 20% / VCM 15% / PCB 15% / IR_FILTER 15% / ADHESIVE 10%.
+```
+**3단계 —** 공급사·ID·입고일 규칙을 추가.
+```
+supplier는 Sup_S1~Sup_S8, material_lot_id 형식은 "MLOT_{type약자}_{YYYYMMDD}_{4자리}", incoming_date는 2024-06~2025-12.
+```
+**4단계 —** 검사 결과·등급 분포를 추가.
+```
+incoming_inspection_result는 PASS 90% / CONDITIONAL_PASS 8% / FAIL 2%, spec_grade는 A 60% / B 30% / C 10%. defect_rate_incoming_pct는 대부분 0~2%로.
+```
+**5단계 —** 의도적 품질 이슈와 저장.
+```
+단, Sup_S7·Sup_S8은 defect_rate를 의도적으로 평균의 2~3배로 높게 하고, 일부 공급사/로트는 defect_rate_incoming_pct가 3~8%가 되게 해줘. Delta 테이블로 저장하고 COMMENT를 달아줘.
 ```
 
 ### 마스터 생성 확인

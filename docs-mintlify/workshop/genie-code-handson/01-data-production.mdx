@@ -18,15 +18,21 @@ title: "생산 실적 테이블"
 | `planned_start` / `planned_end` | TIMESTAMP | 계획 시각 |
 | `wo_status` | STRING | `COMPLETED`/`IN_PROGRESS`/`HOLD` |
 
+**1단계 —** 먼저 뼈대만 만든다.
 ```
-작업지시(work_orders) 15,000건을 생성해줘.
-- 테이블: ccm_factory.bronze.work_orders
-- model_code는 product_master에서 샘플링, line_id는 LINE_1~6
-- planned_qty: 3,000~10,000
-- shift: DAY(40%), SWING(35%), NIGHT(25%)
-- planned_start: 2025-01-01~2025-12-31, planned_end는 start + 8시간
-- wo_status: COMPLETED(85%), IN_PROGRESS(10%), HOLD(5%)
-Delta로 저장, COMMENT 추가.
+ccm_factory.bronze.work_orders 작업지시 테이블을 만들려고 해. 컬럼 구성을 먼저 제안해줘.
+```
+**2단계 —** 건수와 참조를 지정.
+```
+좋아. 15,000건 생성해줘. model_code는 product_master에서 샘플링하고 line_id는 LINE_1~6으로.
+```
+**3단계 —** 분포를 추가.
+```
+shift는 DAY 40% / SWING 35% / NIGHT 25%, wo_status는 COMPLETED 85% / IN_PROGRESS 10% / HOLD 5% 비율로 넣어줘.
+```
+**4단계 —** 나머지 규칙과 저장.
+```
+planned_qty는 3,000~10,000, planned_start는 2025-01-01~2025-12-31로 흩뿌리고 planned_end는 start + 8시간. Delta로 저장하고 컬럼 COMMENT도 달아줘.
 ```
 
 ### 테이블 5: production_events (스테이션 통과 이벤트)
@@ -45,15 +51,25 @@ Delta로 저장, COMMENT 추가.
 | `cycle_time_sec` | INT | 스테이션 체류(초) |
 | `operator_id` | STRING | 작업자 |
 
+**1단계 —** 먼저 뼈대만.
 ```
-스테이션 통과 이벤트(production_events) 400,000건을 생성해줘.
-- 테이블: ccm_factory.bronze.production_events
-- serial_id 형식: "SN_{YYYYMMDD}_{7자리}", wo_id는 work_orders에서 샘플링
-- 각 시리얼은 공정 순서(SMT→DISPENSE→REFLOW→ALIGN→AOI→FINAL)대로 IN/OUT 쌍이 발생
-- equipment_id는 해당 station과 line이 일치하는 설비에서 선택
-- cycle_time_sec: SMT 8~15, DISPENSE 10~20, REFLOW 30~60, ALIGN 20~40, AOI 5~12, FINAL 15~30
-- [의도적 이슈] 약 1% 레코드는 동일 serial+timestamp 중복(재전송), 약 0.5%는 OUT < IN(시간 역전)
-Delta로 저장, COMMENT 추가.
+스테이션 통과 이벤트 테이블 ccm_factory.bronze.production_events 를 만들려고 해. 컬럼 구성을 먼저 제안해줘.
+```
+**2단계 —** 건수와 시리얼·참조를 지정.
+```
+400,000건 생성해줘. serial_id 형식은 "SN_{YYYYMMDD}_{7자리}", wo_id는 work_orders에서 샘플링.
+```
+**3단계 —** 공정 순서와 설비 정합을 추가.
+```
+각 시리얼은 공정 순서(SMT→DISPENSE→REFLOW→ALIGN→AOI→FINAL)대로 IN/OUT 쌍이 발생하고, equipment_id는 해당 station과 line이 일치하는 설비에서 선택해줘.
+```
+**4단계 —** 체류시간 범위를 추가.
+```
+cycle_time_sec는 SMT 8~15, DISPENSE 10~20, REFLOW 30~60, ALIGN 20~40, AOI 5~12, FINAL 15~30.
+```
+**5단계 —** 의도적 이슈와 저장.
+```
+[의도적 이슈] 약 1% 레코드는 동일 serial+timestamp 중복(재전송), 약 0.5%는 OUT < IN(시간 역전)으로 넣어줘. Delta로 저장, COMMENT 추가.
 ```
 
 ### 테이블 6: traceability (제품 이력 계보)
@@ -68,14 +84,21 @@ Delta로 저장, COMMENT 추가.
 | `operator_ids` | `ARRAY<STRING>` | 관여 작업자 |
 | `final_result` | STRING | `PASS`/`FAIL`/`REWORK` |
 
+**1단계 —** 먼저 뼈대만.
 ```
-제품 추적성(traceability) 500,000건을 생성해줘.
-- 테이블: ccm_factory.bronze.traceability
-- serial_id는 production_events의 시리얼과 정합, model_code/wo_id 연결
-- material_lot_ids: material_lot_master에서 유형별로 하나씩 매핑(IMAGE_SENSOR/LENS/VCM/PCB/IR_FILTER/ADHESIVE)
-- station_equipment: 각 스테이션에서 실제 사용된 설비 ID
-- final_result: PASS(92%), FAIL(5%), REWORK(3%)
-Delta로 저장, COMMENT 추가.
+제품 추적성 테이블 ccm_factory.bronze.traceability 를 만들려고 해. 컬럼 구성을 먼저 제안해줘.
+```
+**2단계 —** 건수와 시리얼 정합을 지정.
+```
+500,000건 생성해줘. serial_id는 production_events의 시리얼과 정합하고 model_code/wo_id도 연결해줘.
+```
+**3단계 —** 자재·설비 매핑을 추가.
+```
+material_lot_ids는 material_lot_master에서 유형별로 하나씩 매핑(IMAGE_SENSOR/LENS/VCM/PCB/IR_FILTER/ADHESIVE), station_equipment는 각 스테이션에서 실제 사용된 설비 ID로.
+```
+**4단계 —** 판정 분포와 저장.
+```
+final_result는 PASS 92% / FAIL 5% / REWORK 3% 비율로. Delta로 저장, COMMENT 추가.
 ```
 
 

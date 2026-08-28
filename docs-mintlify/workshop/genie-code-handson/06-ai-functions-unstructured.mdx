@@ -54,16 +54,19 @@ ccm_factory.bronze.field_returns에서 failure_symptom, analysis_result, root_ca
 
 ### A-2. `ai_classify` — 증상을 근본원인 카테고리로 분류
 
-Genie Code에 아래를 요청하면 SQL AI 함수를 생성·실행합니다:
+Genie Code에 한 번에 하나씩 덧붙여 요청하면 SQL AI 함수를 생성·실행합니다:
 
+**1단계 —** 최소 분류부터.
 ```
-ccm_factory.bronze.field_returns의 failure_symptom(한국어 증상 텍스트)을
-ai_classify로 다음 5개 근본원인 카테고리 중 하나로 분류해줘:
-ALIGNMENT, ACTUATOR, BONDING, CONTAMINATION, SENSOR
-
-- 먼저 LIMIT 20으로 테스트
-- 결과 컬럼: rma_id, failure_symptom, 기존 root_cause_code, ai_predicted_cause
-- 실제 사용할 SQL도 보여줘
+ccm_factory.bronze.field_returns의 failure_symptom(한국어 증상 텍스트)을 ai_classify로 분류해줘. 우선 LIMIT 20으로 테스트.
+```
+**2단계 —** 근본원인 카테고리 지정.
+```
+근본원인 카테고리는 다음 5개 중 하나로: ALIGNMENT, ACTUATOR, BONDING, CONTAMINATION, SENSOR.
+```
+**3단계 —** 출력 컬럼·SQL 확인.
+```
+결과 컬럼은 rma_id, failure_symptom, 기존 root_cause_code, ai_predicted_cause로. 실제 사용할 SQL도 보여줘.
 ```
 
 생성될 SQL 형태(참고):
@@ -82,10 +85,16 @@ LIMIT 20
 
 ### A-3. `ai_extract` — 구조화 추출
 
+**1단계 —** 결합 텍스트에서 추출 시작.
 ```
-field_returns.failure_symptom + analysis_result를 결합한 텍스트에서
-ai_extract로 다음 3개 항목을 구조화 추출해줘 (LIMIT 20):
-- symptom(증상), defect_location(불량 부위), suspected_cause(의심 원인)
+field_returns의 failure_symptom과 analysis_result를 결합한 텍스트에서 ai_extract로 항목을 뽑아줘. 우선 LIMIT 20.
+```
+**2단계 —** 추출 스키마 지정.
+```
+추출 항목은 3개: symptom(증상), defect_location(불량 부위), suspected_cause(의심 원인).
+```
+**3단계 —** 출력·SQL.
+```
 결과를 표로 보여주고 SQL도 알려줘.
 ```
 
@@ -104,18 +113,27 @@ LIMIT 20
 
 ### A-4. `ai_summarize` — 모델별 리턴 요약
 
+**1단계 —** 모델별 요약 시작.
 ```
-모델(model_code)별로 최근 필드 리턴 증상들을 ai_summarize로 3문장 요약해줘.
-model_code, return_count, summary 컬럼으로. Global_A 고객 모델 위주로 LIMIT 10.
+모델(model_code)별로 최근 필드 리턴 증상들을 ai_summarize로 3문장 요약해줘. Global_A 고객 모델 위주로 LIMIT 10.
+```
+**2단계 —** 출력 컬럼 지정.
+```
+결과는 model_code, return_count, summary 컬럼으로 보여줘.
 ```
 
 ### A-5. 검증 — AI 분류 vs 기존 root_cause_code 일치율
 
+**1단계 —** 전체 일치율부터.
 ```
-방금 ai_classify로 예측한 ai_predicted_cause와 기존 root_cause_code의 일치율을 계산해줘.
-- 전체 일치율(%)
-- 카테고리별 혼동행렬(confusion matrix)
-- 가장 자주 틀리는 카테고리 쌍
+방금 ai_classify로 예측한 ai_predicted_cause와 기존 root_cause_code의 전체 일치율(%)을 계산해줘.
+```
+**2단계 —** 혼동행렬·오분류 쌍.
+```
+이어서 카테고리별 혼동행렬(confusion matrix)과 가장 자주 틀리는 카테고리 쌍도 보여줘.
+```
+**3단계 —** 원인 추정.
+```
 불일치가 많으면 원인(레이블 정의 모호 등)도 추정해줘.
 ```
 

@@ -16,22 +16,32 @@ title: "정확도 고도화 — COMMENT & 샘플 질문"
 
 ### Step 1: 테이블/컬럼 COMMENT 일괄 추가
 
+**1단계 —** 대상을 짚는다.
 ```
 ccm_factory.gold 스키마의 모든 테이블과 컬럼에 한국어 COMMENT를 추가해줘.
+```
 
-규칙:
+**2단계 —** 작성 규칙을 준다.
+```
+규칙은 이렇게 해줘.
 - 테이블 COMMENT: 비즈니스 담당자가 이해할 수 있는 설명 (50자 이내)
 - 컬럼 COMMENT: 값의 의미, 단위, 범위 포함
+```
 
-예시:
+**3단계 —** 형식 예시를 보여준다.
+```
+이런 형식으로 달아줘.
 COMMENT ON COLUMN ccm_factory.gold.daily_yield_summary.yield_pct IS
   '일 수율(%). (양품 수 / 투입 수) × 100. 범위 0~100';
 COMMENT ON COLUMN ccm_factory.gold.oee_by_equipment.oee_pct IS
   '종합설비효율(%). 가용성×성능×품질. 85 이상이 World Class';
 COMMENT ON COLUMN ccm_factory.gold.spc_process_capability.cpk IS
   '공정능력지수. 1.33 이상이 관리 기준, 1.0 미만은 개선 필요';
+```
 
-모든 Gold 테이블의 모든 컬럼에 COMMENT를 달아줘.
+**4단계 —** 전체에 적용한다.
+```
+확인했으면 모든 Gold 테이블의 모든 컬럼에 COMMENT를 달아줘.
 ```
 
 ### Step 2: 샘플 질문 (Curated Questions) 등록 ⭐⭐⭐

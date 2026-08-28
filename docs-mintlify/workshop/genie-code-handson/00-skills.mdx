@@ -1,0 +1,55 @@
+---
+title: "Skill 설정 — 도메인 지식"
+---
+
+## Part F: Skill 설정 — 도메인 지식 자동 로딩
+
+Custom Instructions가 "항상 지킬 규칙"이라면, **Skill**은 Genie Code가 필요할 때 참고하는 **도메인 전문 지식 묶음**입니다. 워크스페이스의 `Workspace/.assistant/skills/` 에 올려두면 Agent Mode가 관련 작업에서 **자동으로 로딩**합니다.
+
+| 구분 | Custom Instructions | Skill |
+|------|--------------------|-------|
+| 성격 | 항상 적용되는 규칙(시스템 프롬프트) | 관련 작업에서만 로딩되는 지식 |
+| 위치 | `.assistant_instructions.md` | `Workspace/.assistant/skills/<name>/SKILL.md` |
+| 예 | 네이밍·안전·언어 규칙 | 카메라 모듈 공정/스키마/판정기준 지식 |
+
+이 워크샵에서는 **카메라 모듈 공장 도메인 Skill** 하나를 만들어, Genie Code가 우리 공정 용어(SMT·AA·MTF 등)와 테이블 구조를 미리 이해하도록 합니다.
+
+### Step 1: Skill 뼈대 만들기
+
+먼저 최소 구조만 요청합니다.
+
+```
+카메라 모듈 공장 도메인 지식을 담을 Genie Code Skill을 하나 만들어줘.
+경로: /Workspace/.assistant/skills/ccm-factory/SKILL.md
+우선 name·description frontmatter와 빈 섹션 뼈대만.
+```
+
+### Step 2: 도메인 지식 채우기
+
+이어서 내용을 덧붙입니다.
+
+```
+SKILL.md에 우리 공정 흐름(SMT → 디스펜싱 → 리플로우 → AA → AOI → 최종 화질검사)과
+핵심 지표(수율·FPY·OEE·MTF·틸트·Cpk) 용어 설명을 추가해줘.
+```
+
+```
+ccm_factory 카탈로그의 bronze/silver/gold 주요 테이블 이름과 용도를 표로 정리해서 SKILL.md에 넣어줘.
+```
+
+### Step 3: 배포 & 확인
+
+```
+이 Skill을 /Workspace/.assistant/skills/ccm-factory/ 에 저장(업로드)해줘.
+```
+
+배포 후 Genie Code가 인식하는지 확인합니다.
+
+```
+현재 사용 가능한 Skills 목록을 보여줘. ccm-factory Skill이 로딩됐어?
+```
+
+> 💡 **화면 참고**: Settings → **Skills** 탭에서 활성화된 Skill 목록 확인. `Workspace/.assistant/skills/` 에 올린 Skill은 별도 설정 없이 자동 로딩됩니다.
+> 공식 문서: [Genie Code Skills](https://docs.databricks.com/en/genie-code/skills.html)
+
+---

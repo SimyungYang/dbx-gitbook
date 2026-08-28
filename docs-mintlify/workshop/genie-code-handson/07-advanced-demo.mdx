@@ -16,38 +16,47 @@ title: "Lakebase 연동·고도화·데모"
 
 #### Genie Code 프롬프트 (AI Dev Kit MCP: manage_lakebase_database)
 
+**1단계 —** 데이터베이스부터.
+
 ```
-Lakebase 데이터베이스를 만들어줘.
+Lakebase 데이터베이스 ccm_agent_db 를 카탈로그 ccm_factory 에 만들어줘.
+```
 
-설정:
-- 데이터베이스 이름: ccm_agent_db
-- 카탈로그: ccm_factory
+**2단계 —** 세션 테이블.
 
-테이블:
-1. chat_sessions:
-   - session_id UUID PRIMARY KEY
-   - user_name VARCHAR(100)
-   - line_context VARCHAR(20)   -- 관심 라인
-   - started_at TIMESTAMP DEFAULT NOW()
-   - ended_at TIMESTAMP
-   - total_messages INT DEFAULT 0
-   - satisfaction_score INT
+```
+chat_sessions 테이블을 만들어줘:
+- session_id UUID PRIMARY KEY
+- user_name VARCHAR(100)
+- line_context VARCHAR(20)   -- 관심 라인
+- started_at TIMESTAMP DEFAULT NOW()
+- ended_at TIMESTAMP
+- total_messages INT DEFAULT 0
+- satisfaction_score INT
+```
 
-2. chat_messages:
-   - message_id UUID PRIMARY KEY
-   - session_id UUID REFERENCES chat_sessions
-   - role VARCHAR(20)           -- 'user' or 'assistant'
-   - content TEXT
-   - agent_used VARCHAR(50)     -- 'ka', 'genie', 'supervisor'
-   - response_time_ms INT
-   - created_at TIMESTAMP DEFAULT NOW()
+**3단계 —** 메시지 테이블.
 
-3. agent_feedback:
-   - feedback_id UUID PRIMARY KEY
-   - message_id UUID REFERENCES chat_messages
-   - is_helpful BOOLEAN
-   - feedback_text TEXT
-   - created_at TIMESTAMP DEFAULT NOW()
+```
+chat_messages 테이블을 추가해줘:
+- message_id UUID PRIMARY KEY
+- session_id UUID REFERENCES chat_sessions
+- role VARCHAR(20)           -- 'user' or 'assistant'
+- content TEXT
+- agent_used VARCHAR(50)     -- 'ka', 'genie', 'supervisor'
+- response_time_ms INT
+- created_at TIMESTAMP DEFAULT NOW()
+```
+
+**4단계 —** 피드백 테이블.
+
+```
+agent_feedback 테이블을 추가해줘:
+- feedback_id UUID PRIMARY KEY
+- message_id UUID REFERENCES chat_messages
+- is_helpful BOOLEAN
+- feedback_text TEXT
+- created_at TIMESTAMP DEFAULT NOW()
 ```
 
 ---

@@ -19,28 +19,40 @@ title: "설비·검사·환경 테이블"
 | `motor_current_a` | DOUBLE | 모터 전류 |
 | `air_pressure_kpa` | DOUBLE | 공압 |
 
+**1단계 —** 먼저 뼈대만.
 ```
-설비 센서 텔레메트리(equipment_sensor_logs) 300,000건을 생성해줘.
-- 테이블: ccm_factory.bronze.equipment_sensor_logs
-- equipment_id는 equipment_master에서 샘플링(활성 설비), 1분 간격
-- temperature_c: 정상 25~45, 노후 설비는 서서히 상승 추세
-- vibration_mm_s: 정상 0.5~3.0, 고장 전조 설비는 5 이상 스파이크
-- vacuum_kpa: -80~-60(음압), motor_current_a: 2~8
-- [의도적 이슈] 약 0.2%는 temperature_c > 200 (센서 스파이크 이상치)
-Delta로 저장, COMMENT 추가.
+설비 센서 텔레메트리 테이블 ccm_factory.bronze.equipment_sensor_logs 를 만들려고 해. 컬럼 구성을 먼저 제안해줘.
+```
+**2단계 —** 건수와 샘플링·주기를 지정.
+```
+300,000건 생성해줘. equipment_id는 equipment_master에서 샘플링(활성 설비), 1분 간격으로.
+```
+**3단계 —** 센서 값 분포를 추가.
+```
+temperature_c는 정상 25~45(노후 설비는 서서히 상승 추세), vibration_mm_s는 정상 0.5~3.0(고장 전조 설비는 5 이상 스파이크), vacuum_kpa는 -80~-60(음압), motor_current_a는 2~8.
+```
+**4단계 —** 의도적 이슈와 저장.
+```
+[의도적 이슈] 약 0.2%는 temperature_c > 200 (센서 스파이크 이상치)으로 넣어줘. Delta로 저장, COMMENT 추가.
 ```
 
 ### 테이블 12: equipment_downtime (설비 비가동)
 
+**1단계 —** 먼저 뼈대와 컬럼을 지정.
 ```
-설비 비가동(equipment_downtime) 25,000건을 생성해줘.
-- 테이블: ccm_factory.bronze.equipment_downtime
-- 컬럼: event_id, equipment_id, downtime_type, reason_code, start_time, end_time, duration_min
-- downtime_type: CHANGEOVER(35%), PM(25%), IDLE(20%), BREAKDOWN(20%)
-- reason_code: 유형별 코드 (예: BREAKDOWN→NOZZLE_JAM/VACUUM_LEAK/MOTOR_FAIL, PM→SCHEDULED)
-- duration_min: CHANGEOVER 20~60, PM 60~180, BREAKDOWN 30~300, IDLE 5~40
-- start_time: 2025년 범위, end = start + duration
-Delta로 저장, COMMENT 추가.
+설비 비가동 테이블 ccm_factory.bronze.equipment_downtime 를 만들려고 해. 컬럼은 event_id, equipment_id, downtime_type, reason_code, start_time, end_time, duration_min로 구성해줘.
+```
+**2단계 —** 건수와 유형 분포를 추가.
+```
+25,000건 생성해줘. downtime_type은 CHANGEOVER 35% / PM 25% / IDLE 20% / BREAKDOWN 20%.
+```
+**3단계 —** reason_code와 지속시간을 추가.
+```
+reason_code는 유형별 코드(예: BREAKDOWN→NOZZLE_JAM/VACUUM_LEAK/MOTOR_FAIL, PM→SCHEDULED), duration_min은 CHANGEOVER 20~60, PM 60~180, BREAKDOWN 30~300, IDLE 5~40.
+```
+**4단계 —** 시간 규칙과 저장.
+```
+start_time은 2025년 범위, end_time은 start + duration. Delta로 저장, COMMENT 추가.
 ```
 
 
@@ -52,16 +64,21 @@ Delta로 저장, COMMENT 추가.
 
 ### 테이블 13: aoi_inspection (AOI 자동광학검사)
 
+**1단계 —** 먼저 뼈대와 컬럼을 지정.
 ```
-AOI 검사(aoi_inspection) 300,000건을 생성해줘.
-- 테이블: ccm_factory.bronze.aoi_inspection
-- 컬럼: event_id, serial_id, equipment_id, timestamp, inspect_stage, defect_flag, defect_type, component_ref, confidence
-- inspect_stage: POST_SMT / POST_DISPENSE
-- defect_flag: false(95%), true(5%)
-- defect_type: defect_flag=true일 때 SOLDER/PLACEMENT/FOREIGN_MATERIAL/POLARITY 중, false면 NULL
-- confidence: 0.7~0.99
-- [의도적 이슈] 약 0.5%는 defect_flag=false인데 defect_type이 채워짐(비즈니스 규칙 위반)
-Delta로 저장, COMMENT 추가.
+AOI 검사 테이블 ccm_factory.bronze.aoi_inspection 를 만들려고 해. 컬럼은 event_id, serial_id, equipment_id, timestamp, inspect_stage, defect_flag, defect_type, component_ref, confidence로 구성해줘.
+```
+**2단계 —** 건수와 단계·불량 비율을 추가.
+```
+300,000건 생성해줘. inspect_stage는 POST_SMT / POST_DISPENSE, defect_flag는 false 95% / true 5%.
+```
+**3단계 —** 불량 유형과 confidence를 추가.
+```
+defect_type은 defect_flag=true일 때 SOLDER/PLACEMENT/FOREIGN_MATERIAL/POLARITY 중 하나, false면 NULL. confidence는 0.7~0.99.
+```
+**4단계 —** 의도적 이슈와 저장.
+```
+[의도적 이슈] 약 0.5%는 defect_flag=false인데 defect_type이 채워진 레코드(비즈니스 규칙 위반)로 넣어줘. Delta로 저장, COMMENT 추가.
 ```
 
 ### 테이블 14: final_image_test (최종 화질검사) ★
@@ -80,32 +97,44 @@ Delta로 저장, COMMENT 추가.
 | `color_shading` | DOUBLE | 색편차 |
 | `test_result` | STRING | `PASS`/`FAIL` |
 
+**1단계 —** 먼저 뼈대만.
 ```
-최종 화질검사(final_image_test) 250,000건을 생성해줘.
-- 테이블: ccm_factory.bronze.final_image_test
-- serial_id는 FINAL 스테이션 통과 시리얼, model_code 조인으로 spec 참조
-- mtf_sfr_center: PASS 75~92 / FAIL 55~72, corner는 center-10 내외
-- dead_pixel_count: 대부분 0~2, 불량은 3 이상
-- particle_count/blemish_count: 대부분 0~1, 이물 불량은 5 이상
-- snr_db: 34~42, distortion_pct: -2~2, relative_illumination_pct: 45~65
-- test_result: PASS(93%), FAIL(7%) — MTF/데드픽셀/이물 규격 위반 시 FAIL
-- [의도적 이슈] 약 4% 레코드는 snr_db가 NULL (구형 테스터)
-Delta로 저장, COMMENT 추가.
+최종 화질검사 테이블 ccm_factory.bronze.final_image_test 를 만들려고 해. 컬럼 구성을 먼저 제안해줘.
+```
+**2단계 —** 건수와 정합·참조를 지정.
+```
+250,000건 생성해줘. serial_id는 FINAL 스테이션 통과 시리얼, model_code 조인으로 spec을 참조해줘.
+```
+**3단계 —** 화질 지표 값을 추가.
+```
+mtf_sfr_center는 PASS 75~92 / FAIL 55~72, corner는 center-10 내외. dead_pixel_count는 대부분 0~2(불량은 3 이상), particle_count/blemish_count는 대부분 0~1(이물 불량은 5 이상). snr_db는 34~42, distortion_pct는 -2~2, relative_illumination_pct는 45~65.
+```
+**4단계 —** 판정 규칙을 추가.
+```
+test_result는 PASS 93% / FAIL 7%이고, MTF/데드픽셀/이물 규격 위반 시 FAIL이 되게 해줘.
+```
+**5단계 —** 의도적 이슈와 저장.
+```
+[의도적 이슈] 약 4% 레코드는 snr_db가 NULL(구형 테스터)로 넣어줘. Delta로 저장, COMMENT 추가.
 ```
 
 ### 테이블 15: defect_events (불량 이벤트)
 
+**1단계 —** 먼저 뼈대와 컬럼을 지정.
 ```
-불량 이벤트(defect_events) 120,000건을 생성해줘.
-- 테이블: ccm_factory.bronze.defect_events
-- 컬럼: event_id, serial_id, station, defect_code, defect_category, severity, disposition, root_cause_code, timestamp
-- station별 대표 불량: SMT→실장불량, DISPENSE→본딩불량, ALIGN→틸트/MTF, AOI→이물/솔더, FINAL→데드픽셀/화질
-- defect_category: PLACEMENT / BONDING / ALIGNMENT / CONTAMINATION / IMAGE_QUALITY
-- severity: CRITICAL(15%), MAJOR(45%), MINOR(40%)
-- disposition: REWORK(50%), SCRAP(30%), USE_AS_IS(20%)
-- root_cause_code: MATERIAL / EQUIPMENT / PROCESS / OPERATOR / ENVIRONMENT
-- 일부 불량은 특정 자재로트(Sup_S7/S8)·특정 설비와 상관되게
-Delta로 저장, COMMENT 추가.
+불량 이벤트 테이블 ccm_factory.bronze.defect_events 를 만들려고 해. 컬럼은 event_id, serial_id, station, defect_code, defect_category, severity, disposition, root_cause_code, timestamp로 구성해줘.
+```
+**2단계 —** 건수와 스테이션별 불량을 추가.
+```
+120,000건 생성해줘. station별 대표 불량은 SMT→실장불량, DISPENSE→본딩불량, ALIGN→틸트/MTF, AOI→이물/솔더, FINAL→데드픽셀/화질. defect_category는 PLACEMENT / BONDING / ALIGNMENT / CONTAMINATION / IMAGE_QUALITY.
+```
+**3단계 —** 심각도·조치·원인 분포를 추가.
+```
+severity는 CRITICAL 15% / MAJOR 45% / MINOR 40%, disposition은 REWORK 50% / SCRAP 30% / USE_AS_IS 20%, root_cause_code는 MATERIAL / EQUIPMENT / PROCESS / OPERATOR / ENVIRONMENT.
+```
+**4단계 —** 상관 관계와 저장.
+```
+일부 불량은 특정 자재로트(Sup_S7/S8)·특정 설비와 상관되게 만들어줘. Delta로 저장, COMMENT 추가.
 ```
 
 
@@ -117,30 +146,42 @@ Delta로 저장, COMMENT 추가.
 
 ### 테이블 16: cleanroom_environment (클린룸 환경 1분)
 
+**1단계 —** 먼저 뼈대와 컬럼을 지정.
 ```
-클린룸 환경(cleanroom_environment) 150,000건을 생성해줘.
-- 테이블: ccm_factory.bronze.cleanroom_environment
-- 컬럼: line_id, zone, timestamp, temperature_c, humidity_pct, particle_0_3um, particle_0_5um, diff_pressure_pa, esd_voltage_v
-- temperature_c: 22±1.5, humidity_pct: 45±8
-- particle_0_3um: 대부분 100~3000/㎥, 도어 개폐/이상 시 스파이크
-- diff_pressure_pa: 양압 5~15, esd_voltage_v: -50~50
-- 파티클 급증 구간은 이후 CONTAMINATION 불량과 시간 상관되게
-Delta로 저장, COMMENT 추가.
+클린룸 환경 테이블 ccm_factory.bronze.cleanroom_environment 를 만들려고 해. 컬럼은 line_id, zone, timestamp, temperature_c, humidity_pct, particle_0_3um, particle_0_5um, diff_pressure_pa, esd_voltage_v로 구성해줘.
+```
+**2단계 —** 건수와 환경 값을 추가.
+```
+150,000건 생성해줘. temperature_c는 22±1.5, humidity_pct는 45±8, diff_pressure_pa는 양압 5~15, esd_voltage_v는 -50~50.
+```
+**3단계 —** 파티클 패턴을 추가.
+```
+particle_0_3um는 대부분 100~3000/㎥이되 도어 개폐/이상 시 스파이크가 나게 해줘.
+```
+**4단계 —** 상관 관계와 저장.
+```
+파티클 급증 구간은 이후 CONTAMINATION 불량과 시간 상관되게 만들어줘. Delta로 저장, COMMENT 추가.
 ```
 
 ### 테이블 17: field_returns (필드 리턴 / RMA) — 비정형 소재
 
 > `failure_symptom`·`analysis_result`가 자연어. **모듈 6(AI 함수)** 에서 이 텍스트를 분류·추출합니다.
 
+**1단계 —** 먼저 뼈대와 컬럼을 지정.
 ```
-필드 리턴/RMA(field_returns) 10,000건을 생성해줘.
-- 테이블: ccm_factory.bronze.field_returns
-- 컬럼: rma_id, serial_id, model_code, customer, return_date, failure_symptom(자연어 한국어), analysis_result(자연어 한국어), root_cause_code, cost_usd
-- failure_symptom 예: "저조도에서 초점이 맞지 않음", "화면 모서리 흐림", "간헐적 화면 흔들림(OIS 불량 의심)", "이물 혼입으로 검은 점", "고온에서 색감 이상"
-- analysis_result 예: "AA 틸트 규격 초과 확인", "VCM 액추에이터 응답 지연", "렌즈 본딩부 UV 경화 부족", "센서 표면 파티클"
-- root_cause_code: ALIGNMENT/ACTUATOR/BONDING/CONTAMINATION/SENSOR
-- return_date: 2025년, cost_usd: 5~50
-Delta로 저장, COMMENT 추가.
+필드 리턴/RMA 테이블 ccm_factory.bronze.field_returns 를 만들려고 해. 컬럼은 rma_id, serial_id, model_code, customer, return_date, failure_symptom(자연어 한국어), analysis_result(자연어 한국어), root_cause_code, cost_usd로 구성해줘.
+```
+**2단계 —** 건수와 자연어 증상 예시를 추가.
+```
+10,000건 생성해줘. failure_symptom 예시는 "저조도에서 초점이 맞지 않음", "화면 모서리 흐림", "간헐적 화면 흔들림(OIS 불량 의심)", "이물 혼입으로 검은 점", "고온에서 색감 이상".
+```
+**3단계 —** 자연어 분석 결과 예시를 추가.
+```
+analysis_result 예시는 "AA 틸트 규격 초과 확인", "VCM 액추에이터 응답 지연", "렌즈 본딩부 UV 경화 부족", "센서 표면 파티클". root_cause_code는 ALIGNMENT/ACTUATOR/BONDING/CONTAMINATION/SENSOR.
+```
+**4단계 —** 날짜·비용과 저장.
+```
+return_date는 2025년, cost_usd는 5~50. Delta로 저장, COMMENT 추가.
 ```
 
 

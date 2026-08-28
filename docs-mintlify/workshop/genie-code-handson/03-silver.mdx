@@ -44,118 +44,138 @@ title: "Silver Layer 정제"
 
 #### Silver 1: aa_measurements (Active Alignment 측정 — 핵심 공정)
 
+**1단계 —** 뼈대부터, 규칙 제안 요청.
 ```
-ccm_factory.bronze.active_alignment를 정제하여 ccm_factory.silver.aa_measurements를 만들어줘.
-
-변환 규칙:
-1. event_id 기준 중복 제거 (최신 timestamp 유지)
-2. serial_id/equipment_id가 마스터에 없으면 ccm_factory.quarantine.aa_orphans로 분리
-3. mtf_center_pct > 100 또는 < 0 인 레코드는 ccm_factory.quarantine.aa_bad_mtf로 분리 (센서 오류)
-4. product_master 조인으로 target_mtf_center, spec_mtf_min 추가
-5. 추가 컬럼:
-   - event_date: timestamp에서 DATE
-   - mtf_margin: mtf_center_pct - spec_mtf_min
-   - tilt_abs_max: GREATEST(ABS(tilt_x_arcmin), ABS(tilt_y_arcmin))
-   - is_tilt_out: tilt_abs_max > 5 (틸트 규격 초과)
-   - aa_pass_recalc: mtf_center_pct >= spec_mtf_min AND tilt_abs_max <= 5
-6. event_date 파티셔닝, (equipment_id, event_date) Z-ORDER
-7. 테이블/컬럼 COMMENT 추가
-
-CREATE OR REPLACE TABLE, CTAS SQL로 만들어줘.
+ccm_factory.bronze.active_alignment를 정제하여 ccm_factory.silver.aa_measurements를 만들려고 해. 먼저 정제 규칙을 제안해줘.
+```
+**2단계 —** 중복 제거 + 참조 격리.
+```
+event_id 기준으로 중복 제거(최신 timestamp 유지)하고, serial_id/equipment_id가 마스터에 없으면 ccm_factory.quarantine.aa_orphans로 분리해줘.
+```
+**3단계 —** 센서 오류 격리 + 마스터 조인.
+```
+mtf_center_pct > 100 또는 < 0 인 레코드는 ccm_factory.quarantine.aa_bad_mtf로 분리(센서 오류)하고, product_master 조인으로 target_mtf_center, spec_mtf_min을 추가해줘.
+```
+**4단계 —** 파생 컬럼 추가.
+```
+컬럼 추가: event_date(timestamp에서 DATE), mtf_margin(mtf_center_pct - spec_mtf_min), tilt_abs_max(GREATEST(ABS(tilt_x_arcmin), ABS(tilt_y_arcmin))), is_tilt_out(tilt_abs_max > 5, 틸트 규격 초과), aa_pass_recalc(mtf_center_pct >= spec_mtf_min AND tilt_abs_max <= 5).
+```
+**5단계 —** 파티션·Z-ORDER·COMMENT + CTAS 확정.
+```
+event_date 파티셔닝, (equipment_id, event_date) Z-ORDER, 테이블/컬럼 COMMENT를 추가하고 CREATE OR REPLACE TABLE, CTAS SQL로 만들어줘.
 ```
 
 #### Silver 2: final_test_clean (최종 화질검사 정제)
 
+**1단계 —** 뼈대부터, 규칙 제안 요청.
 ```
-ccm_factory.bronze.final_image_test를 정제하여 ccm_factory.silver.final_test_clean을 만들어줘.
-
-변환 규칙:
-1. event_id 중복 제거, serial_id 참조 무결성(없으면 quarantine.final_orphans)
-2. snr_db가 NULL이면 같은 model_code의 중앙값으로 대체하고 snr_imputed=true 플래그 (원본 NULL 여부 보존)
-3. product_master 조인으로 model_code, spec_mtf_min 추가
-4. 추가 컬럼:
-   - event_date (DATE)
-   - defect_summary: dead_pixel_count>2 OR particle_count>=5 OR blemish_count>=5 → true
-   - result_recalc: mtf_sfr_center >= spec_mtf_min AND NOT defect_summary → 'PASS' else 'FAIL'
-   - result_mismatch: test_result != result_recalc (원본 판정과 재계산 불일치 감지)
-5. event_date 파티셔닝, model_code Z-ORDER, COMMENT 추가
-
-CREATE OR REPLACE TABLE, CTAS SQL로.
+ccm_factory.bronze.final_image_test를 정제하여 ccm_factory.silver.final_test_clean을 만들려고 해. 먼저 정제 규칙을 제안해줘.
+```
+**2단계 —** 중복·참조 + SNR 결측 대체.
+```
+event_id 중복 제거, serial_id 참조 무결성(없으면 quarantine.final_orphans)을 적용하고, snr_db가 NULL이면 같은 model_code의 중앙값으로 대체하되 snr_imputed=true 플래그로 원본 NULL 여부를 보존해줘.
+```
+**3단계 —** 마스터 조인.
+```
+product_master 조인으로 model_code, spec_mtf_min을 추가해줘.
+```
+**4단계 —** 파생 컬럼 + 판정 재검증.
+```
+컬럼 추가: event_date(DATE), defect_summary(dead_pixel_count>2 OR particle_count>=5 OR blemish_count>=5 → true), result_recalc(mtf_sfr_center >= spec_mtf_min AND NOT defect_summary → 'PASS' else 'FAIL'), result_mismatch(test_result != result_recalc, 원본 판정과 재계산 불일치 감지).
+```
+**5단계 —** 파티션·Z-ORDER·COMMENT + CTAS 확정.
+```
+event_date 파티셔닝, model_code Z-ORDER, COMMENT를 추가하고 CREATE OR REPLACE TABLE, CTAS SQL로 만들어줘.
 ```
 
 #### Silver 3: sensor_metrics_5min (설비 센서 5분 집계 — 예측정비 기반)
 
+**1단계 —** 뼈대부터, 규칙 제안 요청.
 ```
-ccm_factory.bronze.equipment_sensor_logs를 정제·집계하여 ccm_factory.silver.sensor_metrics_5min을 만들어줘.
-
-변환 규칙:
-1. temperature_c > 120 또는 < 0 → 물리적 상한 120으로 클리핑하고 is_temp_spike=true 플래그
-2. equipment_id 참조 무결성 (없으면 제거)
-3. 5분 단위 집계 (equipment_id × 5분 버킷):
-   - AVG/MAX temperature_c, AVG/MAX vibration_mm_s, AVG motor_current_a, AVG vacuum_kpa, AVG air_pressure_kpa
-   - BOOL_OR(is_temp_spike) as any_spike
-4. 추가 컬럼:
-   - event_date (DATE)
-   - health_flag: max_temperature_c > 80 OR max_vibration_mm_s > 5 → 'warning', 그 이상이면 'critical', else 'normal'
-   - vib_trend: 직전 5분 대비 vibration 증가율 (Window LAG)
-5. event_date 파티셔닝, equipment_id Z-ORDER, COMMENT 추가
-
-CREATE OR REPLACE TABLE, CTAS SQL로.
+ccm_factory.bronze.equipment_sensor_logs를 정제·집계하여 ccm_factory.silver.sensor_metrics_5min을 만들려고 해. 먼저 정제·집계 규칙을 제안해줘.
+```
+**2단계 —** 온도 클리핑 + 참조.
+```
+temperature_c > 120 또는 < 0 이면 물리적 상한 120으로 클리핑하고 is_temp_spike=true 플래그를 붙이고, equipment_id 참조 무결성(없으면 제거)을 적용해줘.
+```
+**3단계 —** 5분 집계.
+```
+equipment_id × 5분 버킷으로 집계: AVG/MAX temperature_c, AVG/MAX vibration_mm_s, AVG motor_current_a, AVG vacuum_kpa, AVG air_pressure_kpa, 그리고 BOOL_OR(is_temp_spike) as any_spike.
+```
+**4단계 —** 파생 컬럼 추가.
+```
+컬럼 추가: event_date(DATE), health_flag(max_temperature_c > 80 OR max_vibration_mm_s > 5 → 'warning', 그 이상이면 'critical', else 'normal'), vib_trend(직전 5분 대비 vibration 증가율, Window LAG).
+```
+**5단계 —** 파티션·Z-ORDER·COMMENT + CTAS 확정.
+```
+event_date 파티셔닝, equipment_id Z-ORDER, COMMENT를 추가하고 CREATE OR REPLACE TABLE, CTAS SQL로 만들어줘.
 ```
 
 #### Silver 4: production_flow (스테이션 흐름 & 택트타임)
 
+**1단계 —** 뼈대부터, 규칙 제안 요청.
 ```
-ccm_factory.bronze.production_events를 정제하여 ccm_factory.silver.production_flow를 만들어줘.
-
-변환 규칙:
-1. (serial_id, timestamp, event_type) 기준 중복 제거 (재전송 제거)
-2. serial_id별·station별 IN/OUT 쌍 매칭:
-   - 같은 serial_id+station의 IN과 다음 OUT을 페어링
-   - OUT < IN(시간 역전) 쌍은 ccm_factory.quarantine.flow_time_reversed로 분리
-   - 짝이 없는 고아 이벤트는 flag
-3. equipment_id 참조 무결성 검증
-4. 산출 컬럼 (그레인: serial_id × station 1행):
-   - in_time, out_time, station, equipment_id, wo_id
-   - dwell_time_sec: out_time - in_time (초)
-   - event_date (in_time의 DATE)
-5. dwell_time_sec이 음수이거나 station 표준 범위의 10배 초과면 이상치 flag
-6. event_date 파티셔닝, (station, event_date) Z-ORDER, COMMENT 추가
-
-CREATE OR REPLACE TABLE, CTAS SQL로.
+ccm_factory.bronze.production_events를 정제하여 ccm_factory.silver.production_flow를 만들려고 해. 먼저 정제 규칙을 제안해줘.
+```
+**2단계 —** 재전송 중복 제거.
+```
+(serial_id, timestamp, event_type) 기준으로 중복(재전송)을 제거해줘.
+```
+**3단계 —** IN/OUT 쌍 매칭 + 격리.
+```
+serial_id별·station별로 같은 serial_id+station의 IN과 다음 OUT을 페어링하고, OUT < IN(시간 역전) 쌍은 ccm_factory.quarantine.flow_time_reversed로 분리, 짝이 없는 고아 이벤트는 flag를 붙여줘. equipment_id 참조 무결성도 검증해줘.
+```
+**4단계 —** 산출 컬럼(그레인 serial_id × station 1행).
+```
+산출 컬럼 추가: in_time, out_time, station, equipment_id, wo_id, dwell_time_sec(out_time - in_time, 초), event_date(in_time의 DATE). dwell_time_sec이 음수이거나 station 표준 범위의 10배 초과면 이상치 flag.
+```
+**5단계 —** 파티션·Z-ORDER·COMMENT + CTAS 확정.
+```
+event_date 파티셔닝, (station, event_date) Z-ORDER, COMMENT를 추가하고 CREATE OR REPLACE TABLE, CTAS SQL로 만들어줘.
 ```
 
 #### Silver 5: defect_normalized (불량 표준화)
 
+**1단계 —** 뼈대부터, 규칙 제안 요청.
 ```
-ccm_factory.bronze.defect_events를 정제하여 ccm_factory.silver.defect_normalized를 만들어줘.
-
-변환 규칙:
-1. event_id 중복 제거, serial_id 참조 무결성
-2. 표준화: severity 대문자 통일(CRITICAL/MAJOR/MINOR 외 → 'UNKNOWN'), defect_category/disposition/root_cause_code 정규화
-3. traceability 조인으로 model_code, 사용 material_lot_ids 추가 (자재↔불량 상관 분석 대비)
-4. 추가 컬럼:
-   - event_date (DATE)
-   - is_scrap: disposition = 'SCRAP'
-   - is_critical: severity = 'CRITICAL'
-5. event_date 파티셔닝, (station, defect_category) Z-ORDER, COMMENT 추가
-
-CREATE OR REPLACE TABLE, CTAS SQL로.
+ccm_factory.bronze.defect_events를 정제하여 ccm_factory.silver.defect_normalized를 만들려고 해. 먼저 정제 규칙을 제안해줘.
+```
+**2단계 —** 중복·참조 + 표준화.
+```
+event_id 중복 제거, serial_id 참조 무결성을 적용하고, severity를 대문자로 통일(CRITICAL/MAJOR/MINOR 외 → 'UNKNOWN'), defect_category/disposition/root_cause_code를 정규화해줘.
+```
+**3단계 —** traceability 조인.
+```
+traceability 조인으로 model_code와 사용 material_lot_ids를 추가해줘 (자재↔불량 상관 분석 대비).
+```
+**4단계 —** 파생 컬럼 추가.
+```
+컬럼 추가: event_date(DATE), is_scrap(disposition = 'SCRAP'), is_critical(severity = 'CRITICAL').
+```
+**5단계 —** 파티션·Z-ORDER·COMMENT + CTAS 확정.
+```
+event_date 파티셔닝, (station, defect_category) Z-ORDER, COMMENT를 추가하고 CREATE OR REPLACE TABLE, CTAS SQL로 만들어줘.
 ```
 
 ### 나머지 Silver 테이블 (6개) — 동일 패턴 일괄
 
+**1단계 —** 공통 원칙 먼저 합의.
 ```
-위 5개 Silver와 동일한 공통 원칙(event_id 중복제거, 참조무결성→quarantine, 이상치 클리핑/플래그, event_date 파티션, 단위표준화, COMMENT)을 적용하여 나머지 6개도 만들어줘:
-
+위 5개 Silver와 동일한 공통 원칙(event_id 중복제거, 참조무결성→quarantine, 이상치 클리핑/플래그, event_date 파티션, 단위표준화, COMMENT)을 나머지 6개에도 적용하려고 해. 3~4개씩 나눠 요청할게.
+```
+**2단계 —** 1~3번 배치 요청.
+```
+먼저 1~3번을 CREATE OR REPLACE로 만들어줘:
 1. silver.serials_cleaned ← bronze.traceability: 중복제거, final_result 표준화, 마스터 조인
 2. silver.aoi_defects ← bronze.aoi_inspection: defect_flag=false인데 defect_type 있는 규칙위반 → quarantine.aoi_rule_violation, defect_type 표준화
 3. silver.smt_placement_clean ← bronze.smt_placement_logs: |offset|>500µm는 mm 혼입으로 보고 1000으로 나눠 보정 + offset_corrected 플래그, pickup_result 정규화
+```
+**3단계 —** 4~6번 배치 이어서.
+```
+이어서 4~6번도 같은 공통 원칙으로 CREATE OR REPLACE로 만들어줘:
 4. silver.dispensing_clean ← bronze.dispensing_process: LENS_BOND인데 uv_dose_mj NULL이면 uv_missing=true, 파라미터 범위 검증
 5. silver.downtime_clean ← bronze.equipment_downtime: 유형/사유코드 표준화, duration_min<=0 제거
 6. silver.cleanroom_5min ← bronze.cleanroom_environment: 1분→5분 집계, particle_0_3um 급증(직전대비 3배↑) 플래그
-
-3~4개씩 나눠서 요청할게. 먼저 1~3번을 CREATE OR REPLACE로 만들어줘.
 ```
 
 > 💡 한 번에 6개를 다 만들면 오래 걸립니다. 3개씩 나눠 요청하세요.

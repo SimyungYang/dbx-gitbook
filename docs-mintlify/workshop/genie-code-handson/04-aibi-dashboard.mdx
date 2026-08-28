@@ -38,33 +38,36 @@ title: "생산·품질 대시보드"
 
 ### Genie Code 프롬프트
 
+> 한 번에 12개 위젯을 요구하지 말고, 뼈대부터 만들고 위젯을 한 단계씩 덧붙입니다.
+
+**1단계 —** 대시보드 뼈대 + 첫 추이 위젯.
+
 ```
-gold.daily_yield_summary, gold.first_pass_yield, gold.station_cycle_time 테이블로
-"생산/수율 운영 대시보드"를 AI/BI 대시보드로 만들어줘.
+gold.daily_yield_summary, gold.first_pass_yield, gold.station_cycle_time 테이블로 "생산/수율 운영 대시보드"를 AI/BI 대시보드로 새로 만들어줘. 우선 일별 수율 추이 꺾은선(최근 30일, 라인별 색상 구분) 하나만.
+```
 
-위젯 (총 12개):
+**2단계 —** 맨 위에 KPI 카운터 4개 추가.
 
-Row 1 — KPI 카운터 (4개):
-1. 오늘 총 생산 수량 (합계)
-2. 전체 수율 % (양품/투입, 게이지)
-3. 직행률(FPY) % (게이지)
-4. 활성 라인 수 (오늘 실적 있는 라인)
+```
+맨 위에 KPI 카운터 4개를 추가해줘: 오늘 총 생산 수량(합계), 전체 수율 %(양품/투입, 게이지), 직행률(FPY) %(게이지), 활성 라인 수(오늘 실적 있는 라인).
+```
 
-Row 2 — 추이 (2개):
-5. 일별 수율 추이 (최근 30일, 꺾은선, 라인별 색상 구분)
-6. 일별 FPY 추이 (최근 30일, 꺾은선)
+**3단계 —** FPY 추이 + 분포 막대 3개 추가.
 
-Row 3 — 분포 (3개):
-7. 모델별 수율 비교 (가로 막대, Top 10 model_code)
-8. 라인별 생산 수량 (막대: LINE_1~LINE_6)
-9. 스테이션별 평균 택트타임 (막대: SMT/DISPENSE/REFLOW/ALIGN/AOI/FINAL)
+```
+일별 FPY 추이 꺾은선(최근 30일)을 추가하고, 분포 막대 3개도 넣어줘: 모델별 수율 비교(가로 막대, Top 10 model_code), 라인별 생산 수량(막대: LINE_1~LINE_6), 스테이션별 평균 택트타임(막대: SMT/DISPENSE/REFLOW/ALIGN/AOI/FINAL).
+```
 
-Row 4 — 운영 지표 (3개):
-10. 라인×일 수율 히트맵 (X축 날짜, Y축 라인, 색상 수율)
-11. 근무조(shift)별 수율 비교 (막대: DAY/SWING/NIGHT)
-12. 고객(customer)별 생산 비중 (도넛)
+**4단계 —** 운영 지표 3개 추가.
 
-필터: 날짜 범위(기본 최근 30일), 라인(line_id), 모델(model_code), 근무조(shift)
+```
+운영 지표 3개를 더 추가해줘: 라인×일 수율 히트맵(X축 날짜, Y축 라인, 색상 수율), 근무조(shift)별 수율 비교(막대: DAY/SWING/NIGHT), 고객(customer)별 생산 비중(도넛).
+```
+
+**5단계 —** 필터 추가.
+
+```
+마지막으로 필터를 추가해줘: 날짜 범위(기본 최근 30일), 라인(line_id), 모델(model_code), 근무조(shift).
 ```
 
 ### 생성 확인
@@ -83,32 +86,36 @@ Row 4 — 운영 지표 (3개):
 
 ### Genie Code 프롬프트
 
+> 파레토부터 만들고 KPI·상관 분석·화질 위젯을 한 단계씩 덧붙입니다.
+
+**1단계 —** 대시보드 뼈대 + 불량 파레토 2종.
+
 ```
-gold.defect_pareto, gold.material_defect_correlation, gold.aa_quality_trend, gold.spc_process_capability 테이블로
-"품질/불량 분석 대시보드"를 AI/BI 대시보드로 만들어줘.
+gold.defect_pareto, gold.material_defect_correlation, gold.aa_quality_trend, gold.spc_process_capability 테이블로 "품질/불량 분석 대시보드"를 AI/BI 대시보드로 새로 만들어줘. 우선 불량 코드별 파레토(막대+누적선, defect_code 상위 15, 누적 % 라인)와 불량 카테고리 × severity 분포(Stacked Bar: PLACEMENT/BONDING/ALIGNMENT/CONTAMINATION/IMAGE_QUALITY × CRITICAL/MAJOR/MINOR)부터.
+```
 
-위젯 (총 11개):
+**2단계 —** 맨 위에 KPI 카운터 3개 추가.
 
-Row 1 — KPI 카운터 (3개):
-1. 전체 불량률 % (게이지)
-2. CRITICAL 불량 건수 (오늘)
-3. 평균 공정능력 Cpk (핵심 공정 평균)
+```
+맨 위에 KPI 카운터 3개를 추가해줘: 전체 불량률 %(게이지), CRITICAL 불량 건수(오늘), 평균 공정능력 Cpk(핵심 공정 평균).
+```
 
-Row 2 — 불량 파레토 (2개):
-4. 불량 코드별 파레토 (막대+누적선, defect_code 상위 15, 누적 % 라인)
-5. 불량 카테고리 × severity 분포 (Stacked Bar: PLACEMENT/BONDING/ALIGNMENT/CONTAMINATION/IMAGE_QUALITY × CRITICAL/MAJOR/MINOR)
+**3단계 —** 상관 분석 위젯 3개 추가.
 
-Row 3 — 상관 분석 (3개):
-6. 자재 공급사별 불량률 (가로 막대, supplier별 — Sup_S7/S8 부각 예상)
-7. 자재 로트↔불량 상관 상위 (막대: material_defect_correlation 상위 10)
-8. root_cause 분포 (파이: MATERIAL/EQUIPMENT/PROCESS/OPERATOR/ENVIRONMENT)
+```
+상관 분석 위젯 3개를 추가해줘: 자재 공급사별 불량률(가로 막대, supplier별 — Sup_S7/S8 부각 예상), 자재 로트↔불량 상관 상위(막대: material_defect_correlation 상위 10), root_cause 분포(파이: MATERIAL/EQUIPMENT/PROCESS/OPERATOR/ENVIRONMENT).
+```
 
-Row 4 — AA 화질 & 공정능력 (3개):
-9. 모델별 MTF(center) 분포 (박스플롯 또는 분포 막대, aa_quality_trend)
-10. AA 틸트 산포 추이 (일별 tilt 표준편차 꺾은선)
-11. 공정 파라미터별 Cpk 히트맵 (X축 날짜, Y축 공정, 색상 Cpk — 1.33 미만 경고색)
+**4단계 —** AA 화질 & 공정능력 위젯 3개 추가.
 
-필터: 날짜 범위, 라인, 모델, 불량 카테고리(defect_category)
+```
+AA 화질·공정능력 위젯 3개를 추가해줘: 모델별 MTF(center) 분포(박스플롯 또는 분포 막대, aa_quality_trend), AA 틸트 산포 추이(일별 tilt 표준편차 꺾은선), 공정 파라미터별 Cpk 히트맵(X축 날짜, Y축 공정, 색상 Cpk — 1.33 미만 경고색).
+```
+
+**5단계 —** 필터 추가.
+
+```
+마지막으로 필터를 추가해줘: 날짜 범위, 라인, 모델, 불량 카테고리(defect_category).
 ```
 
 ### 생성 확인

@@ -8,32 +8,36 @@ title: "설비/OEE 대시보드 & 차트 가이드"
 
 ### Genie Code 프롬프트
 
+> 추이 위젯부터 만들고 KPI·설비 분석·건강 위젯을 한 단계씩 덧붙입니다.
+
+**1단계 —** 대시보드 뼈대 + 추이 2개.
+
 ```
-gold.oee_by_equipment, gold.equipment_health_score 테이블로
-"설비 운영/OEE 대시보드"를 AI/BI 대시보드로 만들어줘.
+gold.oee_by_equipment, gold.equipment_health_score 테이블로 "설비 운영/OEE 대시보드"를 AI/BI 대시보드로 새로 만들어줘. 우선 추이 2개부터: 일별 OEE 추이(최근 30일, 꺾은선, 라인별 색상)와 OEE 3요소(가용성/성능/품질) 추이(Multi-line).
+```
 
-위젯 (총 11개):
+**2단계 —** 맨 위에 KPI 카운터 4개 추가.
 
-Row 1 — KPI 카운터 (4개):
-1. 전체 평균 OEE % (게이지)
-2. 평균 가용성(Availability) %
-3. 평균 성능(Performance) %
-4. 평균 품질(Quality) %
+```
+맨 위에 KPI 카운터 4개를 추가해줘: 전체 평균 OEE %(게이지), 평균 가용성(Availability) %, 평균 성능(Performance) %, 평균 품질(Quality) %.
+```
 
-Row 2 — 추이 (2개):
-5. 일별 OEE 추이 (최근 30일, 꺾은선, 라인별 색상)
-6. OEE 3요소(가용성/성능/품질) 추이 (Multi-line)
+**3단계 —** 설비 분석 위젯 3개 추가.
 
-Row 3 — 설비 분석 (3개):
-7. 설비 유형별 평균 OEE (막대: SMT_MOUNTER/DISPENSER/REFLOW/AA/AOI/FINAL_TESTER)
-8. 설비별 OEE 랭킹 (가로 막대, 하위 15개 — 개선 대상)
-9. 비가동(downtime) 사유별 시간 파레토 (막대: BREAKDOWN/PM/CHANGEOVER/IDLE)
+```
+설비 분석 위젯 3개를 추가해줘: 설비 유형별 평균 OEE(막대: SMT_MOUNTER/DISPENSER/REFLOW/AA/AOI/FINAL_TESTER), 설비별 OEE 랭킹(가로 막대, 하위 15개 — 개선 대상), 비가동(downtime) 사유별 시간 파레토(막대: BREAKDOWN/PM/CHANGEOVER/IDLE).
+```
 
-Row 4 — 설비 건강 (2개):
-10. 설비 건강점수 히트맵 (X축 날짜, Y축 설비, 색상 health_score — 낮을수록 경고색)
-11. 위험 설비 Top 10 (health_grade D/F, 주요 위험요인 표시)
+**4단계 —** 설비 건강 위젯 2개 추가.
 
-필터: 날짜 범위, 라인, 설비 유형(equipment_type)
+```
+설비 건강 위젯 2개를 추가해줘: 설비 건강점수 히트맵(X축 날짜, Y축 설비, 색상 health_score — 낮을수록 경고색), 위험 설비 Top 10(health_grade D/F, 주요 위험요인 표시).
+```
+
+**5단계 —** 필터 추가.
+
+```
+마지막으로 필터를 추가해줘: 날짜 범위, 라인, 설비 유형(equipment_type).
 ```
 
 ### 생성 확인

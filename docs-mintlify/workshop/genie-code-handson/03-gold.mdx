@@ -23,126 +23,140 @@ Gold는 **대시보드·Genie·에이전트·ML이 직접 소비**하는 테이�
 
 #### Gold 1: daily_yield_summary
 
+**1단계 —** 뼈대 + 그레인 확정.
 ```
-silver.final_test_clean, silver.serials_cleaned, silver.production_flow를 결합하여 ccm_factory.gold.daily_yield_summary를 만들어줘.
-
-그레인: line_id × model_code × event_date
-
-컬럼:
-- line_id, model_code, event_date
-- input_qty: 투입 시리얼 수, output_qty: FINAL 통과(PASS) 수
-- yield_pct: output_qty / input_qty * 100
-- fail_qty, scrap_qty, rework_qty
-- avg_mtf_center, avg_snr_db
-- top_defect_category: 최다 불량 카테고리
-
-product_master/equipment 조인으로 customer, module_type 추가.
-event_date 파티셔닝, COMMENT 추가.
+silver.final_test_clean, silver.serials_cleaned, silver.production_flow를 결합하여 ccm_factory.gold.daily_yield_summary를 만들려고 해. 그레인은 line_id × model_code × event_date야. 먼저 집계 설계를 제안해줘.
+```
+**2단계 —** 수율 핵심 컬럼.
+```
+컬럼 추가: line_id, model_code, event_date, input_qty(투입 시리얼 수), output_qty(FINAL 통과 PASS 수), yield_pct(output_qty / input_qty * 100).
+```
+**3단계 —** 불량·품질 지표 추가.
+```
+컬럼 더 추가: fail_qty, scrap_qty, rework_qty, avg_mtf_center, avg_snr_db, top_defect_category(최다 불량 카테고리).
+```
+**4단계 —** 조인 + 파티션·COMMENT.
+```
+product_master/equipment 조인으로 customer, module_type를 추가하고, event_date 파티셔닝과 COMMENT를 추가해줘.
 ```
 
 #### Gold 2: first_pass_yield (FPY 직행률)
 
+**1단계 —** 뼈대 + 그레인·정의 확정.
 ```
-silver.production_flow, silver.aoi_defects, silver.final_test_clean을 결합하여 ccm_factory.gold.first_pass_yield를 만들어줘.
-
-그레인: station × event_date
-
-정의: FPY = (재작업/재검 없이 한 번에 통과한 수) / (해당 스테이션 투입 수) * 100
-
-컬럼:
-- station, event_date
-- input_count, first_pass_count, rework_count
-- fpy_pct: first_pass_count / input_count * 100
-- rolled_throughput_yield: 전 스테이션 FPY의 곱 (라인 전체 직행률, 별도 컬럼 또는 요약행)
-
-event_date 파티셔닝, COMMENT 추가.
+silver.production_flow, silver.aoi_defects, silver.final_test_clean을 결합하여 ccm_factory.gold.first_pass_yield를 만들려고 해. 그레인은 station × event_date, FPY = (재작업/재검 없이 한 번에 통과한 수) / (해당 스테이션 투입 수) * 100 이야. 먼저 설계를 제안해줘.
+```
+**2단계 —** 카운트 컬럼.
+```
+컬럼 추가: station, event_date, input_count, first_pass_count, rework_count, fpy_pct(first_pass_count / input_count * 100).
+```
+**3단계 —** 라인 전체 직행률 추가.
+```
+rolled_throughput_yield 컬럼도 추가해줘: 전 스테이션 FPY의 곱(라인 전체 직행률, 별도 컬럼 또는 요약행).
+```
+**4단계 —** 파티션·COMMENT.
+```
+event_date 파티셔닝과 COMMENT를 추가해줘.
 ```
 
 #### Gold 3: defect_pareto
 
+**1단계 —** 뼈대 + 그레인 확정.
 ```
-silver.defect_normalized를 집계하여 ccm_factory.gold.defect_pareto를 만들어줘.
-
-그레인: defect_code × line_id × event_date
-
-컬럼:
-- defect_code, defect_category, line_id, event_date
-- defect_count, scrap_count, critical_count
-- pct_of_total: 해당 라인/일 전체 불량 대비 비율
-- cum_pct: 불량 많은 순 누적 비율 (파레토 80/20 분석용, Window)
-- top_root_cause: 최다 root_cause_code
-
-event_date 파티셔닝, COMMENT 추가.
+silver.defect_normalized를 집계하여 ccm_factory.gold.defect_pareto를 만들려고 해. 그레인은 defect_code × line_id × event_date야. 먼저 설계를 제안해줘.
+```
+**2단계 —** 카운트 컬럼.
+```
+컬럼 추가: defect_code, defect_category, line_id, event_date, defect_count, scrap_count, critical_count.
+```
+**3단계 —** 파레토 비율 추가.
+```
+파레토 80/20 분석용 컬럼 추가: pct_of_total(해당 라인/일 전체 불량 대비 비율), cum_pct(불량 많은 순 누적 비율, Window), top_root_cause(최다 root_cause_code).
+```
+**4단계 —** 파티션·COMMENT.
+```
+event_date 파티셔닝과 COMMENT를 추가해줘.
 ```
 
 #### Gold 4: oee_by_equipment (설비 종합효율)
 
+**1단계 —** 뼈대 + 그레인·OEE 정의 확정.
 ```
-silver.downtime_clean, silver.production_flow, silver.final_test_clean, bronze.equipment_master를 결합하여 ccm_factory.gold.oee_by_equipment를 만들어줘.
-
-그레인: equipment_id × event_date
-
-OEE = 가용성(Availability) × 성능(Performance) × 품질(Quality)
-- availability = (계획가동시간 - 비가동시간) / 계획가동시간
-  · 비가동시간 = downtime_clean의 BREAKDOWN+CHANGEOVER+IDLE 합 (PM 제외 또는 옵션)
-- performance = (실제 처리수 × 이상택트) / 실제가동시간  또는  실제UPH / rated_capacity_uph
+silver.downtime_clean, silver.production_flow, silver.final_test_clean, bronze.equipment_master를 결합하여 ccm_factory.gold.oee_by_equipment를 만들려고 해. 그레인은 equipment_id × event_date, OEE = 가용성(Availability) × 성능(Performance) × 품질(Quality)이야. 먼저 설계를 제안해줘.
+```
+**2단계 —** 세 지표 계산식.
+```
+세 지표를 이렇게 계산해줘:
+- availability = (계획가동시간 - 비가동시간) / 계획가동시간 · 비가동시간 = downtime_clean의 BREAKDOWN+CHANGEOVER+IDLE 합 (PM 제외 또는 옵션)
+- performance = (실제 처리수 × 이상택트) / 실제가동시간 또는 실제UPH / rated_capacity_uph
 - quality = 양품수 / 총생산수
-
-컬럼:
-- equipment_id, equipment_type, line_id, event_date
-- planned_time_min, downtime_min, run_time_min
-- availability_pct, performance_pct, quality_pct
-- oee_pct: 세 값의 곱
-- breakdown_min, changeover_min, pm_min (유형별 비가동)
-
-event_date 파티셔닝, (equipment_id) Z-ORDER, COMMENT 추가.
+```
+**3단계 —** 컬럼 구성.
+```
+컬럼 추가: equipment_id, equipment_type, line_id, event_date, planned_time_min, downtime_min, run_time_min, availability_pct, performance_pct, quality_pct, oee_pct(세 값의 곱), breakdown_min, changeover_min, pm_min(유형별 비가동).
+```
+**4단계 —** 파티션·Z-ORDER·COMMENT.
+```
+event_date 파티셔닝, (equipment_id) Z-ORDER, COMMENT를 추가해줘.
 ```
 
 #### Gold 5: spc_process_capability (Cpk 공정능력)
 
+**1단계 —** 뼈대 + 그레인 확정.
 ```
-silver.aa_measurements(및 dispensing_clean)를 집계하여 ccm_factory.gold.spc_process_capability를 만들어줘.
-
-그레인: process × parameter × model_code × event_date
-- process/parameter 예: ALIGN/mtf_center_pct, ALIGN/tilt_abs_max, DISPENSE/volume_mg
-
-각 파라미터에 대해:
-- n, mean, stddev
-- usl, lsl: 규격 상/하한 (파라미터별 정의; 예 mtf_center_pct의 LSL = spec_mtf_min, tilt은 USL=5)
-- cp = (USL - LSL) / (6*stddev)
-- cpk = MIN((USL-mean)/(3*stddev), (mean-LSL)/(3*stddev))
-- capability_grade: cpk>=1.33 '우수', 1.0~1.33 '보통', <1.0 '개선필요'
-
-한쪽 규격만 있는 경우 단측 Cpk로 계산. event_date 파티셔닝, COMMENT 추가.
+silver.aa_measurements(및 dispensing_clean)를 집계하여 ccm_factory.gold.spc_process_capability를 만들려고 해. 그레인은 process × parameter × model_code × event_date이고 process/parameter 예는 ALIGN/mtf_center_pct, ALIGN/tilt_abs_max, DISPENSE/volume_mg야. 먼저 설계를 제안해줘.
+```
+**2단계 —** 기초 통계 + 규격.
+```
+각 파라미터에 대해 n, mean, stddev와 usl, lsl(규격 상/하한, 파라미터별 정의; 예 mtf_center_pct의 LSL = spec_mtf_min, tilt은 USL=5)를 계산해줘.
+```
+**3단계 —** Cp/Cpk/등급 추가.
+```
+공정능력지수 추가: cp = (USL - LSL) / (6*stddev), cpk = MIN((USL-mean)/(3*stddev), (mean-LSL)/(3*stddev)), capability_grade(cpk>=1.33 '우수', 1.0~1.33 '보통', <1.0 '개선필요').
+```
+**4단계 —** 단측 Cpk 처리 + 파티션·COMMENT.
+```
+한쪽 규격만 있는 경우 단측 Cpk로 계산하고, event_date 파티셔닝과 COMMENT를 추가해줘.
 ```
 
 #### Gold 6: equipment_health_score (예측정비 점수)
 
+**1단계 —** 뼈대 + 그레인 확정.
 ```
-silver.sensor_metrics_5min, silver.downtime_clean, silver.defect_normalized를 결합하여 ccm_factory.gold.equipment_health_score를 만들어줘.
-
-그레인: equipment_id × event_date
-
-컬럼:
-- equipment_id, equipment_type, line_id, event_date
-- avg_temp, max_temp, avg_vibration, max_vibration, spike_count
-- breakdown_count, breakdown_min
-- defect_attributed_count: 해당 설비 스테이션에서 발생한 불량 수
-- health_score (0~100): 100에서 감점
-  · max_temp>80 -10, max_vibration>5 -15, spike_count>0 -10, breakdown -20/건, vib 상승추세 -10
-- health_grade: A(90~100) B(70~89) C(50~69) D(30~49) F(0~29)
-- risk_factors: 위험요인 배열 (예: ["high_vibration","thermal_spike","frequent_breakdown"])
-
-devices 대신 equipment_master 조인으로 vendor, install_date 추가.
-event_date 파티셔닝, equipment_id Z-ORDER, COMMENT 추가.
+silver.sensor_metrics_5min, silver.downtime_clean, silver.defect_normalized를 결합하여 ccm_factory.gold.equipment_health_score를 만들려고 해. 그레인은 equipment_id × event_date야. 먼저 설계를 제안해줘.
+```
+**2단계 —** 센서·불량 지표 컬럼.
+```
+컬럼 추가: equipment_id, equipment_type, line_id, event_date, avg_temp, max_temp, avg_vibration, max_vibration, spike_count, breakdown_count, breakdown_min, defect_attributed_count(해당 설비 스테이션에서 발생한 불량 수).
+```
+**3단계 —** 건강 점수 산식 추가.
+```
+health_score(0~100) 추가 — 100에서 감점: max_temp>80 -10, max_vibration>5 -15, spike_count>0 -10, breakdown -20/건, vib 상승추세 -10. health_grade: A(90~100) B(70~89) C(50~69) D(30~49) F(0~29).
+```
+**4단계 —** 위험요인 배열 + 조인.
+```
+risk_factors 위험요인 배열(예: ["high_vibration","thermal_spike","frequent_breakdown"])을 추가하고, devices 대신 equipment_master 조인으로 vendor, install_date를 추가해줘.
+```
+**5단계 —** 파티션·Z-ORDER·COMMENT.
+```
+event_date 파티셔닝, equipment_id Z-ORDER, COMMENT를 추가해줘.
 ```
 
 ### 나머지 Gold (4개) — 동일 패턴
 
+**1단계 —** 공통 방식 확인.
 ```
-동일 방식으로 나머지 Gold 4개도 만들어줘 (각 그레인 준수, COMMENT):
+동일 방식으로 나머지 Gold 4개도 만들려고 해 (각 그레인 준수, COMMENT). 2개씩 나눠 요청할게.
+```
+**2단계 —** 1~2번 배치.
+```
+먼저 1~2번:
 1. gold.aa_quality_trend (모델×일): mtf_center/corner 평균·P5·P95, tilt 불량률, aa FAIL율 추이
 2. gold.material_defect_correlation (자재로트×불량): traceability로 로트별 사용 시리얼의 불량률 → 공급사/로트별 불량 상관 (Sup_S7/S8 부각)
+```
+**3단계 —** 3~4번 배치 이어서.
+```
+이어서 3~4번:
 3. gold.station_cycle_time (스테이션×일): production_flow 기반 평균/중앙/P95 dwell_time, 목표택트 대비 편차
 4. gold.product_traceability_360 (시리얼): 시리얼별 모델·자재로트·처리설비·각 공정 측정치(MTF/SNR)·최종판정·불량이력을 한 행으로 (에이전트/ML 소비용)
 ```

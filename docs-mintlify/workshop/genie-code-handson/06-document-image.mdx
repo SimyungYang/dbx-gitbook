@@ -10,25 +10,30 @@ title: "문서 파싱 & 이미지 AI"
 
 실제 교육에서는 강사가 공유한 샘플 PDF를 볼륨에 올려둡니다. 없으면 Genie Code로 샘플을 생성할 수 있습니다:
 
+**1단계 —** 샘플 PDF 생성 요청.
 ```
-카메라 모듈 품질 8D 리포트 샘플 PDF 10건을 만들어서 ccm_factory.bronze.raw_files 볼륨의
-8d_reports/ 폴더에 저장해줘.
-
-각 리포트는 8D 구조(D1~D8)를 갖고, 한국어로 작성:
-- 문제 정의(불량 현상, 발생 로트/모델)
-- 봉쇄 조치, 근본 원인(예: AA 틸트 규격 초과, 렌즈 본딩 UV 부족)
-- 시정/예방 조치
-불량 유형은 ALIGNMENT/BONDING/CONTAMINATION/SENSOR/ACTUATOR로 다양하게.
+카메라 모듈 품질 8D 리포트 샘플 PDF 10건을 만들어서 ccm_factory.bronze.raw_files 볼륨의 8d_reports/ 폴더에 저장해줘. 한국어, 8D 구조(D1~D8)로.
+```
+**2단계 —** 리포트 내용 항목 지정.
+```
+각 리포트에 문제 정의(불량 현상, 발생 로트/모델), 봉쇄 조치, 근본 원인(예: AA 틸트 규격 초과, 렌즈 본딩 UV 부족), 시정/예방 조치를 담아줘.
+```
+**3단계 —** 불량 유형 다양화.
+```
+불량 유형은 ALIGNMENT/BONDING/CONTAMINATION/SENSOR/ACTUATOR로 다양하게 섞어줘.
 ```
 
 > PDF 생성이 서버리스 제약에 걸리면, 강사가 준비한 PDF를 볼륨에 업로드하는 방식으로 대체하세요 (Catalog Explorer → Volume → Upload).
 
 ### B-2. `ai_parse_document`로 텍스트 추출
 
+**1단계 —** 1건 파싱 테스트.
 ```
-ccm_factory.bronze.raw_files 볼륨의 8d_reports/ 아래 PDF들을 ai_parse_document로 파싱해서
-텍스트를 추출하고, ccm_factory.silver.parsed_8d_reports 테이블로 저장해줘.
-컬럼: file_path, parsed_text, parsed_at. 먼저 1개로 테스트하고 결과 미리보기.
+ccm_factory.bronze.raw_files 볼륨의 8d_reports/ 아래 PDF를 ai_parse_document로 파싱해줘. 먼저 1개로 테스트하고 결과 미리보기.
+```
+**2단계 —** 저장 테이블·컬럼 지정.
+```
+확인되면 ccm_factory.silver.parsed_8d_reports 테이블로 저장해줘. 컬럼: file_path, parsed_text, parsed_at.
 ```
 
 참고 SQL 형태:
@@ -43,13 +48,17 @@ LIMIT 1
 
 ### B-3. `ai_extract`로 8D 항목 구조화
 
+**1단계 —** 소량 추출 테스트.
 ```
-silver.parsed_8d_reports의 parsed_text에서 ai_extract로 8D 핵심 항목을 구조화해줘:
-- problem_definition(문제 정의)
-- root_cause(근본 원인)
-- corrective_action(시정 조치)
-- affected_model(영향 모델)
-결과를 ccm_factory.gold.quality_8d_structured 테이블로 저장. LIMIT으로 먼저 테스트.
+silver.parsed_8d_reports의 parsed_text에서 ai_extract로 8D 핵심 항목을 구조화해줘. LIMIT으로 먼저 테스트.
+```
+**2단계 —** 추출 스키마 지정.
+```
+추출 항목: problem_definition(문제 정의), root_cause(근본 원인), corrective_action(시정 조치), affected_model(영향 모델).
+```
+**3단계 —** 결과 저장.
+```
+확인되면 결과를 ccm_factory.gold.quality_8d_structured 테이블로 저장해줘.
 ```
 
 ---
@@ -60,20 +69,28 @@ AOI가 촬영한 불량 이미지를 Vision LLM(`ai_query`)으로 분류·설명
 
 ### C-1. 샘플 이미지 준비
 
+**1단계 —** 이미지 목록 확인.
 ```
 ccm_factory.bronze.raw_files 볼륨의 aoi_defect_images/ 폴더에 있는 불량 이미지 목록을 보여줘.
+```
+**2단계 —** 없을 때 업로드 안내.
+```
 (없으면) 강사가 공유한 AOI 불량 이미지 샘플을 이 폴더에 업로드하는 방법을 안내해줘.
 ```
 
 ### C-2. Vision LLM으로 불량 유형 분류
 
+**1단계 —** 이미지 3장 분류 테스트.
 ```
-aoi_defect_images/ 의 이미지들을 ai_query에 Vision 모델(databricks-claude-sonnet-4)로 넣어
-불량 유형을 분류하고 한 줄 설명을 생성해줘.
-
-- 분류 레이블: SOLDER_DEFECT, FOREIGN_MATERIAL, PLACEMENT_SHIFT, POLARITY_ERROR, SCRATCH, NORMAL
-- 결과 컬럼: image_path, defect_type, description
-- 먼저 이미지 3장으로 테스트하고 SQL도 보여줘
+aoi_defect_images/ 의 이미지들을 ai_query에 Vision 모델(databricks-claude-sonnet-4)로 넣어 불량 유형을 분류하고 한 줄 설명을 생성해줘. 먼저 이미지 3장으로 테스트.
+```
+**2단계 —** 분류 레이블 지정.
+```
+분류 레이블은 SOLDER_DEFECT, FOREIGN_MATERIAL, PLACEMENT_SHIFT, POLARITY_ERROR, SCRATCH, NORMAL 중 하나로.
+```
+**3단계 —** 출력 컬럼·SQL.
+```
+결과 컬럼은 image_path, defect_type, description로. SQL도 보여줘.
 ```
 
 참고 SQL 형태(이미지 바이트 전달):

@@ -18,14 +18,21 @@ title: "공정 파라미터 (SPC)"
 | `placement_angle_deg` | DOUBLE | 실장 각도 |
 | `pickup_result` | STRING | `OK`/`PICKUP_FAIL`/`RECOGNITION_FAIL` |
 
+**1단계 —** 먼저 뼈대만.
 ```
-SMT 실장 로그(smt_placement_logs) 300,000건을 생성해줘.
-- 테이블: ccm_factory.bronze.smt_placement_logs
-- serial_id/equipment_id는 SMT 스테이션 설비와 정합
-- placement_offset_x/y_um: 정상 -30~30µm(평균0), 일부 설비/노즐은 드리프트로 편향
-- pickup_result: OK(97%), PICKUP_FAIL(2%), RECOGNITION_FAIL(1%)
-- [의도적 이슈] 약 0.5% 레코드는 offset이 mm 단위로 잘못 기록(값이 1000배)
-Delta로 저장, COMMENT 추가.
+SMT 실장 로그 테이블 ccm_factory.bronze.smt_placement_logs 를 만들려고 해. 컬럼 구성을 먼저 제안해줘.
+```
+**2단계 —** 건수와 설비 정합을 지정.
+```
+300,000건 생성해줘. serial_id/equipment_id는 SMT 스테이션 설비와 정합하게.
+```
+**3단계 —** 오프셋과 픽업 결과를 추가.
+```
+placement_offset_x/y_um는 정상 -30~30µm(평균 0)이되 일부 설비/노즐은 드리프트로 편향되게. pickup_result는 OK 97% / PICKUP_FAIL 2% / RECOGNITION_FAIL 1%.
+```
+**4단계 —** 의도적 이슈와 저장.
+```
+[의도적 이슈] 약 0.5% 레코드는 offset이 mm 단위로 잘못 기록되어 값이 1000배가 되게 해줘. Delta로 저장, COMMENT 추가.
 ```
 
 ### 테이블 8: dispensing_process (디스펜싱/본딩)
@@ -40,14 +47,21 @@ Delta로 저장, COMMENT 추가.
 | `uv_dose_mj` | DOUBLE | UV 경화량 (LENS_BOND만) |
 | `temp_c` | DOUBLE | 공정 온도 |
 
+**1단계 —** 먼저 뼈대만.
 ```
-디스펜싱/본딩 공정(dispensing_process) 200,000건을 생성해줘.
-- 테이블: ccm_factory.bronze.dispensing_process
-- dispense_type: SENSOR_BOND(50%), LENS_BOND(50%)
-- volume_mg: SENSOR_BOND 2~5, LENS_BOND 1~3 (설비별 미세 편차)
-- pressure_kpa: 80~150, uv_dose_mj: LENS_BOND일 때 500~1500 / SENSOR_BOND는 NULL
-- [의도적 이슈] LENS_BOND인데 uv_dose_mj가 NULL인 레코드 약 3% (UV 미조사 → 잠재 불량)
-Delta로 저장, COMMENT 추가.
+디스펜싱/본딩 공정 테이블 ccm_factory.bronze.dispensing_process 를 만들려고 해. 컬럼 구성을 먼저 제안해줘.
+```
+**2단계 —** 건수와 타입 분포를 지정.
+```
+200,000건 생성해줘. dispense_type은 SENSOR_BOND 50% / LENS_BOND 50%.
+```
+**3단계 —** 도포량·압력·UV를 추가.
+```
+volume_mg는 SENSOR_BOND 2~5, LENS_BOND 1~3 (설비별 미세 편차), pressure_kpa는 80~150, uv_dose_mj는 LENS_BOND일 때 500~1500 / SENSOR_BOND는 NULL.
+```
+**4단계 —** 의도적 이슈와 저장.
+```
+[의도적 이슈] LENS_BOND인데 uv_dose_mj가 NULL인 레코드를 약 3%(UV 미조사 → 잠재 불량) 넣어줘. Delta로 저장, COMMENT 추가.
 ```
 
 ### 테이블 9: reflow_profiles (리플로우 프로파일)
@@ -59,13 +73,21 @@ Delta로 저장, COMMENT 추가.
 | `tal_sec` | INT | Time Above Liquidus |
 | `conveyor_speed_cm_min` | DOUBLE | 컨베이어 속도 |
 
+**1단계 —** 먼저 뼈대만.
 ```
-리플로우 프로파일(reflow_profiles) 60,000건을 생성해줘.
-- 테이블: ccm_factory.bronze.reflow_profiles
-- zone1~8 온도: 예열 150~180 → 승온 → peak 240~250°C 프로파일
-- tal_sec: 45~90초, conveyor_speed: 50~90 cm/min
-- 일부 설비는 peak_temp가 규격(235~255) 벗어나는 이상 로트 소량 포함
-Delta로 저장, COMMENT 추가.
+리플로우 프로파일 테이블 ccm_factory.bronze.reflow_profiles 를 만들려고 해. 컬럼 구성을 먼저 제안해줘.
+```
+**2단계 —** 건수와 온도 프로파일을 지정.
+```
+60,000건 생성해줘. zone1~8 온도는 예열 150~180 → 승온 → peak 240~250°C 프로파일로.
+```
+**3단계 —** 시간·속도를 추가.
+```
+tal_sec는 45~90초, conveyor_speed는 50~90 cm/min.
+```
+**4단계 —** 이상 로트와 저장.
+```
+일부 설비는 peak_temp가 규격(235~255) 벗어나는 이상 로트를 소량 포함시켜줘. Delta로 저장, COMMENT 추가.
 ```
 
 ### 테이블 10: active_alignment (AA 공정) ★ 핵심
@@ -83,17 +105,25 @@ Delta로 저장, COMMENT 추가.
 | `uv_cure_dose_mj` | DOUBLE | UV 경화량 |
 | `aa_result` | STRING | `PASS`/`FAIL`/`RETRY` |
 
+**1단계 —** 먼저 뼈대만.
 ```
-Active Alignment 공정(active_alignment) 250,000건을 생성해줘.
-- 테이블: ccm_factory.bronze.active_alignment
-- serial_id/equipment_id는 ALIGN 스테이션과 정합, model_code 조인으로 target_mtf 참조
-- mtf_center_pct: 정상 78~92 (모델 target 근처), FAIL은 60~75
-- mtf_corner_pct: center보다 8~15 낮음
-- tilt_x/y_arcmin: 정상 -3~3, 불량은 절대값 5 이상
-- focus_z_um: 목표 대비 ±5µm 분포, uv_cure_dose_mj: 800~1600
-- aa_result: PASS(90%), FAIL(7%), RETRY(3%). FAIL은 MTF 낮거나 tilt 큰 경우
-- [의도적 이슈] 약 0.3%는 mtf_center_pct > 100 (센서 오류값)
-Delta로 저장, COMMENT 추가.
+Active Alignment 공정 테이블 ccm_factory.bronze.active_alignment 를 만들려고 해. 컬럼 구성을 먼저 제안해줘.
+```
+**2단계 —** 건수와 정합·참조를 지정.
+```
+250,000건 생성해줘. serial_id/equipment_id는 ALIGN 스테이션과 정합하고, model_code 조인으로 target_mtf를 참조해줘.
+```
+**3단계 —** MTF·틸트·포커스 값을 추가.
+```
+mtf_center_pct는 정상 78~92(모델 target 근처) / FAIL은 60~75, mtf_corner_pct는 center보다 8~15 낮게. tilt_x/y_arcmin는 정상 -3~3 / 불량은 절대값 5 이상, focus_z_um는 목표 대비 ±5µm, uv_cure_dose_mj는 800~1600.
+```
+**4단계 —** 판정 규칙을 추가.
+```
+aa_result는 PASS 90% / FAIL 7% / RETRY 3%이고, FAIL은 MTF가 낮거나 tilt가 큰 경우가 되게 해줘.
+```
+**5단계 —** 의도적 이슈와 저장.
+```
+[의도적 이슈] 약 0.3%는 mtf_center_pct > 100 (센서 오류값)으로 넣어줘. Delta로 저장, COMMENT 추가.
 ```
 
 

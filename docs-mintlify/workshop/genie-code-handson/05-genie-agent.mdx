@@ -36,20 +36,29 @@ Gold 테이블을 기반으로:
 
 ### Genie Space 1: 생산·수율 분석
 
+**1단계 —** 뼈대부터 만든다.
 ```
-다음 설정으로 Genie Space를 만들어줘.
+'생산·수율 분석' Genie Space를 하나 만들어줘.
+```
 
-이름: 생산·수율 분석
-설명: 카메라 모듈 라인의 생산 실적, 수율, 직행률(FPY), 택트타임을 자연어로 분석합니다.
+**2단계 —** 설명을 붙인다.
+```
+설명은 "카메라 모듈 라인의 생산 실적, 수율, 직행률(FPY), 택트타임을 자연어로 분석합니다." 로 넣어줘.
+```
 
-포함 테이블:
+**3단계 —** 포함 테이블을 지정한다.
+```
+포함 테이블은 아래 5개로 해줘.
 - ccm_factory.gold.daily_yield_summary
 - ccm_factory.gold.first_pass_yield
 - ccm_factory.gold.station_cycle_time
 - ccm_factory.bronze.product_master
 - ccm_factory.bronze.equipment_master
+```
 
-General Instructions:
+**4단계 —** General Instructions를 추가한다.
+```
+General Instructions에 아래를 넣어줘.
 - 수율(yield)은 % 단위, 소수점 1자리로 표시
 - 날짜 필터가 없으면 최근 7일 기준
 - 라인은 LINE_1~LINE_6, 모델은 model_code로 식별
@@ -59,21 +68,30 @@ General Instructions:
 
 ### Genie Space 2: 품질·불량 분석
 
+**1단계 —** 뼈대부터 만든다.
 ```
-다음 설정으로 Genie Space를 만들어줘.
+'품질·불량 분석' Genie Space를 하나 만들어줘.
+```
 
-이름: 품질·불량 분석
-설명: 불량 파레토, 자재 로트별 불량 상관, AA(Active Alignment) MTF 품질, 공정능력(Cpk)을 분석합니다.
+**2단계 —** 설명을 붙인다.
+```
+설명은 "불량 파레토, 자재 로트별 불량 상관, AA(Active Alignment) MTF 품질, 공정능력(Cpk)을 분석합니다." 로 넣어줘.
+```
 
-포함 테이블:
+**3단계 —** 포함 테이블을 지정한다.
+```
+포함 테이블은 아래 6개로 해줘.
 - ccm_factory.gold.defect_pareto
 - ccm_factory.gold.material_defect_correlation
 - ccm_factory.gold.aa_quality_trend
 - ccm_factory.gold.spc_process_capability
 - ccm_factory.silver.final_test_clean
 - ccm_factory.bronze.material_lot_master
+```
 
-General Instructions:
+**4단계 —** General Instructions를 추가한다.
+```
+General Instructions에 아래를 넣어줘.
 - 불량률은 % 단위, MTF는 pct 단위(0~100)
 - "규격 미달"은 mtf_center < 모델의 spec_mtf_min 기준
 - Cpk는 소수점 2자리, "공정능력 부족"은 Cpk < 1.33
@@ -83,19 +101,28 @@ General Instructions:
 
 ### Genie Space 3: 설비·OEE 분석
 
+**1단계 —** 뼈대부터 만든다.
 ```
-다음 설정으로 Genie Space를 만들어줘.
+'설비·OEE 분석' Genie Space를 하나 만들어줘.
+```
 
-이름: 설비·OEE 분석
-설명: 설비별 OEE(종합설비효율), 설비 건강 점수, 비가동(downtime)을 분석합니다.
+**2단계 —** 설명을 붙인다.
+```
+설명은 "설비별 OEE(종합설비효율), 설비 건강 점수, 비가동(downtime)을 분석합니다." 로 넣어줘.
+```
 
-포함 테이블:
+**3단계 —** 포함 테이블을 지정한다.
+```
+포함 테이블은 아래 4개로 해줘.
 - ccm_factory.gold.oee_by_equipment
 - ccm_factory.gold.equipment_health_score
 - ccm_factory.bronze.equipment_downtime
 - ccm_factory.bronze.equipment_master
+```
 
-General Instructions:
+**4단계 —** General Instructions를 추가한다.
+```
+General Instructions에 아래를 넣어줘.
 - OEE = 가용성 × 성능 × 품질, % 단위 소수점 1자리
 - "문제 설비"는 OEE < 75% 또는 health_score < 60
 - downtime은 분(min) 단위, 유형은 BREAKDOWN/PM/CHANGEOVER/IDLE

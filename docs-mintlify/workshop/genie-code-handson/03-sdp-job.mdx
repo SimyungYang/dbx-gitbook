@@ -16,39 +16,42 @@ title: "SDP 파이프라인 & Job 스케줄"
 
 ### SDP 파이프라인 생성 프롬프트
 
+**1단계 —** 전환 뼈대 + 타겟 메타.
 ```
-위에서 만든 Bronze → Silver → Gold 변환 로직을 SDP(Spark Declarative Pipeline)로 전환해줘.
-
-파이프라인 이름: ccm_factory_pipeline
-타겟 카탈로그: ccm_factory
-타겟 스키마: silver, gold
-
-요구사항:
-1. Bronze → Silver를 Streaming Table로 (증분 처리)
-2. Silver → Gold를 Materialized View로 (자동 리프레시)
-3. Expectations 추가:
-   - aa_measurements: expect_or_drop("valid_mtf", "mtf_center_pct BETWEEN 0 AND 100")
-   - aa_measurements: expect("valid_tilt", "tilt_abs_max <= 8")
-   - sensor_metrics_5min: expect_or_drop("valid_temp", "max_temperature_c <= 120")
-   - production_flow: expect_or_drop("valid_dwell", "dwell_time_sec > 0")
-   - aoi_defects: expect_or_drop("aoi_rule", "NOT (defect_flag = false AND defect_type IS NOT NULL)")
-   - final_test_clean: expect("valid_result", "test_result IN ('PASS','FAIL')")
-4. 참조 무결성/규칙 위반 레코드는 ccm_factory.quarantine 스키마로 분리
-5. 품질 위반 처리:
-   - Silver: expect_or_drop (위반 시 제거·격리)
-   - Gold: expect_or_fail (위반 시 파이프라인 중단)
-
-노트북 코드를 생성해줘 (Python + SQL 혼합 가능).
+위에서 만든 Bronze → Silver → Gold 변환 로직을 SDP(Spark Declarative Pipeline)로 전환하려고 해. 파이프라인 이름은 ccm_factory_pipeline, 타겟 카탈로그는 ccm_factory, 타겟 스키마는 silver, gold야. 먼저 전환 구조를 제안해줘.
+```
+**2단계 —** 계층별 테이블 유형.
+```
+Bronze → Silver는 Streaming Table로(증분 처리), Silver → Gold는 Materialized View로(자동 리프레시) 구성해줘.
+```
+**3단계 —** Expectations 추가.
+```
+Expectations를 추가해줘:
+- aa_measurements: expect_or_drop("valid_mtf", "mtf_center_pct BETWEEN 0 AND 100")
+- aa_measurements: expect("valid_tilt", "tilt_abs_max <= 8")
+- sensor_metrics_5min: expect_or_drop("valid_temp", "max_temperature_c <= 120")
+- production_flow: expect_or_drop("valid_dwell", "dwell_time_sec > 0")
+- aoi_defects: expect_or_drop("aoi_rule", "NOT (defect_flag = false AND defect_type IS NOT NULL)")
+- final_test_clean: expect("valid_result", "test_result IN ('PASS','FAIL')")
+```
+**4단계 —** 격리 스키마 + 위반 처리 정책.
+```
+참조 무결성/규칙 위반 레코드는 ccm_factory.quarantine 스키마로 분리하고, 품질 위반 처리는 Silver는 expect_or_drop(위반 시 제거·격리), Gold는 expect_or_fail(위반 시 파이프라인 중단)로 해줘.
+```
+**5단계 —** 노트북 생성.
+```
+이 내용으로 노트북 코드를 생성해줘 (Python + SQL 혼합 가능).
 ```
 
 ### SDP 파이프라인 실행
 
+**1단계 —** 파이프라인 생성.
 ```
-방금 만든 SDP 파이프라인 노트북으로:
-1. ccm_factory_pipeline 이름의 파이프라인 생성
-2. 서버리스 컴퓨트 사용
-3. Continuous 대신 Triggered 모드
-4. 실행하고 각 테이블 row count와 Expectations 통과율을 보여줘
+방금 만든 SDP 파이프라인 노트북으로 ccm_factory_pipeline 이름의 파이프라인을 생성해줘. 서버리스 컴퓨트, Continuous 대신 Triggered 모드로.
+```
+**2단계 —** 실행 + 결과 확인.
+```
+파이프라인을 실행하고 각 테이블 row count와 Expectations 통과율을 보여줘.
 ```
 
 ### 실행 결과 확인
@@ -73,16 +76,17 @@ ccm_factory_pipeline의 최근 실행 결과를 보여줘.
 
 ## Part E: 파이프라인 Job 스케줄링
 
+**1단계 —** Job 뼈대.
 ```
-ccm_factory_pipeline을 매일 자동 실행하는 Job을 만들어줘.
-
-설정:
-- Job 이름: ccm_factory_daily_refresh
-- 스케줄: 매일 오전 6시 KST (cron: 0 21 * * * UTC)
-- 재시도: 최대 2회, 간격 10분
-- 알림: 실패 시 이메일 알림
-- 클러스터: 서버리스
-- 타임아웃: 2시간
+ccm_factory_pipeline을 매일 자동 실행하는 Job을 만들려고 해. Job 이름은 ccm_factory_daily_refresh, 클러스터는 서버리스야.
+```
+**2단계 —** 스케줄 추가.
+```
+스케줄은 매일 오전 6시 KST(cron: 0 21 * * * UTC)로 설정해줘.
+```
+**3단계 —** 재시도·알림·타임아웃 추가.
+```
+재시도는 최대 2회·간격 10분, 실패 시 이메일 알림, 타임아웃은 2시간으로 추가해줘.
 ```
 
 ```

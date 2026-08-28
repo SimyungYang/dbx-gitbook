@@ -6,30 +6,38 @@ title: "배치 적용 & 비용·안전"
 
 소량 테스트가 끝나면 전체에 적용하여 **정형화된 인사이트 테이블**을 만듭니다. 이 결과가 대시보드·Genie·RAG의 소스가 됩니다.
 
+**1단계 —** 비용부터 확인(안전).
 ```
-검증이 끝났으니 field_returns 전체(1만 건)에 ai_classify를 배치 적용해서
-ccm_factory.gold.field_return_insights 테이블을 만들어줘.
-
-컬럼:
-- rma_id, serial_id, model_code, customer, return_date
-- ai_predicted_cause (ai_classify 결과)
-- extracted_symptom, extracted_location, suspected_cause (ai_extract 결과)
-- root_cause_code (원본)
-
-주의: 서빙 엔드포인트 과금이 발생하므로, 배치 실행 전 예상 호출 수를 알려주고
-확인받은 뒤 진행해줘. event_date 파티션, 모든 컬럼 COMMENT.
+검증이 끝났어. field_returns 전체(1만 건)에 ai_classify를 배치 적용하기 전에, 서빙 엔드포인트 과금이 발생하니 예상 호출 수를 먼저 알려주고 확인받은 뒤 진행해줘.
+```
+**2단계 —** 배치 적용·결과 테이블.
+```
+확인되면 전체에 배치 적용해서 ccm_factory.gold.field_return_insights 테이블을 만들어줘.
+```
+**3단계 —** 컬럼 구성 지정.
+```
+컬럼: rma_id, serial_id, model_code, customer, return_date, ai_predicted_cause(ai_classify 결과), extracted_symptom·extracted_location·suspected_cause(ai_extract 결과), root_cause_code(원본).
+```
+**4단계 —** 파티션·주석.
+```
+event_date로 파티션하고 모든 컬럼에 COMMENT를 달아줘.
 ```
 
 > **Databricks Document Intelligence 배치추론**: 대량 문서/이미지는 SQL AI 함수의 배치 추론으로 스케줄 처리할 수 있습니다. 정기적으로 신규 필드 리턴을 자동 분류하려면 이 결과 생성 SQL을 [모듈 3](03-transformation-pipeline)의 Job/파이프라인에 편입하세요.
 
 ### 활용 확인
 
+**1단계 —** 원인별 Top 5.
 ```
-gold.field_return_insights를 활용해서:
-- ai_predicted_cause별 리턴 건수 Top 5
-- 모델(model_code)별 최다 근본원인
-- Global_A 고객의 최근 3개월 주요 불량 원인
-을 보여줘. 이 결과가 대시보드나 Genie Space로 쓸 만한지도 코멘트해줘.
+gold.field_return_insights에서 ai_predicted_cause별 리턴 건수 Top 5를 보여줘.
+```
+**2단계 —** 모델별·고객별 분석 추가.
+```
+이어서 모델(model_code)별 최다 근본원인과 Global_A 고객의 최근 3개월 주요 불량 원인도 보여줘.
+```
+**3단계 —** 활용성 코멘트.
+```
+이 결과가 대시보드나 Genie Space로 쓸 만한지도 코멘트해줘.
 ```
 
 ---

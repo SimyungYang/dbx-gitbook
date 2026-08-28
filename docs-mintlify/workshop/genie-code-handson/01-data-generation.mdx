@@ -55,21 +55,28 @@ title: "개요 & 진행 방식"
 
 ### 방식 1 — 공유 볼륨의 parquet 로드 (권장)
 
+**1단계 —** 소스와 타겟만 알려주고 시작.
 ```
-공유 볼륨의 카메라 모듈 공장 시드 데이터를 내 카탈로그로 임포트해줘.
-
-- 소스: /Volumes/main/shared/workshop_seed/ccm_factory/  (하위에 테이블별 parquet 폴더 17개)
-- 타겟: ccm_factory.bronze 스키마의 동일 이름 Delta 테이블 17개
-- 각 parquet 폴더를 읽어 CREATE OR REPLACE TABLE 로 Delta 저장
-- 원본 스키마/컬럼 코멘트를 최대한 보존하고, 없으면 테이블 코멘트를 추가
-- 완료 후 17개 테이블의 row count를 표로 보여줘
+공유 볼륨의 카메라 모듈 공장 시드 데이터를 내 카탈로그로 임포트하려고 해. 소스는 /Volumes/main/shared/workshop_seed/ccm_factory/ (하위에 테이블별 parquet 폴더 17개), 타겟은 ccm_factory.bronze 스키마야.
+```
+**2단계 —** 저장 방식을 지정.
+```
+각 parquet 폴더를 읽어서 동일한 이름의 Delta 테이블 17개로 CREATE OR REPLACE TABLE 저장해줘.
+```
+**3단계 —** 코멘트 보존과 확인을 추가.
+```
+원본 스키마/컬럼 코멘트는 최대한 보존하고, 없으면 테이블 코멘트를 달아줘. 완료 후 17개 테이블의 row count를 표로 보여줘.
 ```
 
 ### 방식 2 — Delta Sharing / Marketplace 공유 카탈로그에서 복제
 
+**1단계 —** 복제 대상을 지정.
 ```
-Delta Sharing으로 공유된 카탈로그 <shared_catalog>.ccm_seed 의 bronze 테이블 17개를
-내 ccm_factory.bronze 로 복제(CTAS)해줘. 완료 후 row count를 확인해줘.
+Delta Sharing으로 공유된 카탈로그 <shared_catalog>.ccm_seed 의 bronze 테이블 17개를 내 ccm_factory.bronze 로 복제(CTAS)해줘.
+```
+**2단계 —** 확인을 추가.
+```
+완료 후 각 테이블 row count를 확인해줘.
 ```
 
 ### 임포트 검증
