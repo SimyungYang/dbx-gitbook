@@ -15,9 +15,9 @@ description: "저장 프로시저를 최소한의 수정만으로 Databricks Lak
 
 ---
 
-여러분의 웨어하우스 어딘가에서는, 수백 개의 저장 프로시저가 매일 밤 깨어나 조용히 비즈니스를 돌아가게 합니다. 그것들은 오래전, 지금은 회사를 떠난 지 오래인 여러 SQL 개발자들이 작성한 것입니다. 중첩된 커서가 있습니다. 즉석에서 임시 테이블을 만듭니다. 여러 테이블에 걸친 업데이트를 하나의 트랜잭션으로 묶습니다. 그리고 47번째 줄 어딘가에는 그저 이렇게 적힌 주석이 있습니다: **"이 부분은 절대 바꾸지 마시오."** 이제 이 프로시저들을 온전히 이해하는 사람은 아무도 없습니다. 그런데도 모두가 여기에 의존합니다. 매출 대시보드, 재무 마감, 운영 리포트, 이 모든 것이 이런저런 방식으로 결국 이 절차적(procedural) SQL 비즈니스 로직 계층으로 거슬러 올라갑니다.
+여러분의 웨어하우스 어딘가에서는, 수백 개의 저장 프로시저가 매일 밤 깨어나 조용히 비즈니스를 돌아가게 합니다. 그것들은 오래전, 지금은 회사를 떠난 지 오래인 여러 SQL 개발자들이 작성한 것입니다. 중첩된 커서가 있습니다. 즉석에서 임시 테이블을 만듭니다. 여러 테이블에 걸친 업데이트를 하나의 트랜잭션으로 묶습니다. 그리고 47번째 줄 어딘가에는 그저 이렇게 적힌 주석이 있습니다: "이 부분은 절대 바꾸지 마시오." 이제 이 프로시저들을 온전히 이해하는 사람은 아무도 없습니다. 그런데도 모두가 여기에 의존합니다. 매출 대시보드, 재무 마감, 운영 리포트, 이 모든 것이 이런저런 방식으로 결국 이 절차적(procedural) SQL 비즈니스 로직 계층으로 거슬러 올라갑니다.
 
-데이터를 Lakehouse로 옮기는 일은 이미 잘 이해되어 있습니다. 마찰은 어느 데이터 웨어하우스 마이그레이션에서든 절차적 핵심부에 있었습니다. 저장 프로시저, 트랜잭션 처리, 임시 테이블, 제어 흐름, 그리고 여전히 많은 기업이 SQL 역량 위에서 돌아간다는 사실입니다. 마이그레이션 이야기가 나올 때마다 이 프로시저들이 가장 먼저 지목되는 대상이었습니다: **"저것을 최소한의 변경으로 돌릴 수 있기 전에는 옮길 수 없습니다. 우리 기업은 여전히 SQL 중심으로 무겁게 돌아갑니다."**
+데이터를 Lakehouse로 옮기는 일은 이미 잘 이해되어 있습니다. 마찰은 어느 데이터 웨어하우스 마이그레이션에서든 절차적 핵심부에 있었습니다. 저장 프로시저, 트랜잭션 처리, 임시 테이블, 제어 흐름, 그리고 여전히 많은 기업이 SQL 역량 위에서 돌아간다는 사실입니다. 마이그레이션 이야기가 나올 때마다 이 프로시저들이 가장 먼저 지목되는 대상이었습니다: "저것을 최소한의 변경으로 돌릴 수 있기 전에는 옮길 수 없습니다. 우리 기업은 여전히 SQL 중심으로 무겁게 돌아갑니다."
 
 그래서 우리는 여러분이 지금 떠올리고 있을 법한 사용 사례 — 여러 마이그레이션에서 보아 온 복합적인 프로시저 — 를 하나 골라, Lakehouse 위에서 하나하나 시연해 보기로 했습니다. 이 예시는 Oracle 마이그레이션 사용 사례를 바탕으로 하지만, 어떤 데이터 웨어하우스(레거시든 클라우드 기반이든)에도 적용할 수 있습니다.
 
@@ -26,6 +26,128 @@ description: "저장 프로시저를 최소한의 수정만으로 Databricks Lak
 이 예시 프로시저는 일일 주문을 처리합니다. 처리되지 않은 주문을 임시 테이블에 스테이징하고, 고객 마스터(customer master)에 대해 검증하며, 실패 건을 하나씩 순회하며 각 반려(rejection)를 개별적으로 로깅한 뒤, 지역별 매출 요약을 업데이트하고 모든 주문을 처리 완료로 표시합니다. 이 모든 것이 실패 시 롤백되는 하나의 트랜잭션 안에서 이루어집니다.
 
 깨져서는 안 되는 하나의 야간 잡(job)입니다.
+
+```sql
+CREATE GLOBAL TEMPORARY TABLE tmp_staged_orders (
+   order_id     NUMBER(12),
+   customer_id  NUMBER(10),
+   region       VARCHAR2(20),
+   amount       NUMBER(12,2),
+   order_date   DATE
+ ) ON COMMIT PRESERVE ROWS;
+```
+
+```sql
+CREATE GLOBAL TEMPORARY TABLE tmp_validation_failures (
+   order_id     NUMBER(12),
+   error_reason VARCHAR2(200)
+ ) ON COMMIT PRESERVE ROWS;
+```
+
+```sql
+CREATE OR REPLACE PROCEDURE process_daily_orders IS
+   v_batch_id    NUMBER;
+   v_row_count   NUMBER;
+   v_order_id    NUMBER;
+   v_error_msg   VARCHAR2(500);
+   CURSOR c_failed_orders IS
+     SELECT order_id, error_reason
+     FROM tmp_validation_failures;
+ BEGIN
+   -- 이 세션의 이전 실행에서 남은 행을 정리
+   EXECUTE IMMEDIATE 'TRUNCATE TABLE tmp_staged_orders';
+   EXECUTE IMMEDIATE 'TRUNCATE TABLE tmp_validation_failures';
+```
+
+```sql
+   SELECT NVL(MAX(batch_id), 0) + 1 INTO v_batch_id FROM batch_log;
+```
+
+```sql
+   INSERT INTO tmp_staged_orders (order_id, customer_id, region, amount, order_date)
+   SELECT order_id, customer_id, region, amount, order_date
+   FROM raw_orders
+   WHERE status = 'PENDING'
+     AND order_date = TRUNC(SYSDATE);
+```
+
+```sql
+   SELECT COUNT(*) INTO v_row_count FROM tmp_staged_orders;
+   IF v_row_count = 0 THEN
+     INSERT INTO batch_log(batch_id, status, message, run_date)
+     VALUES (v_batch_id, 'SKIPPED', 'No pending orders', SYSDATE);
+     COMMIT;
+     RETURN;
+   END IF;
+```
+
+```sql
+   INSERT INTO tmp_validation_failures (order_id, error_reason)
+   SELECT s.order_id,
+          CASE
+            WHEN c.customer_id IS NULL THEN 'Unknown customer'
+            WHEN s.amount <= 0         THEN 'Invalid amount'
+          END
+   FROM tmp_staged_orders s
+   LEFT JOIN customers c ON s.customer_id = c.customer_id
+   WHERE c.customer_id IS NULL OR s.amount <= 0;
+```
+
+```sql
+   OPEN c_failed_orders;
+   LOOP
+     FETCH c_failed_orders INTO v_order_id, v_error_msg;
+     EXIT WHEN c_failed_orders%NOTFOUND;
+     UPDATE raw_orders
+        SET status = 'REJECTED', reject_reason = v_error_msg
+      WHERE order_id = v_order_id;
+     INSERT INTO order_exceptions(order_id, batch_id, reason, logged_at)
+     VALUES (v_order_id, v_batch_id, v_error_msg, SYSDATE);
+   END LOOP;
+   CLOSE c_failed_orders;
+```
+
+```sql
+   MERGE INTO regional_revenue r
+   USING (
+     SELECT s.region, TRUNC(SYSDATE) AS report_date, SUM(s.amount) AS region_total
+     FROM tmp_staged_orders s
+     WHERE s.order_id NOT IN (SELECT order_id FROM tmp_validation_failures)
+     GROUP BY s.region
+   ) sub
+   ON (r.region = sub.region AND r.report_date = sub.report_date)
+   WHEN MATCHED THEN UPDATE
+     SET r.daily_total  = r.daily_total + sub.region_total,
+         r.last_updated = SYSDATE
+   WHEN NOT MATCHED THEN INSERT (region, report_date, daily_total, last_updated)
+     VALUES (sub.region, sub.report_date, sub.region_total, SYSDATE);
+```
+
+```sql
+   UPDATE raw_orders SET status = 'PROCESSED'
+   WHERE order_id IN (
+     SELECT order_id FROM tmp_staged_orders
+     WHERE order_id NOT IN (SELECT order_id FROM tmp_validation_failures));
+```
+
+```sql
+   INSERT INTO batch_log(batch_id, status, message, run_date)
+   VALUES (v_batch_id, 'COMPLETED', v_row_count || ' orders processed', SYSDATE);
+```
+
+```sql
+   COMMIT;
+ EXCEPTION
+   WHEN OTHERS THEN
+     ROLLBACK;
+     v_error_msg := SQLERRM;
+     INSERT INTO batch_log(batch_id, status, message, run_date)
+     VALUES (v_batch_id, 'FAILED', v_error_msg, SYSDATE);
+     COMMIT;
+     RAISE;
+ END process_daily_orders;
+/
+```
 
 예전에는 이를 이관하려면 Python과 Spark로 통째로 재작성해야 했습니다. 몇 주의 작업, 새로 찾아내야 할 버그들, 그리고 더 이상 자신의 비즈니스 로직을 유지보수할 수 없게 된 SQL 팀 말입니다.
 
@@ -43,35 +165,171 @@ description: "저장 프로시저를 최소한의 수정만으로 Databricks Lak
 | `v_id NUMBER;` (BEGIN 이전) | `DECLARE v_id INT;` (BEGIN 내부) |
 | `EXCEPTION WHEN OTHERS THEN` | `DECLARE EXIT HANDLER FOR SQLEXCEPTION` |
 
-참조: [docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-create-procedure](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-create-procedure)
+```sql
+-- Databricks
+CREATE OR REPLACE PROCEDURE process_daily_orders()
+LANGUAGE SQL
+SQL SECURITY INVOKER
+AS BEGIN
+  DECLARE v_batch_id INT;
+  DECLARE v_row_count INT;
+```
 
-## 그다음 임시 테이블을 다루기: *데이터 웨어하우스 마이그레이션에서 손쉬운 승리*
+```sql
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    INSERT INTO batch_log(batch_id, status, message, run_date)
+    VALUES (v_batch_id, 'FAILED', 'Unhandled exception', current_timestamp());
+  END;
+```
 
-원래 프로시저는 스테이징과 검증 실패를 위해 두 개의 [임시 테이블](https://www.databricks.com/blog/introducing-temporary-tables-databricks-sql)을 만듭니다. 이는 나머지 로직이 의존하는 스크래치 공간(scratch space)입니다.
+```sql
+  -- 본문이 이어짐
+END;
+```
+
+> 참고: [docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-create-procedure](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-create-procedure)
+
+## 그다음 임시 테이블을 다루기: 데이터 웨어하우스 마이그레이션에서 손쉬운 승리
+
+원래 프로시저는 스테이징과 검증 실패를 위해 두 개의 임시 테이블을 만듭니다. 이는 나머지 로직이 의존하는 스크래치 공간(scratch space)입니다.
 
 Databricks에서 이것은 마이그레이션에서 가장 단순한 부분 중 하나가 됩니다. EXECUTE IMMEDIATE도, ON COMMIT PRESERVE ROWS도 필요 없습니다. 세션 스코프의 CREATE TEMP TABLE이 직접적인 대체물입니다. 다만 한 가지 작은 유의점이 있습니다. CREATE OR REPLACE TEMP TABLE은 아직 지원되지 않으므로, 같은 세션에서 재실행 가능하게 만들려면 먼저 DROP 하세요.
 
-참조: [docs.databricks.com/aws/en/tables/temporary-tables](https://docs.databricks.com/aws/en/tables/temporary-tables)
+```sql
+-- 레거시
+CREATE GLOBAL TEMPORARY TABLE tmp_staged_orders
+  ON COMMIT PRESERVE ROWS AS
+  SELECT order_id, customer_id, region, amount, order_date
+  FROM raw_orders
+  WHERE status = 'PENDING'
+    AND order_date = TRUNC(SYSDATE);
+```
 
-### 커서가 가장 어려운 부분이었다 — 그렇게 생각했을 뿐
+```sql
+-- Databricks
+DROP TABLE IF EXISTS tmp_staged_orders;
+CREATE TEMP TABLE tmp_staged_orders AS
+SELECT order_id, customer_id, region, amount, order_date
+FROM raw_orders
+WHERE status = 'PENDING'
+  AND CAST(order_date AS DATE) = current_date();
+```
+
+> 참고: [docs.databricks.com/aws/en/tables/temporary-tables](https://docs.databricks.com/aws/en/tables/temporary-tables)
+
+## 커서가 가장 어려운 부분이었다 — 그렇게 생각했을 뿐
 
 이 부분은 모두가 재작성이 필요하리라 짐작한 대목입니다. 원래 프로시저는 검증 실패를 하나하나 순회하며 각 잘못된 주문을 반려하고 그 사유를 로깅합니다. 전형적인 커서 패턴입니다. 수십 년에 걸친 레거시(예를 들어 Oracle)의 손에 밴 습관이지요.
 
 Databricks의 SQL scripting은 Runtime 18.1부터 OPEN, FETCH, CLOSE로 커서를 네이티브로 지원합니다. %NOTFOUND 속성은 CONTINUE HANDLER FOR NOT FOUND가 됩니다. 루프 레이블과 LEAVE가 EXIT WHEN을 대체합니다.
 
-### 스크립팅 로직은 별일 아니었다
+```sql
+-- 레거시
+OPEN c_failed_orders;
+LOOP
+  FETCH c_failed_orders INTO v_order_id, v_error_msg;
+  EXIT WHEN c_failed_orders%NOTFOUND;
+  UPDATE raw_orders
+    SET status = 'REJECTED', reject_reason = v_error_msg
+    WHERE order_id = v_order_id;
+  INSERT INTO order_exceptions(order_id, batch_id, reason, logged_at)
+  VALUES (v_order_id, v_batch_id, v_error_msg, SYSDATE);
+END LOOP;
+CLOSE c_failed_orders;
+```
+
+```sql
+-- Databricks
+DECLARE c_failed CURSOR FOR
+  SELECT order_id, error_reason FROM tmp_validation_failures;
+DECLARE v_order_id INT;
+DECLARE v_error_msg STRING;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_order_id = NULL;
+```
+
+```sql
+OPEN c_failed;
+fetch_loop: LOOP
+  FETCH c_failed INTO v_order_id, v_error_msg;
+  IF v_order_id IS NULL THEN LEAVE fetch_loop; END IF;
+  UPDATE raw_orders
+  SET status = 'REJECTED', reject_reason = v_error_msg
+  WHERE order_id = v_order_id;
+  INSERT INTO order_exceptions(order_id, batch_id, reason, logged_at)
+  VALUES (v_order_id, v_batch_id, v_error_msg, current_timestamp());
+END LOOP;
+CLOSE c_failed;
+```
+
+## 스크립팅 로직은 별일 아니었다
 
 처리할 행이 없으면 건너뛰고 로깅하는 조건 검사는 거의 바뀌지 않았습니다. SELECT ... INTO는 SET var = (SELECT ...)가 됩니다. 나머지는 모두 동일합니다.
 
+```sql
+-- 레거시
+SELECT COUNT(*) INTO v_row_count FROM tmp_staged_orders;
+IF v_row_count = 0 THEN
+  INSERT INTO batch_log(batch_id, status, message, run_date)
+  VALUES (v_batch_id, 'SKIPPED', 'No pending orders', SYSDATE);
+  COMMIT;
+  RETURN;
+END IF;
+```
+
+```sql
+-- Databricks
+SET v_row_count = (SELECT COUNT(*) FROM tmp_staged_orders);
+IF v_row_count = 0 THEN
+  INSERT INTO batch_log(batch_id, status, message, run_date)
+  VALUES (v_batch_id, 'SKIPPED', 'No pending orders', current_timestamp());
+END IF;
+```
+
 우리의 SQL scripting은 절차적 도구 전체를 지원합니다: IF/ELSE, WHILE, FOR, LOOP, REPEAT, LEAVE, ITERATE, SIGNAL/RESIGNAL. 코드베이스에 .GOTO와 .LABEL 지시문이 있는 Teradata BTEQ 스크립트가 있다면, 이는 LEAVE와 ITERATE를 사용하는 레이블 지정 루프로 매핑됩니다.
 
-참조: [docs.databricks.com/aws/en/sql/language-manual/sql-ref-scripting](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-scripting)
+> 참고: [docs.databricks.com/aws/en/sql/language-manual/sql-ref-scripting](https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-scripting)
 
-### 트랜잭션에서 비로소 현실이 되었다
+## 트랜잭션에서 비로소 현실이 되었다
 
 이것이 마지막 조각이자, 마이그레이션을 실제로 성립시킨 부분이었습니다. 원래 프로시저는 regional_revenue를 업데이트하고, 주문을 처리 완료로 표시하며, 배치를 로깅합니다. 어느 한 부분이라도 실패하면 전부 롤백됩니다.
 
 레거시 시스템에서 이것은 명시적 COMMIT을 동반한 암묵적 트랜잭션입니다. Databricks에서는 BEGIN ATOMIC ... END가 동일한 의미론 — 성공 시 자동 커밋, 실패 시 자동 롤백 — 을 제공하며, 한 가지 중요한 이점이 더해집니다. 바로 행 수준 충돌 감지(row-level conflict detection)입니다. 같은 테이블에 쓰는 동시(concurrent) 배치들은 같은 행을 건드릴 때만 충돌합니다. 예를 들어 Oracle과 Snowflake는 둘 다 테이블 수준 잠금(table-level locking)을 사용해 순차 실행을 강제합니다.
+
+```sql
+-- Databricks
+BEGIN ATOMIC
+  MERGE INTO regional_revenue r
+  USING (
+    SELECT region, SUM(amount) AS region_total
+    FROM tmp_staged_orders
+    WHERE order_id NOT IN (
+      SELECT order_id FROM tmp_validation_failures)
+    GROUP BY region
+  ) s
+  ON r.region = s.region AND r.report_date = current_date()
+  WHEN MATCHED THEN UPDATE
+    SET daily_total = r.daily_total + s.region_total,
+        last_updated = current_timestamp()
+  WHEN NOT MATCHED THEN INSERT
+    (region, report_date, daily_total, last_updated)
+    VALUES (s.region, current_date(), s.region_total, current_timestamp());
+```
+
+```sql
+  UPDATE raw_orders SET status = 'PROCESSED'
+  WHERE order_id IN (
+    SELECT order_id FROM tmp_staged_orders
+    WHERE order_id NOT IN (
+      SELECT order_id FROM tmp_validation_failures));
+```
+
+```sql
+  INSERT INTO batch_log(batch_id, status, message, run_date)
+  VALUES (v_batch_id, 'COMPLETED',
+          v_row_count || ' orders processed', current_timestamp());
+END;
+```
 
 MERGE 문은 있는 그대로 Databricks로 이관할 수 있습니다. 명시적 COMMIT은 BEGIN ATOMIC이 처리하므로 사라졌습니다. 그리고 팀은 동시 배치 잡들이 서로를 밟고 넘어질까 걱정하기를 멈추었습니다.
 
@@ -80,16 +338,133 @@ MERGE 문은 있는 그대로 Databricks로 이관할 수 있습니다. 명시�
 - 원자적(atomic) 블록 안에서 정의되는 모든 테이블은 catalogManaged 테이블 기능이 활성화되어 있어야 합니다. 기존 Delta 테이블에서는 다음과 같이 제자리에서(in place) 활성화할 수 있습니다: `ALTER TABLE <name> SET TBLPROPERTIES('delta.feature.catalogManaged'= 'supported');`
 - BEGIN ATOMIC은 최상위 수준(top level) — SQL 스크립트, 노트북 셀, 또는 SQL 잡 태스크 — 에 있어야 합니다.
 
-참조: [docs.databricks.com/aws/en/transactions/](https://docs.databricks.com/aws/en/transactions/)
+```sql
+BEGIN ATOMIC
+  CALL catalog.ops.process_daily_orders();
+END;
+```
+
+> 참고: [docs.databricks.com/aws/en/transactions/](https://docs.databricks.com/aws/en/transactions/)
 
 ## 완성된 이관 프로시저
 
 같은 비즈니스 로직. 같은 제어 흐름. Unity Catalog로 거버넌스됨.
 
+```sql
+CREATE OR REPLACE PROCEDURE process_daily_orders()
+```
+
+```sql
+LANGUAGE SQL
+SQL SECURITY INVOKER
+MODIFIES SQL DATA
+AS BEGIN
+  DECLARE v_batch_id INT;
+  DECLARE v_row_count INT;
+```
+
+```sql
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    INSERT INTO batch_log(batch_id, status, message, run_date)
+    VALUES (v_batch_id, 'FAILED', 'Unhandled exception', current_timestamp());
+  END;
+```
+
+```sql
+  SET v_batch_id = (SELECT COALESCE(MAX(batch_id), 0) + 1 FROM batch_log);
+```
+
+```sql
+  DROP TABLE IF EXISTS tmp_staged_orders;
+  CREATE TEMP TABLE tmp_staged_orders AS
+  SELECT order_id, customer_id, region, amount, order_date
+  FROM raw_orders
+  WHERE status = 'PENDING' AND CAST(order_date AS DATE) = current_date();
+```
+
+```sql
+  SET v_row_count = (SELECT COUNT(*) FROM tmp_staged_orders);
+```
+
+```sql
+  IF v_row_count = 0 THEN
+    INSERT INTO batch_log(batch_id, status, message, run_date)
+    VALUES (v_batch_id, 'SKIPPED', 'No pending orders', current_timestamp());
+  ELSE
+    DROP TABLE IF EXISTS tmp_validation_failures;
+    CREATE TEMP TABLE tmp_validation_failures AS
+    SELECT s.order_id,
+           CASE
+             WHEN c.customer_id IS NULL THEN 'Unknown customer'
+             WHEN s.amount <= 0 THEN 'Invalid amount'
+           END AS error_reason
+    FROM tmp_staged_orders s
+    LEFT JOIN customers c ON s.customer_id = c.customer_id
+    WHERE c.customer_id IS NULL OR s.amount <= 0;
+```
+
+```sql
+    -- 일괄 반려: 하나의 MERGE로 모든 실패 건의 상태를 REJECTED로 전환
+    MERGE INTO raw_orders r
+    USING tmp_validation_failures f
+    ON r.order_id = f.order_id
+    WHEN MATCHED THEN UPDATE SET
+      status = 'REJECTED',
+      reject_reason = f.error_reason;
+```
+
+```sql
+    -- 일괄 예외 로그: 하나의 INSERT...SELECT로 모든 반려를 로깅
+    INSERT INTO order_exceptions (order_id, batch_id, reason, logged_at)
+    SELECT order_id, v_batch_id, error_reason, current_timestamp()
+    FROM tmp_validation_failures;
+```
+
+```sql
+    MERGE INTO regional_revenue r
+    USING (
+      SELECT region, SUM(amount) AS region_total
+      FROM tmp_staged_orders
+      WHERE order_id NOT IN (
+        SELECT order_id FROM tmp_validation_failures)
+      GROUP BY region
+    ) s
+    ON r.region = s.region AND CAST(r.report_date AS DATE) = current_date()
+    WHEN MATCHED THEN UPDATE
+      SET daily_total = r.daily_total + s.region_total,
+          last_updated = current_timestamp()
+    WHEN NOT MATCHED THEN INSERT
+      (region, report_date, daily_total, last_updated)
+      VALUES (s.region, CAST(current_date() AS TIMESTAMP), s.region_total, current_timestamp());
+```
+
+```sql
+    UPDATE raw_orders SET status = 'PROCESSED'
+    WHERE order_id IN (
+      SELECT order_id FROM tmp_staged_orders
+      WHERE order_id NOT IN (
+        SELECT order_id FROM tmp_validation_failures));
+```
+
+```sql
+    INSERT INTO batch_log(batch_id, status, message, run_date)
+    VALUES (v_batch_id, 'COMPLETED',
+            v_row_count || ' orders processed', current_timestamp());
+  END IF;
+END;
+```
+
 트랜잭션 안에서 실행하려면 호출을 감싸세요.
+
+```sql
+BEGIN ATOMIC
+  CALL process_daily_orders();
+END;
+```
 
 ## 우리가 배운 것
 
-무거운 PL/SQL 패키지 의존성을 가진 복잡한 저장 프로시저라 해도, 이런 프로그램의 마이그레이션 기간은 50~75%까지 단축될 수 있습니다. 이 효율은 원래의 비즈니스 로직을 보존하는 기계적 번역 과정에서 나오며, 덕분에 SQL 팀은 유지보수 작업을 매끄럽게 이어 갈 수 있습니다. 마이그레이션 자체를 넘어 팀은 강력한 새 이점을 얻습니다. *같은 거버넌스된 데이터가 대시보드, 머신러닝 모델, AI 이니셔티브를 모두 뒷받침하는* 통합 플랫폼입니다.
+무거운 PL/SQL 패키지 의존성을 가진 복잡한 저장 프로시저라 해도, 이런 프로그램의 마이그레이션 기간은 50~75%까지 단축될 수 있습니다. 이 효율은 원래의 비즈니스 로직을 보존하는 기계적 번역 과정에서 나오며, 덕분에 SQL 팀은 유지보수 작업을 매끄럽게 이어 갈 수 있습니다. 마이그레이션 자체를 넘어 팀은 강력한 새 이점을 얻습니다. 같은 거버넌스된 데이터가 대시보드, 머신러닝 모델, AI 이니셔티브를 모두 뒷받침하는 통합 플랫폼입니다.
 
 여러분의 프로시저가 번역되는지 알 수 있는 유일한 방법은 하나를 직접 해 보는 것입니다. 배치에서 가장 작은 저장 프로시저 — 되도록이면 아무도 디버깅하기 좋아하지 않는 것 — 를 고르세요. 워크스페이스에 마이그레이션 프로젝트를 만들고 Agentic Code Convertor로 시작하세요!
