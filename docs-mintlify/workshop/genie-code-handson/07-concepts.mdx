@@ -1,0 +1,84 @@
+---
+title: "개념: Agent Bricks & Vector Search"
+---
+
+이 모듈은 문서 Q&A 챗봇과 데이터 분석 에이전트를 만들고, 하나의 오케스트레이터로 통합하는 기능을 다룹니다. 아래에서 각 개념이 무엇이고, 왜 필요하며, 어떻게 동작하는지 설명합니다.
+
+### Agent Bricks
+
+- **무엇** — AI 에이전트를 코드 없이 UI/API로 만들고 관리하는 플랫폼. Knowledge Assistant(문서 Q&A), Genie Agent(데이터 분석), Supervisor Agent(오케스트레이션)를 제공합니다.
+- **왜·언제** — 에이전트 프레임워크를 직접 코딩하지 않고, 지식 소스와 규칙만 지정해 곧바로 운영 가능한 에이전트를 세울 때. 이 워크샵에서는 자연어 프롬프트만으로 세 종류를 만듭니다.
+- **어떻게** — 지식 소스·도구·System Prompt를 선언하면 Databricks가 검색·추론·서빙을 관리형으로 구성합니다. 내부적으로 Vector Search, Model Serving, MLflow가 함께 동작합니다.
+
+### Vector Search — 임베딩·인덱스·의미 검색
+
+- **무엇** — 텍스트를 벡터(임베딩)로 변환해 저장하고, 의미가 비슷한 문서를 찾아주는 검색 엔진. Knowledge Assistant의 검색 백엔드입니다.
+- **왜·언제** — 키워드가 정확히 일치하지 않아도 관련 문서를 찾아야 할 때. SQL의 `LIKE '%틸트%'`는 "틸트"가 든 문서만 찾지만, Vector Search는 "광축 정렬 기울기 허용치"처럼 뜻이 비슷한 문서도 찾아냅니다.
+- **어떻게** — 임베딩 모델(예: `databricks-gte-large-en`)이 문서를 벡터로 바꿔 인덱스에 저장하고, 질문도 같은 방식으로 벡터화해 가장 가까운 벡터들을 되돌려 줍니다. 엔드포인트+인덱스 생성에 5~10분이 걸립니다.
+
+### RAG (Retrieval-Augmented Generation)
+
+- **무엇** — LLM이 답하기 전에 관련 문서를 먼저 검색해, 그 근거로 답변을 생성하는 방식.
+- **왜·언제** — LLM이 모르는 사내 규격·SOP를 정확히 답하게 하고, 근거 없는 환각을 줄일 때. 문서에 없으면 "찾을 수 없다"고 답하도록 만들 수 있습니다.
+- **어떻게** — (1) Vector Search로 질문과 관련된 문서를 검색 → (2) 그 문서를 프롬프트에 넣어 LLM이 답변 생성. 청킹·메타데이터 필터·Hybrid Search·리랭킹으로 검색 품질을 높입니다.
+
+### Knowledge Assistant (KA) — RAG 챗봇
+
+- **무엇** — 비정형 문서(SOP, 품질기준서, 설비 매뉴얼)를 Vector Search로 인덱싱해 질문에 답하는 RAG 기반 에이전트.
+- **왜·언제** — "AA 틸트 규격은?", "리플로우 피크온도 기준은?" 같은 문서 기반 질문에 24시간 셀프서비스로 답하게 할 때.
+- **어떻게** — 지식 베이스 테이블을 소스로 연결하고, 임베딩 대상 컬럼과 메타데이터 컬럼, 임베딩/LLM 모델, System Prompt를 지정하면 생성됩니다. 인덱싱 완료(ONLINE) 후 질문해야 정상 답변이 나옵니다.
+
+### Genie Agent — 데이터 분석 에이전트
+
+- **무엇** — 앞선 모듈에서 만든 **Genie Space**를 도구로 삼아, 데이터 질문에 SQL(NL2SQL)로 답하는 에이전트.
+- **왜·언제** — "이번 주 라인2 수율은?", "불량 파레토 Top5는?"처럼 숫자·통계·추세를 묻는 질문에 답할 때. 비개발자의 셀프서비스 데이터 분석을 돕습니다.
+- **어떻게** — 여러 Genie Space(생산/품질/설비 등)를 도구로 연결하고, System Prompt에 질문 유형별로 어떤 Space를 쓸지 규칙을 적어 라우팅합니다.
+
+### Supervisor Agent — 멀티 에이전트 오케스트레이션
+
+- **무엇** — 사용자 질문의 의도를 파악해 적절한 하위 에이전트로 라우팅하는 상위 에이전트. 복합 질문은 여러 에이전트를 함께 호출합니다.
+- **왜·언제** — 문서 질문과 데이터 질문이 뒤섞인 현장에서, 단일 창구로 분석과 가이드를 통합 제공할 때. "MTF 불량이 급증했는데 원인과 대응은?" 같은 질문은 데이터+문서를 모두 필요로 합니다.
+- **어떻게** — 하위 에이전트(KA, Genie Agent)를 연결하고, System Prompt에 라우팅 규칙(규격/기준 → KA, 통계/추세 → Genie, 복합 → 둘 다)을 정의합니다. 라우팅 결정은 사용자에게 감추고 답변을 자연스럽게 하나로 통합합니다.
+
+### Databricks Model Serving
+
+- **무엇** — LLM·임베딩 모델을 API 엔드포인트로 서빙하는 기능. 에이전트의 추론 엔진입니다.
+- **왜·언제** — KA·Genie·Supervisor가 답변을 생성하거나 문서를 임베딩할 때마다 모델 호출이 필요할 때. 사용자는 엔드포인트만 지정하면 됩니다.
+- **어떻게** — Agent Bricks가 지정된 모델(예: `databricks-claude-sonnet-4`, `databricks-gte-large-en`) 엔드포인트를 호출해 추론·임베딩을 수행합니다.
+
+### Lakebase — 에이전트 세션 저장 (선택)
+
+- **무엇** — Databricks 내장 PostgreSQL 호환 OLTP 데이터베이스. 대화 이력·피드백 저장에 씁니다.
+- **왜·언제** — 대화 컨텍스트를 유지하고, 사용자별 선호를 학습하며, 사용 패턴을 분석하고 싶을 때. 사용 불가 환경에서는 건너뛰어도 에이전트는 동작합니다.
+- **어떻게** — 세션·메시지·피드백 테이블을 만들어 각 대화 턴과 사용된 에이전트, 응답 시간, 유용성 평가를 기록합니다.
+
+### MLflow on Databricks — 품질 평가
+
+- **무엇** — 에이전트 응답을 트레이싱하고 품질을 평가하는 도구.
+- **왜·언제** — 라우팅이 정확한지, 답변 품질이 충분한지 모니터링하고 개선 후보를 찾을 때.
+- **어떻게** — 대화 흐름을 Tracing으로 기록하고, 라우팅 정확도·응답 품질을 평가해 보강이 필요한 질문 유형을 식별합니다.
+
+---
+
+## 요약
+
+| 개념 | 한 줄 정의 | 이 워크샵에서의 쓰임 |
+|------|-----------|--------------------|
+| Agent Bricks | 코드 없이 에이전트를 만드는 플랫폼 | 세 종류 에이전트를 프롬프트로 생성 |
+| Vector Search | 임베딩 기반 의미 검색 엔진 | KA의 문서 검색 백엔드 |
+| RAG | 검색 후 생성하는 답변 방식 | 근거 기반 답변, 환각 억제 |
+| Knowledge Assistant | RAG 기반 문서 Q&A 에이전트 | 제조 SOP·품질기준 Q&A 챗봇 |
+| Genie Agent | Genie Space 기반 데이터 분석 에이전트 | 수율·불량·OEE 데이터 질의 |
+| Supervisor Agent | 의도 기반 멀티에이전트 라우터 | 문서+데이터 질문 통합 창구 |
+| Databricks Model Serving | 모델을 API로 서빙 | 에이전트의 추론·임베딩 엔진 |
+| Lakebase | 내장 PostgreSQL OLTP | 대화 이력·피드백 저장 |
+| MLflow on Databricks | 응답 트레이싱·품질 평가 | 라우팅·답변 품질 모니터링 |
+
+## 공식 문서
+
+- Agent Bricks: https://docs.databricks.com/en/generative-ai/agent-bricks/index.html
+- Vector Search: https://docs.databricks.com/en/generative-ai/vector-search.html
+- Databricks Model Serving: https://docs.databricks.com/en/machine-learning/model-serving/index.html
+- Lakebase: https://docs.databricks.com/en/oltp/index.html
+- MLflow on Databricks: https://docs.databricks.com/en/mlflow/index.html
+

@@ -1,0 +1,66 @@
+---
+title: "개념: Genie Code · Unity Catalog · MCP · Skill"
+---
+
+모듈 0에서는 워크샵 전체를 관통하는 도구와 뼈대를 세팅합니다. 여기서 만나는 핵심 기술 — **Genie Code**, **Unity Catalog**, **Serverless**, **Custom Instructions**, **Skill**, **AI Dev Kit MCP** — 을 하나씩, "무엇 / 왜·언제 / 어떻게"로 정리합니다.
+
+### Genie Code
+
+- **무엇** — Databricks에 내장된 AI 코딩 어시스턴트. 자연어 지시를 받아 코드·쿼리를 생성하고 직접 실행·검증·수정한다.
+- **왜/언제** — 일반 코딩 AI(ChatGPT·Copilot)는 내 테이블 스키마를 모른다. Genie Code는 Unity Catalog의 메타데이터를 직접 읽으므로 컬럼명을 지어내는 환각이 적다. 노트북·SQL Editor·AI/BI Dashboards·Lakeflow Pipeline Editor·MLflow·Jobs 등 6개 제품 영역 안에서 쓴다.
+- **어떻게(핵심)** — 각 화면 우측 상단 **✨ 아이콘** 또는 `Cmd+I`로 사이드 패널을 연다. 스키마 탐색 → 코드 생성 → 실행 → 결과 확인 → 에러 자동 수정을 한 흐름으로 반복한다.
+
+> 비용은 소비량 기반(consumption)이다. "생성이 공짜"가 아니라, ① Genie Code 사용과 ② 생성된 코드를 돌리는 **컴퓨트** 두 축에서 과금된다.
+
+### Agent Mode vs Chat Mode
+
+- **무엇** — Genie Code의 두 가지 동작 방식. Chat Mode는 인라인 코드 제안, Agent Mode는 계획→코드→실행→검증→수정을 자율로 반복한다.
+- **왜/언제** — 빠른 완성·설명이면 Chat Mode, 복잡한 EDA·파이프라인·에이전트 구축처럼 여러 단계가 필요하면 Agent Mode. 이 워크샵은 전 과정 **Agent Mode**로 진행한다.
+- **어떻게(핵심)** — Agent Mode는 실행 전 **Plan을 보여주고 승인(Allow)**을 요청한다. 승인은 "Allow in this thread"만 쓰고 "Always Allow"는 누르지 않는다 — 파괴적 작업(DROP·DELETE)까지 자동 승인되는 것을 막기 위해서다. **실행 권한은 항상 사람이 쥔다.**
+
+### Unity Catalog (카탈로그 / 스키마 / 볼륨)
+
+- **무엇** — Databricks의 통합 데이터 거버넌스 계층. `카탈로그 > 스키마 > 테이블`의 3단계로 데이터를 조직하고, 권한·리니지·태그를 중앙에서 통제한다.
+- **왜/언제** — 흩어진 데이터의 접근 권한과 계보를 한 곳에서 관리하기 위해. 데이터를 만들거나 읽는 거의 모든 작업의 기준점이다.
+- **어떻게(핵심)** — 이 워크샵은 카탈로그 `ccm_factory` 아래 `bronze`·`silver`·`gold`·`quarantine` 스키마를 둔다. **Volume**은 스키마에 속한 파일 저장 영역으로, PDF·이미지 같은 비정형 파일을 담는다(`ccm_factory.bronze.raw_files`). 본인 UC 권한이 있는 오브젝트만 읽고 쓸 수 있다.
+
+### Serverless Compute
+
+- **무엇** — 클러스터를 직접 띄우고 관리하지 않아도 되는 Databricks 관리형 컴퓨트. Genie Code는 이 위에서 동작한다.
+- **왜/언제** — 클러스터 기동 대기·튜닝 없이 바로 실행하고 싶을 때. 워크샵처럼 다수가 즉시 코드를 돌리는 환경에 적합하다.
+- **어떻게(핵심)** — 관리형인 만큼 제약이 있다. R·Scala·Spark RDD, `dbutils.fs.mount`, Init Script·JAR는 안 된다 → Python·SQL·DataFrame API·**UC Volumes**로 대체한다. `%pip install`은 되지만 `pyspark` 재설치는 세션을 끊으므로 금지.
+
+### Custom Instructions (시스템 프롬프트)
+
+- **무엇** — Genie Code에게 "항상 이 규칙을 지켜"라고 미리 심어두는 지침. 매 대화에 자동으로 얹히는 **시스템 프롬프트** 역할을 한다.
+- **왜/언제** — 네이밍·언어·안전 규칙을 프롬프트마다 반복하지 않으려고. 팀 표준을 한 번에 고정할 때 쓴다.
+- **어떻게(핵심)** — 두 레벨이 있다. **워크스페이스** 레벨(`.assistant_workspace_instructions.md`, 팀 전체)이 **개인** 레벨(`.assistant_instructions.md`, 나만)보다 우선한다. Agent·Chat·인라인 제안·`/fix`에 모두 적용된다(Autocomplete 제외). 이 워크샵은 한국어 답변·PySpark 우선·snake_case·안전 규칙을 개인 지침으로 설정한다.
+
+### Skill
+
+- **무엇** — Genie Code가 관련 작업을 만났을 때 **자동으로 로딩**하는 도메인 전문 지식 묶음. `SKILL.md` 파일 하나에 name·description frontmatter와 지식 본문을 담는다.
+- **왜/언제** — Custom Instructions가 "항상 지킬 규칙"이라면, Skill은 "필요할 때만 참고하는 지식"이다. 공정 용어·테이블 구조·판정 기준처럼 특정 작업에서만 필요한 배경지식을 Genie Code에 주입할 때 쓴다.
+- **어떻게(핵심)** — `Workspace/.assistant/skills/<name>/SKILL.md` 경로에 올려두면 별도 설정 없이 Agent Mode가 관련 작업에서 자동 로딩한다. description을 보고 지금 작업에 필요한지 판단해 그때만 본문을 읽어들이는 방식이라, 항상 켜두는 지침보다 문맥을 아낀다. 이 워크샵은 카메라 모듈 공정(SMT·AA·MTF 등)과 스키마 지식을 담은 Skill 하나를 만든다.
+
+### AI Dev Kit MCP
+
+- **무엇** — Genie Code를 **크로스 프로덕트**로 확장하는 MCP(Model Context Protocol) 서버. 한 대화에서 Genie Space·대시보드·Job·Agent Bricks까지 생성·오케스트레이션한다.
+- **왜/언제** — Genie Code는 각 제품 영역 "안에서는" 강력하지만, 한 대화로 여러 제품을 가로지르는 작업(예: "Genie Space도 만들고 대시보드도 걸어줘")은 기본 기능만으론 못 한다. 이럴 때만 켠다. **네이티브 우선, MCP는 최소화**가 원칙이라 안 켜도 각 모듈을 완주할 수 있다.
+- **어떻게(핵심)** — Settings → MCP Servers에서 `mcp-ai-dev-kit`(RUNNING 상태) 앱을 추가한다. 40여 개 도구 중 **최대 20개**만 켤 수 있으므로, Genie Code가 이미 잘 하는 기능은 끄고 고유 기능(`manage_genie`·`manage_dashboard`·`manage_jobs` 등)만 활성화한다. `execute_sql`을 `execute_code`보다 우선 쓴다(클러스터 기동 타임아웃 회피).
+
+---
+
+### 요약
+
+| 개념 | 한 줄 정의 | 이 워크샵에서의 쓰임 |
+|------|-----------|--------------------|
+| **Genie Code** | Databricks 내장 AI 코딩 어시스턴트 | 전 모듈의 자연어 실습 도구 |
+| **Agent Mode / Chat Mode** | 자율 실행 모드 / 인라인 제안 모드 | 전 과정 Agent Mode + Allow 승인 |
+| **Unity Catalog** | 카탈로그·스키마·볼륨 3단 거버넌스 | `ccm_factory` 카탈로그·4개 스키마·볼륨 구성 |
+| **Serverless** | 관리형 컴퓨트 | 모든 코드·쿼리 실행 기반 |
+| **Custom Instructions** | 항상 적용되는 시스템 프롬프트 | 한국어·PySpark·안전 규칙 고정 |
+| **Skill** | 필요 시 자동 로딩되는 도메인 지식 묶음 | 카메라 모듈 공정 지식 주입 |
+| **AI Dev Kit MCP** | 크로스 프로덕트 확장 MCP 서버 | 한 대화에서 다중 제품 생성(선택) |
+
+공식 문서: [Genie Code](https://docs.databricks.com/en/genie-code/index.html) · [Unity Catalog](https://docs.databricks.com/en/data-governance/unity-catalog/index.html) · [Genie Code Skills](https://docs.databricks.com/en/genie-code/skills.html) · [AI Dev Kit](https://github.com/databricks-solutions/ai-dev-kit)
+

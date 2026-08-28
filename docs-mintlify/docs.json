@@ -1890,6 +1890,7 @@
           {
             "group": "0. 환경 & Genie Code 설정",
             "pages": [
+              "workshop/genie-code-handson/00-concepts",
               "workshop/genie-code-handson/00-genie-code-intro-setup",
               "workshop/genie-code-handson/00-safety-rules",
               "workshop/genie-code-handson/00-genie-code-setup",
@@ -1902,6 +1903,7 @@
           {
             "group": "1. 가상 데이터 생성",
             "pages": [
+              "workshop/genie-code-handson/01-concepts",
               "workshop/genie-code-handson/01-data-generation",
               "workshop/genie-code-handson/01-data-masters",
               "workshop/genie-code-handson/01-data-production",
@@ -1913,6 +1915,7 @@
           {
             "group": "2. 데이터 EDA",
             "pages": [
+              "workshop/genie-code-handson/02-concepts",
               "workshop/genie-code-handson/02-eda",
               "workshop/genie-code-handson/02-eda-distribution",
               "workshop/genie-code-handson/02-eda-quality",
@@ -1928,6 +1931,7 @@
           {
             "group": "3. 변환 파이프라인 (Job & SDP)",
             "pages": [
+              "workshop/genie-code-handson/03-concepts",
               "workshop/genie-code-handson/03-transformation-pipeline",
               "workshop/genie-code-handson/03-silver",
               "workshop/genie-code-handson/03-gold",
@@ -1937,6 +1941,7 @@
           {
             "group": "4. AI/BI 대시보드",
             "pages": [
+              "workshop/genie-code-handson/04-concepts",
               "workshop/genie-code-handson/04-aibi-dashboard",
               "workshop/genie-code-handson/04-dashboard-oee"
             ]
@@ -1944,6 +1949,7 @@
           {
             "group": "5. Genie 에이전트",
             "pages": [
+              "workshop/genie-code-handson/05-concepts",
               "workshop/genie-code-handson/05-genie-agent",
               "workshop/genie-code-handson/05-genie-accuracy",
               "workshop/genie-code-handson/05-genie-tuning",
@@ -1953,6 +1959,7 @@
           {
             "group": "6. 비정형 데이터 AI 함수",
             "pages": [
+              "workshop/genie-code-handson/06-concepts",
               "workshop/genie-code-handson/06-ai-functions-unstructured",
               "workshop/genie-code-handson/06-document-image",
               "workshop/genie-code-handson/06-batch-cost"
@@ -1961,6 +1968,7 @@
           {
             "group": "7. Agent Bricks 에이전트",
             "pages": [
+              "workshop/genie-code-handson/07-concepts",
               "workshop/genie-code-handson/07-agent-bricks",
               "workshop/genie-code-handson/07-genie-supervisor",
               "workshop/genie-code-handson/07-advanced-demo"
