@@ -1,0 +1,39 @@
+---
+title: "시드 데이터 다운로드 & 적재"
+---
+
+## Part D2: 시드 데이터 다운로드 & 적재
+
+카탈로그·스키마·볼륨을 만들었으니, 이제 실습용 **시드 데이터**를 부어 넣습니다. 강사가 미리 생성한 **모든 참가자 동일** 데이터를 zip 하나로 받아 로드합니다. (Genie Code로 직접 생성하는 방법은 [모듈 1](01-data-generation)에서 다룹니다.)
+
+> 📦 **다운로드**: [ccm_factory_seed.zip](https://github.com/SimyungYang/dbx-gitbook/releases/download/ccm-seed-v1/ccm_factory_seed.zip) — Bronze 17테이블 parquet, 약 **60MB**. 압축 내부 구조는 `ccm_factory/<table>/part.parquet` 입니다.
+
+**1단계 —** 받은 zip을 내 UC Volume에 업로드.
+
+Catalog Explorer에서 `ccm_factory.bronze.raw_files` 볼륨을 열고 **Upload** 버튼으로 zip을 올립니다. 경로가 헷갈리면 Genie Code에 물어보세요.
+
+```
+ccm_factory.bronze.raw_files 볼륨에 시드 zip을 업로드하려고 해. Catalog Explorer 업로드 방법과 업로드 후 최종 경로를 알려줘.
+```
+
+**2단계 —** 압축을 풀고 구조를 확인.
+
+```
+/Volumes/ccm_factory/bronze/raw_files/ccm_factory_seed.zip 을 풀어서, ccm_factory/ 아래 테이블별 parquet 폴더 17개가 있는지 목록으로 보여줘.
+```
+
+**3단계 —** parquet → Delta 17개 테이블로 적재.
+
+```
+풀린 각 parquet 폴더(`ccm_factory/<table>/`)를 읽어서 ccm_factory.bronze 스키마에 동일한 이름의 Delta 테이블 17개로 CREATE OR REPLACE TABLE 저장해줘.
+```
+
+**4단계 —** 적재 확인.
+
+```
+ccm_factory.bronze 의 테이블 17개 row count를 표로 보여주고, 참조 무결성(serial_id / equipment_id / material_lot_id)이 정상인지 간단히 점검해줘.
+```
+
+> 💡 이 시드에는 결측·중복·이상치·참조무결성 위반 등 **의도적 데이터 품질 이슈**가 심어져 있습니다 — [02. EDA](02-eda)·[03. 파이프라인](03-transformation-pipeline)에서 찾아내고 정제하는 실습 소재이니 정상입니다.
+
+---
