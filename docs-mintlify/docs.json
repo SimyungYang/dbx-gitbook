@@ -1771,6 +1771,9 @@
           {
             "group": "월별 릴리스",
             "pages": [
+              "releases/monthly/2026-08",
+              "releases/monthly/2026-07",
+              "releases/monthly/2026-06",
               "releases/monthly/2026-05",
               "releases/monthly/2026-04",
               "releases/monthly/2026-03",

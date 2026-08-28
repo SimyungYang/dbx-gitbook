@@ -1,0 +1,65 @@
+---
+title: "2026년 7월 릴리스"
+description: "2026년 7월 Databricks 플랫폼 릴리스 내역"
+---
+
+> 출처: [Databricks 2026년 7월 릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/july)
+
+## GA (정식 출시)
+
+| 날짜 | 기능 | 영역 | 서울 리전 |
+|------|------|------|-----------|
+| 07월 | **Apache Spark 4.2** — 새 Spark 릴리스, DBR 19 기반 | Data Engineering | 확인 필요 |
+| 07월 | **Multi-statement Transactions** — UC 테이블에 대한 원자적 다중 문장 처리 | Data Engineering | 확인 필요 |
+| 07월 | **Automatic Table Feature Upgrades** — row tracking·Checkpoint V2 자동 업그레이드 | Data Engineering | 확인 필요 |
+| 07월 | **REPLACE WHERE Flows** — 조건에 일치하는 행만 갱신 | Data Engineering | 확인 필요 |
+| 07월 | **Lakeflow Designer** — 비주얼 노코드 데이터 준비 | Data Engineering | 확인 필요 |
+| 07월 | **Lakeflow Connect Row Filtering** — 수집 단계 행 필터링 | Data Engineering | 확인 필요 |
+| 07월 | **Excel 파일 포맷 지원** — .xls/.xlsx/.xlsm 파일 처리 | Data Engineering | 확인 필요 |
+| 07월 | **Python UDTFs in Unity Catalog** — UC 거버넌스 하의 Python 테이블 함수 | DBSQL & Analytics | 확인 필요 |
+| 07월 | **Scala & Java UDFs in Unity Catalog** — UC 거버넌스 하의 Scala·Java 함수 | DBSQL & Analytics | 확인 필요 |
+| 07월 | **Warehouse Activity Details** — 상태 색상 주석으로 웨어하우스 활동 표시 | DBSQL & Analytics | 확인 필요 |
+| 07월 | **Priority Pay-Per-Token** — 지연 민감 앱 전용 용량 제공 | AI/ML | 확인 필요 |
+| 07월 | **AI Search High-QPS 확장** — 높은 초당 쿼리 수 지원 확장 | AI/ML | 확인 필요 |
+| 07월 | **MLflow Trace Storage in Unity Catalog** — 트레이스 UC 저장 정식 출시 | AI/ML | 확인 필요 |
+| 07월 | **Genie Agents** — 구 Genie Spaces 리브랜딩 | AI/ML | 확인 필요 |
+| 07월 | **Databricks Runtime 19 (+ 19 ML)** — Spark 4.2.0 기반 | Compute | 확인 필요 |
+| 07월 | **DBR 18 LTS (+ 18 ML LTS)** — 3년 장기 지원 릴리스 | Compute | 확인 필요 |
+| 07월 | **Context-Based Ingress Control** — 컨텍스트 기반 인그레스 제어 | Security | 확인 필요 |
+| 07월 | **Okta Automatic Identity Management** — Okta 자동 아이덴티티 관리 정식 출시 | Security | 확인 필요 |
+| 07월 | **Packaged Clean Rooms** — 패키지형 클린룸 | Security | 확인 필요 |
+| 07월 | **Budgets** — 계정 비용 관리 | Security | 확인 필요 |
+| 07월 | **Service Principal 토큰 만료 알림** — SP 토큰 만료 알림 정식 출시 | Security | 확인 필요 |
+
+## Public Preview
+
+| 날짜 | 기능 | 영역 | 서울 리전 |
+|------|------|------|-----------|
+| 07월 | **AI 함수 UC 권한 제어** — AI 함수에 대한 Unity Catalog 권한 관리 | DBSQL & Analytics | 확인 필요 |
+| 07.10 | **Feature Views** — 피처를 1회 정의해 실험·배치·실시간에서 재사용 | AI/ML | 확인 필요 |
+| 07월 | **Custom URLs for Databricks account** — 계정 커스텀 URL | Security | 확인 필요 |
+| 07월 | **AI Runtime 웹 터미널** — 서버리스 GPU 웹 터미널 | Compute | 확인 필요 |
+
+## Beta
+
+| 날짜 | 기능 | 영역 | 서울 리전 |
+|------|------|------|-----------|
+| 07월 | **Zerobus Ingest (C++ SDK)** — 고처리량 gRPC 수집 | Data Engineering | 확인 필요 |
+| 07월 | **Declarative Pipelines 단위 테스트** — 선언형 파이프라인 유닛 테스트 | Data Engineering | 확인 필요 |
+| 07월 | **Warehouse별 statement timeout** — 웨어하우스 단위 문장 타임아웃 | DBSQL & Analytics | 확인 필요 |
+| 07월 | **Agentic Code Converter** — 레거시 SQL 방언을 ANSI로 변환 | DBSQL & Analytics | 확인 필요 |
+| 07월 | **Governance Hub** — 계정 레벨 거버넌스 지표 UI | UC & Governance | 확인 필요 |
+| 07월 | **Governed Tags system table + Tag Automations** — 거버닝 태그 시스템 테이블·태그 자동화 | UC & Governance | 확인 필요 |
+| 07월 | **PrivateLink for account-level resources** — 계정 레벨 리소스용 PrivateLink | Security | 확인 필요 |
+| 07월 | **Allowlist partner platform IPs** — Power BI/Tableau/dbt 등 파트너 플랫폼 IP 허용 목록 | Security | 확인 필요 |
+
+## 주요 블로그·발표
+
+- **[보안 알림 분류 에이전트](/translations/2026-07-06-security-alert-triage-agents)** (7/6) — 보안 알림 트리아지 에이전트
+- **[데이터 네이티브 AI 에이전트](/translations/2026-07-15-data-native-ai-agents)** (7/15) — 데이터에 밀착한 AI 에이전트 아키텍처
+- **[Thinking Machines Inkling 모델](/translations/2026-07-15-inkling-thinking-machines-lab)** (7/15) — Thinking Machines Lab 의 Inkling 모델
+- **[AI는 준비됐지만 데이터 기반은?](/translations/2026-07-16-ai-ready-data-foundation)** (7/16) — AI 준비도와 데이터 토대 점검
+- **[Lakebase로 AI 에이전트 오케스트레이션](/translations/2026-07-22-lakebase-agent-orchestration)** (7/22) — Lakebase 기반 에이전트 오케스트레이션
+- **[프런티어 데이터 에이전트 vs 일반 코딩 에이전트](/translations/2026-07-23-frontier-data-agent-vs-coding-agents)** (7/23) — 데이터 특화 에이전트와 범용 코딩 에이전트 비교
+- **Apache Spark 4.2 발표** (7월) — 새 Spark 릴리스 소개 ([원문](https://www.databricks.com/blog/introducing-apache-spark-42))
+- **Feature Views 발표** (7/10) — 피처 재사용을 위한 Feature Views 소개 ([원문](https://www.databricks.com/blog/introducing-feature-views))
