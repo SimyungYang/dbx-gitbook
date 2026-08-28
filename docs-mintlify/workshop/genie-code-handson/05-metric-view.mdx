@@ -1,0 +1,83 @@
+---
+title: "Metric View — 거버넌스 지표"
+---
+
+## Part E: Metric View — 거버넌스된 지표 계층
+
+### 왜 필요한가
+
+같은 "수율"이라도 사람마다·쿼리마다 정의가 조금씩 다르면(양품/투입인지, PASS/전체인지) 대시보드와 Genie 답이 어긋납니다. **Metric View**는 measure(집계 지표)와 dimension(분석 축)을 **한 번만** 정의해 두는 거버넌스된 지표 계층입니다.
+
+| 문제 (Metric View 없이) | Metric View 도입 후 |
+|------------------------|--------------------|
+| 쿼리마다 수율 계산식이 제각각 | `Yield Pct` 정의 1개를 모두가 공유 |
+| Genie가 집계식을 매번 새로 생성 → 환각·오류 | 검증된 measure를 그대로 참조 → 환각 감소 |
+| 대시보드와 Genie 숫자가 불일치 | 동일 지표 정의 → 숫자 일치 |
+
+> Metric View는 measure를 **미리 계산하지 않고**, 조회 시점에 정의된 집계식으로 계산합니다. `dimension`으로 그룹핑 축을, `measure`로 집계 지표를 YAML 스펙에 선언합니다.
+
+### Genie Code로 Metric View 만들기
+
+> **위치**: Metric View는 Unity Catalog 객체입니다. Genie Code에게 `manage_uc_objects`로 생성을 요청하거나, 사이드바 **Catalog → Create → Metric View**로도 만들 수 있습니다.
+
+**1단계 —** 뼈대 + 소스·축을 정한다.
+```
+@ccm_factory.gold.daily_yield_summary를 소스로 하는 Metric View를 ccm_factory.gold.mv_yield 이름으로 만들려고 해. dimension은 line_id, model_code, shift, event_date로 하고 싶어. 먼저 YAML 스펙 구조를 제안해줘.
+```
+
+**2단계 —** measure(집계 지표)를 정의한다.
+```
+measure를 아래로 정의해줘 (집계식 포함):
+- Total Input = SUM(input_qty)
+- Total Good = SUM(good_qty)
+- Total Defect = SUM(defect_qty)
+- Yield Pct = SUM(good_qty) / SUM(input_qty) * 100
+- Avg MTF Center = AVG(avg_mtf_center)
+```
+
+**3단계 —** YAML 스펙으로 생성한다.
+```
+이 내용으로 Metric View YAML 스펙(version, source, dimensions, measures)을 만들고, ccm_factory.gold.mv_yield로 생성해줘. 예시 형식:
+version: 0.1
+source: ccm_factory.gold.daily_yield_summary
+dimensions:
+  - name: Line
+    expr: line_id
+  - name: Shift
+    expr: shift
+measures:
+  - name: Yield Pct
+    expr: SUM(good_qty) / SUM(input_qty) * 100
+```
+
+**4단계 —** Genie Space에 연결한다.
+```
+방금 만든 ccm_factory.gold.mv_yield Metric View를 "생산·수율 분석" Genie Space의 포함 테이블로 추가해줘. 그리고 수율 관련 질문은 이 Metric View의 measure(Yield Pct)를 우선 사용하도록 General Instructions에 규칙을 추가해줘.
+```
+
+**5단계 —** 일관성을 확인한다.
+```
+"생산·수율 분석" Space에 "라인별 이번 주 수율"을 질문해서, Metric View의 Yield Pct 정의(SUM(good_qty)/SUM(input_qty)*100)로 계산되는지 확인해줘.
+```
+
+> 💡 한 번 정의한 measure는 대시보드·Genie·에이전트가 모두 같은 값을 참조합니다. 지표 정의가 바뀌면 Metric View 한 곳만 고치면 됩니다.
+
+---
+
+## 핵심 포인트 정리
+
+| 배운 것 | 왜 중요한가 |
+|---------|-----------|
+| Genie Space 생성 | 비개발자가 SQL 없이 수율·불량·설비를 탐색 |
+| 컬럼 COMMENT | Genie가 제조 지표의 의미를 "이해"하는 핵심 |
+| 샘플 질문 등록 | **정확도를 가장 크게 올리는 방법** — 검증된 SQL 학습 |
+| General Instructions | 수율/OEE/Cpk 용어와 임의정의 방지 규칙 |
+| Joins·Benchmarks | 올바른 조인 + 정확도 정량 추적(정답률 측정) |
+| Metric View | 지표 정의 1곳 표준화 → 대시보드·Genie 숫자 일치, 환각 감소 |
+| Genie Agent | 3개 Space를 하나의 분석가로 통합 |
+
+---
+
+## 다음 단계
+
+- **[06. 비정형 데이터 AI 함수](06-ai-functions-unstructured)** — RMA 리포트·8D 문서·불량 이미지 등 비정형 데이터를 `ai_parse_document`·`ai_extract`·`ai_query`로 처리합니다.

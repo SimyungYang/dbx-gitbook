@@ -42,7 +42,7 @@ Genie Space Configure → **Joins** 탭에서 조인 경로를 정의합니다:
 |-----------|------------|----------|------|
 | daily_yield_summary | product_master | model_code | Many to One |
 | oee_by_equipment | equipment_master | equipment_id | Many to One |
-| material_defect_correlation | material_lot_master | supplier | Many to One |
+| material_defect_correlation | material_lot_master | material_lot_id | Many to One |
 | aa_quality_trend | product_master | model_code | Many to One |
 
 > Joins를 설정하지 않으면 "특정 고객 모델의 수율" 같은 질문에서 Genie가 조인을 못 하거나 잘못합니다.
@@ -69,5 +69,43 @@ Genie Space 우측 상단 ⚙️ **Configure**:
 | **SQL Queries** | Example query(샘플 질문) 등록 |
 
 > **Benchmarks**: 질문 + 정답 SQL을 등록하면 Genie 생성 SQL이 정답과 얼마나 일치하는지 자동 평가합니다. "정확도 80% → 95%"를 정량 추적할 수 있어, 튜닝 전후 비교에 유용합니다.
+
+### Step 6: Genie Benchmark로 정확도 측정 ⭐
+
+> "정확해졌다"는 느낌이 아니라 **숫자**로 확인합니다. 대표 질문에 정답 SQL을 붙여 벤치마크를 만들고, 실행해 정답률을 본 뒤, 틀린 항목만 튜닝합니다.
+>
+> **위치**: Genie Space → ⚙️ Configure → **Benchmarks** 탭 (또는 아래 프롬프트로 `manage_genie` MCP 일괄 등록).
+
+**1단계 —** 대표 질문으로 벤치마크를 만든다 (품질·불량 Space 예시).
+```
+"품질·불량 분석" Genie Space에 Benchmark를 만들어줘. 아래 5개 질문과 정답 SQL을 벤치마크 항목으로 등록해줘 (위 샘플 질문 6~10의 SQL을 정답으로 사용).
+1. 이번 주 불량 파레토 Top 10 (불량 코드별)
+2. Sup_S7 자재 로트의 불량률이 평균보다 높은가?
+3. MTF 규격 미달 비율이 높은 모델은?
+4. 공정능력(Cpk)이 1.33 미만인 공정 파라미터는?
+5. 불량 카테고리별 폐기(SCRAP) vs 재작업(REWORK) 비중
+```
+
+**2단계 —** 벤치마크를 실행한다.
+```
+방금 만든 Benchmark를 실행해줘. 각 질문에 대해 Genie가 생성한 SQL과 정답 SQL의 일치 여부(정답률)를 표로 보여줘.
+```
+
+**3단계 —** 정답률을 확인한다.
+```
+전체 정답률(%)과, 통과/실패 항목을 구분해서 보여줘. 실패한 질문은 Genie가 어떤 컬럼·조인·필터에서 정답과 달라졌는지 원인을 요약해줘.
+```
+
+**4단계 —** 낮은 항목을 튜닝한다.
+```
+실패한 질문 각각에 대해, 관련 컬럼 COMMENT 보강·샘플 질문 추가·General Instructions 규칙 추가 중 무엇이 필요한지 제안하고, 승인하면 적용해줘.
+```
+
+**5단계 —** 재실행으로 개선을 확인한다.
+```
+튜닝 적용 후 Benchmark를 다시 실행해서, 튜닝 전 대비 정답률이 얼마나 올랐는지 비교해줘.
+```
+
+> 💡 정답률이 목표(예: 90%)에 도달할 때까지 4~5단계를 반복합니다. 튜닝 전후 정답률을 기록해두면 개선 효과를 정량으로 보고할 수 있습니다.
 
 ---

@@ -91,8 +91,8 @@ LIMIT 10
 SELECT
   station,
   ROUND(AVG(fpy_pct), 1) AS avg_fpy_pct,
-  SUM(pass_qty) AS pass_qty,
-  SUM(input_qty) AS input_qty
+  SUM(first_pass_count) AS first_pass_count,
+  SUM(input_count) AS input_count
 FROM ccm_factory.gold.first_pass_yield
 WHERE event_date >= CURRENT_DATE - INTERVAL 7 DAYS
 GROUP BY station
@@ -174,13 +174,13 @@ LIMIT 10
 **질문 9**: 공정능력(Cpk)이 관리 기준(1.33) 미만인 공정 파라미터는?
 ```sql
 SELECT
-  process_name,
-  parameter_name,
+  process,
+  parameter,
   ROUND(AVG(cpk), 2) AS avg_cpk,
   ROUND(AVG(mean_value), 2) AS mean_value
 FROM ccm_factory.gold.spc_process_capability
 WHERE event_date >= CURRENT_DATE - INTERVAL 7 DAYS
-GROUP BY process_name, parameter_name
+GROUP BY process, parameter
 HAVING AVG(cpk) < 1.33
 ORDER BY avg_cpk ASC
 ```
@@ -189,9 +189,9 @@ ORDER BY avg_cpk ASC
 ```sql
 SELECT
   defect_category,
-  SUM(CASE WHEN disposition = 'SCRAP' THEN defect_count ELSE 0 END) AS scrap_qty,
-  SUM(CASE WHEN disposition = 'REWORK' THEN defect_count ELSE 0 END) AS rework_qty,
-  ROUND(SUM(CASE WHEN disposition = 'SCRAP' THEN defect_count ELSE 0 END) * 100.0
+  SUM(scrap_count) AS scrap_qty,
+  SUM(rework_count) AS rework_qty,
+  ROUND(SUM(scrap_count) * 100.0
     / NULLIF(SUM(defect_count), 0), 1) AS scrap_pct
 FROM ccm_factory.gold.defect_pareto
 WHERE event_date >= CURRENT_DATE - INTERVAL 30 DAYS
