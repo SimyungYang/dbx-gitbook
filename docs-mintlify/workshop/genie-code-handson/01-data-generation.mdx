@@ -129,23 +129,23 @@ ccm_factory.bronze 스키마의 테이블 17개가 모두 로드됐는지,
 ```
 catalog: ccm_factory
 └── bronze (17개 테이블)
-    ├── [Master]     equipment_master            300
-    ├── [Master]     product_master              60
-    ├── [Master]     material_lot_master         20,000
-    ├── [Production] work_orders                 15,000
-    ├── [Production] production_events           400,000
-    ├── [Production] traceability                500,000
-    ├── [Process]    smt_placement_logs          300,000
-    ├── [Process]    dispensing_process          200,000
-    ├── [Process]    reflow_profiles             60,000
-    ├── [Process]    active_alignment            250,000
-    ├── [Equipment]  equipment_sensor_logs       300,000
-    ├── [Equipment]  equipment_downtime          25,000
-    ├── [Inspection] aoi_inspection              300,000
-    ├── [Inspection] final_image_test            250,000
-    ├── [Inspection] defect_events               120,000
-    ├── [Environment]cleanroom_environment       150,000
-    └── [Field]      field_returns               10,000
+    ├── [Master]     ccm_factory.bronze.equipment_master            300
+    ├── [Master]     ccm_factory.bronze.product_master              60
+    ├── [Master]     ccm_factory.bronze.material_lot_master         20,000
+    ├── [Production] ccm_factory.bronze.work_orders                 15,000
+    ├── [Production] ccm_factory.bronze.production_events           400,000
+    ├── [Production] ccm_factory.bronze.traceability                500,000
+    ├── [Process]    ccm_factory.bronze.smt_placement_logs          300,000
+    ├── [Process]    ccm_factory.bronze.dispensing_process          200,000
+    ├── [Process]    ccm_factory.bronze.reflow_profiles             60,000
+    ├── [Process]    ccm_factory.bronze.active_alignment            250,000
+    ├── [Equipment]  ccm_factory.bronze.equipment_sensor_logs       300,000
+    ├── [Equipment]  ccm_factory.bronze.equipment_downtime          25,000
+    ├── [Inspection] ccm_factory.bronze.aoi_inspection              300,000
+    ├── [Inspection] ccm_factory.bronze.final_image_test            250,000
+    ├── [Inspection] ccm_factory.bronze.defect_events               120,000
+    ├── [Environment]ccm_factory.bronze.cleanroom_environment       150,000
+    └── [Field]      ccm_factory.bronze.field_returns               10,000
                                             ─────────────
                                             합계 ~3,000,000건
 ```

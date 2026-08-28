@@ -11,7 +11,7 @@ title: "택트타임 · 설비가동(OEE)"
 **1단계 —** 스테이션별 사이클타임 분포.
 
 ```
-production_events 의 cycle_time_sec 을 station 별로 분포(중앙값·p95)와 함께 보여줘.
+@ccm_factory.bronze.production_events 의 cycle_time_sec 을 station 별로 분포(중앙값·p95)와 함께 보여줘.
 ```
 
 **2단계 —** 병목 탐색.
@@ -25,7 +25,7 @@ production_events 의 cycle_time_sec 을 station 별로 분포(중앙값·p95)�
 **1단계 —** 다운타임 구성.
 
 ```
-equipment_downtime 를 downtime_type(BREAKDOWN/PM/CHANGEOVER/IDLE)별 총 시간·건수로 집계해서 보여줘.
+@ccm_factory.bronze.equipment_downtime 를 downtime_type(BREAKDOWN/PM/CHANGEOVER/IDLE)별 총 시간·건수로 집계해서 보여줘.
 ```
 
 **2단계 —** 가용성과 MTBF/MTTR 근사.

@@ -84,7 +84,7 @@ Delta 테이블로 저장하고 COMMENT를 달아줘.
 
 **작업지시 생성** 🟢 — 모듈 1
 ```
-작업지시(work_orders) 15,000건을 생성해줘.
+작업지시(ccm_factory.bronze.work_orders) 15,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.work_orders
 - model_code는 product_master에서 샘플링, line_id는 LINE_1~6
 - planned_qty: 3,000~10,000
@@ -96,7 +96,7 @@ Delta로 저장, COMMENT 추가.
 
 **제품 추적성 생성** 🟢 — 모듈 1
 ```
-제품 추적성(traceability) 500,000건을 생성해줘.
+제품 추적성(ccm_factory.bronze.traceability) 500,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.traceability
 - serial_id는 production_events의 시리얼과 정합, model_code/wo_id 연결
 - material_lot_ids: material_lot_master에서 유형별로 하나씩 매핑(IMAGE_SENSOR/LENS/VCM/PCB/IR_FILTER/ADHESIVE)
@@ -107,7 +107,7 @@ Delta로 저장, COMMENT 추가.
 
 **SMT 실장 로그 생성** 🟢 — 모듈 1
 ```
-SMT 실장 로그(smt_placement_logs) 300,000건을 생성해줘.
+SMT 실장 로그(ccm_factory.bronze.smt_placement_logs) 300,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.smt_placement_logs
 - serial_id/equipment_id는 SMT 스테이션 설비와 정합
 - placement_offset_x/y_um: 정상 -30~30µm(평균0), 일부 설비/노즐은 드리프트로 편향
@@ -118,7 +118,7 @@ Delta로 저장, COMMENT 추가.
 
 **Active Alignment 생성** 🟢 — 모듈 1 (핵심 공정)
 ```
-Active Alignment 공정(active_alignment) 250,000건을 생성해줘.
+Active Alignment 공정(ccm_factory.bronze.active_alignment) 250,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.active_alignment
 - serial_id/equipment_id는 ALIGN 스테이션과 정합, model_code 조인으로 target_mtf 참조
 - mtf_center_pct: 정상 78~92 (모델 target 근처), FAIL은 60~75
@@ -132,7 +132,7 @@ Delta로 저장, COMMENT 추가.
 
 **설비 센서 텔레메트리 생성** 🟢 — 모듈 1
 ```
-설비 센서 텔레메트리(equipment_sensor_logs) 300,000건을 생성해줘.
+설비 센서 텔레메트리(ccm_factory.bronze.equipment_sensor_logs) 300,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.equipment_sensor_logs
 - equipment_id는 equipment_master에서 샘플링(활성 설비), 1분 간격
 - temperature_c: 정상 25~45, 노후 설비는 서서히 상승 추세
@@ -144,7 +144,7 @@ Delta로 저장, COMMENT 추가.
 
 **AOI 검사 생성** 🟢 — 모듈 1
 ```
-AOI 검사(aoi_inspection) 300,000건을 생성해줘.
+AOI 검사(ccm_factory.bronze.aoi_inspection) 300,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.aoi_inspection
 - 컬럼: event_id, serial_id, equipment_id, timestamp, inspect_stage, defect_flag, defect_type, component_ref, confidence
 - inspect_stage: POST_SMT / POST_DISPENSE
@@ -157,7 +157,7 @@ Delta로 저장, COMMENT 추가.
 
 **최종 화질검사 생성** 🟢 — 모듈 1 (최종 판정)
 ```
-최종 화질검사(final_image_test) 250,000건을 생성해줘.
+최종 화질검사(ccm_factory.bronze.final_image_test) 250,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.final_image_test
 - serial_id는 FINAL 스테이션 통과 시리얼, model_code 조인으로 spec 참조
 - mtf_sfr_center: PASS 75~92 / FAIL 55~72, corner는 center-10 내외
@@ -171,7 +171,7 @@ Delta로 저장, COMMENT 추가.
 
 **클린룸 환경 생성** 🟢 — 모듈 1
 ```
-클린룸 환경(cleanroom_environment) 150,000건을 생성해줘.
+클린룸 환경(ccm_factory.bronze.cleanroom_environment) 150,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.cleanroom_environment
 - 컬럼: line_id, zone, timestamp, temperature_c, humidity_pct, particle_0_3um, particle_0_5um, diff_pressure_pa, esd_voltage_v
 - temperature_c: 22±1.5, humidity_pct: 45±8
@@ -183,7 +183,7 @@ Delta로 저장, COMMENT 추가.
 
 **필드 리턴/RMA 생성 (비정형)** 🟢 — 모듈 1
 ```
-필드 리턴/RMA(field_returns) 10,000건을 생성해줘.
+필드 리턴/RMA(ccm_factory.bronze.field_returns) 10,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.field_returns
 - 컬럼: rma_id, serial_id, model_code, customer, return_date, failure_symptom(자연어 한국어), analysis_result(자연어 한국어), root_cause_code, cost_usd
 - failure_symptom 예: "저조도에서 초점이 맞지 않음", "화면 모서리 흐림", "간헐적 화면 흔들림(OIS 불량 의심)", "이물 혼입으로 검은 점", "고온에서 색감 이상"
@@ -198,7 +198,7 @@ Delta로 저장, COMMENT 추가.
 
 **마스터 생성 확인** 🟢 — 모듈 1
 ```
-ccm_factory.bronze의 마스터 3개 테이블(equipment_master, product_master, material_lot_master)의
+ccm_factory.bronze의 마스터 3개 테이블(ccm_factory.bronze.equipment_master, ccm_factory.bronze.product_master, ccm_factory.bronze.material_lot_master)의
 row 수와 주요 컬럼 분포(설비 type별, 고객별, 자재 type별)를 요약해서 보여줘.
 ```
 
@@ -209,10 +209,10 @@ ccm_factory.bronze 스키마의 모든 테이블에 대해 확인해줘:
 2. serial_id / equipment_id / material_lot_id 의 참조 무결성 (마스터에 없는 값 건수)
 3. timestamp 범위가 2025년 위주인지
 4. 의도적으로 심은 이슈가 실제로 존재하는지:
-   - active_alignment.mtf_center_pct > 100 건수
-   - equipment_sensor_logs.temperature_c > 200 건수
-   - final_image_test.snr_db NULL 비율
-   - production_events 중복(serial+timestamp) 건수
+   - ccm_factory.bronze.active_alignment.mtf_center_pct > 100 건수
+   - ccm_factory.bronze.equipment_sensor_logs.temperature_c > 200 건수
+   - ccm_factory.bronze.final_image_test.snr_db NULL 비율
+   - ccm_factory.bronze.production_events 중복(serial+timestamp) 건수
 결과를 데이터 품질 요약 표로 보여줘.
 ```
 

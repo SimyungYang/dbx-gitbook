@@ -58,15 +58,15 @@ ccm_factory.bronze의 핵심 테이블에 대해 Silver 변환 전 최종 품질
 ```
 **2단계 —** 결측·중복 점검 추가.
 ```
-스코어카드에 추가: final_image_test.snr_db, dispensing_process.uv_dose_mj NULL 비율, 그리고 production_events 중복(serial_id+timestamp+event_type) 및 OUT<IN 역전 건수.
+스코어카드에 추가: @ccm_factory.bronze.final_image_test.snr_db, @ccm_factory.bronze.dispensing_process.uv_dose_mj NULL 비율, 그리고 @ccm_factory.bronze.production_events 중복(serial_id+timestamp+event_type) 및 OUT<IN 역전 건수.
 ```
 **3단계 —** 이상치·단위혼입 추가.
 ```
-이상치도 추가: active_alignment.mtf_center_pct>100, equipment_sensor_logs.temperature_c>200 건수, smt_placement_logs 단위혼입 의심(|offset|>500µm) 건수.
+이상치도 추가: @ccm_factory.bronze.active_alignment.mtf_center_pct>100, @ccm_factory.bronze.equipment_sensor_logs.temperature_c>200 건수, @ccm_factory.bronze.smt_placement_logs 단위혼입 의심(|offset|>500µm) 건수.
 ```
 **4단계 —** 참조무결성·규칙위반 추가.
 ```
-참조 무결성 위반(serial_id/equipment_id/material_lot_id) 건수와 aoi_inspection 비즈니스 규칙 위반(defect_flag=false & defect_type NOT NULL) 건수도 더해줘.
+참조 무결성 위반(serial_id/equipment_id/material_lot_id) 건수와 @ccm_factory.bronze.aoi_inspection 비즈니스 규칙 위반(defect_flag=false & defect_type NOT NULL) 건수도 더해줘.
 ```
 **5단계 —** 표 정리 + 우선순위.
 ```

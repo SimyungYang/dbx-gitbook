@@ -25,7 +25,7 @@ ALIGNMENT, ACTUATOR, BONDING, CONTAMINATION, SENSOR
 
 **ai_extract — 구조화 추출** 🟢 — 모듈 6 · Part A
 ```
-field_returns.failure_symptom + analysis_result를 결합한 텍스트에서
+@ccm_factory.bronze.field_returns.failure_symptom + analysis_result를 결합한 텍스트에서
 ai_extract로 다음 3개 항목을 구조화 추출해줘 (LIMIT 20):
 - symptom(증상), defect_location(불량 부위), suspected_cause(의심 원인)
 결과를 표로 보여주고 SQL도 알려줘.
@@ -94,7 +94,7 @@ aoi_defect_images/ 의 이미지들을 ai_query에 Vision 모델로 넣어
 
 **배치 적용 — field_return_insights 생성** 🟢 — 모듈 6 · Part D
 ```
-검증이 끝났으니 field_returns 전체(1만 건)에 ai_classify를 배치 적용해서
+검증이 끝났으니 @ccm_factory.bronze.field_returns 전체(1만 건)에 ai_classify를 배치 적용해서
 ccm_factory.gold.field_return_insights 테이블을 만들어줘.
 
 컬럼:

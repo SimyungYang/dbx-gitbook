@@ -12,7 +12,7 @@ title: "문서 파싱 & 이미지 AI"
 
 **1단계 —** 샘플 PDF 생성 요청.
 ```
-카메라 모듈 품질 8D 리포트 샘플 PDF 10건을 만들어서 ccm_factory.bronze.raw_files 볼륨의 8d_reports/ 폴더에 저장해줘. 한국어, 8D 구조(D1~D8)로.
+카메라 모듈 품질 8D 리포트 샘플 PDF 10건을 만들어서 @ccm_factory.bronze.raw_files 볼륨의 8d_reports/ 폴더에 저장해줘. 한국어, 8D 구조(D1~D8)로.
 ```
 **2단계 —** 리포트 내용 항목 지정.
 ```
@@ -29,11 +29,11 @@ title: "문서 파싱 & 이미지 AI"
 
 **1단계 —** 1건 파싱 테스트.
 ```
-ccm_factory.bronze.raw_files 볼륨의 8d_reports/ 아래 PDF를 ai_parse_document로 파싱해줘. 먼저 1개로 테스트하고 결과 미리보기.
+@ccm_factory.bronze.raw_files 볼륨의 8d_reports/ 아래 PDF를 ai_parse_document로 파싱해줘. 먼저 1개로 테스트하고 결과 미리보기.
 ```
 **2단계 —** 저장 테이블·컬럼 지정.
 ```
-확인되면 ccm_factory.silver.parsed_8d_reports 테이블로 저장해줘. 컬럼: file_path, parsed_text, parsed_at.
+확인되면 @ccm_factory.silver.parsed_8d_reports 테이블로 저장해줘. 컬럼: file_path, parsed_text, parsed_at.
 ```
 
 참고 SQL 형태:
@@ -58,7 +58,7 @@ silver.parsed_8d_reports의 parsed_text에서 ai_extract로 8D 핵심 항목을 
 ```
 **3단계 —** 결과 저장.
 ```
-확인되면 결과를 ccm_factory.gold.quality_8d_structured 테이블로 저장해줘.
+확인되면 결과를 @ccm_factory.gold.quality_8d_structured 테이블로 저장해줘.
 ```
 
 ---
@@ -71,7 +71,7 @@ AOI가 촬영한 불량 이미지를 Vision LLM(`ai_query`)으로 분류·설명
 
 **1단계 —** 이미지 목록 확인.
 ```
-ccm_factory.bronze.raw_files 볼륨의 aoi_defect_images/ 폴더에 있는 불량 이미지 목록을 보여줘.
+@ccm_factory.bronze.raw_files 볼륨의 aoi_defect_images/ 폴더에 있는 불량 이미지 목록을 보여줘.
 ```
 **2단계 —** 없을 때 업로드 안내.
 ```

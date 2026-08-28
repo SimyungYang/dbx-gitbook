@@ -52,16 +52,16 @@ ccm_factory.bronze 스키마의 모든 테이블에 대해 다음을 표로 보�
 
 ```
 다음 3개 핵심 테이블의 수치형 컬럼 통계(count, mean, stddev, min, 25%, 50%, 75%, max)를 보여줘:
-- ccm_factory.bronze.active_alignment (mtf_center_pct, mtf_corner_pct, tilt_x_arcmin, tilt_y_arcmin, focus_z_um)
-- ccm_factory.bronze.final_image_test (mtf_sfr_center, dead_pixel_count, particle_count, snr_db, distortion_pct)
-- ccm_factory.bronze.equipment_sensor_logs (temperature_c, vibration_mm_s, vacuum_kpa, motor_current_a)
+- @ccm_factory.bronze.active_alignment (mtf_center_pct, mtf_corner_pct, tilt_x_arcmin, tilt_y_arcmin, focus_z_um)
+- @ccm_factory.bronze.final_image_test (mtf_sfr_center, dead_pixel_count, particle_count, snr_db, distortion_pct)
+- @ccm_factory.bronze.equipment_sensor_logs (temperature_c, vibration_mm_s, vacuum_kpa, motor_current_a)
 각 컬럼의 값 범위가 물리적으로 말이 되는지(예: MTF는 0~100%) 코멘트도 붙여줘.
 ```
 
 ### NULL 비율 상위 컬럼
 
 ```
-ccm_factory.bronze의 주요 테이블(final_image_test, dispensing_process, active_alignment, aoi_inspection)에 대해
+ccm_factory.bronze의 주요 테이블(@ccm_factory.bronze.final_image_test, @ccm_factory.bronze.dispensing_process, @ccm_factory.bronze.active_alignment, @ccm_factory.bronze.aoi_inspection)에 대해
 컬럼별 NULL 비율을 계산하고, NULL 비율이 높은 상위 5개 컬럼을 테이블별로 보여줘.
 ```
 

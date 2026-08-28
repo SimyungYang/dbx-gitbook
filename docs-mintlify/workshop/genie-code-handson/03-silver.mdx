@@ -46,7 +46,7 @@ title: "Silver Layer 정제"
 
 **1단계 —** 뼈대부터, 규칙 제안 요청.
 ```
-ccm_factory.bronze.active_alignment를 정제하여 ccm_factory.silver.aa_measurements를 만들려고 해. 먼저 정제 규칙을 제안해줘.
+@ccm_factory.bronze.active_alignment를 정제하여 ccm_factory.silver.aa_measurements를 만들려고 해. 먼저 정제 규칙을 제안해줘.
 ```
 **2단계 —** 중복 제거 + 참조 격리.
 ```
@@ -54,7 +54,7 @@ event_id 기준으로 중복 제거(최신 timestamp 유지)하고, serial_id/eq
 ```
 **3단계 —** 센서 오류 격리 + 마스터 조인.
 ```
-mtf_center_pct > 100 또는 < 0 인 레코드는 ccm_factory.quarantine.aa_bad_mtf로 분리(센서 오류)하고, product_master 조인으로 target_mtf_center, spec_mtf_min을 추가해줘.
+mtf_center_pct > 100 또는 < 0 인 레코드는 ccm_factory.quarantine.aa_bad_mtf로 분리(센서 오류)하고, @ccm_factory.bronze.product_master 조인으로 target_mtf_center, spec_mtf_min을 추가해줘.
 ```
 **4단계 —** 파생 컬럼 추가.
 ```
@@ -69,7 +69,7 @@ event_date 파티셔닝, (equipment_id, event_date) Z-ORDER, 테이블/컬럼 CO
 
 **1단계 —** 뼈대부터, 규칙 제안 요청.
 ```
-ccm_factory.bronze.final_image_test를 정제하여 ccm_factory.silver.final_test_clean을 만들려고 해. 먼저 정제 규칙을 제안해줘.
+@ccm_factory.bronze.final_image_test를 정제하여 ccm_factory.silver.final_test_clean을 만들려고 해. 먼저 정제 규칙을 제안해줘.
 ```
 **2단계 —** 중복·참조 + SNR 결측 대체.
 ```
@@ -77,7 +77,7 @@ event_id 중복 제거, serial_id 참조 무결성(없으면 quarantine.final_or
 ```
 **3단계 —** 마스터 조인.
 ```
-product_master 조인으로 model_code, spec_mtf_min을 추가해줘.
+@ccm_factory.bronze.product_master 조인으로 model_code, spec_mtf_min을 추가해줘.
 ```
 **4단계 —** 파생 컬럼 + 판정 재검증.
 ```
@@ -92,7 +92,7 @@ event_date 파티셔닝, model_code Z-ORDER, COMMENT를 추가하고 CREATE OR R
 
 **1단계 —** 뼈대부터, 규칙 제안 요청.
 ```
-ccm_factory.bronze.equipment_sensor_logs를 정제·집계하여 ccm_factory.silver.sensor_metrics_5min을 만들려고 해. 먼저 정제·집계 규칙을 제안해줘.
+@ccm_factory.bronze.equipment_sensor_logs를 정제·집계하여 ccm_factory.silver.sensor_metrics_5min을 만들려고 해. 먼저 정제·집계 규칙을 제안해줘.
 ```
 **2단계 —** 온도 클리핑 + 참조.
 ```
@@ -115,7 +115,7 @@ event_date 파티셔닝, equipment_id Z-ORDER, COMMENT를 추가하고 CREATE OR
 
 **1단계 —** 뼈대부터, 규칙 제안 요청.
 ```
-ccm_factory.bronze.production_events를 정제하여 ccm_factory.silver.production_flow를 만들려고 해. 먼저 정제 규칙을 제안해줘.
+@ccm_factory.bronze.production_events를 정제하여 ccm_factory.silver.production_flow를 만들려고 해. 먼저 정제 규칙을 제안해줘.
 ```
 **2단계 —** 재전송 중복 제거.
 ```
@@ -138,7 +138,7 @@ event_date 파티셔닝, (station, event_date) Z-ORDER, COMMENT를 추가하고 
 
 **1단계 —** 뼈대부터, 규칙 제안 요청.
 ```
-ccm_factory.bronze.defect_events를 정제하여 ccm_factory.silver.defect_normalized를 만들려고 해. 먼저 정제 규칙을 제안해줘.
+@ccm_factory.bronze.defect_events를 정제하여 ccm_factory.silver.defect_normalized를 만들려고 해. 먼저 정제 규칙을 제안해줘.
 ```
 **2단계 —** 중복·참조 + 표준화.
 ```
@@ -146,7 +146,7 @@ event_id 중복 제거, serial_id 참조 무결성을 적용하고, severity를 
 ```
 **3단계 —** traceability 조인.
 ```
-traceability 조인으로 model_code와 사용 material_lot_ids를 추가해줘 (자재↔불량 상관 분석 대비).
+@ccm_factory.bronze.traceability 조인으로 model_code와 사용 material_lot_ids를 추가해줘 (자재↔불량 상관 분석 대비).
 ```
 **4단계 —** 파생 컬럼 추가.
 ```

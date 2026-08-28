@@ -48,7 +48,7 @@ title: "개요 & 텍스트 AI 함수"
 ### A-1. 데이터 훑어보기
 
 ```
-ccm_factory.bronze.field_returns에서 failure_symptom, analysis_result, root_cause_code를
+@ccm_factory.bronze.field_returns에서 failure_symptom, analysis_result, root_cause_code를
 10건만 보여줘. 어떤 자연어 텍스트가 들어있는지 확인하고 싶어.
 ```
 
@@ -58,7 +58,7 @@ Genie Code에 한 번에 하나씩 덧붙여 요청하면 SQL AI 함수를 생�
 
 **1단계 —** 최소 분류부터.
 ```
-ccm_factory.bronze.field_returns의 failure_symptom(한국어 증상 텍스트)을 ai_classify로 분류해줘. 우선 LIMIT 20으로 테스트.
+@ccm_factory.bronze.field_returns의 failure_symptom(한국어 증상 텍스트)을 ai_classify로 분류해줘. 우선 LIMIT 20으로 테스트.
 ```
 **2단계 —** 근본원인 카테고리 지정.
 ```

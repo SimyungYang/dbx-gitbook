@@ -60,7 +60,7 @@ Knowledge Assistant는 **비정형 문서**(SOP, 품질기준서, 설비 매뉴�
 **1단계 —** 빈 테이블 스키마부터.
 
 ```
-카메라 모듈 제조 현장용 지식 베이스를 담을 Delta 테이블 ccm_factory.bronze.mfg_knowledge_base 를 만들어줘.
+카메라 모듈 제조 현장용 지식 베이스를 담을 Delta 테이블 @ccm_factory.bronze.mfg_knowledge_base 를 만들어줘.
 컬럼: doc_id STRING(고유 문서 ID), category STRING(카테고리), title STRING(제목/질문), content STRING(본문), tags `ARRAY<STRING>`(관련 태그), process_stage STRING(관련 공정: SMT/DISPENSE/REFLOW/ALIGN/AOI/FINAL/COMMON), last_updated DATE.
 ```
 
@@ -127,7 +127,7 @@ Knowledge Assistant "카메라 모듈 제조 가이드" 를 만들어줘.
 **2단계 —** 지식 소스 연결.
 
 ```
-지식 소스로 ccm_factory.bronze.mfg_knowledge_base 테이블을 연결해줘.
+지식 소스로 @ccm_factory.bronze.mfg_knowledge_base 테이블을 연결해줘.
 임베딩 대상 컬럼: content / 메타데이터 컬럼: category, title, tags, process_stage
 ```
 

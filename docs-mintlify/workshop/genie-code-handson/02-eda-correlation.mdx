@@ -10,9 +10,9 @@ title: "상관 & 인사이트"
 
 ```
 특정 자재 공급사/로트가 불량과 상관있는지 분석해줘:
-- traceability 로 시리얼별 사용 자재 로트(material_lot_ids)를 펼치고, defect_events / final_image_test 의 불량과 조인
+- @ccm_factory.bronze.traceability 로 시리얼별 사용 자재 로트(material_lot_ids)를 펼치고, @ccm_factory.bronze.defect_events / @ccm_factory.bronze.final_image_test 의 불량과 조인
 - 공급사(supplier)별 불량률을 계산하고, 평균 대비 유의하게 높은 공급사를 찾아줘
-- material_lot_master.defect_rate_incoming(수입검사 불량률)과 실제 생산 불량률의 상관도 봐줘
+- @ccm_factory.bronze.material_lot_master.defect_rate_incoming(수입검사 불량률)과 실제 생산 불량률의 상관도 봐줘
 결과를 공급사별 불량률 막대 차트로 보여줘.
 ```
 
@@ -22,8 +22,8 @@ title: "상관 & 인사이트"
 
 ```
 설비 노후/이상 신호가 고장으로 이어지는지 분석해줘:
-- equipment_sensor_logs 에서 설비별 temperature_c, vibration_mm_s 의 일별 추세를 계산
-- equipment_downtime 에서 downtime_type='BREAKDOWN' 발생 설비/시점과 비교
+- @ccm_factory.bronze.equipment_sensor_logs 에서 설비별 temperature_c, vibration_mm_s 의 일별 추세를 계산
+- @ccm_factory.bronze.equipment_downtime 에서 downtime_type='BREAKDOWN' 발생 설비/시점과 비교
 - BREAKDOWN 직전 구간에서 온도/진동이 상승 추세였는지 확인
 온도·진동 추세와 고장 시점을 같이 볼 수 있는 시각화를 만들어줘.
 ```
@@ -32,8 +32,8 @@ title: "상관 & 인사이트"
 
 ```
 클린룸 파티클 급증이 오염 불량과 시간적으로 연관되는지 분석해줘:
-- cleanroom_environment 의 particle_0_3um 이 급증한 라인×시간대를 찾고
-- 같은 라인×시간대의 defect_events 중 defect_category='CONTAMINATION' 건수와 비교
+- @ccm_factory.bronze.cleanroom_environment 의 particle_0_3um 이 급증한 라인×시간대를 찾고
+- 같은 라인×시간대의 @ccm_factory.bronze.defect_events 중 defect_category='CONTAMINATION' 건수와 비교
 - 파티클 스파이크 이후 일정 시간 내 오염 불량이 증가하는 패턴이 있는지 확인해줘
 ```
 
@@ -41,7 +41,7 @@ title: "상관 & 인사이트"
 
 ```
 Active Alignment 품질이 최종 화질 판정으로 이어지는지 검증해줘:
-- active_alignment.mtf_center_pct, tilt_x/y_arcmin 과 final_image_test.test_result 를 serial 기준 조인
+- @ccm_factory.bronze.active_alignment.mtf_center_pct, tilt_x/y_arcmin 과 @ccm_factory.bronze.final_image_test.test_result 를 serial 기준 조인
 - AA 단계 MTF가 낮거나 tilt가 큰 시리얼이 최종에서 FAIL 되는 비율이 높은지 확인
 - tilt 절대값 구간별 최종 FAIL률을 표로 보여줘
 ```

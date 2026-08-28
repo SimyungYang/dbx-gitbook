@@ -31,11 +31,11 @@ ccm_factory.gold 스키마의 모든 테이블과 컬럼에 한국어 COMMENT를
 **3단계 —** 형식 예시를 보여준다.
 ```
 이런 형식으로 달아줘.
-COMMENT ON COLUMN ccm_factory.gold.daily_yield_summary.yield_pct IS
+COMMENT ON COLUMN @ccm_factory.gold.daily_yield_summary.yield_pct IS
   '일 수율(%). (양품 수 / 투입 수) × 100. 범위 0~100';
-COMMENT ON COLUMN ccm_factory.gold.oee_by_equipment.oee_pct IS
+COMMENT ON COLUMN @ccm_factory.gold.oee_by_equipment.oee_pct IS
   '종합설비효율(%). 가용성×성능×품질. 85 이상이 World Class';
-COMMENT ON COLUMN ccm_factory.gold.spc_process_capability.cpk IS
+COMMENT ON COLUMN @ccm_factory.gold.spc_process_capability.cpk IS
   '공정능력지수. 1.33 이상이 관리 기준, 1.0 미만은 개선 필요';
 ```
 

@@ -72,7 +72,7 @@ silver.final_test_clean, silver.serials_cleaned, silver.production_flow를 결�
 - avg_mtf_center, avg_snr_db
 - top_defect_category: 최다 불량 카테고리
 
-product_master/equipment 조인으로 customer, module_type 추가.
+@ccm_factory.bronze.product_master/equipment 조인으로 customer, module_type 추가.
 event_date 파티셔닝, COMMENT 추가.
 ```
 
@@ -164,7 +164,7 @@ silver.sensor_metrics_5min, silver.downtime_clean, silver.defect_normalized를 �
 - health_grade: A(90~100) B(70~89) C(50~69) D(30~49) F(0~29)
 - risk_factors: 위험요인 배열 (예: ["high_vibration","thermal_spike","frequent_breakdown"])
 
-equipment_master 조인으로 vendor, install_date 추가.
+@ccm_factory.bronze.equipment_master 조인으로 vendor, install_date 추가.
 event_date 파티셔닝, equipment_id Z-ORDER, COMMENT 추가.
 ```
 

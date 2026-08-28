@@ -9,7 +9,7 @@ title: "다변량 · 세그먼트 분석"
 ### 공정 파라미터 상관 히트맵
 
 ```
-active_alignment 와 final_image_test 를 serial 기준으로 조인해서
+@ccm_factory.bronze.active_alignment 와 @ccm_factory.bronze.final_image_test 를 serial 기준으로 조인해서
 주요 수치형 파라미터(mtf_center/corner, tilt_x/y, focus_z, snr_db, distortion_pct) 간 상관행렬을 구하고
 히트맵으로 보여줘. 강하게 상관된 쌍을 알려줘.
 ```
@@ -25,7 +25,7 @@ active_alignment 와 final_image_test 를 serial 기준으로 조인해서
 **2단계 —** 공장 품질 ↔ 필드 리턴 연결.
 
 ```
-field_returns 의 모델별 리턴율과, 같은 모델의 공장 내 불량률/수율을 나란히 비교해줘.
+@ccm_factory.bronze.field_returns 의 모델별 리턴율과, 같은 모델의 공장 내 불량률/수율을 나란히 비교해줘.
 공장에서 못 걸러 필드로 나간 것으로 의심되는 모델이 있는지 봐줘.
 ```
 

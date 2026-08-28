@@ -49,11 +49,11 @@ Gold 테이블을 기반으로:
 **3단계 —** 포함 테이블을 지정한다.
 ```
 포함 테이블은 아래 5개로 해줘.
-- ccm_factory.gold.daily_yield_summary
-- ccm_factory.gold.first_pass_yield
-- ccm_factory.gold.station_cycle_time
-- ccm_factory.bronze.product_master
-- ccm_factory.bronze.equipment_master
+- @ccm_factory.gold.daily_yield_summary
+- @ccm_factory.gold.first_pass_yield
+- @ccm_factory.gold.station_cycle_time
+- @ccm_factory.bronze.product_master
+- @ccm_factory.bronze.equipment_master
 ```
 
 **4단계 —** General Instructions를 추가한다.
@@ -81,12 +81,12 @@ General Instructions에 아래를 넣어줘.
 **3단계 —** 포함 테이블을 지정한다.
 ```
 포함 테이블은 아래 6개로 해줘.
-- ccm_factory.gold.defect_pareto
-- ccm_factory.gold.material_defect_correlation
-- ccm_factory.gold.aa_quality_trend
-- ccm_factory.gold.spc_process_capability
-- ccm_factory.silver.final_test_clean
-- ccm_factory.bronze.material_lot_master
+- @ccm_factory.gold.defect_pareto
+- @ccm_factory.gold.material_defect_correlation
+- @ccm_factory.gold.aa_quality_trend
+- @ccm_factory.gold.spc_process_capability
+- @ccm_factory.silver.final_test_clean
+- @ccm_factory.bronze.material_lot_master
 ```
 
 **4단계 —** General Instructions를 추가한다.
@@ -114,10 +114,10 @@ General Instructions에 아래를 넣어줘.
 **3단계 —** 포함 테이블을 지정한다.
 ```
 포함 테이블은 아래 4개로 해줘.
-- ccm_factory.gold.oee_by_equipment
-- ccm_factory.gold.equipment_health_score
-- ccm_factory.bronze.equipment_downtime
-- ccm_factory.bronze.equipment_master
+- @ccm_factory.gold.oee_by_equipment
+- @ccm_factory.gold.equipment_health_score
+- @ccm_factory.bronze.equipment_downtime
+- @ccm_factory.bronze.equipment_master
 ```
 
 **4단계 —** General Instructions를 추가한다.
@@ -126,7 +126,7 @@ General Instructions에 아래를 넣어줘.
 - OEE = 가용성 × 성능 × 품질, % 단위 소수점 1자리
 - "문제 설비"는 OEE < 75% 또는 health_score < 60
 - downtime은 분(min) 단위, 유형은 BREAKDOWN/PM/CHANGEOVER/IDLE
-- 설비는 equipment_id로 식별, 라인/유형 질문 시 equipment_master 조인
+- 설비는 equipment_id로 식별, 라인/유형 질문 시 @ccm_factory.bronze.equipment_master 조인
 ```
 
 ### 생성 확인 & 첫 테스트

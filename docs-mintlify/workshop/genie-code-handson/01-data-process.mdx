@@ -19,7 +19,7 @@ title: "공정 파라미터 (SPC)"
 | `pickup_result` | STRING | `OK`/`PICKUP_FAIL`/`RECOGNITION_FAIL` |
 
 ```
-SMT 실장 로그(smt_placement_logs) 300,000건을 생성해줘.
+SMT 실장 로그(ccm_factory.bronze.smt_placement_logs) 300,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.smt_placement_logs
 - serial_id/equipment_id는 SMT 스테이션 설비와 정합
 - placement_offset_x/y_um: 정상 -30~30µm(평균0), 일부 설비/노즐은 드리프트로 편향
@@ -41,7 +41,7 @@ Delta로 저장, COMMENT 추가.
 | `temp_c` | DOUBLE | 공정 온도 |
 
 ```
-디스펜싱/본딩 공정(dispensing_process) 200,000건을 생성해줘.
+디스펜싱/본딩 공정(ccm_factory.bronze.dispensing_process) 200,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.dispensing_process
 - dispense_type: SENSOR_BOND(50%), LENS_BOND(50%)
 - volume_mg: SENSOR_BOND 2~5, LENS_BOND 1~3 (설비별 미세 편차)
@@ -60,7 +60,7 @@ Delta로 저장, COMMENT 추가.
 | `conveyor_speed_cm_min` | DOUBLE | 컨베이어 속도 |
 
 ```
-리플로우 프로파일(reflow_profiles) 60,000건을 생성해줘.
+리플로우 프로파일(ccm_factory.bronze.reflow_profiles) 60,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.reflow_profiles
 - zone1~8 온도: 예열 150~180 → 승온 → peak 240~250°C 프로파일
 - tal_sec: 45~90초, conveyor_speed: 50~90 cm/min
@@ -84,7 +84,7 @@ Delta로 저장, COMMENT 추가.
 | `aa_result` | STRING | `PASS`/`FAIL`/`RETRY` |
 
 ```
-Active Alignment 공정(active_alignment) 250,000건을 생성해줘.
+Active Alignment 공정(ccm_factory.bronze.active_alignment) 250,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.active_alignment
 - serial_id/equipment_id는 ALIGN 스테이션과 정합, model_code 조인으로 target_mtf 참조
 - mtf_center_pct: 정상 78~92 (모델 target 근처), FAIL은 60~75

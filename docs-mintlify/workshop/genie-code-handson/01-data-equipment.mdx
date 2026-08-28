@@ -20,7 +20,7 @@ title: "설비·검사·환경 테이블"
 | `air_pressure_kpa` | DOUBLE | 공압 |
 
 ```
-설비 센서 텔레메트리(equipment_sensor_logs) 300,000건을 생성해줘.
+설비 센서 텔레메트리(ccm_factory.bronze.equipment_sensor_logs) 300,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.equipment_sensor_logs
 - equipment_id는 equipment_master에서 샘플링(활성 설비), 1분 간격
 - temperature_c: 정상 25~45, 노후 설비는 서서히 상승 추세
@@ -33,7 +33,7 @@ Delta로 저장, COMMENT 추가.
 ### 테이블 12: equipment_downtime (설비 비가동)
 
 ```
-설비 비가동(equipment_downtime) 25,000건을 생성해줘.
+설비 비가동(ccm_factory.bronze.equipment_downtime) 25,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.equipment_downtime
 - 컬럼: event_id, equipment_id, downtime_type, reason_code, start_time, end_time, duration_min
 - downtime_type: CHANGEOVER(35%), PM(25%), IDLE(20%), BREAKDOWN(20%)
@@ -53,7 +53,7 @@ Delta로 저장, COMMENT 추가.
 ### 테이블 13: aoi_inspection (AOI 자동광학검사)
 
 ```
-AOI 검사(aoi_inspection) 300,000건을 생성해줘.
+AOI 검사(ccm_factory.bronze.aoi_inspection) 300,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.aoi_inspection
 - 컬럼: event_id, serial_id, equipment_id, timestamp, inspect_stage, defect_flag, defect_type, component_ref, confidence
 - inspect_stage: POST_SMT / POST_DISPENSE
@@ -81,7 +81,7 @@ Delta로 저장, COMMENT 추가.
 | `test_result` | STRING | `PASS`/`FAIL` |
 
 ```
-최종 화질검사(final_image_test) 250,000건을 생성해줘.
+최종 화질검사(ccm_factory.bronze.final_image_test) 250,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.final_image_test
 - serial_id는 FINAL 스테이션 통과 시리얼, model_code 조인으로 spec 참조
 - mtf_sfr_center: PASS 75~92 / FAIL 55~72, corner는 center-10 내외
@@ -96,7 +96,7 @@ Delta로 저장, COMMENT 추가.
 ### 테이블 15: defect_events (불량 이벤트)
 
 ```
-불량 이벤트(defect_events) 120,000건을 생성해줘.
+불량 이벤트(ccm_factory.bronze.defect_events) 120,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.defect_events
 - 컬럼: event_id, serial_id, station, defect_code, defect_category, severity, disposition, root_cause_code, timestamp
 - station별 대표 불량: SMT→실장불량, DISPENSE→본딩불량, ALIGN→틸트/MTF, AOI→이물/솔더, FINAL→데드픽셀/화질
@@ -118,7 +118,7 @@ Delta로 저장, COMMENT 추가.
 ### 테이블 16: cleanroom_environment (클린룸 환경 1분)
 
 ```
-클린룸 환경(cleanroom_environment) 150,000건을 생성해줘.
+클린룸 환경(ccm_factory.bronze.cleanroom_environment) 150,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.cleanroom_environment
 - 컬럼: line_id, zone, timestamp, temperature_c, humidity_pct, particle_0_3um, particle_0_5um, diff_pressure_pa, esd_voltage_v
 - temperature_c: 22±1.5, humidity_pct: 45±8
@@ -133,7 +133,7 @@ Delta로 저장, COMMENT 추가.
 > `failure_symptom`·`analysis_result`가 자연어. **모듈 6(AI 함수)** 에서 이 텍스트를 분류·추출합니다.
 
 ```
-필드 리턴/RMA(field_returns) 10,000건을 생성해줘.
+필드 리턴/RMA(ccm_factory.bronze.field_returns) 10,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.field_returns
 - 컬럼: rma_id, serial_id, model_code, customer, return_date, failure_symptom(자연어 한국어), analysis_result(자연어 한국어), root_cause_code, cost_usd
 - failure_symptom 예: "저조도에서 초점이 맞지 않음", "화면 모서리 흐림", "간헐적 화면 흔들림(OIS 불량 의심)", "이물 혼입으로 검은 점", "고온에서 색감 이상"

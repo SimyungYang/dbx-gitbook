@@ -37,7 +37,7 @@ silver.final_test_clean, silver.serials_cleaned, silver.production_flow를 결�
 ```
 **4단계 —** 조인 + 파티션·COMMENT.
 ```
-product_master/equipment 조인으로 customer, module_type를 추가하고, event_date 파티셔닝과 COMMENT를 추가해줘.
+@ccm_factory.bronze.product_master/equipment 조인으로 customer, module_type를 추가하고, event_date 파티셔닝과 COMMENT를 추가해줘.
 ```
 
 #### Gold 2: first_pass_yield (FPY 직행률)
@@ -135,7 +135,7 @@ health_score(0~100) 추가 — 100에서 감점: max_temp>80 -10, max_vibration>
 ```
 **4단계 —** 위험요인 배열 + 조인.
 ```
-risk_factors 위험요인 배열(예: ["high_vibration","thermal_spike","frequent_breakdown"])을 추가하고, devices 대신 equipment_master 조인으로 vendor, install_date를 추가해줘.
+risk_factors 위험요인 배열(예: ["high_vibration","thermal_spike","frequent_breakdown"])을 추가하고, devices 대신 @ccm_factory.bronze.equipment_master 조인으로 vendor, install_date를 추가해줘.
 ```
 **5단계 —** 파티션·Z-ORDER·COMMENT.
 ```

@@ -10,9 +10,9 @@ title: "분포 탐색"
 
 ```
 카메라 모듈 최종 판정 현황을 분석해줘:
-1. final_image_test.test_result (PASS/FAIL) 비율
-2. active_alignment.aa_result (PASS/FAIL/RETRY) 비율
-3. traceability.final_result (PASS/FAIL/REWORK) 비율
+1. @ccm_factory.bronze.final_image_test.test_result (PASS/FAIL) 비율
+2. @ccm_factory.bronze.active_alignment.aa_result (PASS/FAIL/RETRY) 비율
+3. @ccm_factory.bronze.traceability.final_result (PASS/FAIL/REWORK) 비율
 4. 라인(line_id)별, 모델(model_code)별 FAIL 비율 상위 10개
 결과를 막대 차트로 시각화해줘.
 ```
@@ -32,8 +32,8 @@ active_alignment의 mtf_center_pct 와 final_image_test의 mtf_sfr_center 분포
 
 ```
 생산·불량을 여러 차원으로 쪼개서 보여줘:
-1. 라인(line_id)별 생산량(traceability 기준)과 불량률
-2. 설비 유형(equipment_type)별 처리 건수 (production_events 조인)
+1. 라인(line_id)별 생산량(@ccm_factory.bronze.traceability 기준)과 불량률
+2. 설비 유형(equipment_type)별 처리 건수 (@ccm_factory.bronze.production_events 조인)
 3. 모델(model_code)별·고객(customer)별 생산 비중 (도넛 차트)
 4. 근무조(shift)별 불량률 비교 (DAY/SWING/NIGHT)
 시각화도 함께 만들어줘.

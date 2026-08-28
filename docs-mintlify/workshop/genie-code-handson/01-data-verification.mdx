@@ -12,10 +12,10 @@ ccm_factory.bronze 스키마의 모든 테이블에 대해 확인해줘:
 2. serial_id / equipment_id / material_lot_id 의 참조 무결성 (마스터에 없는 값 건수)
 3. timestamp 범위가 2025년 위주인지
 4. 의도적으로 심은 이슈가 실제로 존재하는지:
-   - active_alignment.mtf_center_pct > 100 건수
-   - equipment_sensor_logs.temperature_c > 200 건수
-   - final_image_test.snr_db NULL 비율
-   - production_events 중복(serial+timestamp) 건수
+   - ccm_factory.bronze.active_alignment.mtf_center_pct > 100 건수
+   - ccm_factory.bronze.equipment_sensor_logs.temperature_c > 200 건수
+   - ccm_factory.bronze.final_image_test.snr_db NULL 비율
+   - ccm_factory.bronze.production_events 중복(serial+timestamp) 건수
 결과를 데이터 품질 요약 표로 보여줘.
 ```
 

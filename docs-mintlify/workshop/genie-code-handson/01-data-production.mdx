@@ -19,7 +19,7 @@ title: "생산 실적 테이블"
 | `wo_status` | STRING | `COMPLETED`/`IN_PROGRESS`/`HOLD` |
 
 ```
-작업지시(work_orders) 15,000건을 생성해줘.
+작업지시(ccm_factory.bronze.work_orders) 15,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.work_orders
 - model_code는 product_master에서 샘플링, line_id는 LINE_1~6
 - planned_qty: 3,000~10,000
@@ -46,7 +46,7 @@ Delta로 저장, COMMENT 추가.
 | `operator_id` | STRING | 작업자 |
 
 ```
-스테이션 통과 이벤트(production_events) 400,000건을 생성해줘.
+스테이션 통과 이벤트(ccm_factory.bronze.production_events) 400,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.production_events
 - serial_id 형식: "SN_{YYYYMMDD}_{7자리}", wo_id는 work_orders에서 샘플링
 - 각 시리얼은 공정 순서(SMT→DISPENSE→REFLOW→ALIGN→AOI→FINAL)대로 IN/OUT 쌍이 발생
@@ -69,7 +69,7 @@ Delta로 저장, COMMENT 추가.
 | `final_result` | STRING | `PASS`/`FAIL`/`REWORK` |
 
 ```
-제품 추적성(traceability) 500,000건을 생성해줘.
+제품 추적성(ccm_factory.bronze.traceability) 500,000건을 생성해줘.
 - 테이블: ccm_factory.bronze.traceability
 - serial_id는 production_events의 시리얼과 정합, model_code/wo_id 연결
 - material_lot_ids: material_lot_master에서 유형별로 하나씩 매핑(IMAGE_SENSOR/LENS/VCM/PCB/IR_FILTER/ADHESIVE)
