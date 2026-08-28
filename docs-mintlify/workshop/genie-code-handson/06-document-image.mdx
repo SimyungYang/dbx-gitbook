@@ -10,6 +10,10 @@ title: "문서 파싱 & 이미지 AI"
 
 실제 교육에서는 강사가 공유한 샘플 PDF를 볼륨에 올려둡니다. 없으면 Genie Code로 샘플을 생성할 수 있습니다:
 
+**0단계 —** PDF 생성 라이브러리 사용 가능 여부 확인.
+```
+이 실행 환경(서버리스/노트북)에서 PDF 생성 라이브러리(reportlab 또는 fpdf 등)를 설치·사용할 수 있는지 먼저 확인해줘. 안 되면 강사 제공 PDF 업로드 방식으로 대체할게.
+```
 **1단계 —** 샘플 PDF 생성 요청.
 ```
 카메라 모듈 품질 8D 리포트 샘플 PDF 10건을 만들어서 @ccm_factory.bronze.raw_files 볼륨의 8d_reports/ 폴더에 저장해줘. 한국어, 8D 구조(D1~D8)로.
@@ -31,19 +35,25 @@ title: "문서 파싱 & 이미지 AI"
 ```
 @ccm_factory.bronze.raw_files 볼륨의 8d_reports/ 아래 PDF를 ai_parse_document로 파싱해줘. 먼저 1개로 테스트하고 결과 미리보기.
 ```
-**2단계 —** 저장 테이블·컬럼 지정.
+**2단계 —** 결과 구조 확인 후 본문 텍스트만 추출.
 ```
-확인되면 @ccm_factory.silver.parsed_8d_reports 테이블로 저장해줘. 컬럼: file_path, parsed_text, parsed_at.
+ai_parse_document는 STRING이 아니라 STRUCT/VARIANT(문서 구조·페이지·메타 포함)를 반환해. 반환 구조를 먼저 확인하고, 거기서 본문 텍스트만 STRING으로 추출하는 방법을 알려줘.
+```
+**3단계 —** 저장 테이블·컬럼 지정.
+```
+확인되면 파싱 결과에서 본문 텍스트만 뽑아 parsed_text(STRING) 컬럼에 담아 @ccm_factory.silver.parsed_8d_reports 테이블로 저장해줘. 컬럼: file_path, parsed_text, parsed_at.
 ```
 
-참고 SQL 형태:
+참고 SQL 형태(파싱 → 본문 텍스트 추출은 워크스페이스 버전에 따라 필드 경로가 다르므로 2단계에서 확인한 형태를 사용):
 
 ```sql
+-- 1) 파싱 결과 구조 확인 (STRUCT/VARIANT 반환)
 SELECT
   path AS file_path,
   ai_parse_document(content) AS parsed
 FROM READ_FILES('/Volumes/ccm_factory/bronze/raw_files/8d_reports/', format => 'binaryFile')
 LIMIT 1
+-- 2) 확인한 구조에서 본문 텍스트만 STRING으로 추출하여 parsed_text로 저장
 ```
 
 ### B-3. `ai_extract`로 8D 항목 구조화
@@ -67,6 +77,8 @@ silver.parsed_8d_reports의 parsed_text에서 ai_extract로 8D 핵심 항목을 
 
 AOI가 촬영한 불량 이미지를 Vision LLM(`ai_query`)으로 분류·설명합니다.
 
+> **전제**: AOI 불량 이미지는 **강사가 제공하는 것을 기본 전제**로 합니다(자체 생성 대상 아님). 이미지가 제공되지 않았다면 이 Part C는 **건너뛰어도 됩니다** — 이후 Part D(배치 적용)는 Part A의 텍스트 결과만으로 진행할 수 있습니다.
+
 ### C-1. 샘플 이미지 준비
 
 **1단계 —** 이미지 목록 확인.
@@ -80,33 +92,36 @@ AOI가 촬영한 불량 이미지를 Vision LLM(`ai_query`)으로 분류·설명
 
 ### C-2. Vision LLM으로 불량 유형 분류
 
-**1단계 —** 이미지 3장 분류 테스트.
+**1단계 —** (필수 선행) 이미지 입력 구문 먼저 확인.
 ```
-aoi_defect_images/ 의 이미지들을 ai_query에 Vision 모델(databricks-claude-sonnet-4)로 넣어 불량 유형을 분류하고 한 줄 설명을 생성해줘. 먼저 이미지 3장으로 테스트.
+이 워크스페이스에서 ai_query로 이미지를 입력해 Vision 모델을 호출하는 정확한 구문을 먼저 알려줘. 이미지 바이트/경로를 어떤 인자 형태로 전달해야 하는지 최신 문법을 확인하고, 아래 실습에 쓸 예시 한 줄을 만들어줘.
 ```
-**2단계 —** 분류 레이블 지정.
+**2단계 —** 확인한 구문으로 이미지 3장 분류 테스트.
+```
+방금 확인한 구문으로, aoi_defect_images/ 의 이미지들을 ai_query에 Vision 모델(예: databricks-claude-sonnet-4)로 넣어 불량 유형을 분류하고 한 줄 설명을 생성해줘. 먼저 이미지 3장으로 테스트.
+```
+**3단계 —** 분류 레이블 지정.
 ```
 분류 레이블은 SOLDER_DEFECT, FOREIGN_MATERIAL, PLACEMENT_SHIFT, POLARITY_ERROR, SCRATCH, NORMAL 중 하나로.
 ```
-**3단계 —** 출력 컬럼·SQL.
+**4단계 —** 출력 컬럼·SQL.
 ```
 결과 컬럼은 image_path, defect_type, description로. SQL도 보여줘.
 ```
 
-참고 SQL 형태(이미지 바이트 전달):
+> ⚠️ **아래 SQL은 플레이스홀더입니다 — 확정 문법이 아닙니다.** `files => ARRAY(content)` 형태는 워크스페이스/버전에 따라 다르며 그대로 동작하지 않을 수 있습니다. 반드시 **1단계에서 확인한 실제 구문**으로 대체해 사용하세요.
 
 ```sql
+-- 플레이스홀더 (확정 문법 아님 — 1단계에서 확인한 이미지 입력 구문으로 교체할 것)
 SELECT
   path AS image_path,
   ai_query(
     'databricks-claude-sonnet-4',
     '이 카메라 모듈 AOI 이미지의 불량 유형을 SOLDER_DEFECT/FOREIGN_MATERIAL/PLACEMENT_SHIFT/POLARITY_ERROR/SCRATCH/NORMAL 중 하나로 분류하고 한 줄로 설명해줘.',
-    files => ARRAY(content)
+    files => ARRAY(content)   -- ← 확정 문법 아님. 워크스페이스의 실제 이미지 입력 구문으로 교체
   ) AS ai_result
 FROM READ_FILES('/Volumes/ccm_factory/bronze/raw_files/aoi_defect_images/', format => 'binaryFile')
 LIMIT 3
 ```
-
-> Vision 지원 엔드포인트/구문은 워크스페이스 버전에 따라 다를 수 있습니다. Genie Code에 "이 워크스페이스에서 ai_query로 이미지를 처리하는 정확한 구문을 알려줘"라고 물어 최신 형태를 확인하세요.
 
 ---

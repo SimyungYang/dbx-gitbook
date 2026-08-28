@@ -26,7 +26,7 @@ Lakebase 데이터베이스 ccm_agent_db 를 카탈로그 ccm_factory 에 만들
 
 ```
 chat_sessions 테이블을 만들어줘:
-- session_id UUID PRIMARY KEY
+- session_id UUID PRIMARY KEY DEFAULT gen_random_uuid()
 - user_name VARCHAR(100)
 - line_context VARCHAR(20)   -- 관심 라인
 - started_at TIMESTAMP DEFAULT NOW()
@@ -39,7 +39,7 @@ chat_sessions 테이블을 만들어줘:
 
 ```
 chat_messages 테이블을 추가해줘:
-- message_id UUID PRIMARY KEY
+- message_id UUID PRIMARY KEY DEFAULT gen_random_uuid()
 - session_id UUID REFERENCES chat_sessions
 - role VARCHAR(20)           -- 'user' or 'assistant'
 - content TEXT
@@ -52,7 +52,7 @@ chat_messages 테이블을 추가해줘:
 
 ```
 agent_feedback 테이블을 추가해줘:
-- feedback_id UUID PRIMARY KEY
+- feedback_id UUID PRIMARY KEY DEFAULT gen_random_uuid()
 - message_id UUID REFERENCES chat_messages
 - is_helpful BOOLEAN
 - feedback_text TEXT

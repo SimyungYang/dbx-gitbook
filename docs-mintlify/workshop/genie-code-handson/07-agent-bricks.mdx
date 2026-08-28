@@ -60,7 +60,7 @@ Knowledge Assistant는 **비정형 문서**(SOP, 품질기준서, 설비 매뉴�
 **1단계 —** 빈 테이블 스키마부터.
 
 ```
-카메라 모듈 제조 현장용 지식 베이스를 담을 Delta 테이블 @ccm_factory.bronze.mfg_knowledge_base 를 만들어줘.
+카메라 모듈 제조 현장용 지식 베이스를 담을 Delta 테이블 @ccm_factory.silver.mfg_knowledge_base 를 만들어줘.
 컬럼: doc_id STRING(고유 문서 ID), category STRING(카테고리), title STRING(제목/질문), content STRING(본문), tags `ARRAY<STRING>`(관련 태그), process_stage STRING(관련 공정: SMT/DISPENSE/REFLOW/ALIGN/AOI/FINAL/COMMON), last_updated DATE.
 ```
 
@@ -124,21 +124,35 @@ Knowledge Assistant "카메라 모듈 제조 가이드" 를 만들어줘.
 설명: 카메라 모듈 제조 공정의 SOP, 품질 기준, 설비 트러블슈팅, 불량 대응에 대해 답변합니다.
 ```
 
-**2단계 —** 지식 소스 연결.
+**2단계 —** 지식 소스 연결 (07 지식베이스 + 06 산출물 함께).
+
+> [06. 비정형 AI 함수](06-ai-functions-unstructured)에서 만든 8D 산출물(`silver.parsed_8d_reports`, `gold.quality_8d_structured`)을 여기서 **실제로 KA 지식 소스에 추가 연결**합니다. 그래야 06/07에서 서술한 "06 산출물이 KA 소스"가 사실이 됩니다.
 
 ```
-지식 소스로 @ccm_factory.bronze.mfg_knowledge_base 테이블을 연결해줘.
-임베딩 대상 컬럼: content / 메타데이터 컬럼: category, title, tags, process_stage
+지식 소스로 아래 3개 테이블을 연결해줘.
+1. @ccm_factory.silver.mfg_knowledge_base — 임베딩 컬럼: content / 메타데이터: category, title, tags, process_stage
+2. @ccm_factory.silver.parsed_8d_reports (06 산출물, 8D 리포트 파싱 원문) — 임베딩: 파싱 본문 텍스트 컬럼
+3. @ccm_factory.gold.quality_8d_structured (06 산출물, 8D 구조화 분석) — 임베딩: 원인(root_cause)·조치(corrective_action) 텍스트 컬럼
 ```
 
-**3단계 —** 인덱스·모델 지정.
+**3단계 —** 사용 가능한 모델 엔드포인트부터 확인.
+
+> LLM/임베딩 엔드포인트명은 워크스페이스마다 다를 수 있습니다. 하드코딩하지 말고 먼저 확인하세요.
+
+```
+이 워크스페이스에서 사용 가능한 Foundation Model 서빙 엔드포인트 목록을 보여줘.
+특히 임베딩용(gte/bge 계열)과 LLM용(claude-sonnet-4, llama 계열)에서 최신으로 쓸 수 있는 엔드포인트명을 알려줘.
+```
+
+**4단계 —** 인덱스·모델 지정 (3단계에서 확인한 엔드포인트명 사용).
 
 ```
 Vector Search 엔드포인트 vs-endpoint-ccm 에 인덱스 vs-index-mfg-knowledge 로 붙여줘.
-임베딩 모델: databricks-gte-large-en / LLM 모델: databricks-claude-sonnet-4 (또는 databricks-meta-llama-3.3-70b-instruct)
+임베딩 모델: databricks-gte-large-en / LLM 모델: databricks-claude-sonnet-4
+(claude-sonnet-4 가 없으면 위에서 확인한 대체 엔드포인트, 예: databricks-meta-llama-3-3-70b-instruct 사용)
 ```
 
-**4단계 —** System Prompt 설정.
+**5단계 —** System Prompt 설정.
 
 ```
 System Prompt 를 이렇게 설정해줘:
@@ -152,7 +166,7 @@ System Prompt 를 이렇게 설정해줘:
 6. 안전/품질 주의사항이 있으면 반드시 언급하세요."
 ```
 
-**5단계 —** 생성 후 바로 테스트.
+**6단계 —** 생성 후 바로 테스트.
 
 ```
 생성 후 테스트 질문 3개를 실행해줘:
@@ -170,7 +184,7 @@ Vector Search 엔드포인트 상태와 인덱스 문서 수도 알려줘.
 
 > ⚠️ 인덱싱은 **5~10분** 소요됩니다. 인덱스 상태가 "PROVISIONING"이면 "ONLINE"이 될 때까지 기다린 뒤 테스트하세요. 인덱싱 전에 질문하면 "관련 문서를 찾을 수 없습니다"가 나옵니다.
 
-### Step 3: KA 테스트 & 평가
+### Step 4: KA 테스트 & 평가
 
 **1단계 —** 평가 기준부터 합의.
 

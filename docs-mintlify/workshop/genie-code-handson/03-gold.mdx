@@ -6,18 +6,22 @@ title: "Gold Layer 집계"
 
 Gold는 **대시보드·Genie·에이전트·ML이 직접 소비**하는 테이블입니다.
 
-| Gold 테이블 | 그레인 | 설명 |
-|------------|--------|------|
-| `daily_yield_summary` | 라인 × 모델 × 일 | 일별 수율 요약 |
-| `first_pass_yield` | 스테이션 × 일 | 직행률(FPY) |
-| `defect_pareto` | 불량코드 × 라인 × 일 | 불량 파레토 |
-| `oee_by_equipment` | 설비 × 일 | 설비 종합효율 (가용성×성능×품질) |
-| `spc_process_capability` | 공정 × 파라미터 × 일 | 공정능력지수 Cpk |
-| `aa_quality_trend` | 모델 × 일 | MTF/틸트 분포 추이 |
-| `equipment_health_score` | 설비 × 일 | 예측정비 건강 점수 |
-| `material_defect_correlation` | 자재로트 × 불량 | 자재↔불량 상관 |
-| `station_cycle_time` | 스테이션 × 일 | 택트타임 |
-| `product_traceability_360` | 시리얼 | 제품 360 이력 |
+> **★ Gold 컬럼 표준 (단일 원본)**: 아래 컬럼명은 **확정 스펙**입니다. 이후 모듈 4(대시보드)·5(Genie)·7(에이전트)는 **여기 정의된 이름만** 사용합니다. Genie Code에게 프롬프트할 때도 이 이름을 그대로 쓰세요(이름이 어긋나면 대시보드 위젯·Genie SQL이 깨집니다).
+
+| Gold 테이블 | 그레인 | 확정 컬럼 (이름 : 의미) |
+|------------|--------|------------------------|
+| `daily_yield_summary` | 라인×모델×근무조×일 | `line_id`, `model_code`, `shift`, `event_date`, `input_qty`(투입), `good_qty`(양품), `defect_qty`(불량), `yield_pct`(=good_qty/input_qty*100), `avg_mtf_center`, `top_defect_category` |
+| `first_pass_yield` | 스테이션×일 | `station`, `event_date`, `input_count`, `first_pass_count`, `rework_count`, `fpy_pct`(=first_pass_count/input_count*100) |
+| `defect_pareto` | 불량코드×라인×일 | `defect_code`, `defect_category`, `line_id`, `event_date`, `defect_count`, `scrap_count`, `rework_count`, `critical_count`, `pct_of_total`, `cum_pct`, `top_root_cause` |
+| `oee_by_equipment` | 설비×일 | `equipment_id`, `equipment_type`, `line_id`, `event_date`, `availability_pct`, `performance_pct`, `quality_pct`, `oee_pct`, `downtime_min`, `breakdown_min` |
+| `spc_process_capability` | 공정×파라미터×모델×일 | `process`, `parameter`, `model_code`, `event_date`, `sample_count`, `mean_value`, `stddev_value`, `usl`, `lsl`, `cpk`, `capability_grade` |
+| `aa_quality_trend` | 모델×일 | `model_code`, `event_date`, `mtf_center_avg`, `mtf_center_p5`, `mtf_center_p95`, `mtf_corner_avg`, `tilt_abs_max_avg`, `below_spec_pct`(규격미달 시리얼 비율), `aa_fail_pct`, `sample_count` |
+| `equipment_health_score` | 설비×일 | `equipment_id`, `equipment_type`, `line_id`, `event_date`, `health_score`, `health_grade`, `avg_temp`, `max_vibration`, `spike_count`, `breakdown_count`, `risk_factors` |
+| `material_defect_correlation` | 자재로트×일 | `material_lot_id`, `supplier`, `material_type`, `event_date`, `used_qty`, `defect_qty`, `defect_rate_pct` |
+| `station_cycle_time` | 스테이션×일 | `station`, `event_date`, `avg_cycle_time_sec`, `median_cycle_time_sec`, `p95_cycle_time_sec`, `throughput_count` |
+| `product_traceability_360` | 시리얼 | `serial_id`, `model_code`, `line_id`, `wo_id`, `final_result`, `aa_mtf_center`, `final_mtf_sfr_center`, `defect_count`, `material_lot_ids` |
+
+> 💡 `line_id`·`shift`는 원천에서 `work_orders`에만 있으므로, 시리얼→`wo_id`→`work_orders` 경로로 가져옵니다(아래 Gold 1 참조). `event_date`는 각 이벤트 timestamp의 DATE입니다.
 
 ### Gold 핵심 6개 프롬프트
 
@@ -25,19 +29,19 @@ Gold는 **대시보드·Genie·에이전트·ML이 직접 소비**하는 테이�
 
 **1단계 —** 뼈대 + 그레인 확정.
 ```
-silver.final_test_clean, silver.serials_cleaned, silver.production_flow를 결합하여 ccm_factory.gold.daily_yield_summary를 만들려고 해. 그레인은 line_id × model_code × event_date야. 먼저 집계 설계를 제안해줘.
+silver.final_test_clean, silver.serials_cleaned를 결합하여 ccm_factory.gold.daily_yield_summary를 만들려고 해. 그레인은 line_id × model_code × shift × event_date야. 먼저 집계 설계를 제안해줘.
 ```
-**2단계 —** 수율 핵심 컬럼.
+**2단계 —** line_id·shift 조인 경로 지정 (원천에 없으므로).
 ```
-컬럼 추가: line_id, model_code, event_date, input_qty(투입 시리얼 수), output_qty(FINAL 통과 PASS 수), yield_pct(output_qty / input_qty * 100).
+line_id와 shift는 @ccm_factory.silver.final_test_clean(시리얼 최종결과) → @ccm_factory.silver.serials_cleaned(serial_id→wo_id, model_code) → @ccm_factory.bronze.work_orders(wo_id→line_id, shift) 경로로 가져와줘. event_date는 최종검사 timestamp의 DATE로.
 ```
-**3단계 —** 불량·품질 지표 추가.
+**3단계 —** 수율 핵심 컬럼 (컬럼 표준 준수).
 ```
-컬럼 더 추가: fail_qty, scrap_qty, rework_qty, avg_mtf_center, avg_snr_db, top_defect_category(최다 불량 카테고리).
+컬럼 추가: line_id, model_code, shift, event_date, input_qty(투입 시리얼 수), good_qty(FINAL 통과 PASS 수), defect_qty(input_qty - good_qty), yield_pct(good_qty / input_qty * 100).
 ```
-**4단계 —** 조인 + 파티션·COMMENT.
+**4단계 —** 품질 지표 + 파티션·COMMENT.
 ```
-@ccm_factory.bronze.product_master/equipment 조인으로 customer, module_type를 추가하고, event_date 파티셔닝과 COMMENT를 추가해줘.
+컬럼 더 추가: avg_mtf_center(최종검사 평균 MTF), top_defect_category(최다 불량 카테고리). event_date 파티셔닝과 테이블/컬럼 COMMENT를 추가해줘.
 ```
 
 #### Gold 2: first_pass_yield (FPY 직행률)
@@ -67,7 +71,7 @@ silver.defect_normalized를 집계하여 ccm_factory.gold.defect_pareto를 만�
 ```
 **2단계 —** 카운트 컬럼.
 ```
-컬럼 추가: defect_code, defect_category, line_id, event_date, defect_count, scrap_count, critical_count.
+컬럼 추가: defect_code, defect_category, line_id, event_date, defect_count, scrap_count, rework_count, critical_count. (disposition별 분해가 필요하면 scrap_count/rework_count로 제공)
 ```
 **3단계 —** 파레토 비율 추가.
 ```
@@ -135,7 +139,7 @@ health_score(0~100) 추가 — 100에서 감점: max_temp>80 -10, max_vibration>
 ```
 **4단계 —** 위험요인 배열 + 조인.
 ```
-risk_factors 위험요인 배열(예: ["high_vibration","thermal_spike","frequent_breakdown"])을 추가하고, devices 대신 @ccm_factory.bronze.equipment_master 조인으로 vendor, install_date를 추가해줘.
+risk_factors 위험요인 배열(예: ["high_vibration","thermal_spike","frequent_breakdown"])을 추가하고, @ccm_factory.bronze.equipment_master 조인으로 vendor, install_date를 추가해줘.
 ```
 **5단계 —** 파티션·Z-ORDER·COMMENT.
 ```
@@ -148,17 +152,17 @@ event_date 파티셔닝, equipment_id Z-ORDER, COMMENT를 추가해줘.
 ```
 동일 방식으로 나머지 Gold 4개도 만들려고 해 (각 그레인 준수, COMMENT). 2개씩 나눠 요청할게.
 ```
-**2단계 —** 1~2번 배치.
+**2단계 —** 1~2번 배치 (컬럼 표준 준수).
 ```
-먼저 1~2번:
-1. gold.aa_quality_trend (모델×일): mtf_center/corner 평균·P5·P95, tilt 불량률, aa FAIL율 추이
-2. gold.material_defect_correlation (자재로트×불량): traceability로 로트별 사용 시리얼의 불량률 → 공급사/로트별 불량 상관 (Sup_S7/S8 부각)
+먼저 1~2번, 위 "Gold 컬럼 표준"의 이름을 그대로 써줘:
+1. gold.aa_quality_trend (그레인 모델×일): model_code, event_date, mtf_center_avg, mtf_center_p5, mtf_center_p95, mtf_corner_avg, tilt_abs_max_avg, below_spec_pct(silver.aa_measurements에서 mtf_center_pct < spec_mtf_min 인 시리얼 비율), aa_fail_pct, sample_count
+2. gold.material_defect_correlation (그레인 자재로트×일): material_lot_id, supplier, material_type, event_date, used_qty(해당 로트 사용 시리얼 수), defect_qty(그중 불량 수), defect_rate_pct — traceability로 로트별 사용 시리얼의 불량을 집계 (Sup_S7/S8 부각). 조인 키는 material_lot_id.
 ```
-**3단계 —** 3~4번 배치 이어서.
+**3단계 —** 3~4번 배치 이어서 (컬럼 표준 준수).
 ```
 이어서 3~4번:
-3. gold.station_cycle_time (스테이션×일): production_flow 기반 평균/중앙/P95 dwell_time, 목표택트 대비 편차
-4. gold.product_traceability_360 (시리얼): 시리얼별 모델·자재로트·처리설비·각 공정 측정치(MTF/SNR)·최종판정·불량이력을 한 행으로 (에이전트/ML 소비용)
+3. gold.station_cycle_time (그레인 스테이션×일): station, event_date, avg_cycle_time_sec, median_cycle_time_sec, p95_cycle_time_sec, throughput_count — silver.production_flow 기반.
+4. gold.product_traceability_360 (그레인 시리얼): serial_id, model_code, line_id, wo_id, final_result, aa_mtf_center, final_mtf_sfr_center, defect_count, material_lot_ids — 시리얼별 이력을 한 행으로 (에이전트/ML 소비용).
 ```
 
 ### Gold 확인
