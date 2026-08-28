@@ -1,0 +1,63 @@
+---
+title: "배치 적용 & 비용·안전"
+---
+
+## Part D: 배치 적용 — AI Ready Data 만들기
+
+소량 테스트가 끝나면 전체에 적용하여 **정형화된 인사이트 테이블**을 만듭니다. 이 결과가 대시보드·Genie·RAG의 소스가 됩니다.
+
+```
+검증이 끝났으니 field_returns 전체(1만 건)에 ai_classify를 배치 적용해서
+ccm_factory.gold.field_return_insights 테이블을 만들어줘.
+
+컬럼:
+- rma_id, serial_id, model_code, customer, return_date
+- ai_predicted_cause (ai_classify 결과)
+- extracted_symptom, extracted_location, suspected_cause (ai_extract 결과)
+- root_cause_code (원본)
+
+주의: 서빙 엔드포인트 과금이 발생하므로, 배치 실행 전 예상 호출 수를 알려주고
+확인받은 뒤 진행해줘. event_date 파티션, 모든 컬럼 COMMENT.
+```
+
+> **Databricks Document Intelligence 배치추론**: 대량 문서/이미지는 SQL AI 함수의 배치 추론으로 스케줄 처리할 수 있습니다. 정기적으로 신규 필드 리턴을 자동 분류하려면 이 결과 생성 SQL을 [모듈 3](03-transformation-pipeline)의 Job/파이프라인에 편입하세요.
+
+### 활용 확인
+
+```
+gold.field_return_insights를 활용해서:
+- ai_predicted_cause별 리턴 건수 Top 5
+- 모델(model_code)별 최다 근본원인
+- Global_A 고객의 최근 3개월 주요 불량 원인
+을 보여줘. 이 결과가 대시보드나 Genie Space로 쓸 만한지도 코멘트해줘.
+```
+
+---
+
+## Part E: 비용 & 안전
+
+| 항목 | 지침 |
+|------|------|
+| **과금** | AI 함수는 서빙 엔드포인트(FM API) **호출당 과금** — 대량 행에 돌리면 호출 수만큼 비용 증가. Genie Code 사용·코드 실행도 각각 과금됨 |
+| **테스트 우선** | 반드시 `LIMIT 10~20`으로 결과·비용 확인 후 전체 적용 |
+| **배치 확인** | 전체 배치 전 예상 호출 수를 Genie Code에 확인시키기 |
+| **PII** | 자연어 텍스트에 개인정보가 섞이면 마스킹/필터 후 처리 (AI Gateway Guardrails) |
+| **모델 선택** | 분류·추출은 경량 모델로도 충분, Vision·복잡 추론만 대형 모델 |
+
+---
+
+## 핵심 포인트 정리
+
+| 배운 것 | 기능 | 비즈니스 가치 |
+|---------|------|-------------|
+| 자연어 증상 분류 | `ai_classify` | 필드 리턴 근본원인 자동 태깅 |
+| 구조화 추출 | `ai_extract` | 비정형 → 분석 가능한 정형 |
+| 문서 파싱 | `ai_parse_document` | 8D/SOP 지식의 데이터화 |
+| 이미지 분류 | `ai_query` (Vision) | AOI 불량 자동 판독 보조 |
+| 배치 인사이트 | Document Intelligence 배치 | 대시보드·Genie·RAG용 AI Ready Data |
+
+---
+
+## 다음 단계
+
+- **[07. Agent Bricks 에이전트](07-agent-bricks)** — 이 모듈에서 정형화·파싱한 비정형 지식(8D·SOP·인사이트)을 Knowledge Assistant의 지식 소스로 삼아, Genie Agent와 함께 통합 스마트팩토리 어시스턴트를 만듭니다.

@@ -1,0 +1,266 @@
+---
+title: "정확도 고도화 — COMMENT & 샘플 질문"
+---
+
+## Part B: Genie 정확도 고도화 ⭐ (가장 중요)
+
+> Genie Space를 만드는 건 쉽지만, **정확한 답**을 내게 만드는 건 튜닝이 필요합니다. 아래 5요소가 정확도를 결정합니다.
+
+| # | 요소 | 영향도 | 설명 |
+|---|------|-------|------|
+| 1 | **테이블/컬럼 COMMENT** | ★★★★★ | Genie가 컬럼 의미를 이해하는 핵심 |
+| 2 | **샘플 질문 (Curated Q&A)** | ★★★★★ | 검증된 SQL 패턴을 학습시킴 |
+| 3 | **General Instructions** | ★★★★☆ | 비즈니스 용어·계산 규칙·출력 형식 |
+| 4 | **테이블 간 Joins** | ★★★★☆ | 올바른 조인 경로 안내 |
+| 5 | **Trusted Assets(인증 쿼리)** | ★★★☆☆ | 자주 쓰는 복잡 쿼리 재사용 |
+
+### Step 1: 테이블/컬럼 COMMENT 일괄 추가
+
+```
+ccm_factory.gold 스키마의 모든 테이블과 컬럼에 한국어 COMMENT를 추가해줘.
+
+규칙:
+- 테이블 COMMENT: 비즈니스 담당자가 이해할 수 있는 설명 (50자 이내)
+- 컬럼 COMMENT: 값의 의미, 단위, 범위 포함
+
+예시:
+COMMENT ON COLUMN ccm_factory.gold.daily_yield_summary.yield_pct IS
+  '일 수율(%). (양품 수 / 투입 수) × 100. 범위 0~100';
+COMMENT ON COLUMN ccm_factory.gold.oee_by_equipment.oee_pct IS
+  '종합설비효율(%). 가용성×성능×품질. 85 이상이 World Class';
+COMMENT ON COLUMN ccm_factory.gold.spc_process_capability.cpk IS
+  '공정능력지수. 1.33 이상이 관리 기준, 1.0 미만은 개선 필요';
+
+모든 Gold 테이블의 모든 컬럼에 COMMENT를 달아줘.
+```
+
+### Step 2: 샘플 질문 (Curated Questions) 등록 ⭐⭐⭐
+
+> **정확도를 가장 크게 올리는 방법**입니다. 검증된 SQL을 샘플로 등록하면, 비슷한 질문에 그 패턴을 참고합니다.
+>
+> **등록 방법**: (1) `manage_genie` MCP로 일괄 등록, 또는 (2) Genie Space 화면 → ⚙️ Settings → "Example queries" → "+ Add".
+
+MCP 일괄 등록 프롬프트:
+```
+"생산·수율 분석"과 "품질·불량 분석" Genie Space에 아래 샘플 질문과 검증된 SQL을 등록해줘.
+```
+
+#### 생산·수율 Space — 샘플 질문
+
+**질문 1**: 최근 7일간 라인별 수율 Top/Bottom
+```sql
+SELECT
+  line_id,
+  ROUND(AVG(yield_pct), 1) AS avg_yield_pct,
+  SUM(input_qty) AS total_input,
+  SUM(good_qty) AS total_good
+FROM ccm_factory.gold.daily_yield_summary
+WHERE event_date >= CURRENT_DATE - INTERVAL 7 DAYS
+GROUP BY line_id
+ORDER BY avg_yield_pct ASC
+```
+
+**질문 2**: 모델별 평균 수율과 목표 대비 갭
+```sql
+SELECT
+  y.model_code,
+  p.customer,
+  p.module_type,
+  ROUND(AVG(y.yield_pct), 1) AS avg_yield_pct,
+  COUNT(DISTINCT y.event_date) AS days
+FROM ccm_factory.gold.daily_yield_summary y
+JOIN ccm_factory.bronze.product_master p ON y.model_code = p.model_code
+WHERE y.event_date >= CURRENT_DATE - INTERVAL 30 DAYS
+GROUP BY y.model_code, p.customer, p.module_type
+ORDER BY avg_yield_pct ASC
+LIMIT 10
+```
+
+**질문 3**: 스테이션별 직행률(FPY)이 가장 낮은 공정은?
+```sql
+SELECT
+  station,
+  ROUND(AVG(fpy_pct), 1) AS avg_fpy_pct,
+  SUM(pass_qty) AS pass_qty,
+  SUM(input_qty) AS input_qty
+FROM ccm_factory.gold.first_pass_yield
+WHERE event_date >= CURRENT_DATE - INTERVAL 7 DAYS
+GROUP BY station
+ORDER BY avg_fpy_pct ASC
+```
+
+**질문 4**: 최근 한 달 수율이 증가 추세인지 감소 추세인지?
+```sql
+WITH weekly AS (
+  SELECT
+    DATE_TRUNC('week', event_date) AS week_start,
+    ROUND(AVG(yield_pct), 1) AS avg_yield
+  FROM ccm_factory.gold.daily_yield_summary
+  WHERE event_date >= CURRENT_DATE - INTERVAL 30 DAYS
+  GROUP BY DATE_TRUNC('week', event_date)
+)
+SELECT
+  week_start,
+  avg_yield,
+  ROUND(avg_yield - LAG(avg_yield) OVER (ORDER BY week_start), 1) AS wow_change
+FROM weekly
+ORDER BY week_start
+```
+
+**질문 5**: 병목 스테이션은? (택트타임이 가장 긴 공정)
+```sql
+SELECT
+  station,
+  ROUND(AVG(avg_cycle_time_sec), 1) AS avg_cycle_sec,
+  ROUND(PERCENTILE(avg_cycle_time_sec, 0.95), 1) AS p95_cycle_sec
+FROM ccm_factory.gold.station_cycle_time
+WHERE event_date >= CURRENT_DATE - INTERVAL 7 DAYS
+GROUP BY station
+ORDER BY avg_cycle_sec DESC
+```
+
+#### 품질·불량 Space — 샘플 질문
+
+**질문 6**: 이번 주 불량 파레토 Top 10 (불량 코드별)
+```sql
+SELECT
+  defect_code,
+  defect_category,
+  SUM(defect_count) AS total_defects,
+  ROUND(SUM(defect_count) * 100.0 / SUM(SUM(defect_count)) OVER (), 1) AS pct_of_total
+FROM ccm_factory.gold.defect_pareto
+WHERE event_date >= CURRENT_DATE - INTERVAL 7 DAYS
+GROUP BY defect_code, defect_category
+ORDER BY total_defects DESC
+LIMIT 10
+```
+
+**질문 7**: Sup_S7 자재 로트의 불량률이 평균보다 높은가?
+```sql
+SELECT
+  supplier,
+  ROUND(AVG(defect_rate_pct), 2) AS avg_defect_rate,
+  SUM(defect_qty) AS total_defects,
+  SUM(used_qty) AS total_used
+FROM ccm_factory.gold.material_defect_correlation
+WHERE event_date >= CURRENT_DATE - INTERVAL 30 DAYS
+GROUP BY supplier
+ORDER BY avg_defect_rate DESC
+```
+
+**질문 8**: MTF 규격 미달 비율이 높은 모델은?
+```sql
+SELECT
+  model_code,
+  ROUND(AVG(mtf_center_avg), 1) AS avg_mtf_center,
+  ROUND(AVG(below_spec_pct), 1) AS avg_below_spec_pct
+FROM ccm_factory.gold.aa_quality_trend
+WHERE event_date >= CURRENT_DATE - INTERVAL 7 DAYS
+GROUP BY model_code
+ORDER BY avg_below_spec_pct DESC
+LIMIT 10
+```
+
+**질문 9**: 공정능력(Cpk)이 관리 기준(1.33) 미만인 공정 파라미터는?
+```sql
+SELECT
+  process_name,
+  parameter_name,
+  ROUND(AVG(cpk), 2) AS avg_cpk,
+  ROUND(AVG(mean_value), 2) AS mean_value
+FROM ccm_factory.gold.spc_process_capability
+WHERE event_date >= CURRENT_DATE - INTERVAL 7 DAYS
+GROUP BY process_name, parameter_name
+HAVING AVG(cpk) < 1.33
+ORDER BY avg_cpk ASC
+```
+
+**질문 10**: 불량 카테고리별 폐기(SCRAP) vs 재작업(REWORK) 비중
+```sql
+SELECT
+  defect_category,
+  SUM(CASE WHEN disposition = 'SCRAP' THEN defect_count ELSE 0 END) AS scrap_qty,
+  SUM(CASE WHEN disposition = 'REWORK' THEN defect_count ELSE 0 END) AS rework_qty,
+  ROUND(SUM(CASE WHEN disposition = 'SCRAP' THEN defect_count ELSE 0 END) * 100.0
+    / NULLIF(SUM(defect_count), 0), 1) AS scrap_pct
+FROM ccm_factory.gold.defect_pareto
+WHERE event_date >= CURRENT_DATE - INTERVAL 30 DAYS
+GROUP BY defect_category
+ORDER BY scrap_qty DESC
+```
+
+#### 설비·OEE Space — 샘플 질문
+
+**질문 11**: OEE가 가장 낮은 설비 Bottom 5
+```sql
+SELECT
+  o.equipment_id,
+  e.equipment_type,
+  e.line_id,
+  ROUND(AVG(o.oee_pct), 1) AS avg_oee,
+  ROUND(AVG(o.availability_pct), 1) AS availability,
+  ROUND(AVG(o.performance_pct), 1) AS performance,
+  ROUND(AVG(o.quality_pct), 1) AS quality
+FROM ccm_factory.gold.oee_by_equipment o
+JOIN ccm_factory.bronze.equipment_master e ON o.equipment_id = e.equipment_id
+WHERE o.event_date >= CURRENT_DATE - INTERVAL 7 DAYS
+GROUP BY o.equipment_id, e.equipment_type, e.line_id
+ORDER BY avg_oee ASC
+LIMIT 5
+```
+
+**질문 12**: 건강 점수가 낮아 정비가 필요한 설비는?
+```sql
+SELECT
+  h.equipment_id,
+  e.equipment_type,
+  ROUND(AVG(h.health_score), 1) AS avg_health,
+  ANY_VALUE(h.risk_factors) AS risk_factors
+FROM ccm_factory.gold.equipment_health_score h
+JOIN ccm_factory.bronze.equipment_master e ON h.equipment_id = e.equipment_id
+WHERE h.event_date >= CURRENT_DATE - INTERVAL 7 DAYS
+GROUP BY h.equipment_id, e.equipment_type
+HAVING AVG(h.health_score) < 60
+ORDER BY avg_health ASC
+```
+
+**질문 13**: 비가동 사유(reason_code)별 손실 시간 Top 10
+```sql
+SELECT
+  downtime_type,
+  reason_code,
+  COUNT(*) AS occurrences,
+  ROUND(SUM(duration_min), 0) AS total_downtime_min
+FROM ccm_factory.bronze.equipment_downtime
+WHERE start_time >= CURRENT_DATE - INTERVAL 7 DAYS
+GROUP BY downtime_type, reason_code
+ORDER BY total_downtime_min DESC
+LIMIT 10
+```
+
+**질문 14**: 라인별 평균 OEE 비교
+```sql
+SELECT
+  e.line_id,
+  ROUND(AVG(o.oee_pct), 1) AS avg_oee,
+  COUNT(DISTINCT o.equipment_id) AS equipment_count
+FROM ccm_factory.gold.oee_by_equipment o
+JOIN ccm_factory.bronze.equipment_master e ON o.equipment_id = e.equipment_id
+WHERE o.event_date >= CURRENT_DATE - INTERVAL 7 DAYS
+GROUP BY e.line_id
+ORDER BY avg_oee DESC
+```
+
+**질문 15**: BREAKDOWN이 가장 잦은 설비 유형은?
+```sql
+SELECT
+  e.equipment_type,
+  COUNT(*) AS breakdown_count,
+  ROUND(AVG(d.duration_min), 0) AS avg_repair_min
+FROM ccm_factory.bronze.equipment_downtime d
+JOIN ccm_factory.bronze.equipment_master e ON d.equipment_id = e.equipment_id
+WHERE d.downtime_type = 'BREAKDOWN'
+  AND d.start_time >= CURRENT_DATE - INTERVAL 30 DAYS
+GROUP BY e.equipment_type
+ORDER BY breakdown_count DESC
+```

@@ -1,0 +1,42 @@
+---
+title: "Custom Instructions 안전 규칙"
+---
+
+## Part E: Custom Instructions — 안전 규칙 고정
+
+Genie Code Settings(⚙️) → **Custom Instructions**에 아래를 붙여넣습니다. 한 번 설정하면 매 프롬프트마다 반복하지 않아도 됩니다.
+
+```markdown
+## 기본 규칙
+- 한국어로 답변, 기술 용어는 영문 병기
+- PySpark 기본 사용 (pandas 대신), SQL은 Databricks SQL 문법
+- Serverless 제약 준수: R/Scala/RDD/DBFS mount/init script 금지, %pip install pyspark 금지
+
+## 네이밍
+- 카탈로그: ccm_factory
+- 스키마: bronze / silver / gold / quarantine
+- 테이블/컬럼: snake_case
+
+## 안전 규칙
+- 기존 테이블 DROP/DELETE/UPDATE 금지, CREATE OR REPLACE TABLE 사용
+- 개발/테스트 시 LIMIT 1000
+- 모든 테이블/컬럼에 COMMENT 추가
+- Delta 형식, event_date 파티셔닝 기본
+
+## MCP 도구 활용 (AI Dev Kit)
+- Genie Space → manage_genie, 대시보드 → manage_dashboard, Job → manage_jobs
+- 파이프라인 → manage_pipeline, KA/Supervisor → manage_ka/manage_mas
+- MCP 호출 실패 시 재시도, 노트북 우회를 먼저 제안하지 말 것
+```
+
+### 적용 확인
+
+```
+Custom Instructions가 적용됐는지 테스트해줘.
+ccm_factory.bronze 스키마에 test_table 이름으로 1행짜리 Delta 테이블을 만들고 바로 삭제해줘.
+권한·컴퓨트가 정상인지 확인용이야.
+```
+
+> 한국어 답변 + PySpark + snake_case + COMMENT면 정상 적용입니다.
+
+---

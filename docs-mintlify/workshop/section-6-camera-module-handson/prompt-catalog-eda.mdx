@@ -1,0 +1,137 @@
+---
+title: "EDA & 품질 진단"
+---
+
+## 4. 데이터 탐색 · 프로파일링 (EDA)
+
+**전체 테이블 개요** 🟢 — 모듈 2 · Part A
+```
+ccm_factory.bronze 스키마의 모든 테이블에 대해 다음을 표로 보여줘:
+1. 테이블명, row count, 컬럼 수
+2. 각 테이블의 대략적 용도 (COMMENT 기반)
+3. 시간 컬럼이 있으면 min/max 타임스탬프 범위
+읽기 전용으로만 조회하고, 큰 테이블은 근사치(예: 샘플 또는 메타데이터)를 활용해도 좋아.
+```
+
+**핵심 테이블 컬럼 통계** 🟢 — 모듈 2 · Part A
+```
+다음 3개 핵심 테이블의 수치형 컬럼 통계(count, mean, stddev, min, 25%, 50%, 75%, max)를 보여줘:
+- ccm_factory.bronze.active_alignment (mtf_center_pct, mtf_corner_pct, tilt_x_arcmin, tilt_y_arcmin, focus_z_um)
+- ccm_factory.bronze.final_image_test (mtf_sfr_center, dead_pixel_count, particle_count, snr_db, distortion_pct)
+- ccm_factory.bronze.equipment_sensor_logs (temperature_c, vibration_mm_s, vacuum_kpa, motor_current_a)
+각 컬럼의 값 범위가 물리적으로 말이 되는지(예: MTF는 0~100%) 코멘트도 붙여줘.
+```
+
+**NULL 비율 상위 컬럼** 🟢 — 모듈 2 · Part A
+```
+ccm_factory.bronze의 주요 테이블(final_image_test, dispensing_process, active_alignment, aoi_inspection)에 대해
+컬럼별 NULL 비율을 계산하고, NULL 비율이 높은 상위 5개 컬럼을 테이블별로 보여줘.
+```
+
+**수율/판정 분포** 🟢 — 모듈 2 · Part B
+```
+카메라 모듈 최종 판정 현황을 분석해줘:
+1. final_image_test.test_result (PASS/FAIL) 비율
+2. active_alignment.aa_result (PASS/FAIL/RETRY) 비율
+3. traceability.final_result (PASS/FAIL/REWORK) 비율
+4. 라인(line_id)별, 모델(model_code)별 FAIL 비율 상위 10개
+결과를 막대 차트로 시각화해줘.
+```
+
+**MTF(해상력) 분포** 🟢 — 모듈 2 · Part B
+```
+active_alignment의 mtf_center_pct 와 final_image_test의 mtf_sfr_center 분포를 히스토그램으로 보여줘.
+- product_master의 spec_mtf_min 규격선을 기준으로, 규격 미달 비율도 계산
+- module_type(AF/OIS/ToF)별로 MTF 분포가 어떻게 다른지 비교
+- 규격을 넘는 이상치(mtf > 100 등)가 보이면 표시
+```
+
+**설비/라인/모델 차원 분포** 🟢 — 모듈 2 · Part B
+```
+생산·불량을 여러 차원으로 쪼개서 보여줘:
+1. 라인(line_id)별 생산량(traceability 기준)과 불량률
+2. 설비 유형(equipment_type)별 처리 건수 (production_events 조인)
+3. 모델(model_code)별·고객(customer)별 생산 비중 (도넛 차트)
+4. 근무조(shift)별 불량률 비교 (DAY/SWING/NIGHT)
+시각화도 함께 만들어줘.
+```
+
+### 상관 · 인사이트 탐색
+
+**자재 로트 ↔ 불량 상관** 🟢 — 모듈 2 · Part D
+```
+특정 자재 공급사/로트가 불량과 상관있는지 분석해줘:
+- traceability 로 시리얼별 사용 자재 로트(material_lot_ids)를 펼치고, defect_events / final_image_test 의 불량과 조인
+- 공급사(supplier)별 불량률을 계산하고, 평균 대비 유의하게 높은 공급사를 찾아줘
+- material_lot_master.defect_rate_incoming(수입검사 불량률)과 실제 생산 불량률의 상관도 봐줘
+결과를 공급사별 불량률 막대 차트로 보여줘.
+```
+
+**설비 상태 ↔ 고장(비가동) 상관** 🟢 — 모듈 2 · Part D
+```
+설비 노후/이상 신호가 고장으로 이어지는지 분석해줘:
+- equipment_sensor_logs 에서 설비별 temperature_c, vibration_mm_s 의 일별 추세를 계산
+- equipment_downtime 에서 downtime_type='BREAKDOWN' 발생 설비/시점과 비교
+- BREAKDOWN 직전 구간에서 온도/진동이 상승 추세였는지 확인
+온도·진동 추세와 고장 시점을 같이 볼 수 있는 시각화를 만들어줘.
+```
+
+**클린룸 환경 ↔ 오염 불량 시간 상관** 🟢 — 모듈 2 · Part D
+```
+클린룸 파티클 급증이 오염 불량과 시간적으로 연관되는지 분석해줘:
+- cleanroom_environment 의 particle_0_3um 이 급증한 라인×시간대를 찾고
+- 같은 라인×시간대의 defect_events 중 defect_category='CONTAMINATION' 건수와 비교
+- 파티클 스파이크 이후 일정 시간 내 오염 불량이 증가하는 패턴이 있는지 확인해줘
+```
+
+**AA 공정 ↔ 최종 화질 결과 연계** 🟢 — 모듈 2 · Part D
+```
+Active Alignment 품질이 최종 화질 판정으로 이어지는지 검증해줘:
+- active_alignment.mtf_center_pct, tilt_x/y_arcmin 과 final_image_test.test_result 를 serial 기준 조인
+- AA 단계 MTF가 낮거나 tilt가 큰 시리얼이 최종에서 FAIL 되는 비율이 높은지 확인
+- tilt 절대값 구간별 최종 FAIL률을 표로 보여줘
+```
+
+---
+
+## 5. 데이터 품질 진단
+
+**품질 스코어카드** 🟢 — 모듈 2 · Part C
+```
+ccm_factory.bronze 전체에 대해 데이터 품질 리포트를 만들어줘:
+
+1. 참조 무결성:
+   - production_events / active_alignment / aoi_inspection / final_image_test 의 equipment_id 가 equipment_master 에 없는 건수
+   - traceability / production_events 의 serial 관련 참조가 어긋나는 건수
+   - defect_events 등의 material 참조가 material_lot_master 에 없는 건수
+2. 중복: production_events 에서 동일 (serial_id, timestamp) 중복 건수
+3. 이상치:
+   - active_alignment.mtf_center_pct > 100 건수
+   - equipment_sensor_logs.temperature_c > 200 건수
+   - smt_placement_logs.placement_offset_x_um 이 비정상적으로 큰 값(예: 절대값 500 초과 — mm 단위 혼입 의심) 건수
+4. 결측: final_image_test.snr_db NULL 비율, dispensing_process 에서 LENS_BOND 인데 uv_dose_mj NULL 인 비율
+5. 시간 역전: production_events 에서 같은 serial+station 의 OUT timestamp < IN timestamp 건수
+6. 비즈니스 규칙 위반: aoi_inspection 에서 defect_flag=false 인데 defect_type 이 채워진 건수
+
+결과를 "이슈 유형 | 테이블 | 위반 건수 | 위반 비율 | 영향" 스코어카드 표로 정리해줘.
+```
+
+**진단 결과 해석 & 우선순위** 🟢 — 모듈 2 · Part C
+```
+위 품질 리포트 결과를 보고, Silver 변환에서 먼저 처리해야 할 이슈를 우선순위로 정리해줘.
+각 이슈에 대해: (1) 왜 문제인지 (2) 어떤 분석/집계를 왜곡시키는지 (3) 권장 처리 방법(제거/보정/플래그/격리)을 알려줘.
+```
+
+**Silver 변환 전 최종 스코어카드** 🟢 — 모듈 3 · Part A
+```
+ccm_factory.bronze의 핵심 테이블에 대해 Silver 변환 전 최종 품질 스코어카드를 만들어줘:
+1. final_image_test.snr_db, dispensing_process.uv_dose_mj NULL 비율
+2. production_events 중복(serial_id+timestamp+event_type) 및 OUT<IN 역전 건수
+3. active_alignment.mtf_center_pct>100, equipment_sensor_logs.temperature_c>200 이상치 건수
+4. smt_placement_logs 단위혼입 의심(|offset|>500µm) 건수
+5. serial_id/equipment_id/material_lot_id 참조 무결성 위반 건수
+6. aoi_inspection 비즈니스 규칙 위반(defect_flag=false & defect_type NOT NULL) 건수
+결과를 표로 보여주고, Silver에서 처리 우선순위를 제안해줘.
+```
+
+---

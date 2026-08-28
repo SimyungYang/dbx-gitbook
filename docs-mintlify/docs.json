@@ -1888,22 +1888,85 @@
             ]
           },
           {
-            "group": "핸즈온 모듈",
+            "group": "0. 환경 & Genie Code 설정",
             "pages": [
               "workshop/section-6-camera-module-handson/00-genie-code-intro-setup",
-              "workshop/section-6-camera-module-handson/01-data-generation",
-              "workshop/section-6-camera-module-handson/02-eda",
-              "workshop/section-6-camera-module-handson/03-transformation-pipeline",
-              "workshop/section-6-camera-module-handson/04-aibi-dashboard",
-              "workshop/section-6-camera-module-handson/05-genie-agent",
-              "workshop/section-6-camera-module-handson/06-ai-functions-unstructured",
-              "workshop/section-6-camera-module-handson/07-agent-bricks"
+              "workshop/section-6-camera-module-handson/00-safety-rules",
+              "workshop/section-6-camera-module-handson/00-genie-code-setup",
+              "workshop/section-6-camera-module-handson/00-catalog-setup",
+              "workshop/section-6-camera-module-handson/00-custom-instructions",
+              "workshop/section-6-camera-module-handson/00-mcp-setup"
             ]
           },
           {
-            "group": "부록",
+            "group": "1. 가상 데이터 생성",
             "pages": [
-              "workshop/section-6-camera-module-handson/prompt-catalog"
+              "workshop/section-6-camera-module-handson/01-data-generation",
+              "workshop/section-6-camera-module-handson/01-data-masters",
+              "workshop/section-6-camera-module-handson/01-data-production",
+              "workshop/section-6-camera-module-handson/01-data-process",
+              "workshop/section-6-camera-module-handson/01-data-equipment",
+              "workshop/section-6-camera-module-handson/01-data-verification"
+            ]
+          },
+          {
+            "group": "2. 데이터 EDA",
+            "pages": [
+              "workshop/section-6-camera-module-handson/02-eda",
+              "workshop/section-6-camera-module-handson/02-eda-quality",
+              "workshop/section-6-camera-module-handson/02-eda-correlation"
+            ]
+          },
+          {
+            "group": "3. 변환 파이프라인 (Job & SDP)",
+            "pages": [
+              "workshop/section-6-camera-module-handson/03-transformation-pipeline",
+              "workshop/section-6-camera-module-handson/03-silver",
+              "workshop/section-6-camera-module-handson/03-gold",
+              "workshop/section-6-camera-module-handson/03-sdp-job"
+            ]
+          },
+          {
+            "group": "4. AI/BI 대시보드",
+            "pages": [
+              "workshop/section-6-camera-module-handson/04-aibi-dashboard",
+              "workshop/section-6-camera-module-handson/04-dashboard-oee"
+            ]
+          },
+          {
+            "group": "5. Genie 에이전트",
+            "pages": [
+              "workshop/section-6-camera-module-handson/05-genie-agent",
+              "workshop/section-6-camera-module-handson/05-genie-accuracy",
+              "workshop/section-6-camera-module-handson/05-genie-tuning",
+              "workshop/section-6-camera-module-handson/05-genie-agent-build"
+            ]
+          },
+          {
+            "group": "6. 비정형 데이터 AI 함수",
+            "pages": [
+              "workshop/section-6-camera-module-handson/06-ai-functions-unstructured",
+              "workshop/section-6-camera-module-handson/06-document-image",
+              "workshop/section-6-camera-module-handson/06-batch-cost"
+            ]
+          },
+          {
+            "group": "7. Agent Bricks 에이전트",
+            "pages": [
+              "workshop/section-6-camera-module-handson/07-agent-bricks",
+              "workshop/section-6-camera-module-handson/07-genie-supervisor",
+              "workshop/section-6-camera-module-handson/07-advanced-demo"
+            ]
+          },
+          {
+            "group": "부록 — 샘플 프롬프트 모음",
+            "pages": [
+              "workshop/section-6-camera-module-handson/prompt-catalog",
+              "workshop/section-6-camera-module-handson/prompt-catalog-data",
+              "workshop/section-6-camera-module-handson/prompt-catalog-eda",
+              "workshop/section-6-camera-module-handson/prompt-catalog-pipeline",
+              "workshop/section-6-camera-module-handson/prompt-catalog-dashboard-genie",
+              "workshop/section-6-camera-module-handson/prompt-catalog-ai-agents"
             ]
           }
         ]

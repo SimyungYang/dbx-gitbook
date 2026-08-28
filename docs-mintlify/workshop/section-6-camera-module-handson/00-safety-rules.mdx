@@ -1,0 +1,41 @@
+---
+title: "안전하게 쓰는 법"
+---
+
+## Part B: 안전하게 쓰는 법 ★ (이 워크샵의 원칙)
+
+> 자연어로 뭐든 시킬 수 있다는 건, 실수로 뭐든 지울 수도 있다는 뜻입니다. 아래 규칙으로 **안전하게** 씁니다.
+
+### B-1. 실행 승인은 사람이 쥔다
+
+| 규칙 | 이유 |
+|------|------|
+| **"Allow in this thread"만 클릭** | 이번 대화에서만 해당 작업 허용 |
+| **"Always Allow" 절대 금지** ❌ | 이후 모든 파괴적 작업이 자동 승인됨 |
+| DROP/DELETE/ALTER는 **계획(Plan)을 읽고** 승인 | 의도치 않은 삭제 방지 |
+| Genie Code가 작업 중이면(빨간 Stop 버튼) 다음 프롬프트 입력 금지 | 중복 실행 방지 |
+
+### B-2. Serverless 제약 (가장 흔한 차단 원인)
+
+Genie Code는 Serverless 위에서 돕니다. 아래는 **안 됩니다** → Python·SQL·UC Volumes로 대체:
+
+| 안 되는 것 | 대안 |
+|-----------|------|
+| R / Scala / Spark RDD | Python / SQL / DataFrame API |
+| `dbutils.fs.mount` (DBFS 마운트) | Unity Catalog Volumes |
+| Init Script, JAR/Maven | `%pip install` (단, `pyspark`는 금지 — 세션 중단) |
+| `os.environ` 환경변수 | Databricks Widgets |
+| UDF 내부 인터넷 접근 | 노트북 코드에서 직접 호출 |
+
+### B-3. 권한·제한
+
+- 본인 UC 권한이 있는 테이블만 읽기/쓰기 가능 (다른 사용자 데이터·Genie 대화 접근 불가)
+- Genie Space는 **최대 30테이블** (GCP 25) → 초과 시 뷰로 사전 결합
+- MCP 도구는 **최대 20개** 활성화
+
+### B-4. ⚠️ 서울리전 사전 확인
+
+서울리전(`ap-northeast-2`)에서 Genie Code가 안 되면, 관리자가 워크스페이스 설정에서
+**"Enforce data processing within workspace Geography for AI features"**를 확인/조정해야 합니다 (Cross-Geo).
+
+---

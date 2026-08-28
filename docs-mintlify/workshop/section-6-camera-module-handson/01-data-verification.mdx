@@ -1,0 +1,45 @@
+---
+title: "생성 후 종합 검증"
+---
+
+## 데이터 생성 후 종합 검증
+
+각 테이블을 만들 때마다 `방금 만든 테이블의 row 수와 주요 컬럼 분포를 확인해줘.` 로 간단히 확인하고, 17개를 다 만든 뒤 아래 종합 검증을 실행합니다.
+
+```
+ccm_factory.bronze 스키마의 모든 테이블에 대해 확인해줘:
+1. 각 테이블 row count
+2. serial_id / equipment_id / material_lot_id 의 참조 무결성 (마스터에 없는 값 건수)
+3. timestamp 범위가 2025년 위주인지
+4. 의도적으로 심은 이슈가 실제로 존재하는지:
+   - active_alignment.mtf_center_pct > 100 건수
+   - equipment_sensor_logs.temperature_c > 200 건수
+   - final_image_test.snr_db NULL 비율
+   - production_events 중복(serial+timestamp) 건수
+결과를 데이터 품질 요약 표로 보여줘.
+```
+
+> 💡 **AI 결과에 도전하기**: 확인에 만족하지 말고 교차검증을 시켜보세요 —
+> ```
+> active_alignment의 aa_result=FAIL 레코드가 실제로 MTF 낮거나 tilt 큰 조건과 일치하는지,
+> 내가 요청한 규칙대로 만들어졌는지 검증하고 불일치가 있으면 알려줘.
+> ```
+
+### 기대 결과 (요약)
+
+| 테이블 | 건수 | 검증 포인트 |
+|--------|------|-----------|
+| equipment_master | 300 | type·line 분포 |
+| product_master | 60 | 고객·module_type 분포 |
+| material_lot_master | 20,000 | Sup_S7/S8 고불량 |
+| production_events | 400,000 | IN/OUT 쌍, 중복·역전 존재 |
+| active_alignment | 250,000 | MTF/tilt와 aa_result 정합, >100 이상치 |
+| final_image_test | 250,000 | test_result와 규격 정합, snr_db NULL 4% |
+| defect_events | 120,000 | 자재로트·설비 상관 |
+| **합계** | **~3,000,000** | |
+
+---
+
+## 다음 단계
+
+- **[02. 데이터 EDA](02-eda)** — 생성한 Bronze 데이터를 프로파일링하고, 품질 이슈·이상치·상관을 탐색합니다.

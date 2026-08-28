@@ -1,0 +1,107 @@
+---
+title: "마스터 3종 생성"
+---
+
+## 카테고리: Master (가장 먼저 생성) ★
+
+### 테이블 1: equipment_master (설비 마스터)
+
+> 모든 공정 로그의 기준이 되는 설비 마스터. 가장 먼저 생성합니다.
+
+| 컬럼 | 타입 | 설명 | 예시 |
+|------|------|------|------|
+| `equipment_id` | STRING | 설비 고유 ID | `EQ_L1_AA_01` |
+| `equipment_type` | STRING | 설비 유형 | `SMT_MOUNTER`, `DISPENSER`, `REFLOW`, `AA`, `AOI`, `FINAL_TESTER` |
+| `line_id` | STRING | 라인 | `LINE_1`~`LINE_6` |
+| `station` | STRING | 공정 스테이션 | `SMT`, `DISPENSE`, `REFLOW`, `ALIGN`, `AOI`, `FINAL` |
+| `vendor` | STRING | 설비 벤더 | `ASM`, `Fuji`, `Hanwha`, `Nordson`, `Koh_Young`, `TRIOPTICS` |
+| `model_no` | STRING | 설비 모델 | `SIPLACE_SX`, `AEROSPRAY_5` |
+| `install_date` | DATE | 설치일 | `2022-05-10` |
+| `rated_capacity_uph` | INT | 정격 UPH(시간당 생산) | `1200` |
+| `status` | STRING | 상태 | `RUNNING`, `IDLE`, `MAINTENANCE`, `DOWN` |
+
+```
+카메라 모듈 조립 공장의 설비 마스터 300대를 생성해줘.
+
+조건:
+- 테이블: ccm_factory.bronze.equipment_master
+- 라인 LINE_1~LINE_6, 각 라인은 공정 스테이션 6종(SMT, DISPENSE, REFLOW, ALIGN, AOI, FINAL)을 보유
+- 스테이션별 설비 수를 다르게: SMT_MOUNTER 라인당 3~4대, 나머지는 라인당 1~2대
+- equipment_id 형식: "EQ_{line 약자}_{type 약자}_{2자리}" (예: EQ_L1_AA_01)
+- vendor는 type에 따라: SMT_MOUNTER→ASM/Fuji/Hanwha, DISPENSER→Nordson, AOI→Koh_Young, FINAL_TESTER/AA→TRIOPTICS
+- install_date: 2021-01 ~ 2024-12
+- rated_capacity_uph: SMT 1000~1500, 그 외 600~1000
+- status 분포: RUNNING(80%), IDLE(10%), MAINTENANCE(7%), DOWN(3%)
+
+Delta 테이블로 저장하고 모든 컬럼에 COMMENT를 달아줘.
+```
+
+### 테이블 2: product_master (제품/모델 마스터)
+
+| 컬럼 | 타입 | 설명 | 예시 |
+|------|------|------|------|
+| `model_code` | STRING | 모델 코드 | `CCM_A_48MP_OIS` |
+| `customer` | STRING | 고객 (익명) | `Global_A`, `Global_B`, `Global_C`, `Domestic_D` |
+| `module_type` | STRING | 모듈 타입 | `AF`, `OIS`, `ToF` |
+| `resolution_mp` | INT | 해상도(MP) | `12`, `48`, `50`, `108` |
+| `sensor_type` | STRING | 이미지센서 | `IMX_766`, `S5KGN`, `OV50` |
+| `lens_count` | INT | 렌즈 매수 | `5`, `6`, `7` |
+| `target_mtf_center` | DOUBLE | MTF 목표(중심) | `85.0` |
+| `spec_mtf_min` | DOUBLE | MTF 최소규격 | `70.0` |
+| `launch_date` | DATE | 양산 시작 | `2024-03-01` |
+
+```
+카메라 모듈 제품(모델) 마스터 60종을 생성해줘.
+
+조건:
+- 테이블: ccm_factory.bronze.product_master
+- 고객명은 익명으로: Global_A(35%), Global_B(25%), Global_C(20%), Domestic_D(20%)
+- module_type 분포: OIS(40%), AF(45%), ToF(15%)
+- resolution_mp: 12/48/50/108 중, OIS/ToF는 고화소 비중 높게
+- model_code 형식: "CCM_{고객약자}_{화소}MP_{모듈타입}" (예: CCM_A_48MP_OIS)
+- target_mtf_center: 80~90, spec_mtf_min: target - 12~18
+- lens_count: 5~7 (고화소일수록 많게)
+- launch_date: 2023-01 ~ 2025-06
+
+Delta 테이블로 저장하고 COMMENT를 달아줘.
+```
+
+### 테이블 3: material_lot_master (자재 로트 마스터)
+
+> 이미지센서·렌즈·VCM 등 입고 자재 로트. 나중에 "특정 자재 로트가 불량과 상관있는지" 분석에 사용합니다.
+
+| 컬럼 | 타입 | 설명 | 예시 |
+|------|------|------|------|
+| `material_lot_id` | STRING | 자재 로트 ID | `MLOT_SENSOR_20250310_0001` |
+| `material_type` | STRING | 자재 유형 | `IMAGE_SENSOR`, `LENS`, `VCM`, `PCB`, `IR_FILTER`, `ADHESIVE` |
+| `supplier` | STRING | 공급사 (익명) | `Sup_S1`~`Sup_S8` |
+| `incoming_date` | DATE | 입고일 | `2025-03-10` |
+| `incoming_qty` | INT | 입고 수량 | `5000` |
+| `incoming_inspection_result` | STRING | 수입검사 | `PASS`, `CONDITIONAL_PASS`, `FAIL` |
+| `defect_rate_incoming_pct` | DOUBLE | 수입검사 불량률 | `0.8` |
+| `spec_grade` | STRING | 등급 | `A`, `B`, `C` |
+
+```
+카메라 모듈용 자재 입고 로트 20,000건을 생성해줘.
+
+조건:
+- 테이블: ccm_factory.bronze.material_lot_master
+- material_type 분포: LENS(25%), IMAGE_SENSOR(20%), VCM(15%), PCB(15%), IR_FILTER(15%), ADHESIVE(10%)
+- supplier: Sup_S1~Sup_S8 (일부 공급사는 defect_rate가 의도적으로 높게 — Sup_S7, Sup_S8은 평균의 2~3배)
+- material_lot_id 형식: "MLOT_{type약자}_{YYYYMMDD}_{4자리}"
+- incoming_date: 2024-06 ~ 2025-12
+- incoming_inspection_result: PASS(90%), CONDITIONAL_PASS(8%), FAIL(2%)
+- defect_rate_incoming_pct: 대부분 0~2%, 일부 공급사/로트는 3~8%
+- spec_grade: A(60%), B(30%), C(10%)
+
+Delta 테이블로 저장하고 COMMENT를 달아줘.
+```
+
+### 마스터 생성 확인
+
+```
+ccm_factory.bronze의 마스터 3개 테이블(equipment_master, product_master, material_lot_master)의
+row 수와 주요 컬럼 분포(설비 type별, 고객별, 자재 type별)를 요약해서 보여줘.
+```
+
+---

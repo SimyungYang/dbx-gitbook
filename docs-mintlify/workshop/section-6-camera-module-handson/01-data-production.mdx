@@ -1,0 +1,83 @@
+---
+title: "생산 실적 테이블"
+---
+
+## 카테고리: Production (생산 실적)
+
+<Accordion title="생산 3개 테이블 — work_orders(15K), production_events(400K), traceability(500K)">
+
+### 테이블 4: work_orders (작업지시)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `wo_id` | STRING | 작업지시 ID |
+| `model_code` | STRING | FK → product_master |
+| `line_id` | STRING | 생산 라인 |
+| `planned_qty` | INT | 지시 수량 |
+| `shift` | STRING | 근무조 (`DAY`/`SWING`/`NIGHT`) |
+| `planned_start` / `planned_end` | TIMESTAMP | 계획 시각 |
+| `wo_status` | STRING | `COMPLETED`/`IN_PROGRESS`/`HOLD` |
+
+```
+작업지시(work_orders) 15,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.work_orders
+- model_code는 product_master에서 샘플링, line_id는 LINE_1~6
+- planned_qty: 3,000~10,000
+- shift: DAY(40%), SWING(35%), NIGHT(25%)
+- planned_start: 2025-01-01~2025-12-31, planned_end는 start + 8시간
+- wo_status: COMPLETED(85%), IN_PROGRESS(10%), HOLD(5%)
+Delta로 저장, COMMENT 추가.
+```
+
+### 테이블 5: production_events (스테이션 통과 이벤트)
+
+> 시리얼(개별 모듈)이 각 스테이션을 IN/OUT하는 이벤트. 택트타임 산출의 원천.
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `event_id` | STRING | 이벤트 ID |
+| `serial_id` | STRING | 개별 모듈 시리얼 |
+| `wo_id` | STRING | FK → work_orders |
+| `station` | STRING | SMT/DISPENSE/REFLOW/ALIGN/AOI/FINAL |
+| `equipment_id` | STRING | FK → equipment_master |
+| `event_type` | STRING | `IN` / `OUT` |
+| `timestamp` | TIMESTAMP | 이벤트 시각 |
+| `cycle_time_sec` | INT | 스테이션 체류(초) |
+| `operator_id` | STRING | 작업자 |
+
+```
+스테이션 통과 이벤트(production_events) 400,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.production_events
+- serial_id 형식: "SN_{YYYYMMDD}_{7자리}", wo_id는 work_orders에서 샘플링
+- 각 시리얼은 공정 순서(SMT→DISPENSE→REFLOW→ALIGN→AOI→FINAL)대로 IN/OUT 쌍이 발생
+- equipment_id는 해당 station과 line이 일치하는 설비에서 선택
+- cycle_time_sec: SMT 8~15, DISPENSE 10~20, REFLOW 30~60, ALIGN 20~40, AOI 5~12, FINAL 15~30
+- [의도적 이슈] 약 1% 레코드는 동일 serial+timestamp 중복(재전송), 약 0.5%는 OUT < IN(시간 역전)
+Delta로 저장, COMMENT 추가.
+```
+
+### 테이블 6: traceability (제품 이력 계보)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `serial_id` | STRING | 개별 모듈 시리얼 (PK) |
+| `wo_id` | STRING | 작업지시 |
+| `model_code` | STRING | 모델 |
+| `material_lot_ids` | `MAP<STRING,STRING>` | 자재유형→사용 로트ID |
+| `station_equipment` | `MAP<STRING,STRING>` | 스테이션→처리 설비ID |
+| `operator_ids` | `ARRAY<STRING>` | 관여 작업자 |
+| `final_result` | STRING | `PASS`/`FAIL`/`REWORK` |
+
+```
+제품 추적성(traceability) 500,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.traceability
+- serial_id는 production_events의 시리얼과 정합, model_code/wo_id 연결
+- material_lot_ids: material_lot_master에서 유형별로 하나씩 매핑(IMAGE_SENSOR/LENS/VCM/PCB/IR_FILTER/ADHESIVE)
+- station_equipment: 각 스테이션에서 실제 사용된 설비 ID
+- final_result: PASS(92%), FAIL(5%), REWORK(3%)
+Delta로 저장, COMMENT 추가.
+```
+
+</Accordion>
+
+---

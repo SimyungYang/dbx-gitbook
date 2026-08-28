@@ -1,0 +1,110 @@
+---
+title: "SDP 파이프라인 & Job 스케줄"
+---
+
+## Part D: SDP 파이프라인으로 자동화
+
+### 수동 CTAS → SDP 전환의 의미
+
+| 항목 | 수동 CTAS | SDP (Lakeflow) |
+|------|----------|----------------|
+| 실행 | 노트북 수동 Run | 파이프라인 자동 스케줄 |
+| 증분 처리 | 전체 재처리 | 자동 증분(Streaming Table) |
+| 데이터 품질 | 코드에서 직접 필터 | `expect` 선언적 규칙 |
+| 의존성 | 실행 순서 수동 | DAG 자동 해석 |
+| 에러 복구 | 수동 재실행 | 자동 재시도 + 격리 |
+
+### SDP 파이프라인 생성 프롬프트
+
+```
+위에서 만든 Bronze → Silver → Gold 변환 로직을 SDP(Spark Declarative Pipeline)로 전환해줘.
+
+파이프라인 이름: ccm_factory_pipeline
+타겟 카탈로그: ccm_factory
+타겟 스키마: silver, gold
+
+요구사항:
+1. Bronze → Silver를 Streaming Table로 (증분 처리)
+2. Silver → Gold를 Materialized View로 (자동 리프레시)
+3. Expectations 추가:
+   - aa_measurements: expect_or_drop("valid_mtf", "mtf_center_pct BETWEEN 0 AND 100")
+   - aa_measurements: expect("valid_tilt", "tilt_abs_max <= 8")
+   - sensor_metrics_5min: expect_or_drop("valid_temp", "max_temperature_c <= 120")
+   - production_flow: expect_or_drop("valid_dwell", "dwell_time_sec > 0")
+   - aoi_defects: expect_or_drop("aoi_rule", "NOT (defect_flag = false AND defect_type IS NOT NULL)")
+   - final_test_clean: expect("valid_result", "test_result IN ('PASS','FAIL')")
+4. 참조 무결성/규칙 위반 레코드는 ccm_factory.quarantine 스키마로 분리
+5. 품질 위반 처리:
+   - Silver: expect_or_drop (위반 시 제거·격리)
+   - Gold: expect_or_fail (위반 시 파이프라인 중단)
+
+노트북 코드를 생성해줘 (Python + SQL 혼합 가능).
+```
+
+### SDP 파이프라인 실행
+
+```
+방금 만든 SDP 파이프라인 노트북으로:
+1. ccm_factory_pipeline 이름의 파이프라인 생성
+2. 서버리스 컴퓨트 사용
+3. Continuous 대신 Triggered 모드
+4. 실행하고 각 테이블 row count와 Expectations 통과율을 보여줘
+```
+
+### 실행 결과 확인
+
+```
+ccm_factory_pipeline의 최근 실행 결과를 보여줘.
+각 테이블 row count, Expectations 통과율, 실패한 테이블이 있으면 에러 메시지를 알려줘.
+```
+
+> **참고**: SDP는 Databricks UI의 **Pipelines** 메뉴에서 DAG로 테이블 의존성과 품질 상태를 시각적으로 확인할 수 있습니다.
+
+### 기대 결과: Expectations 통과율(예시)
+
+| 테이블 | Expectation | 통과율 | 위반 |
+|--------|------------|--------|------|
+| aa_measurements | valid_mtf | ~99.7% | ~750 |
+| sensor_metrics_5min | valid_temp | ~99.8% | ~600 |
+| production_flow | valid_dwell | ~99.5% | ~2,000 |
+| aoi_defects | aoi_rule | ~99.5% | ~1,500 |
+
+---
+
+## Part E: 파이프라인 Job 스케줄링
+
+```
+ccm_factory_pipeline을 매일 자동 실행하는 Job을 만들어줘.
+
+설정:
+- Job 이름: ccm_factory_daily_refresh
+- 스케줄: 매일 오전 6시 KST (cron: 0 21 * * * UTC)
+- 재시도: 최대 2회, 간격 10분
+- 알림: 실패 시 이메일 알림
+- 클러스터: 서버리스
+- 타임아웃: 2시간
+```
+
+```
+방금 만든 ccm_factory_daily_refresh Job의 설정과 다음 실행 예정 시각을 확인해줘.
+지금 한 번 수동 실행(trigger)해서 정상 동작하는지도 확인해줘.
+```
+
+---
+
+## 핵심 포인트 정리
+
+| 배운 것 | Databricks 기능 | 비즈니스 가치 |
+|---------|----------------|-------------|
+| 데이터 품질 진단·처리 | SQL, Window 함수 | Raw 로그의 신뢰성 확보 |
+| 참조 무결성·격리 | Quarantine 스키마 | 오염 데이터가 분석을 왜곡하지 않음 |
+| 선언적 파이프라인 | SDP (Lakeflow) | 증분 처리·운영 부담 최소화 |
+| 품질 규칙 자동화 | Expectations | 위반 자동 감지·격리·중단 |
+| 수율/FPY/OEE/Cpk 집계 | Materialized View | 대시보드·Genie·ML이 바로 소비 |
+| 일일 자동 리프레시 | Databricks Jobs | 무인 운영 |
+
+---
+
+## 다음 단계
+
+- **[04. AI/BI 대시보드](04-aibi-dashboard)** — Gold 테이블로 수율·불량·설비 운영 대시보드를 자연어로 생성합니다.

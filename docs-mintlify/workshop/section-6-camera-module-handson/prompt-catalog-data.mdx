@@ -1,0 +1,220 @@
+---
+title: "데이터 생성 / 임포트"
+---
+
+## 3. 데이터 임포트 / 가상 데이터 생성
+
+> 실제 교육은 **임포트**(방식 1/2)가 기본. 생성 프롬프트는 "Genie Code로 이렇게 만들 수 있다" 시연용. (모듈 1 참조)
+
+**샘플 데이터 임포트 — 공유 볼륨 parquet** 🟢 — 모듈 1 · Part A
+```
+공유 볼륨의 카메라 모듈 공장 시드 데이터를 내 카탈로그로 임포트해줘.
+
+- 소스: /Volumes/main/shared/workshop_seed/ccm_factory/  (하위에 테이블별 parquet 폴더 17개)
+- 타겟: ccm_factory.bronze 스키마의 동일 이름 Delta 테이블 17개
+- 각 parquet 폴더를 읽어 CREATE OR REPLACE TABLE 로 Delta 저장
+- 원본 스키마/컬럼 코멘트를 최대한 보존하고, 없으면 테이블 코멘트를 추가
+- 완료 후 17개 테이블의 row count를 표로 보여줘
+```
+
+**샘플 데이터 임포트 — Delta Sharing/Marketplace** 🟢 — 모듈 1 · Part A
+```
+Delta Sharing으로 공유된 카탈로그 <shared_catalog>.ccm_seed 의 bronze 테이블 17개를
+내 ccm_factory.bronze 로 복제(CTAS)해줘. 완료 후 row count를 확인해줘.
+```
+
+**임포트 검증** 🟢 — 모듈 1 · Part A
+```
+ccm_factory.bronze 스키마의 테이블 17개가 모두 로드됐는지,
+각 테이블 row count와 참조 무결성(serial_id/equipment_id/material_lot_id)이 정상인지 요약해줘.
+```
+
+<Accordion title="데이터 생성 프롬프트 (시연용) — 마스터 3종 + 로그 테이블">
+
+**설비 마스터 생성** 🟢 — 모듈 1
+```
+카메라 모듈 조립 공장의 설비 마스터 300대를 생성해줘.
+
+조건:
+- 테이블: ccm_factory.bronze.equipment_master
+- 라인 LINE_1~LINE_6, 각 라인은 공정 스테이션 6종(SMT, DISPENSE, REFLOW, ALIGN, AOI, FINAL)을 보유
+- 스테이션별 설비 수를 다르게: SMT_MOUNTER 라인당 3~4대, 나머지는 라인당 1~2대
+- equipment_id 형식: "EQ_{line 약자}_{type 약자}_{2자리}" (예: EQ_L1_AA_01)
+- vendor는 type에 따라: SMT_MOUNTER→ASM/Fuji/Hanwha, DISPENSER→Nordson, AOI→Koh_Young, FINAL_TESTER/AA→TRIOPTICS
+- install_date: 2021-01 ~ 2024-12
+- rated_capacity_uph: SMT 1000~1500, 그 외 600~1000
+- status 분포: RUNNING(80%), IDLE(10%), MAINTENANCE(7%), DOWN(3%)
+
+Delta 테이블로 저장하고 모든 컬럼에 COMMENT를 달아줘.
+```
+
+**제품/모델 마스터 생성** 🟢 — 모듈 1
+```
+카메라 모듈 제품(모델) 마스터 60종을 생성해줘.
+
+조건:
+- 테이블: ccm_factory.bronze.product_master
+- 고객명은 익명으로: Global_A(35%), Global_B(25%), Global_C(20%), Domestic_D(20%)
+- module_type 분포: OIS(40%), AF(45%), ToF(15%)
+- resolution_mp: 12/48/50/108 중, OIS/ToF는 고화소 비중 높게
+- model_code 형식: "CCM_{고객약자}_{화소}MP_{모듈타입}" (예: CCM_A_48MP_OIS)
+- target_mtf_center: 80~90, spec_mtf_min: target - 12~18
+- lens_count: 5~7 (고화소일수록 많게)
+- launch_date: 2023-01 ~ 2025-06
+
+Delta 테이블로 저장하고 COMMENT를 달아줘.
+```
+
+**자재 로트 마스터 생성** 🟢 — 모듈 1
+```
+카메라 모듈용 자재 입고 로트 20,000건을 생성해줘.
+
+조건:
+- 테이블: ccm_factory.bronze.material_lot_master
+- material_type 분포: LENS(25%), IMAGE_SENSOR(20%), VCM(15%), PCB(15%), IR_FILTER(15%), ADHESIVE(10%)
+- supplier: Sup_S1~Sup_S8 (일부 공급사는 defect_rate가 의도적으로 높게 — Sup_S7, Sup_S8은 평균의 2~3배)
+- material_lot_id 형식: "MLOT_{type약자}_{YYYYMMDD}_{4자리}"
+- incoming_date: 2024-06 ~ 2025-12
+- incoming_inspection_result: PASS(90%), CONDITIONAL_PASS(8%), FAIL(2%)
+- defect_rate_incoming_pct: 대부분 0~2%, 일부 공급사/로트는 3~8%
+- spec_grade: A(60%), B(30%), C(10%)
+
+Delta 테이블로 저장하고 COMMENT를 달아줘.
+```
+
+**작업지시 생성** 🟢 — 모듈 1
+```
+작업지시(work_orders) 15,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.work_orders
+- model_code는 product_master에서 샘플링, line_id는 LINE_1~6
+- planned_qty: 3,000~10,000
+- shift: DAY(40%), SWING(35%), NIGHT(25%)
+- planned_start: 2025-01-01~2025-12-31, planned_end는 start + 8시간
+- wo_status: COMPLETED(85%), IN_PROGRESS(10%), HOLD(5%)
+Delta로 저장, COMMENT 추가.
+```
+
+**제품 추적성 생성** 🟢 — 모듈 1
+```
+제품 추적성(traceability) 500,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.traceability
+- serial_id는 production_events의 시리얼과 정합, model_code/wo_id 연결
+- material_lot_ids: material_lot_master에서 유형별로 하나씩 매핑(IMAGE_SENSOR/LENS/VCM/PCB/IR_FILTER/ADHESIVE)
+- station_equipment: 각 스테이션에서 실제 사용된 설비 ID
+- final_result: PASS(92%), FAIL(5%), REWORK(3%)
+Delta로 저장, COMMENT 추가.
+```
+
+**SMT 실장 로그 생성** 🟢 — 모듈 1
+```
+SMT 실장 로그(smt_placement_logs) 300,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.smt_placement_logs
+- serial_id/equipment_id는 SMT 스테이션 설비와 정합
+- placement_offset_x/y_um: 정상 -30~30µm(평균0), 일부 설비/노즐은 드리프트로 편향
+- pickup_result: OK(97%), PICKUP_FAIL(2%), RECOGNITION_FAIL(1%)
+- [의도적 이슈] 약 0.5% 레코드는 offset이 mm 단위로 잘못 기록(값이 1000배)
+Delta로 저장, COMMENT 추가.
+```
+
+**Active Alignment 생성** 🟢 — 모듈 1 (핵심 공정)
+```
+Active Alignment 공정(active_alignment) 250,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.active_alignment
+- serial_id/equipment_id는 ALIGN 스테이션과 정합, model_code 조인으로 target_mtf 참조
+- mtf_center_pct: 정상 78~92 (모델 target 근처), FAIL은 60~75
+- mtf_corner_pct: center보다 8~15 낮음
+- tilt_x/y_arcmin: 정상 -3~3, 불량은 절대값 5 이상
+- focus_z_um: 목표 대비 ±5µm 분포, uv_cure_dose_mj: 800~1600
+- aa_result: PASS(90%), FAIL(7%), RETRY(3%). FAIL은 MTF 낮거나 tilt 큰 경우
+- [의도적 이슈] 약 0.3%는 mtf_center_pct > 100 (센서 오류값)
+Delta로 저장, COMMENT 추가.
+```
+
+**설비 센서 텔레메트리 생성** 🟢 — 모듈 1
+```
+설비 센서 텔레메트리(equipment_sensor_logs) 300,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.equipment_sensor_logs
+- equipment_id는 equipment_master에서 샘플링(활성 설비), 1분 간격
+- temperature_c: 정상 25~45, 노후 설비는 서서히 상승 추세
+- vibration_mm_s: 정상 0.5~3.0, 고장 전조 설비는 5 이상 스파이크
+- vacuum_kpa: -80~-60(음압), motor_current_a: 2~8
+- [의도적 이슈] 약 0.2%는 temperature_c > 200 (센서 스파이크 이상치)
+Delta로 저장, COMMENT 추가.
+```
+
+**AOI 검사 생성** 🟢 — 모듈 1
+```
+AOI 검사(aoi_inspection) 300,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.aoi_inspection
+- 컬럼: event_id, serial_id, equipment_id, timestamp, inspect_stage, defect_flag, defect_type, component_ref, confidence
+- inspect_stage: POST_SMT / POST_DISPENSE
+- defect_flag: false(95%), true(5%)
+- defect_type: defect_flag=true일 때 SOLDER/PLACEMENT/FOREIGN_MATERIAL/POLARITY 중, false면 NULL
+- confidence: 0.7~0.99
+- [의도적 이슈] 약 0.5%는 defect_flag=false인데 defect_type이 채워짐(비즈니스 규칙 위반)
+Delta로 저장, COMMENT 추가.
+```
+
+**최종 화질검사 생성** 🟢 — 모듈 1 (최종 판정)
+```
+최종 화질검사(final_image_test) 250,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.final_image_test
+- serial_id는 FINAL 스테이션 통과 시리얼, model_code 조인으로 spec 참조
+- mtf_sfr_center: PASS 75~92 / FAIL 55~72, corner는 center-10 내외
+- dead_pixel_count: 대부분 0~2, 불량은 3 이상
+- particle_count/blemish_count: 대부분 0~1, 이물 불량은 5 이상
+- snr_db: 34~42, distortion_pct: -2~2, relative_illumination_pct: 45~65
+- test_result: PASS(93%), FAIL(7%) — MTF/데드픽셀/이물 규격 위반 시 FAIL
+- [의도적 이슈] 약 4% 레코드는 snr_db가 NULL (구형 테스터)
+Delta로 저장, COMMENT 추가.
+```
+
+**클린룸 환경 생성** 🟢 — 모듈 1
+```
+클린룸 환경(cleanroom_environment) 150,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.cleanroom_environment
+- 컬럼: line_id, zone, timestamp, temperature_c, humidity_pct, particle_0_3um, particle_0_5um, diff_pressure_pa, esd_voltage_v
+- temperature_c: 22±1.5, humidity_pct: 45±8
+- particle_0_3um: 대부분 100~3000/㎥, 도어 개폐/이상 시 스파이크
+- diff_pressure_pa: 양압 5~15, esd_voltage_v: -50~50
+- 파티클 급증 구간은 이후 CONTAMINATION 불량과 시간 상관되게
+Delta로 저장, COMMENT 추가.
+```
+
+**필드 리턴/RMA 생성 (비정형)** 🟢 — 모듈 1
+```
+필드 리턴/RMA(field_returns) 10,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.field_returns
+- 컬럼: rma_id, serial_id, model_code, customer, return_date, failure_symptom(자연어 한국어), analysis_result(자연어 한국어), root_cause_code, cost_usd
+- failure_symptom 예: "저조도에서 초점이 맞지 않음", "화면 모서리 흐림", "간헐적 화면 흔들림(OIS 불량 의심)", "이물 혼입으로 검은 점", "고온에서 색감 이상"
+- analysis_result 예: "AA 틸트 규격 초과 확인", "VCM 액추에이터 응답 지연", "렌즈 본딩부 UV 경화 부족", "센서 표면 파티클"
+- root_cause_code: ALIGNMENT/ACTUATOR/BONDING/CONTAMINATION/SENSOR
+- return_date: 2025년, cost_usd: 5~50
+Delta로 저장, COMMENT 추가.
+```
+
+> 여기 없는 나머지 로그 테이블(dispensing_process, reflow_profiles, input_switch 등)은 위 패턴을 그대로 따라 모듈 1의 표를 참고해 생성하세요.
+
+</Accordion>
+
+**마스터 생성 확인** 🟢 — 모듈 1
+```
+ccm_factory.bronze의 마스터 3개 테이블(equipment_master, product_master, material_lot_master)의
+row 수와 주요 컬럼 분포(설비 type별, 고객별, 자재 type별)를 요약해서 보여줘.
+```
+
+**Bronze 종합 검증** 🟢 — 모듈 1
+```
+ccm_factory.bronze 스키마의 모든 테이블에 대해 확인해줘:
+1. 각 테이블 row count
+2. serial_id / equipment_id / material_lot_id 의 참조 무결성 (마스터에 없는 값 건수)
+3. timestamp 범위가 2025년 위주인지
+4. 의도적으로 심은 이슈가 실제로 존재하는지:
+   - active_alignment.mtf_center_pct > 100 건수
+   - equipment_sensor_logs.temperature_c > 200 건수
+   - final_image_test.snr_db NULL 비율
+   - production_events 중복(serial+timestamp) 건수
+결과를 데이터 품질 요약 표로 보여줘.
+```
+
+---

@@ -1,0 +1,36 @@
+---
+title: "카탈로그·스키마·볼륨 생성"
+---
+
+## Part D: 카탈로그 / 스키마 / 볼륨 생성
+
+```
+Unity Catalog에 다음 환경을 설정해줘 (기존 오브젝트가 있으면 DROP하지 말고 스킵):
+
+- 카탈로그: ccm_factory
+- 스키마: bronze, silver, gold, quarantine
+- 볼륨: bronze 스키마에 raw_files 볼륨 (PDF/이미지 등 비정형 저장용)
+
+각 스키마에 COMMENT:
+- bronze: 'Raw 제조/공정/검사/설비 텔레메트리'
+- silver: '정제·표준화된 데이터'
+- gold: '수율·불량·OEE 등 비즈니스 집계'
+- quarantine: '데이터 품질 위반 격리'
+```
+
+### 확인
+
+```
+ccm_factory 카탈로그의 모든 스키마와 COMMENT를 보여줘.
+```
+
+기대 결과:
+
+| 스키마 | 설명 |
+|--------|------|
+| `bronze` | Raw 제조/공정/검사/설비 텔레메트리 |
+| `silver` | 정제·표준화된 데이터 |
+| `gold` | 수율·불량·OEE 등 비즈니스 집계 |
+| `quarantine` | 데이터 품질 위반 격리 |
+
+---

@@ -1,0 +1,101 @@
+---
+title: "공정 파라미터 (SPC)"
+---
+
+## 카테고리: Process (공정 파라미터 / SPC)
+
+<Accordion title="공정 4개 테이블 — smt_placement_logs(300K), dispensing_process(200K), reflow_profiles(60K), active_alignment(250K)">
+
+### 테이블 7: smt_placement_logs (SMT 실장)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `event_id`·`serial_id`·`equipment_id`·`timestamp` | | 기본 |
+| `component_ref` | STRING | 부품 위치 (`C1`,`R3`,`U1`) |
+| `nozzle_id` | STRING | 노즐 |
+| `feeder_id` | STRING | 피더 |
+| `placement_offset_x_um` / `_y_um` | DOUBLE | 실장 offset(µm) |
+| `placement_angle_deg` | DOUBLE | 실장 각도 |
+| `pickup_result` | STRING | `OK`/`PICKUP_FAIL`/`RECOGNITION_FAIL` |
+
+```
+SMT 실장 로그(smt_placement_logs) 300,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.smt_placement_logs
+- serial_id/equipment_id는 SMT 스테이션 설비와 정합
+- placement_offset_x/y_um: 정상 -30~30µm(평균0), 일부 설비/노즐은 드리프트로 편향
+- pickup_result: OK(97%), PICKUP_FAIL(2%), RECOGNITION_FAIL(1%)
+- [의도적 이슈] 약 0.5% 레코드는 offset이 mm 단위로 잘못 기록(값이 1000배)
+Delta로 저장, COMMENT 추가.
+```
+
+### 테이블 8: dispensing_process (디스펜싱/본딩)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `dispense_type` | STRING | `SENSOR_BOND`/`LENS_BOND` |
+| `volume_mg` | DOUBLE | 도포량(mg) |
+| `pressure_kpa` | DOUBLE | 토출 압력 |
+| `needle_id` | STRING | 니들 |
+| `pos_x_um`/`pos_y_um` | DOUBLE | 도포 위치 |
+| `uv_dose_mj` | DOUBLE | UV 경화량 (LENS_BOND만) |
+| `temp_c` | DOUBLE | 공정 온도 |
+
+```
+디스펜싱/본딩 공정(dispensing_process) 200,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.dispensing_process
+- dispense_type: SENSOR_BOND(50%), LENS_BOND(50%)
+- volume_mg: SENSOR_BOND 2~5, LENS_BOND 1~3 (설비별 미세 편차)
+- pressure_kpa: 80~150, uv_dose_mj: LENS_BOND일 때 500~1500 / SENSOR_BOND는 NULL
+- [의도적 이슈] LENS_BOND인데 uv_dose_mj가 NULL인 레코드 약 3% (UV 미조사 → 잠재 불량)
+Delta로 저장, COMMENT 추가.
+```
+
+### 테이블 9: reflow_profiles (리플로우 프로파일)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `zone1_temp_c`~`zone8_temp_c` | DOUBLE | 존별 온도 |
+| `peak_temp_c` | DOUBLE | 피크 온도 |
+| `tal_sec` | INT | Time Above Liquidus |
+| `conveyor_speed_cm_min` | DOUBLE | 컨베이어 속도 |
+
+```
+리플로우 프로파일(reflow_profiles) 60,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.reflow_profiles
+- zone1~8 온도: 예열 150~180 → 승온 → peak 240~250°C 프로파일
+- tal_sec: 45~90초, conveyor_speed: 50~90 cm/min
+- 일부 설비는 peak_temp가 규격(235~255) 벗어나는 이상 로트 소량 포함
+Delta로 저장, COMMENT 추가.
+```
+
+### 테이블 10: active_alignment (AA 공정) ★ 핵심
+
+> 렌즈-센서 광축 정렬. MTF/틸트/포커스가 화질을 좌우하는 카메라 모듈의 핵심 공정.
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `focus_z_um` | DOUBLE | 포커스 Z 위치 |
+| `tilt_x_arcmin`/`tilt_y_arcmin` | DOUBLE | 틸트 |
+| `rotation_deg` | DOUBLE | 회전 |
+| `mtf_center_pct` | DOUBLE | MTF 중심 |
+| `mtf_corner_pct` | DOUBLE | MTF 코너 |
+| `align_offset_um` | DOUBLE | 정렬 offset |
+| `uv_cure_dose_mj` | DOUBLE | UV 경화량 |
+| `aa_result` | STRING | `PASS`/`FAIL`/`RETRY` |
+
+```
+Active Alignment 공정(active_alignment) 250,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.active_alignment
+- serial_id/equipment_id는 ALIGN 스테이션과 정합, model_code 조인으로 target_mtf 참조
+- mtf_center_pct: 정상 78~92 (모델 target 근처), FAIL은 60~75
+- mtf_corner_pct: center보다 8~15 낮음
+- tilt_x/y_arcmin: 정상 -3~3, 불량은 절대값 5 이상
+- focus_z_um: 목표 대비 ±5µm 분포, uv_cure_dose_mj: 800~1600
+- aa_result: PASS(90%), FAIL(7%), RETRY(3%). FAIL은 MTF 낮거나 tilt 큰 경우
+- [의도적 이슈] 약 0.3%는 mtf_center_pct > 100 (센서 오류값)
+Delta로 저장, COMMENT 추가.
+```
+
+</Accordion>
+
+---

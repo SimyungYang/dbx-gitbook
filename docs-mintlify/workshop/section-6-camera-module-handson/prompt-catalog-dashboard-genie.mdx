@@ -1,0 +1,245 @@
+---
+title: "대시보드 & Genie"
+---
+
+## 7. AI/BI 대시보드
+
+> 🔵 MCP(`manage_dashboard`)가 있으면 한 대화로 생성, 없으면 **Dashboards → + Create** 후 사이드 패널 Genie Code로 위젯을 추가하세요.
+
+**생산/수율 운영 대시보드** 🔵 — 모듈 4 · Part A
+```
+gold.daily_yield_summary, gold.first_pass_yield, gold.station_cycle_time 테이블로
+"생산/수율 운영 대시보드"를 AI/BI 대시보드로 만들어줘.
+
+위젯 (총 12개):
+
+Row 1 — KPI 카운터 (4개):
+1. 오늘 총 생산 수량 (합계)
+2. 전체 수율 % (양품/투입, 게이지)
+3. 직행률(FPY) % (게이지)
+4. 활성 라인 수 (오늘 실적 있는 라인)
+
+Row 2 — 추이 (2개):
+5. 일별 수율 추이 (최근 30일, 꺾은선, 라인별 색상 구분)
+6. 일별 FPY 추이 (최근 30일, 꺾은선)
+
+Row 3 — 분포 (3개):
+7. 모델별 수율 비교 (가로 막대, Top 10 model_code)
+8. 라인별 생산 수량 (막대: LINE_1~LINE_6)
+9. 스테이션별 평균 택트타임 (막대: SMT/DISPENSE/REFLOW/ALIGN/AOI/FINAL)
+
+Row 4 — 운영 지표 (3개):
+10. 라인×일 수율 히트맵 (X축 날짜, Y축 라인, 색상 수율)
+11. 근무조(shift)별 수율 비교 (막대: DAY/SWING/NIGHT)
+12. 고객(customer)별 생산 비중 (도넛)
+
+필터: 날짜 범위(기본 최근 30일), 라인(line_id), 모델(model_code), 근무조(shift)
+```
+
+**품질/불량 분석 대시보드** 🔵 — 모듈 4 · Part B
+```
+gold.defect_pareto, gold.material_defect_correlation, gold.aa_quality_trend, gold.spc_process_capability 테이블로
+"품질/불량 분석 대시보드"를 AI/BI 대시보드로 만들어줘.
+
+위젯 (총 11개):
+
+Row 1 — KPI 카운터 (3개):
+1. 전체 불량률 % (게이지)
+2. CRITICAL 불량 건수 (오늘)
+3. 평균 공정능력 Cpk (핵심 공정 평균)
+
+Row 2 — 불량 파레토 (2개):
+4. 불량 코드별 파레토 (막대+누적선, defect_code 상위 15, 누적 % 라인)
+5. 불량 카테고리 × severity 분포 (Stacked Bar)
+
+Row 3 — 상관 분석 (3개):
+6. 자재 공급사별 불량률 (가로 막대, supplier별 — Sup_S7/S8 부각 예상)
+7. 자재 로트↔불량 상관 상위 (막대: material_defect_correlation 상위 10)
+8. root_cause 분포 (파이: MATERIAL/EQUIPMENT/PROCESS/OPERATOR/ENVIRONMENT)
+
+Row 4 — AA 화질 & 공정능력 (3개):
+9. 모델별 MTF(center) 분포 (박스플롯 또는 분포 막대, aa_quality_trend)
+10. AA 틸트 산포 추이 (일별 tilt 표준편차 꺾은선)
+11. 공정 파라미터별 Cpk 히트맵 (X축 날짜, Y축 공정, 색상 Cpk — 1.33 미만 경고색)
+
+필터: 날짜 범위, 라인, 모델, 불량 카테고리(defect_category)
+```
+
+**설비 운영/OEE 대시보드** 🔵 — 모듈 4 · Part C
+```
+gold.oee_by_equipment, gold.equipment_health_score 테이블로
+"설비 운영/OEE 대시보드"를 AI/BI 대시보드로 만들어줘.
+
+위젯 (총 11개):
+
+Row 1 — KPI 카운터 (4개):
+1. 전체 평균 OEE % (게이지)
+2. 평균 가용성(Availability) %
+3. 평균 성능(Performance) %
+4. 평균 품질(Quality) %
+
+Row 2 — 추이 (2개):
+5. 일별 OEE 추이 (최근 30일, 꺾은선, 라인별 색상)
+6. OEE 3요소(가용성/성능/품질) 추이 (Multi-line)
+
+Row 3 — 설비 분석 (3개):
+7. 설비 유형별 평균 OEE (막대)
+8. 설비별 OEE 랭킹 (가로 막대, 하위 15개 — 개선 대상)
+9. 비가동(downtime) 사유별 시간 파레토 (막대: BREAKDOWN/PM/CHANGEOVER/IDLE)
+
+Row 4 — 설비 건강 (2개):
+10. 설비 건강점수 히트맵 (X축 날짜, Y축 설비, 색상 health_score)
+11. 위험 설비 Top 10 (health_grade D/F, 주요 위험요인 표시)
+
+필터: 날짜 범위, 라인, 설비 유형(equipment_type)
+```
+
+**대시보드 생성 확인 (공통 템플릿)** 🔵 — 모듈 4
+```
+방금 만든 "<대시보드 이름>"이 잘 생성됐는지 확인해줘. 대시보드 URL과 포함된 위젯 목록을 보여줘.
+```
+
+**대시보드를 App으로 배포** 🔵 — 모듈 4 · 보너스
+```
+"설비 운영/OEE 대시보드"를 Databricks Apps로 배포해줘. 완료되면 앱 URL을 알려줘.
+```
+
+---
+
+## 8. Genie Space 생성 · 정확도 튜닝
+
+> 🔵 MCP(`manage_genie`)가 있으면 한 대화로 생성, 없으면 **Genie → + New**에서 만드세요. 정확도 튜닝의 COMMENT 추가는 🟢 네이티브 SQL로 가능합니다.
+
+**Genie Space 1: 생산·수율 분석** 🔵 — 모듈 5 · Part A
+```
+다음 설정으로 Genie Space를 만들어줘.
+
+이름: 생산·수율 분석
+설명: 카메라 모듈 라인의 생산 실적, 수율, 직행률(FPY), 택트타임을 자연어로 분석합니다.
+
+포함 테이블:
+- ccm_factory.gold.daily_yield_summary
+- ccm_factory.gold.first_pass_yield
+- ccm_factory.gold.station_cycle_time
+- ccm_factory.bronze.product_master
+- ccm_factory.bronze.equipment_master
+
+General Instructions:
+- 수율(yield)은 % 단위, 소수점 1자리로 표시
+- 날짜 필터가 없으면 최근 7일 기준
+- 라인은 LINE_1~LINE_6, 모델은 model_code로 식별
+- 결과가 10행 이상이면 Top 10으로 제한하고 "전체 N건 중 Top 10" 표시
+- 고객명은 익명(Global_A/B/C, Domestic_D)이므로 그대로 사용
+```
+
+**Genie Space 2: 품질·불량 분석** 🔵 — 모듈 5 · Part A
+```
+다음 설정으로 Genie Space를 만들어줘.
+
+이름: 품질·불량 분석
+설명: 불량 파레토, 자재 로트별 불량 상관, AA(Active Alignment) MTF 품질, 공정능력(Cpk)을 분석합니다.
+
+포함 테이블:
+- ccm_factory.gold.defect_pareto
+- ccm_factory.gold.material_defect_correlation
+- ccm_factory.gold.aa_quality_trend
+- ccm_factory.gold.spc_process_capability
+- ccm_factory.silver.final_test_clean
+- ccm_factory.bronze.material_lot_master
+
+General Instructions:
+- 불량률은 % 단위, MTF는 pct 단위(0~100)
+- "규격 미달"은 mtf_center < 모델의 spec_mtf_min 기준
+- Cpk는 소수점 2자리, "공정능력 부족"은 Cpk < 1.33
+- 자재 공급사는 Sup_S1~S8로 식별
+- 날짜 미지정 시 최근 7일
+```
+
+**Genie Space 3: 설비·OEE 분석** 🔵 — 모듈 5 · Part A
+```
+다음 설정으로 Genie Space를 만들어줘.
+
+이름: 설비·OEE 분석
+설명: 설비별 OEE(종합설비효율), 설비 건강 점수, 비가동(downtime)을 분석합니다.
+
+포함 테이블:
+- ccm_factory.gold.oee_by_equipment
+- ccm_factory.gold.equipment_health_score
+- ccm_factory.bronze.equipment_downtime
+- ccm_factory.bronze.equipment_master
+
+General Instructions:
+- OEE = 가용성 × 성능 × 품질, % 단위 소수점 1자리
+- "문제 설비"는 OEE < 75% 또는 health_score < 60
+- downtime은 분(min) 단위, 유형은 BREAKDOWN/PM/CHANGEOVER/IDLE
+- 설비는 equipment_id로 식별, 라인/유형 질문 시 equipment_master 조인
+```
+
+**Genie Space 생성 확인 & 첫 테스트** 🔵 — 모듈 5 · Part A
+```
+방금 만든 "생산·수율 분석" Genie Space에 테스트 질문을 해줘:
+"최근 7일간 수율이 가장 낮은 라인 Top 3는?"
+SQL이 정상 생성되고 결과가 나오는지 확인해줘.
+```
+
+**컬럼 COMMENT 일괄 추가 (정확도↑)** 🟢 — 모듈 5 · Part B
+```
+ccm_factory.gold 스키마의 모든 테이블과 컬럼에 한국어 COMMENT를 추가해줘.
+
+규칙:
+- 테이블 COMMENT: 비즈니스 담당자가 이해할 수 있는 설명 (50자 이내)
+- 컬럼 COMMENT: 값의 의미, 단위, 범위 포함
+
+예시:
+COMMENT ON COLUMN ccm_factory.gold.daily_yield_summary.yield_pct IS
+  '일 수율(%). (양품 수 / 투입 수) × 100. 범위 0~100';
+COMMENT ON COLUMN ccm_factory.gold.oee_by_equipment.oee_pct IS
+  '종합설비효율(%). 가용성×성능×품질. 85 이상이 World Class';
+COMMENT ON COLUMN ccm_factory.gold.spc_process_capability.cpk IS
+  '공정능력지수. 1.33 이상이 관리 기준, 1.0 미만은 개선 필요';
+
+모든 Gold 테이블의 모든 컬럼에 COMMENT를 달아줘.
+```
+
+**샘플 질문(Curated) 등록** 🔵 — 모듈 5 · Part B
+```
+"생산·수율 분석"과 "품질·불량 분석" Genie Space에 아래 샘플 질문과 검증된 SQL을 등록해줘.
+(질문·SQL 쌍은 모듈 5 Part B의 15개 목록 참조)
+```
+
+**General Instructions (임의 정의 방지 포함) — Genie Space 설정에 붙여넣기** 🔵 — 모듈 5 · Part B
+```
+## 비즈니스 용어 정의
+- "수율(Yield)": (양품 수 / 투입 수) × 100
+- "직행률(FPY, First Pass Yield)": 재작업 없이 한 번에 통과한 비율
+- "OEE": 가용성 × 성능 × 품질 (종합설비효율)
+- "Cpk": 공정능력지수. 1.33 이상 관리기준, 1.0 미만 개선 필요
+- "규격 미달": mtf_center가 해당 모델 spec_mtf_min 미만
+- "문제 설비": OEE < 75% 또는 health_score < 60
+- "프라임 시프트": DAY 근무조(주간)
+
+## 계산 규칙
+- 비율 계산 시 분모가 0이면 NULLIF 사용
+- 날짜 필터 미지정 시 최근 7일
+- 수율/OEE/불량률은 % 소수점 1자리, Cpk는 소수점 2자리
+- 공급사는 Sup_S1~S8, 라인은 LINE_1~6로 식별
+
+## 분석 규칙 (임의 정의 방지) ★
+- 기준이 명확하지 않으면 임의로 정의해서 분석하지 말 것
+- 더 정확한 정보가 필요하면 사용자에게 반드시 질문할 것
+  (예: "'품질이 나쁘다'의 기준을 수율/불량률/MTF 중 무엇으로 볼까요?")
+```
+
+**Genie Agent 생성 확인** 🔵 — 모듈 5 · Part C
+```
+"스마트팩토리 데이터 분석가" Genie Agent가 정상 생성됐고, 연결된 Genie Space 3개를 모두 인식하는지 확인해줘.
+```
+
+**인사이트 도출 체인 (Genie Space Agent 모드)** 🔵 — 모듈 5 · Part D
+```
+① 전체 데이터셋에서 흥미로운 인사이트를 3가지 뽑아줘.
+② 방금 도출한 인사이트를 바탕으로 수율 향상 우선순위 3가지를 제안해줘.
+③ 그 중 데이터로 검증 가능한 것을 골라, 검증에 필요한 추가 분석 쿼리를 만들고 실행해줘.
+```
+
+---

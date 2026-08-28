@@ -1,0 +1,213 @@
+---
+title: "Silver/Gold/SDP/Job"
+---
+
+## 6. Silver/Gold 변환 · SDP 파이프라인 · Job
+
+### Silver 정제 (CTAS)
+
+**Silver: aa_measurements** 🟢 — 모듈 3 · Part B
+```
+ccm_factory.bronze.active_alignment를 정제하여 ccm_factory.silver.aa_measurements를 만들어줘.
+
+변환 규칙:
+1. event_id 기준 중복 제거 (최신 timestamp 유지)
+2. serial_id/equipment_id가 마스터에 없으면 ccm_factory.quarantine.aa_orphans로 분리
+3. mtf_center_pct > 100 또는 < 0 인 레코드는 ccm_factory.quarantine.aa_bad_mtf로 분리 (센서 오류)
+4. product_master 조인으로 target_mtf_center, spec_mtf_min 추가
+5. 추가 컬럼:
+   - event_date: timestamp에서 DATE
+   - mtf_margin: mtf_center_pct - spec_mtf_min
+   - tilt_abs_max: GREATEST(ABS(tilt_x_arcmin), ABS(tilt_y_arcmin))
+   - is_tilt_out: tilt_abs_max > 5 (틸트 규격 초과)
+   - aa_pass_recalc: mtf_center_pct >= spec_mtf_min AND tilt_abs_max <= 5
+6. event_date 파티셔닝, (equipment_id, event_date) Z-ORDER
+7. 테이블/컬럼 COMMENT 추가
+
+CREATE OR REPLACE TABLE, CTAS SQL로 만들어줘.
+```
+
+**Silver: production_flow (IN/OUT 쌍 매칭)** 🟢 — 모듈 3 · Part B
+```
+ccm_factory.bronze.production_events를 정제하여 ccm_factory.silver.production_flow를 만들어줘.
+
+변환 규칙:
+1. (serial_id, timestamp, event_type) 기준 중복 제거 (재전송 제거)
+2. serial_id별·station별 IN/OUT 쌍 매칭:
+   - 같은 serial_id+station의 IN과 다음 OUT을 페어링
+   - OUT < IN(시간 역전) 쌍은 ccm_factory.quarantine.flow_time_reversed로 분리
+   - 짝이 없는 고아 이벤트는 flag
+3. equipment_id 참조 무결성 검증
+4. 산출 컬럼 (그레인: serial_id × station 1행):
+   - in_time, out_time, station, equipment_id, wo_id
+   - dwell_time_sec: out_time - in_time (초)
+   - event_date (in_time의 DATE)
+5. dwell_time_sec이 음수이거나 station 표준 범위의 10배 초과면 이상치 flag
+6. event_date 파티셔닝, (station, event_date) Z-ORDER, COMMENT 추가
+
+CREATE OR REPLACE TABLE, CTAS SQL로.
+```
+
+> 나머지 Silver(serials_cleaned, aoi_defects, final_test_clean, sensor_metrics_5min, defect_normalized, downtime_clean, dispensing_clean 등)는 위 두 패턴을 따라 동일 요청으로 생성. (모듈 3 참조)
+
+**Silver 전체 확인** 🟢 — 모듈 3 · Part B
+```
+ccm_factory.silver의 모든 테이블 목록과 row count를 보여줘.
+bronze 원본 대비 필터링/격리된 비율과, quarantine 스키마에 격리된 건수도 테이블별로 알려줘.
+```
+
+### Gold 집계 (CTAS)
+
+**Gold: daily_yield_summary** 🟢 — 모듈 3 · Part C
+```
+silver.final_test_clean, silver.serials_cleaned, silver.production_flow를 결합하여 ccm_factory.gold.daily_yield_summary를 만들어줘.
+
+그레인: line_id × model_code × event_date
+
+컬럼:
+- line_id, model_code, event_date
+- input_qty: 투입 시리얼 수, output_qty: FINAL 통과(PASS) 수
+- yield_pct: output_qty / input_qty * 100
+- fail_qty, scrap_qty, rework_qty
+- avg_mtf_center, avg_snr_db
+- top_defect_category: 최다 불량 카테고리
+
+product_master/equipment 조인으로 customer, module_type 추가.
+event_date 파티셔닝, COMMENT 추가.
+```
+
+**Gold: first_pass_yield (FPY)** 🟢 — 모듈 3 · Part C
+```
+silver.production_flow, silver.aoi_defects, silver.final_test_clean을 결합하여 ccm_factory.gold.first_pass_yield를 만들어줘.
+
+그레인: station × event_date
+
+정의: FPY = (재작업/재검 없이 한 번에 통과한 수) / (해당 스테이션 투입 수) * 100
+
+컬럼:
+- station, event_date
+- input_count, first_pass_count, rework_count
+- fpy_pct: first_pass_count / input_count * 100
+- rolled_throughput_yield: 전 스테이션 FPY의 곱 (라인 전체 직행률, 별도 컬럼 또는 요약행)
+
+event_date 파티셔닝, COMMENT 추가.
+```
+
+**Gold: defect_pareto** 🟢 — 모듈 3 · Part C
+```
+silver.defect_normalized를 집계하여 ccm_factory.gold.defect_pareto를 만들어줘.
+
+그레인: defect_code × line_id × event_date
+
+컬럼:
+- defect_code, defect_category, line_id, event_date
+- defect_count, scrap_count, critical_count
+- pct_of_total: 해당 라인/일 전체 불량 대비 비율
+- cum_pct: 불량 많은 순 누적 비율 (파레토 80/20 분석용, Window)
+- top_root_cause: 최다 root_cause_code
+
+event_date 파티셔닝, COMMENT 추가.
+```
+
+**Gold: oee_by_equipment** 🟢 — 모듈 3 · Part C
+```
+silver.downtime_clean, silver.production_flow, silver.final_test_clean, bronze.equipment_master를 결합하여 ccm_factory.gold.oee_by_equipment를 만들어줘.
+
+그레인: equipment_id × event_date
+
+OEE = 가용성(Availability) × 성능(Performance) × 품질(Quality)
+- availability = (계획가동시간 - 비가동시간) / 계획가동시간
+  · 비가동시간 = downtime_clean의 BREAKDOWN+CHANGEOVER+IDLE 합 (PM 제외 또는 옵션)
+- performance = (실제 처리수 × 이상택트) / 실제가동시간  또는  실제UPH / rated_capacity_uph
+- quality = 양품수 / 총생산수
+
+컬럼:
+- equipment_id, equipment_type, line_id, event_date
+- planned_time_min, downtime_min, run_time_min
+- availability_pct, performance_pct, quality_pct
+- oee_pct: 세 값의 곱
+- breakdown_min, changeover_min, pm_min (유형별 비가동)
+
+event_date 파티셔닝, (equipment_id) Z-ORDER, COMMENT 추가.
+```
+
+**Gold: spc_process_capability (Cpk)** 🟢 — 모듈 3 · Part C
+```
+silver.aa_measurements(및 dispensing_clean)를 집계하여 ccm_factory.gold.spc_process_capability를 만들어줘.
+
+그레인: process × parameter × model_code × event_date
+- process/parameter 예: ALIGN/mtf_center_pct, ALIGN/tilt_abs_max, DISPENSE/volume_mg
+
+각 파라미터에 대해:
+- n, mean, stddev
+- usl, lsl: 규격 상/하한 (파라미터별 정의; 예 mtf_center_pct의 LSL = spec_mtf_min, tilt은 USL=5)
+- cp = (USL - LSL) / (6*stddev)
+- cpk = MIN((USL-mean)/(3*stddev), (mean-LSL)/(3*stddev))
+- capability_grade: cpk>=1.33 '우수', 1.0~1.33 '보통', <1.0 '개선필요'
+
+한쪽 규격만 있는 경우 단측 Cpk로 계산. event_date 파티셔닝, COMMENT 추가.
+```
+
+**Gold: equipment_health_score** 🟢 — 모듈 3 · Part C
+```
+silver.sensor_metrics_5min, silver.downtime_clean, silver.defect_normalized를 결합하여 ccm_factory.gold.equipment_health_score를 만들어줘.
+
+그레인: equipment_id × event_date
+
+컬럼:
+- equipment_id, equipment_type, line_id, event_date
+- avg_temp, max_temp, avg_vibration, max_vibration, spike_count
+- breakdown_count, breakdown_min
+- defect_attributed_count: 해당 설비 스테이션에서 발생한 불량 수
+- health_score (0~100): 100에서 감점
+  · max_temp>80 -10, max_vibration>5 -15, spike_count>0 -10, breakdown -20/건, vib 상승추세 -10
+- health_grade: A(90~100) B(70~89) C(50~69) D(30~49) F(0~29)
+- risk_factors: 위험요인 배열 (예: ["high_vibration","thermal_spike","frequent_breakdown"])
+
+equipment_master 조인으로 vendor, install_date 추가.
+event_date 파티셔닝, equipment_id Z-ORDER, COMMENT 추가.
+```
+
+**Gold 확인** 🟢 — 모듈 3 · Part C
+```
+ccm_factory.gold의 모든 테이블 목록과 row count, 각 테이블 그레인을 표로 보여줘.
+daily_yield_summary의 라인별 평균 수율과, defect_pareto 상위 5개 불량코드도 함께 보여줘.
+```
+
+### SDP 파이프라인 · Job
+
+**SDP 파이프라인 생성·실행** 🔵 — 모듈 3 · Part D
+```
+방금 만든 SDP 파이프라인 노트북으로:
+1. ccm_factory_pipeline 이름의 파이프라인 생성
+2. 서버리스 컴퓨트 사용
+3. Continuous 대신 Triggered 모드
+4. 실행하고 각 테이블 row count와 Expectations 통과율을 보여줘
+```
+
+**파이프라인 실행 결과 확인** 🔵 — 모듈 3 · Part D
+```
+ccm_factory_pipeline의 최근 실행 결과를 보여줘.
+각 테이블 row count, Expectations 통과율, 실패한 테이블이 있으면 에러 메시지를 알려줘.
+```
+
+**Job 스케줄 생성** 🔵 — 모듈 3 · Part E
+```
+ccm_factory_pipeline을 매일 자동 실행하는 Job을 만들어줘.
+
+설정:
+- Job 이름: ccm_factory_daily_refresh
+- 스케줄: 매일 오전 6시 KST (cron: 0 21 * * * UTC)
+- 재시도: 최대 2회, 간격 10분
+- 알림: 실패 시 이메일 알림
+- 클러스터: 서버리스
+- 타임아웃: 2시간
+```
+
+**Job 확인·수동 실행** 🔵 — 모듈 3 · Part E
+```
+방금 만든 ccm_factory_daily_refresh Job의 설정과 다음 실행 예정 시각을 확인해줘.
+지금 한 번 수동 실행(trigger)해서 정상 동작하는지도 확인해줘.
+```
+
+---

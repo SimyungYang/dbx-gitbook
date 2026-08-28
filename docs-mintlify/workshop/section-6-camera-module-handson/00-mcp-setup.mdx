@@ -1,0 +1,96 @@
+---
+title: "AI Dev Kit MCP 연결 (선택)"
+---
+
+## Part F: AI Dev Kit MCP 연결 (선택 — 꼭 필요할 때만)
+
+> **원칙: 네이티브 우선, MCP는 최소화.** 이 워크샵의 대부분(데이터 생성·EDA·품질진단·SQL·파이프라인 코드·대시보드/에이전트 초안)은 **Genie Code 네이티브 기능 + Databricks UI**만으로 됩니다. AI Dev Kit MCP는 **한 대화에서 여러 제품을 자동 생성/오케스트레이션**하고 싶을 때만 켜세요. 안 켜도 각 모듈은 UI 대체 경로로 완주할 수 있습니다.
+
+Genie Code는 각 제품 영역 **안에서는** 강력하지만, 한 대화에서 **여러 제품에 걸친 작업**(예: "Genie Space도 만들고 대시보드도 만들고 Job도 걸어줘")은 기본 기능만으로는 못 합니다. 이때만 **AI Dev Kit MCP**가 도움이 됩니다.
+
+| 작업 | 네이티브 Genie Code + UI | MCP 있을 때 |
+|------|------------------------|------------|
+| 데이터 생성/EDA/품질진단/SQL | ✅ 그대로 가능 | 동일 |
+| SDP 파이프라인 코드 작성 | ✅ Lakeflow Pipeline Editor에서 Genie Code | `manage_pipeline`로 생성까지 |
+| 대시보드 | ✅ Dashboards → + Create (사이드 패널 Genie Code) | `manage_dashboard`로 한 대화에서 |
+| Genie Space | ✅ Genie → + New | `manage_genie`로 한 대화에서 |
+| Agent Bricks (KA/Supervisor) | ✅ Agent Bricks 메뉴에서 생성 | `manage_ka`/`manage_mas`로 한 대화에서 |
+
+> 즉 **MCP 없이도 전 모듈 완주 가능**합니다. 각 모듈은 MCP 프롬프트와 함께 UI 대체 경로를 병기합니다. MCP를 쓰지 않을 팀은 아래 Step 1~3을 건너뛰어도 됩니다.
+
+| 요청 | MCP 없이 | MCP 연결 시 |
+|------|---------|-------------|
+| "이 테이블로 Genie Space 만들어줘" | ❌ | ✅ `manage_genie` |
+| "대시보드 + Job 스케줄 한 번에" | ❌ | ✅ 한 대화에서 |
+| "Knowledge Assistant / Supervisor 만들어줘" | ❌ | ✅ `manage_ka` / `manage_mas` |
+
+### Step 1: MCP 서버 추가
+
+> **사전 조건**: `mcp-ai-dev-kit` 앱이 워크스페이스에 RUNNING 상태여야 합니다. (앱 이름은 `mcp-`로 시작해야 Settings에 노출됨)
+
+1. Genie Code 사이드 패널 → 하단 ⚙️ **Settings**
+2. **MCP Servers → "+ Add Server"**
+3. 드롭다운에서 **`mcp-ai-dev-kit`** 선택 → **Save**
+
+### Step 2: 도구 20개 제한 — 워크샵 프로필만 ON
+
+AI Dev Kit은 40여 개 도구를 제공하지만 **최대 20개**만 켤 수 있습니다. Genie Code가 이미 잘 하는 것(OOB Genie 질의·Vector Search 질의·SQL 실행)은 OFF, 고유 기능만 ON.
+
+**워크샵 권장 프로필 (올라운드 15개)**:
+
+| # | 도구 | 용도 |
+|---|------|------|
+| 1 | `manage_genie` | Genie Space 생성/관리 |
+| 2 | `manage_mas` | Supervisor Agent |
+| 3 | `manage_ka` | Knowledge Assistant |
+| 4 | `manage_dashboard` | 대시보드 생성 |
+| 5 | `manage_jobs` | Job 생성/스케줄 |
+| 6 | `manage_job_runs` | Job 실행/모니터링 |
+| 7 | `manage_pipeline` | SDP 파이프라인 |
+| 8 | `manage_app` | Databricks App |
+| 9 | `manage_serving_endpoint` | Model Serving |
+| 10 | `manage_vs_index` | Vector Search 인덱스 |
+| 11 | `execute_sql` | SQL 실행 (우선 사용) |
+| 12 | `manage_uc_objects` | 카탈로그/스키마/테이블 CRUD |
+| 13 | `manage_uc_grants` | 권한 GRANT/REVOKE |
+| 14 | `manage_workspace_files` | 워크스페이스 파일 |
+| 15 | `get_table_stats_and_schema` | 테이블 통계/스키마 |
+
+> `execute_code`(클러스터 실행)는 시작 대기로 타임아웃이 잦습니다. **SQL로 되는 건 `execute_sql` 우선**.
+
+> **모듈별 추가 도구** (20개 이내에서 켜기): 데이터 생성/PySpark 시연이 필요하면 **`execute_code`**, Lakebase 실습(모듈 7 Part D, 선택)이면 **`manage_lakebase_database`** 를 추가로 ON 하세요. 위 15개 + 2개 = 17개로 20개 제한 안에 들어옵니다.
+
+### Step 3: 연결 확인 & Warm-up
+
+```
+현재 활성화된 MCP 도구가 몇 개이고 어떤 도구들인지 목록으로 보여줘. 20개 제한에 걸리지 않는지도 확인해줘.
+```
+
+```
+현재 사용자 정보 알려줘
+```
+> MCP 앱이 유휴 상태면 첫 호출이 10~30초 지연될 수 있습니다. 위 프롬프트로 미리 깨워두세요.
+
+### MCP 실패 시 대응
+
+- Genie Code가 "노트북으로 대신할까요?"라고 하면 → `아니, 다시 MCP 도구로 시도해줘.` (10~30초 후 대부분 해결)
+- 계속 실패하면 UI로 우회 가능: Genie Space는 사이드바 **Genie → + New**, 대시보드는 **Dashboards → + Create**, 에이전트는 **Agent Bricks** 메뉴
+
+---
+
+## 환경 요약
+
+| 항목 | 값 |
+|------|-----|
+| 카탈로그 | `ccm_factory` |
+| 스키마 | `bronze` / `silver` / `gold` / `quarantine` |
+| 볼륨 | `ccm_factory.bronze.raw_files` |
+| 컴퓨트 | Serverless |
+| Genie Code | Agent Mode + Custom Instructions |
+| MCP | `mcp-ai-dev-kit` (15개 도구 프로필) |
+
+---
+
+## 다음 단계
+
+- **[01. 분석용 가상 데이터 생성](01-data-generation)** — 카메라 모듈 공장 Bronze 17테이블, 약 250만 건을 Genie Code 프롬프트로 생성

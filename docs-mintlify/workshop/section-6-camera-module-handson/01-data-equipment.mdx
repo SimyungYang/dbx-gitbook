@@ -1,0 +1,150 @@
+---
+title: "설비·검사·환경 테이블"
+---
+
+## 카테고리: Equipment (설비 텔레메트리)
+
+<Accordion title="설비 2개 테이블 — equipment_sensor_logs(300K), equipment_downtime(25K)">
+
+### 테이블 11: equipment_sensor_logs (설비 센서 1분 텔레메트리)
+
+> 예측정비(PdM)용. 온도·진동·진공·전류.
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `equipment_id`·`timestamp` | | 기본 |
+| `temperature_c` | DOUBLE | 설비 온도 |
+| `vibration_mm_s` | DOUBLE | 진동 |
+| `vacuum_kpa` | DOUBLE | 진공(픽업/본딩) |
+| `motor_current_a` | DOUBLE | 모터 전류 |
+| `air_pressure_kpa` | DOUBLE | 공압 |
+
+```
+설비 센서 텔레메트리(equipment_sensor_logs) 300,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.equipment_sensor_logs
+- equipment_id는 equipment_master에서 샘플링(활성 설비), 1분 간격
+- temperature_c: 정상 25~45, 노후 설비는 서서히 상승 추세
+- vibration_mm_s: 정상 0.5~3.0, 고장 전조 설비는 5 이상 스파이크
+- vacuum_kpa: -80~-60(음압), motor_current_a: 2~8
+- [의도적 이슈] 약 0.2%는 temperature_c > 200 (센서 스파이크 이상치)
+Delta로 저장, COMMENT 추가.
+```
+
+### 테이블 12: equipment_downtime (설비 비가동)
+
+```
+설비 비가동(equipment_downtime) 25,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.equipment_downtime
+- 컬럼: event_id, equipment_id, downtime_type, reason_code, start_time, end_time, duration_min
+- downtime_type: CHANGEOVER(35%), PM(25%), IDLE(20%), BREAKDOWN(20%)
+- reason_code: 유형별 코드 (예: BREAKDOWN→NOZZLE_JAM/VACUUM_LEAK/MOTOR_FAIL, PM→SCHEDULED)
+- duration_min: CHANGEOVER 20~60, PM 60~180, BREAKDOWN 30~300, IDLE 5~40
+- start_time: 2025년 범위, end = start + duration
+Delta로 저장, COMMENT 추가.
+```
+
+</Accordion>
+
+---
+
+## 카테고리: Inspection (검사)
+
+<Accordion title="검사 3개 테이블 — aoi_inspection(300K), final_image_test(250K), defect_events(120K)">
+
+### 테이블 13: aoi_inspection (AOI 자동광학검사)
+
+```
+AOI 검사(aoi_inspection) 300,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.aoi_inspection
+- 컬럼: event_id, serial_id, equipment_id, timestamp, inspect_stage, defect_flag, defect_type, component_ref, confidence
+- inspect_stage: POST_SMT / POST_DISPENSE
+- defect_flag: false(95%), true(5%)
+- defect_type: defect_flag=true일 때 SOLDER/PLACEMENT/FOREIGN_MATERIAL/POLARITY 중, false면 NULL
+- confidence: 0.7~0.99
+- [의도적 이슈] 약 0.5%는 defect_flag=false인데 defect_type이 채워짐(비즈니스 규칙 위반)
+Delta로 저장, COMMENT 추가.
+```
+
+### 테이블 14: final_image_test (최종 화질검사) ★
+
+> 출하 전 최종 판정. MTF/데드픽셀/이물/SNR 등 화질 지표.
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `mtf_sfr_center`/`mtf_sfr_corner` | DOUBLE | SFR 해상력 |
+| `dead_pixel_count` | INT | 데드픽셀 수 |
+| `blemish_count` | INT | 얼룩 |
+| `particle_count` | INT | 이물 |
+| `snr_db` | DOUBLE | 신호대잡음비 |
+| `relative_illumination_pct` | DOUBLE | 주변광량비 |
+| `distortion_pct` | DOUBLE | 왜곡 |
+| `color_shading` | DOUBLE | 색편차 |
+| `test_result` | STRING | `PASS`/`FAIL` |
+
+```
+최종 화질검사(final_image_test) 250,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.final_image_test
+- serial_id는 FINAL 스테이션 통과 시리얼, model_code 조인으로 spec 참조
+- mtf_sfr_center: PASS 75~92 / FAIL 55~72, corner는 center-10 내외
+- dead_pixel_count: 대부분 0~2, 불량은 3 이상
+- particle_count/blemish_count: 대부분 0~1, 이물 불량은 5 이상
+- snr_db: 34~42, distortion_pct: -2~2, relative_illumination_pct: 45~65
+- test_result: PASS(93%), FAIL(7%) — MTF/데드픽셀/이물 규격 위반 시 FAIL
+- [의도적 이슈] 약 4% 레코드는 snr_db가 NULL (구형 테스터)
+Delta로 저장, COMMENT 추가.
+```
+
+### 테이블 15: defect_events (불량 이벤트)
+
+```
+불량 이벤트(defect_events) 120,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.defect_events
+- 컬럼: event_id, serial_id, station, defect_code, defect_category, severity, disposition, root_cause_code, timestamp
+- station별 대표 불량: SMT→실장불량, DISPENSE→본딩불량, ALIGN→틸트/MTF, AOI→이물/솔더, FINAL→데드픽셀/화질
+- defect_category: PLACEMENT / BONDING / ALIGNMENT / CONTAMINATION / IMAGE_QUALITY
+- severity: CRITICAL(15%), MAJOR(45%), MINOR(40%)
+- disposition: REWORK(50%), SCRAP(30%), USE_AS_IS(20%)
+- root_cause_code: MATERIAL / EQUIPMENT / PROCESS / OPERATOR / ENVIRONMENT
+- 일부 불량은 특정 자재로트(Sup_S7/S8)·특정 설비와 상관되게
+Delta로 저장, COMMENT 추가.
+```
+
+</Accordion>
+
+---
+
+## 카테고리: Environment & Field
+
+<Accordion title="환경·필드 2개 테이블 — cleanroom_environment(150K), field_returns(10K)">
+
+### 테이블 16: cleanroom_environment (클린룸 환경 1분)
+
+```
+클린룸 환경(cleanroom_environment) 150,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.cleanroom_environment
+- 컬럼: line_id, zone, timestamp, temperature_c, humidity_pct, particle_0_3um, particle_0_5um, diff_pressure_pa, esd_voltage_v
+- temperature_c: 22±1.5, humidity_pct: 45±8
+- particle_0_3um: 대부분 100~3000/㎥, 도어 개폐/이상 시 스파이크
+- diff_pressure_pa: 양압 5~15, esd_voltage_v: -50~50
+- 파티클 급증 구간은 이후 CONTAMINATION 불량과 시간 상관되게
+Delta로 저장, COMMENT 추가.
+```
+
+### 테이블 17: field_returns (필드 리턴 / RMA) — 비정형 소재
+
+> `failure_symptom`·`analysis_result`가 자연어. **모듈 6(AI 함수)** 에서 이 텍스트를 분류·추출합니다.
+
+```
+필드 리턴/RMA(field_returns) 10,000건을 생성해줘.
+- 테이블: ccm_factory.bronze.field_returns
+- 컬럼: rma_id, serial_id, model_code, customer, return_date, failure_symptom(자연어 한국어), analysis_result(자연어 한국어), root_cause_code, cost_usd
+- failure_symptom 예: "저조도에서 초점이 맞지 않음", "화면 모서리 흐림", "간헐적 화면 흔들림(OIS 불량 의심)", "이물 혼입으로 검은 점", "고온에서 색감 이상"
+- analysis_result 예: "AA 틸트 규격 초과 확인", "VCM 액추에이터 응답 지연", "렌즈 본딩부 UV 경화 부족", "센서 표면 파티클"
+- root_cause_code: ALIGNMENT/ACTUATOR/BONDING/CONTAMINATION/SENSOR
+- return_date: 2025년, cost_usd: 5~50
+Delta로 저장, COMMENT 추가.
+```
+
+</Accordion>
+
+---

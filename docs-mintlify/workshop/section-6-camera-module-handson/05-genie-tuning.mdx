@@ -1,0 +1,73 @@
+---
+title: "정확도 고도화 — Instructions·Joins·SQL"
+---
+
+> **Part B: Genie 정확도 고도화 (이어서)** — Step 3~6 및 Configure UI 설정입니다.
+
+### Step 3: General Instructions 상세 설정
+
+> ⚠️ Instructions 변경 후에는 반드시 **New Chat**을 눌러 새 대화를 시작하세요. 기존 대화에는 이전 지침 컨텍스트가 남습니다.
+
+품질·불량 Space의 General Instructions 예시:
+
+```
+## 비즈니스 용어 정의
+- "수율(Yield)": (양품 수 / 투입 수) × 100
+- "직행률(FPY, First Pass Yield)": 재작업 없이 한 번에 통과한 비율
+- "OEE": 가용성 × 성능 × 품질 (종합설비효율)
+- "Cpk": 공정능력지수. 1.33 이상 관리기준, 1.0 미만 개선 필요
+- "규격 미달": mtf_center가 해당 모델 spec_mtf_min 미만
+- "문제 설비": OEE < 75% 또는 health_score < 60
+- "프라임 시프트": DAY 근무조(주간)
+
+## 계산 규칙
+- 비율 계산 시 분모가 0이면 NULLIF 사용
+- 날짜 필터 미지정 시 최근 7일
+- 수율/OEE/불량률은 % 소수점 1자리, Cpk는 소수점 2자리
+- 공급사는 Sup_S1~S8, 라인은 LINE_1~6로 식별
+
+## 분석 규칙 (임의 정의 방지) ★
+- 기준이 명확하지 않으면 임의로 정의해서 분석하지 말 것
+- 더 정확한 정보가 필요하면 사용자에게 반드시 질문할 것
+  (예: "'품질이 나쁘다'의 기준을 수율/불량률/MTF 중 무엇으로 볼까요?")
+```
+
+> 💡 **임의 정의 방지**가 핵심입니다. 이 규칙이 없으면 Genie가 "품질 나쁜 라인"의 기준을 제멋대로 정해 분석합니다.
+
+### Step 4: Joins 설정
+
+Genie Space Configure → **Joins** 탭에서 조인 경로를 정의합니다:
+
+| Left Table | Right Table | Join Key | 관계 |
+|-----------|------------|----------|------|
+| daily_yield_summary | product_master | model_code | Many to One |
+| oee_by_equipment | equipment_master | equipment_id | Many to One |
+| material_defect_correlation | material_lot_master | supplier | Many to One |
+| aa_quality_trend | product_master | model_code | Many to One |
+
+> Joins를 설정하지 않으면 "특정 고객 모델의 수율" 같은 질문에서 Genie가 조인을 못 하거나 잘못합니다.
+
+### Step 5: SQL Expressions (재사용 로직)
+
+| 유형 | 이름 | SQL | 설명 |
+|------|------|-----|------|
+| **Filter** | 관리기준 미달 공정 | `cpk < 1.33` | Cpk 부족 필터 |
+| **Measure** | 평균 수율 | `ROUND(AVG(yield_pct), 1)` | 소수점 1자리 |
+| **Dimension** | 근무조 구분 | `CASE WHEN shift='DAY' THEN '주간' WHEN shift='SWING' THEN '오후' ELSE '야간' END` | 근무조 한글화 |
+
+### Configure UI 6개 탭 & Benchmarks
+
+Genie Space 우측 상단 ⚙️ **Configure**:
+
+| 탭 | 용도 |
+|---|------|
+| **About** | 이름·설명·SQL Warehouse 연결 |
+| **Data** | 테이블 추가/제거, 테이블 설명, 동의어 |
+| **Instructions** | 위 General Instructions |
+| **Joins** | 위 조인 설정 |
+| **SQL Expressions** | Filter/Measure/Dimension |
+| **SQL Queries** | Example query(샘플 질문) 등록 |
+
+> **Benchmarks**: 질문 + 정답 SQL을 등록하면 Genie 생성 SQL이 정답과 얼마나 일치하는지 자동 평가합니다. "정확도 80% → 95%"를 정량 추적할 수 있어, 튜닝 전후 비교에 유용합니다.
+
+---

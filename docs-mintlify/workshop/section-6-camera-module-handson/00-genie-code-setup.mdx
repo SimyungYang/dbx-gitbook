@@ -1,0 +1,33 @@
+---
+title: "Genie Code 설정 & 사전점검"
+---
+
+## Part C: 워크샵 사전점검
+
+노트북을 열고 Genie Code Agent Mode에서 아래 프롬프트로 환경을 한 번에 확인합니다.
+
+### Step 1: 노트북 + Serverless 연결
+
+1. 왼쪽 사이드바 **New → Notebook**
+2. 이름을 `00_CCM_Workshop`으로 변경, 언어 **Python**
+3. 우측 상단 컴퓨트 → **Serverless** 선택 (초록불 확인)
+
+### Step 2: Genie Code Agent Mode 켜기
+
+1. 우측 상단 **✨ Genie Code** 아이콘 클릭 → 사이드 패널
+2. 하단 드롭다운에서 **Agent** 선택
+
+### Step 3: 사전점검 프롬프트
+
+```
+내 Databricks 개발 환경이 준비됐는지 점검해줘:
+1. 지금 Serverless 컴퓨트에 연결되어 있는지, Python/SQL 실행이 되는지 간단히 테스트
+2. 내가 접근 가능한 카탈로그 목록 (SHOW CATALOGS)
+3. %pip install faker 가 되는지 (pyspark 관련 패키지는 테스트하지 마)
+4. 현재 워크스페이스 리전과, AI 기능(Genie Code)이 활성 상태인지
+결과를 표로 요약해줘.
+```
+
+> Plan이 뜨고 "Allow" 버튼이 보이면 Agent Mode 정상입니다.
+
+---
