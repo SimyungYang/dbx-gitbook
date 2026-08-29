@@ -1,0 +1,58 @@
+---
+title: "2027년 2월 3일"
+description: "Genie Code 사용법 상세 가이드, Genie Space 모니터링 가이드, Databricks Apps 리소스 가이드, 교육자료 3편 추가(분산 학습·RAG 파이프라인·Lakebase Data Sync)"
+---
+
+## 가이드: Genie Code 사용법 상세
+
+[**Genie Code 사용법**](/blog/guides/genie-code/usage) 페이지가 공개되었습니다. 기존 [Genie Code 가이드](/blog/guides/genie-code/overview)의 시나리오·쿡북 중심 구성에 더해, 각 기능의 **동작 원리와 전문가 팁** 을 한 곳에서 확인할 수 있습니다.
+
+- **Chat 모드 vs Agent 모드** — 두 모드의 차이와 전환 기준을 설명합니다. 단순 질의는 Chat, 파일 생성·멀티스텝 작업은 Agent 모드가 적합합니다
+- **인라인 코드 제안 & Quick Fix** — 코드 작성 중 자동 완성과 오류 자동 수정 기능의 활용법을 다룹니다
+- **Diagnose Error & Slash 명령어** — 에러 진단 자동화와 `/fix`, `/explain` 등 빠른 명령어 사용법을 안내합니다
+
+---
+
+## 가이드: Genie Space 모니터링 & 피드백
+
+[**모니터링 및 피드백**](/blog/guides/genie-space/monitoring) 페이지가 [Genie Space 운영 가이드](/blog/guides/genie-space/overview)에 추가되었습니다. Space 배포 후 품질을 유지하고 사용자 신뢰를 구축하기 위한 운영 전략을 안내합니다.
+
+- **모니터링 탭 활용** — 질문 추이, 응답 정확도, Thumbs Up/Down 지표를 추적하여 오답 패턴을 조기에 발견하는 방법
+- **피드백 기반 개선 사이클** — 사용자 피드백을 Instructions·데이터 모델 업데이트로 연결하는 반복 프로세스
+- **배포 후 2주 운영 전략** — 첫 2주간 집중 모니터링으로 사용자 이탈을 방지하는 실전 운영 팁
+
+---
+
+## 가이드: Databricks Apps — 리소스 & 환경변수
+
+[**리소스 & 환경변수**](/blog/guides/apps/resources) 페이지가 [Databricks Apps 가이드](/blog/guides/apps/overview)에 추가되었습니다. 앱에서 Databricks 서비스에 안전하게 접근하기 위한 리소스 선언 방식을 설명합니다.
+
+- **리소스 선언 패턴** — SQL Warehouse, Model Serving Endpoint, Secret 등 리소스 유형별 `app.yaml` 설정법과 런타임 자격 증명 자동 주입 원리
+- **환경변수 관리** — 하드코딩 없이 환경(dev/staging/prod)별 설정을 안전하게 분리하는 방법
+
+---
+
+## 교육자료: 머신러닝 — 분산 학습 상세
+
+[**분산 학습 상세**](/training/09-machine-learning/distributed-training) 교육자료가 [머신러닝 교육 섹션](/training/09-machine-learning/ml-on-databricks-overview)에 추가되었습니다.
+
+- **3가지 분산 전략 비교** — Data Parallelism, Model Parallelism, Pipeline Parallelism의 트레이드오프와 적합한 상황을 정리합니다
+- **TorchDistributor 실습** — Databricks ML Runtime에서 PyTorch 분산 학습을 설정하고 실행하는 단계별 가이드
+
+---
+
+## 교육자료: AI 에이전트 — RAG 파이프라인
+
+[**RAG 파이프라인**](/training/10-agent-development/rag-pipeline) 교육자료가 [AI 에이전트 교육 섹션](/training/10-agent-development/what-is-ai-agent)에 추가되었습니다. 오프라인(데이터 준비) → 온라인(질의 처리) 2단계로 나뉘는 RAG의 전체 구조를 실습 중심으로 설명합니다.
+
+- **오프라인 파이프라인** — 문서 수집 → 파싱(`ai_parse_document`) → 청킹 → Delta 저장 → Vector Search 인덱싱의 5단계 구성
+- **온라인 파이프라인** — 사용자 질문 → Vector Search 검색 → Reranker 재순위화 → LLM 생성 → 응답 반환 흐름
+
+---
+
+## 교육자료: Lakebase — Data Sync
+
+[**Data Sync**](/training/11-lakebase/data-sync) 교육자료가 [Lakebase 교육 섹션](/training/11-lakebase/what-is-lakebase)에 추가되었습니다. Lakebase(OLTP)와 Delta Lake(OLAP) 간 자동 데이터 동기화를 다룹니다.
+
+- **CDC 기반 동기화** — WAL(Write-Ahead Log)에서 변경 사항을 감지하여 별도 ETL 없이 Delta Lake에 자동 반영하는 아키텍처
+- **실시간 분석 연동** — OLTP 데이터를 실시간 대시보드와 ML 피처 갱신에 즉시 활용하는 시나리오
