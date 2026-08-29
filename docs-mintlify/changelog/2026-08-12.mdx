@@ -1,0 +1,65 @@
+---
+title: "2026년 8월 12일"
+description: "Agent Bricks 실전 가이드, RAG 핵심 개념 & 고급 Retrieval 전략, AI Dev Kit Builder App 배포, Genie Space vs Code 선택 가이드, Lakebase 교육자료"
+---
+
+## 가이드: Agent Bricks — 선언형 AI 에이전트 빌더
+
+[**Agent Bricks 실전 가이드**](/blog/guides/agent-bricks/overview)가 5개 페이지로 구성되었습니다. 코드 없이 프로덕션 수준의 AI 에이전트를 구축, 평가, 배포하는 전 과정을 다룹니다.
+
+- [**Knowledge Assistant**](/blog/guides/agent-bricks/knowledge-assistant) — Unity Catalog 데이터 소스를 연결하여 사내 문서 기반 Q&A 에이전트를 선언형으로 구성
+- [**Genie Spaces 연동**](/blog/guides/agent-bricks/genie-agent) — Genie Space를 에이전트의 도구로 통합하여 자연어 데이터 분석을 에이전트 워크플로우에 포함
+- [**Supervisor Agent**](/blog/guides/agent-bricks/supervisor) — 여러 하위 에이전트를 오케스트레이션하는 멀티 에이전트 아키텍처 구성
+- [**평가 & 배포**](/blog/guides/agent-bricks/evaluation) — MLflow Evaluate 기반 품질 측정, Synthetic Task Generation을 통한 자동 테스트, Model Serving 엔드포인트 배포
+- [**베스트 프랙티스**](/blog/guides/agent-bricks/best-practices) — 인스트럭션 설계, 도구 선택, 모니터링 등 운영 노하우
+
+---
+
+## 가이드: RAG 핵심 개념 사전 & 고급 Retrieval 전략
+
+[**RAG 핵심 개념**](/blog/guides/rag/concepts/overview) 시리즈 6개 페이지에서 검색 증강 생성의 기반 기술을 수식 수준까지 깊이 있게 설명합니다. 각 개념은 "왜 필요한가"부터 시작하여 동작 원리, 실무 적용까지 단계적으로 다룹니다.
+
+- [**임베딩**](/blog/guides/rag/concepts/embedding) · [**유사도 측정**](/blog/guides/rag/concepts/similarity) — 텍스트를 벡터로 변환하고, 코사인 유사도·내적·L2 거리로 비교하는 원리
+- [**벡터 인덱스 & ANN**](/blog/guides/rag/concepts/vector-index) — 수백만 벡터에서 밀리초 안에 유사 벡터를 찾는 HNSW, IVF 등의 자료 구조
+- [**BM25**](/blog/guides/rag/concepts/bm25) · [**하이브리드 검색**](/blog/guides/rag/concepts/hybrid-search) — 키워드 검색과 Dense 검색을 결합하는 RRF 알고리즘
+- [**Reranking**](/blog/guides/rag/concepts/reranking) — Cross-Encoder 기반 정밀 재순위 전략
+
+[**고급 Retrieval 전략**](/blog/guides/rag/advanced-retrieval/overview) 7개 페이지에서는 프로덕션 RAG의 검색 품질을 높이는 실전 기법을 다룹니다.
+
+- [**하이브리드 검색**](/blog/guides/rag/advanced-retrieval/hybrid-search) — Dense + Sparse 결합, 가중치 튜닝, 다국어 토크나이저 고려사항
+- [**전처리 & 후처리**](/blog/guides/rag/advanced-retrieval/preprocessing) — Query Rewrite, HyDE, 결과 필터링 및 컨텍스트 압축
+- [**고급 청킹**](/blog/guides/rag/advanced-retrieval/chunking-advanced) — Semantic Chunking, Parent-Child 구조, 슬라이딩 윈도우 전략
+- [**Databricks Advanced RAG 구현**](/blog/guides/rag/advanced-retrieval/implementation) — Vector Search + Foundation Model API 기반 프로덕션 로드맵
+
+---
+
+## 가이드: 한국어 RAG 최적화
+
+[**한국어 RAG 최적화 가이드**](/blog/guides/rag/korean-nlp)에서 한국어 특유의 교착어 특성, 띄어쓰기 불규칙성, 한영 혼용 텍스트가 RAG 파이프라인에 미치는 영향과 해결 전략을 다룹니다. 형태소 분석 기반 토큰화, 한국어 특화 임베딩 모델 선택, BM25 인덱싱 최적화 등 영어 기준 파이프라인을 한국어에 맞게 조정하는 실전 기법을 안내합니다.
+
+---
+
+## 가이드: AI Dev Kit Builder App & 배포
+
+[**AI Dev Kit**](/blog/guides/ai-dev-kit/overview) 가이드에 Builder App 관련 3개 페이지가 추가되었습니다. Claude Code 에이전트와 브라우저에서 대화하며 30개 이상의 Databricks 도구를 자연어로 실행할 수 있는 풀스택 애플리케이션입니다.
+
+- [**Builder App**](/blog/guides/ai-dev-kit/builder-app) — React + FastAPI 아키텍처, MCP 통합을 통한 자동 도구 발견, 비개발자도 사용 가능한 채팅 UI
+- [**배포 가이드**](/blog/guides/ai-dev-kit/deployment-guide) — Databricks Apps 배포 절차, 로컬 개발 vs 프로덕션 비교, Lakebase 기반 대화 이력 영구 저장
+- [**활용 사례**](/blog/guides/ai-dev-kit/use-cases) — 데이터 엔지니어링, 분석, AI 개발 등 역할별 활용 시나리오
+
+---
+
+## 가이드: Genie Space & Code 선택 가이드
+
+[**Genie Space & Code 선택 가이드**](/blog/guides/genie-selection/overview)에서 이름이 비슷하지만 완전히 다른 두 Databricks 기능의 차이를 명확히 설명합니다. Genie Space는 비기술 사용자가 자연어로 데이터에 질문하는 전용 공간이고, Genie Code는 기술 사용자의 코딩 작업을 AI가 가속하는 내장 어시스턴트입니다. 대상 사용자, 인터페이스, 출력 형태, 비용 구조를 비교하여 상황에 맞는 도구를 선택할 수 있습니다.
+
+---
+
+## 교육자료: Lakebase — 관리형 OLTP 데이터베이스
+
+[**Lakebase 교육자료**](/training/11-lakebase/what-is-lakebase) 8개 페이지에서 Databricks의 PostgreSQL 호환 관리형 OLTP 데이터베이스를 체계적으로 학습할 수 있습니다.
+
+- [**Lakebase란?**](/training/11-lakebase/what-is-lakebase) — OLTP-OLAP 통합 아키텍처, ETL 없는 실시간 동기화, PostgreSQL 호환성
+- [**설정 가이드**](/training/11-lakebase/lakebase-setup) — Lakebase 인스턴스 생성, 네트워크 구성, Unity Catalog 통합
+- [**Data Sync**](/training/11-lakebase/data-sync) — Lakebase ↔ Delta Lake 간 자동 실시간 동기화 설정
+- [**Databricks Apps 연동**](/training/11-lakebase/lakebase-with-apps/overview) — Streamlit, FastAPI, Django 등 프레임워크별 연결 방법, 인증 구성, CRUD 패턴, 프로덕션 배포 가이드
