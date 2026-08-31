@@ -161,7 +161,7 @@ event_date 파티셔닝, (station, defect_category) Z-ORDER, COMMENT를 추가�
 
 **1단계 —** 공통 원칙 먼저 합의.
 ```
-위 5개 Silver와 동일한 공통 원칙(event_id 중복제거, 참조무결성→quarantine, 이상치 클리핑/플래그, event_date 파티션, 단위표준화, COMMENT)을 나머지 6개에도 적용하려고 해. 3~4개씩 나눠 요청할게.
+방금 만든 5개 Silver 테이블과 동일한 공통 원칙(event_id 중복제거, 참조무결성→quarantine, 이상치 클리핑/플래그, event_date 파티션, 단위표준화, COMMENT)을 나머지 6개에도 적용하려고 해. 3~4개씩 나눠 요청할게.
 ```
 **2단계 —** 1~3번 배치 요청.
 ```
