@@ -62,10 +62,10 @@ bronze 원본 대비 필터링/격리된 비율과, quarantine 스키마에 격�
 ```
 silver.final_test_clean, silver.serials_cleaned, silver.production_flow를 결합하여 ccm_factory.gold.daily_yield_summary를 만들어줘.
 
-그레인: line_id × model_code × event_date
+그레인: line_id × model_code × shift × event_date
 
 컬럼:
-- line_id, model_code, event_date
+- line_id, model_code, shift, event_date
 - input_qty: 투입 시리얼 수, output_qty: FINAL 통과(PASS) 수
 - yield_pct: output_qty / input_qty * 100
 - fail_qty, scrap_qty, rework_qty

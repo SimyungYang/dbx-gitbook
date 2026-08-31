@@ -12,7 +12,7 @@ title: "상관 & 인사이트"
 특정 자재 공급사/로트가 불량과 상관있는지 분석해줘:
 - @ccm_factory.bronze.traceability 로 시리얼별 사용 자재 로트(material_lot_ids)를 펼치고, @ccm_factory.bronze.defect_events / @ccm_factory.bronze.final_image_test 의 불량과 조인
 - 공급사(supplier)별 불량률을 계산하고, 평균 대비 유의하게 높은 공급사를 찾아줘
-- @ccm_factory.bronze.material_lot_master.defect_rate_incoming(수입검사 불량률)과 실제 생산 불량률의 상관도 봐줘
+- @ccm_factory.bronze.material_lot_master.defect_rate_incoming_pct(수입검사 불량률)과 실제 생산 불량률의 상관도 봐줘
 결과를 공급사별 불량률 막대 차트로 보여줘.
 ```
 

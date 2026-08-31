@@ -70,6 +70,8 @@ gold.daily_yield_summary, gold.first_pass_yield, gold.station_cycle_time 테이�
 운영 지표 3개를 더 추가해줘: 라인×일 수율 히트맵(X축 날짜, Y축 라인, 색상 수율), 근무조(shift)별 수율 비교(막대: DAY/SWING/NIGHT), 고객(customer)별 생산 비중(도넛).
 ```
 
+> 💡 `customer`는 세 소스 테이블에 없고 `@ccm_factory.bronze.product_master`의 컬럼입니다. 고객별 비중 위젯은 `daily_yield_summary`(또는 `first_pass_yield`)를 `product_master`와 `model_code`로 조인해 만들도록 프롬프트에 명시하세요.
+
 **5단계 —** 필터 추가.
 
 ```
@@ -97,8 +99,10 @@ gold.daily_yield_summary, gold.first_pass_yield, gold.station_cycle_time 테이�
 **1단계 —** 대시보드 뼈대 + 불량 파레토 2종.
 
 ```
-gold.defect_pareto, gold.material_defect_correlation, gold.aa_quality_trend, gold.spc_process_capability 테이블로 "품질/불량 분석 대시보드"를 AI/BI 대시보드로 새로 만들어줘. 우선 불량 코드별 파레토(막대+누적선, defect_code 상위 15, 누적 % 라인)와 불량 카테고리 × severity 분포(Stacked Bar: PLACEMENT/BONDING/ALIGNMENT/CONTAMINATION/IMAGE_QUALITY × CRITICAL/MAJOR/MINOR)부터.
+gold.defect_pareto, gold.material_defect_correlation, gold.aa_quality_trend, gold.spc_process_capability 테이블로 "품질/불량 분석 대시보드"를 AI/BI 대시보드로 새로 만들어줘. 우선 불량 코드별 파레토(막대+누적선, defect_code 상위 15, 누적 % 라인)와 불량 카테고리별 분포(Stacked Bar: PLACEMENT/BONDING/ALIGNMENT/CONTAMINATION/IMAGE_QUALITY, 값은 defect_count와 critical_count 비중)부터.
 ```
+
+> ⚠️ `defect_pareto`에는 severity 컬럼이 없습니다(카테고리별 `defect_count`·`critical_count`만 존재). severity(CRITICAL/MAJOR/MINOR) 단위로 분해하려면 데이터셋에 `@ccm_factory.silver.defect_normalized`(레코드 단위 severity 보유)를 추가한 뒤 그 컬럼으로 그룹핑하세요. 추가 없이는 위처럼 `critical_count 비중` 기반으로 만듭니다.
 
 **2단계 —** 맨 위에 KPI 카운터 3개 추가.
 
@@ -115,7 +119,7 @@ gold.defect_pareto, gold.material_defect_correlation, gold.aa_quality_trend, gol
 **4단계 —** AA 화질 & 공정능력 위젯 3개 추가.
 
 ```
-AA 화질·공정능력 위젯 3개를 추가해줘: 모델별 MTF(center) 분포(박스플롯 또는 분포 막대, @ccm_factory.gold.aa_quality_trend), AA 틸트 산포 추이(일별 tilt 표준편차 꺾은선), 공정 파라미터별 Cpk 히트맵(X축 날짜, Y축 공정, 색상 Cpk — 1.33 미만 경고색).
+AA 화질·공정능력 위젯 3개를 추가해줘: 모델별 MTF(center) 분포(박스플롯 또는 분포 막대, @ccm_factory.gold.aa_quality_trend), AA 틸트 산포 추이(일별 tilt_abs_max_avg 추이 꺾은선), 공정 파라미터별 Cpk 히트맵(X축 날짜, Y축 공정, 색상 Cpk — 1.33 미만 경고색).
 ```
 
 **5단계 —** 필터 추가.

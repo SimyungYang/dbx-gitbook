@@ -25,8 +25,10 @@ gold.oee_by_equipment, gold.equipment_health_score 테이블로 "설비 운영/O
 **3단계 —** 설비 분석 위젯 3개 추가.
 
 ```
-설비 분석 위젯 3개를 추가해줘: 설비 유형별 평균 OEE(막대: SMT_MOUNTER/DISPENSER/REFLOW/AA/AOI/FINAL_TESTER), 설비별 OEE 랭킹(가로 막대, 하위 15개 — 개선 대상), 비가동(downtime) 사유별 시간 파레토(막대: BREAKDOWN/PM/CHANGEOVER/IDLE).
+설비 분석 위젯 3개를 추가해줘: 설비 유형별 평균 OEE(막대: SMT_MOUNTER/DISPENSER/REFLOW/AA/AOI/FINAL_TESTER), 설비별 OEE 랭킹(가로 막대, 하위 15개 — 개선 대상), 비가동(downtime) 시간 추이(막대: 일별 downtime_min 합계).
 ```
+
+> ⚠️ `oee_by_equipment`에는 비가동 유형 분해가 없습니다(`downtime_min`·`breakdown_min` 총량만 존재). 사유별(BREAKDOWN/PM/CHANGEOVER/IDLE) 파레토가 필요하면 데이터셋에 `@ccm_factory.silver.downtime_clean`(유형별 레코드 보유)을 추가한 뒤 유형으로 그룹핑하세요.
 
 **4단계 —** 설비 건강 위젯 2개 추가.
 
@@ -71,10 +73,12 @@ gold.oee_by_equipment, gold.equipment_health_score 테이블로 "설비 운영/O
 막대를 모델(model_code)별로 그룹핑하고, module_type(AF/OIS/ToF)으로 색상을 나눠줘(stacked).
 ```
 
+> 💡 `module_type`은 `@ccm_factory.bronze.product_master`의 컬럼입니다. 이 색상 분해를 쓰려면 대상 위젯의 데이터셋을 `product_master`와 `model_code`로 조인하도록 함께 요청하세요.
+
 **4단계 —** 필터·기간·정렬 조정.
 
 ```
-대시보드에 기간(event_date) 필터와 라인 필터를 추가하고, 불량률 차트는 값 내림차순으로 정렬해줘.
+대시보드에 기간(event_date) 필터와 라인 필터를 추가하고, 라인별 생산 수량 차트(Part A 3단계)는 값 내림차순으로 정렬해줘.
 ```
 
 **5단계 —** 표시 형식 다듬기.

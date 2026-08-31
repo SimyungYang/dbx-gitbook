@@ -20,8 +20,8 @@ title: "분포 탐색"
 ### MTF(해상력) 분포 — 카메라 모듈의 핵심 품질지표
 
 ```
-active_alignment의 mtf_center_pct 와 final_image_test의 mtf_sfr_center 분포를 히스토그램으로 보여줘.
-- product_master의 spec_mtf_min 규격선을 기준으로, 규격 미달 비율도 계산
+@ccm_factory.bronze.active_alignment의 mtf_center_pct 와 @ccm_factory.bronze.final_image_test의 mtf_sfr_center 분포를 히스토그램으로 보여줘.
+- @ccm_factory.bronze.product_master의 spec_mtf_min 규격선을 기준으로, 규격 미달 비율도 계산
 - module_type(AF/OIS/ToF)별로 MTF 분포가 어떻게 다른지 비교
 - 규격을 넘는 이상치(mtf > 100 등)가 보이면 표시
 ```
