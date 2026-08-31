@@ -72,7 +72,7 @@ title: "개요 & 진행 방식"
 
 **1단계 —** zip을 워크스페이스 볼륨에 바로 내려받기 (권장). 로컬 다운로드→업로드는 브라우저·용량 제약이 있으니, Genie Code가 URL에서 볼륨으로 직접 받게 합니다.
 ```
-아래 zip 파일을 시드 데이터로 쓰려고 해. 내 카탈로그의 bronze.raw_files 볼륨에 바로 다운로드해줘.
+아래 zip 파일을 시드 데이터로 쓰려고 해. ccm_factory_<본인ID>.bronze.raw_files 볼륨에 바로 다운로드해줘.
 https://github.com/SimyungYang/dbx-gitbook/releases/download/ccm-seed-v1/ccm_factory_seed.zip
 ```
 > 대안(직접 다운로드가 막히면): 위 링크를 로컬에 받은 뒤 Catalog Explorer → `bronze.raw_files` 볼륨 → **Upload** 로 올립니다.
@@ -83,11 +83,11 @@ https://github.com/SimyungYang/dbx-gitbook/releases/download/ccm-seed-v1/ccm_fac
 ```
 **3단계 —** parquet → Delta 17개 테이블로 로드.
 ```
-풀린 각 parquet 폴더(ccm_factory/<table>/)를 읽어서 내 카탈로그의 bronze 스키마에 동일 이름의 Delta 테이블 17개로 CREATE OR REPLACE TABLE 저장해줘.
+풀린 각 parquet 폴더(ccm_factory/<table>/)를 읽어서 ccm_factory_<본인ID>.bronze 스키마에 동일 이름의 Delta 테이블 17개로 CREATE OR REPLACE TABLE 저장해줘.
 ```
 **4단계 —** 코멘트 보완과 확인.
 ```
-테이블/컬럼에 COMMENT가 없으면 의미에 맞게 달아주고, 완료 후 내 카탈로그 bronze 의 17개 테이블 row count를 표로 보여줘.
+테이블/컬럼에 COMMENT가 없으면 의미에 맞게 달아주고, 완료 후 ccm_factory_<본인ID>.bronze 의 17개 테이블 row count를 표로 보여줘.
 ```
 
 > 💡 이 시드에는 결측·중복·이상치·참조무결성 위반 등 **의도적 데이터 품질 이슈**가 심어져 있습니다 ([02. EDA](02-eda)·[03. 파이프라인](03-transformation-pipeline)에서 찾아내고 정제하는 실습 소재). 정상입니다.
@@ -96,7 +96,7 @@ https://github.com/SimyungYang/dbx-gitbook/releases/download/ccm-seed-v1/ccm_fac
 
 **1단계 —** 소스와 타겟만 알려주고 시작.
 ```
-공유 볼륨의 카메라 모듈 공장 시드 데이터를 내 카탈로그로 임포트하려고 해. 소스는 /Volumes/main/shared/workshop_seed/ccm_factory/ (하위에 테이블별 parquet 폴더 17개), 타겟은 ccm_factory.bronze 스키마야.
+공유 볼륨의 카메라 모듈 공장 시드 데이터를 내 카탈로그로 임포트하려고 해. 소스는 /Volumes/main/shared/workshop_seed/ccm_factory/ (하위에 테이블별 parquet 폴더 17개), 타겟은 ccm_factory_<본인ID>.bronze 스키마야.
 ```
 **2단계 —** 저장 방식을 지정.
 ```
