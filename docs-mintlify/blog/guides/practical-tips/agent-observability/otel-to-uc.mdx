@@ -1,0 +1,149 @@
+---
+title: "OpenTelemetry SDK로 Unity Catalog에 전송하기"
+---
+
+<Note>
+  이 페이지는 핵심 구현 페이지입니다. 저장 방식 비교는 [Trace 저장](/blog/guides/practical-tips/agent-observability/trace-storage)을, 저장 후 확인·검색은 [Trace 확인·검색](/blog/guides/practical-tips/agent-observability/search-monitoring)을 참고하세요.
+</Note>
+
+OpenTelemetry SDK로 생성한 Trace를 Databricks OTLP endpoint를 거쳐 Unity Catalog의 OTel Delta 테이블에 직접 적재합니다. 단계별로 진행합니다.
+
+## Step 1 — 사전조건
+
+다음을 준비합니다.
+
+- Unity Catalog가 활성화된 workspace
+- SQL Warehouse
+- MLflow Python **3.14 이상**
+- trace table을 생성할 catalog/schema 권한
+- 쓰기 주체(사용자 또는 service principal) 권한
+
+UC trace storage는 GA이므로 별도 preview 신청이 필요 없습니다.
+
+```bash
+pip install --upgrade "mlflow[databricks]>=3.14.0"
+pip install opentelemetry-sdk
+pip install opentelemetry-exporter-otlp-proto-http
+```
+
+## Step 2 — Experiment와 UC trace location 연결
+
+Experiment를 만들면서 `UnityCatalog` trace location을 지정합니다.
+
+<Warning>
+  trace location은 experiment **생성 시점에만** 바인딩할 수 있고, 사후 변경이 불가능합니다. 새 catalog/schema로 옮기려면 새 experiment를 만들어야 합니다.
+</Warning>
+
+```python
+import os
+import mlflow
+from mlflow.entities.trace_location import UnityCatalog
+
+os.environ["MLFLOW_TRACING_SQL_WAREHOUSE_ID"] = "<SQL_WAREHOUSE_ID>"
+mlflow.set_tracking_uri("databricks")
+
+experiment = mlflow.set_experiment(
+    experiment_name="/Shared/agent-traces",
+    trace_location=UnityCatalog(
+        catalog_name="<UC_CATALOG>",
+        schema_name="<UC_SCHEMA>",
+        table_prefix="agent",
+    ),
+)
+print(experiment.experiment_id)
+print(experiment.trace_location.full_otel_spans_table_name)
+```
+
+## Step 3 — 권한 부여
+
+`ALL PRIVILEGES`만으로는 부족합니다. `USE CATALOG`, `USE SCHEMA`와 각 테이블에 대한 `MODIFY`·`SELECT`를 명시적으로 부여해야 합니다.
+
+```sql
+GRANT USE CATALOG ON CATALOG <UC_CATALOG> TO `<SERVICE_PRINCIPAL_OR_USER>`;
+GRANT USE SCHEMA ON SCHEMA <UC_CATALOG>.<UC_SCHEMA> TO `<SERVICE_PRINCIPAL_OR_USER>`;
+GRANT MODIFY, SELECT ON TABLE <UC_CATALOG>.<UC_SCHEMA>.agent_otel_spans TO `<SERVICE_PRINCIPAL_OR_USER>`;
+GRANT MODIFY, SELECT ON TABLE <UC_CATALOG>.<UC_SCHEMA>.agent_otel_logs TO `<SERVICE_PRINCIPAL_OR_USER>`;
+GRANT MODIFY, SELECT ON TABLE <UC_CATALOG>.<UC_SCHEMA>.agent_otel_metrics TO `<SERVICE_PRINCIPAL_OR_USER>`;
+GRANT MODIFY, SELECT ON TABLE <UC_CATALOG>.<UC_SCHEMA>.agent_otel_annotations TO `<SERVICE_PRINCIPAL_OR_USER>`;
+```
+
+## Step 4 — OTLP Exporter 설정
+
+Databricks OTLP endpoint는 `/api/2.0/otel/v1/traces`입니다. 다음 헤더가 필요합니다.
+
+| 헤더 | 값 |
+| --- | --- |
+| `X-Databricks-UC-Table-Name` | spans 테이블 full name (`` `<catalog>.<schema>.agent_otel_spans` ``) |
+| `content-type` | `application/x-protobuf` |
+| `Authorization` | `Bearer <DATABRICKS_TOKEN>` |
+
+Trace에는 root span이 반드시 있어야 합니다.
+
+```python
+import json
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+
+WORKSPACE_URL = "<WORKSPACE_URL>"
+UC_SPANS_TABLE = "<UC_CATALOG>.<UC_SCHEMA>.agent_otel_spans"
+DATABRICKS_TOKEN = "<DATABRICKS_TOKEN>"
+
+exporter = OTLPSpanExporter(
+    endpoint=f"https://{WORKSPACE_URL}/api/2.0/otel/v1/traces",
+    headers={
+        "content-type": "application/x-protobuf",
+        "X-Databricks-UC-Table-Name": UC_SPANS_TABLE,
+        "Authorization": f"Bearer {DATABRICKS_TOKEN}",
+    },
+)
+provider = TracerProvider()
+provider.add_span_processor(BatchSpanProcessor(exporter))
+trace.set_tracer_provider(provider)
+tracer = trace.get_tracer("my-agent")
+
+def run_agent(query: str) -> str:
+    with tracer.start_as_current_span("agent-run") as root:
+        root.set_attribute("gen_ai.operation.name", "invoke_agent")
+        root.set_attribute("session.id", "conversation-123")
+        root.set_attribute("user.id", "user-456")
+        root.set_attribute("gen_ai.input.messages", json.dumps([{"role": "user", "content": query}]))
+        with tracer.start_as_current_span("llm-call") as llm_span:
+            llm_span.set_attribute("gen_ai.operation.name", "chat")
+            llm_span.set_attribute("gen_ai.request.model", "my-model")
+            response = call_llm(query)
+            llm_span.set_attribute("gen_ai.output.messages", json.dumps([{"role": "assistant", "content": response}]))
+        root.set_attribute("gen_ai.output.messages", json.dumps([{"role": "assistant", "content": response}]))
+        root.set_attribute("gen_ai.usage.input_tokens", 150)
+        root.set_attribute("gen_ai.usage.output_tokens", 42)
+        return response
+```
+
+`BatchSpanProcessor`는 span을 배치로 모아 전송하므로, 프로세스 종료 전 반드시 flush 해야 남은 span이 유실되지 않습니다.
+
+```python
+provider.shutdown()
+```
+
+## GenAI OTel 속성
+
+MLflow UI가 span을 올바른 type으로 표시하고 입출력·token을 채우려면 아래 GenAI 표준 속성을 씁니다.
+
+| 속성 | 값·의미 |
+| --- | --- |
+| `gen_ai.operation.name` = `chat` | CHAT_MODEL span |
+| `gen_ai.operation.name` = `execute_tool` | TOOL span |
+| `gen_ai.operation.name` = `invoke_agent` | AGENT span |
+| `gen_ai.operation.name` = `embeddings` | EMBEDDING span |
+| `gen_ai.input.messages` | 입력 메시지 |
+| `gen_ai.output.messages` | 출력 메시지 |
+| `gen_ai.usage.input_tokens` | 입력 token 수 |
+| `gen_ai.usage.output_tokens` | 출력 token 수 |
+| `gen_ai.request.model` | 모델 이름 |
+| `session.id` | 대화 식별 |
+| `user.id` | 사용자 식별 |
+
+<Warning>
+  `gen_ai.input.messages` / `gen_ai.output.messages`와 token usage는 **root span에도** 설정해야 trace summary와 집계 값이 채워집니다. 또한 커스텀 attribute는 MLflow unified tags로 자동 변환되지 않으므로, 검색에 쓸 tag는 MLflow tag API로 별도 지정하세요.
+</Warning>

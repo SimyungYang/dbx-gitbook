@@ -1,0 +1,78 @@
+---
+title: "Agent Observability 개요"
+---
+
+<Info>
+  이 가이드는 Databricks에서 Agent의 실행을 관찰하고 저장하는 방법을 다룹니다. 세부 구현은 [MLflow Tracing](/blog/guides/practical-tips/agent-observability/mlflow-tracing), [Trace 저장](/blog/guides/practical-tips/agent-observability/trace-storage), [OTel → UC 전송](/blog/guides/practical-tips/agent-observability/otel-to-uc) 페이지를 참고하세요.
+</Info>
+
+Databricks의 Agent observability는 하나의 기능이 아닙니다. Agent 내부 실행을 추적하는 계층, Trace를 장기 저장하는 계층, 품질을 평가하는 계층, 호출한 서비스의 비용과 접근을 관찰하는 계층, 앱 자체의 runtime을 수집하는 계층이 각각 나뉘어 있습니다.
+
+실무에서는 목적에 맞게 이 계층들을 조합합니다. 개발 중에는 Agent 내부 흐름을 빠르게 들여다보고, 운영 중에는 Trace를 Unity Catalog에 장기 저장하며 품질을 자동 평가합니다. 각 계층이 무엇을 담당하는지 먼저 정리합니다.
+
+## 5개 관찰 계층
+
+| 계층 | 담당 | 비고 |
+| --- | --- | --- |
+| **MLflow Tracing** | Agent 내부 실행 흐름 추적 — LLM 호출, RAG 검색, tool 호출, 중간 결과, 입출력, latency, token usage | Agent 개발·디버깅의 기본 |
+| **Unity Catalog Trace Storage** | Trace를 OTel 형식 Delta 테이블로 저장 — SQL·MLflow UI·권한 관리·장기 보존 | **2026년 7월 GA** (이전 Public Preview는 2026년 4월) |
+| **MLflow Evaluation/Monitoring** | Trace 기반 correctness/relevance/safety/groundedness 평가, 운영 중 scorer 실행 | 품질 자동 평가 |
+| **Unity AI Gateway Observability** | Agent가 호출한 Model/MCP 서비스의 요청량·token·latency·비용·접근 주체·audit 관찰 | `system.ai_gateway.usage`, `system.access.audit`, inference table |
+| **Databricks Apps Telemetry** | 앱 자체 traces/logs/metrics를 OTel로 수집해 UC 저장 | MLflow Agent trace와 별도 계층, **Public Preview** |
+
+## 권장 아키텍처
+
+```text
+Agent Application
+   │
+   ├─ MLflow autolog / @mlflow.trace
+   └─ OpenTelemetry SDK
+          │
+          ▼
+Databricks OTLP Endpoint (/api/2.0/otel/v1/traces)
+          │
+          ▼
+Unity Catalog OTel Delta Tables
+   ├─ _otel_spans
+   ├─ _otel_logs
+   ├─ _otel_metrics
+   └─ _otel_annotations
+          │
+          ├─ MLflow Traces UI
+          ├─ MLflow Evaluation / Production Monitoring
+          ├─ Databricks SQL / AI·BI Dashboard
+          └─ Unity Catalog 권한·보존·감사
+```
+
+Agent 애플리케이션은 MLflow autolog나 OpenTelemetry SDK로 Trace를 만들고, Databricks OTLP endpoint를 통해 Unity Catalog의 OTel Delta 테이블에 적재합니다. 저장된 Trace는 MLflow UI, 평가·모니터링, Databricks SQL, 그리고 UC의 권한·보존·감사 기능에서 그대로 활용됩니다.
+
+## 실무 조합 가이드
+
+| 필요한 것 | 사용할 계층 |
+| --- | --- |
+| Agent 내부 품질·RAG·tool 흐름 관찰 | MLflow Tracing |
+| 표준 다언어 계측 | OpenTelemetry SDK |
+| 운영 Trace 장기 저장·SQL 분석 | Unity Catalog OTel tables |
+| Model·MCP 비용·접근 관찰 | Unity AI Gateway |
+| 앱 오류·runtime 수집 | Apps Telemetry |
+| 품질 자동 평가 | MLflow scorers · Production Monitoring |
+
+## 세부 페이지
+
+<CardGroup cols={2}>
+  <Card title="MLflow Tracing — Trace와 Span" href="/blog/guides/practical-tips/agent-observability/mlflow-tracing">
+    Trace/Span 개념, span type, 자동·수동 계측
+  </Card>
+  <Card title="Trace 저장 — Experiment vs Unity Catalog" href="/blog/guides/practical-tips/agent-observability/trace-storage">
+    두 저장 방식 비교와 UC 저장 구조
+  </Card>
+  <Card title="OpenTelemetry SDK로 UC에 전송하기" href="/blog/guides/practical-tips/agent-observability/otel-to-uc">
+    핵심 구현 — 권한, OTLP exporter, GenAI 속성
+  </Card>
+  <Card title="Trace 확인·검색과 프로덕션 모니터링" href="/blog/guides/practical-tips/agent-observability/search-monitoring">
+    UI 확인, Python 검색, Production Monitoring
+  </Card>
+  <Card title="Databricks Apps Telemetry & 외부 OTel 연동" href="/blog/guides/practical-tips/agent-observability/apps-and-external">
+    앱 runtime 수집, 외부 backend export
+  </Card>
+</CardGroup>

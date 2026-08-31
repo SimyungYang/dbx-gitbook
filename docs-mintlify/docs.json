@@ -1202,6 +1202,22 @@
             ]
           },
           {
+            "group": "AI Agent Observability",
+            "pages": [
+              {
+                "group": "OTel Tracing 구현",
+                "pages": [
+                  "blog/guides/practical-tips/agent-observability/overview",
+                  "blog/guides/practical-tips/agent-observability/mlflow-tracing",
+                  "blog/guides/practical-tips/agent-observability/trace-storage",
+                  "blog/guides/practical-tips/agent-observability/otel-to-uc",
+                  "blog/guides/practical-tips/agent-observability/search-monitoring",
+                  "blog/guides/practical-tips/agent-observability/apps-and-external"
+                ]
+              }
+            ]
+          },
+          {
             "group": "Delta Lake 성능",
             "pages": [
               "blog/guides/practical-tips/delta-performance-checklist"

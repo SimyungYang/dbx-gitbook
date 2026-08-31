@@ -1,0 +1,62 @@
+---
+title: "Trace 확인·검색과 프로덕션 모니터링"
+---
+
+<Note>
+  UC로 Trace를 전송하는 구현은 [OTel → UC 전송](/blog/guides/practical-tips/agent-observability/otel-to-uc)을 먼저 참고하세요.
+</Note>
+
+Trace를 저장했으면 MLflow UI에서 시각적으로 확인하고, Python API로 조건 검색하며, 운영 중에는 자동 모니터링을 붙입니다.
+
+## MLflow UI에서 확인
+
+1. Workspace > **Experiments** 로 이동합니다.
+2. Trace가 연결된 Experiment를 엽니다.
+3. **Traces** 탭을 선택합니다.
+4. UC trace라면 조회에 사용할 **SQL Warehouse**를 선택합니다.
+
+Unity Catalog에 저장된 OTel trace도 Experiment에 저장한 trace와 동일한 UI에서 확인합니다.
+
+## Python으로 검색
+
+`mlflow.search_traces()`로 조건에 맞는 Trace를 가져옵니다. UC trace를 읽으려면 SQL Warehouse ID를 지정해야 합니다.
+
+```python
+import os
+import mlflow
+
+os.environ["MLFLOW_TRACING_SQL_WAREHOUSE_ID"] = "<SQL_WAREHOUSE_ID>"
+mlflow.set_tracking_uri("databricks")
+mlflow.set_experiment(experiment_id="<EXPERIMENT_ID>")
+
+traces = mlflow.search_traces(
+    filter_string="span.attributes.gen_ai.operation.name = 'chat'",
+    include_spans=True,
+)
+print(traces)
+```
+
+## OTel attribute 검색
+
+OTel attribute는 `span.attributes.<name>` 형식으로 필터링합니다.
+
+```python
+mlflow.search_traces(filter_string="span.attributes.session.id = 'conversation-123'")
+mlflow.search_traces(filter_string="span.attributes.gen_ai.request.model LIKE '%gpt%'")
+mlflow.search_traces(filter_string="span.attributes.gen_ai.usage.input_tokens > 1000")
+```
+
+특정 대화 세션의 Trace만 모으거나, 특정 모델을 쓴 호출만 추리거나, token을 많이 쓴 요청을 찾는 식으로 활용합니다.
+
+## 프로덕션 모니터링
+
+<Warning>
+  UC trace 기반 Production Monitoring은 `MLFLOW_TRACING_SQL_WAREHOUSE_ID` 환경변수만으로는 부족합니다. monitoring job이 UC 테이블을 읽을 수 있도록 Warehouse ID를 experiment에 저장해야 합니다.
+</Warning>
+
+```python
+from mlflow.tracing import set_databricks_monitoring_sql_warehouse_id
+set_databricks_monitoring_sql_warehouse_id("<SQL_WAREHOUSE_ID>")
+```
+
+이 설정을 마치면 correctness/relevance/safety/groundedness 같은 scorer를 운영 Trace에 지속적으로 실행해 품질을 자동 평가할 수 있습니다.

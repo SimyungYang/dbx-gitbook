@@ -1,0 +1,93 @@
+---
+title: "MLflow Tracing — Trace와 Span"
+---
+
+<Note>
+  전체 관찰 계층은 [Agent Observability 개요](/blog/guides/practical-tips/agent-observability/overview)를 먼저 참고하세요. 저장 방식 선택은 [Trace 저장](/blog/guides/practical-tips/agent-observability/trace-storage) 페이지에서 다룹니다.
+</Note>
+
+## Trace와 Span
+
+MLflow Tracing은 Agent 실행을 계층 구조로 기록합니다. 하나의 Agent 요청은 root trace가 되고, 그 안에서 일어나는 개별 작업은 child span으로 남습니다. 검색, LLM 호출, tool 실행이 각각 하나의 span이 되고, 서로 부모-자식 관계를 이루며 트리를 형성합니다.
+
+```text
+Agent request
+├─ Agent/orchestration
+├─ Retriever
+├─ LLM call
+├─ Tool call
+└─ Final response
+```
+
+이 트리 덕분에 요청 하나가 어떤 순서로 처리됐는지, 어느 단계에서 시간이 오래 걸렸는지, 어디서 오류가 났는지 한눈에 확인할 수 있습니다.
+
+## span에 담기는 정보
+
+각 span은 다음 정보를 담습니다.
+
+- 입력·출력
+- 시작·종료 시간과 latency
+- LLM prompt/response
+- tool 이름과 인자
+- 검색 문서와 metadata
+- model 이름
+- token usage
+- exception과 상태
+- session/user 정보
+
+## span type
+
+MLflow span schema는 OpenTelemetry와 호환됩니다. span은 다음 type을 가질 수 있습니다.
+
+| span type | 의미 |
+| --- | --- |
+| `AGENT` | Agent 오케스트레이션 단위 |
+| `TOOL` | tool 호출 |
+| `RETRIEVER` | 문서 검색 |
+| `CHAT_MODEL` | chat 형식 LLM 호출 |
+| `LLM` | 일반 LLM 호출 |
+| `EMBEDDING` | 임베딩 생성 |
+
+이 외에 `PARSER`, `RERANKER`, `UNKNOWN` type도 있습니다.
+
+## 자동 계측 (autolog)
+
+지원 라이브러리는 한 줄로 계측이 켜집니다.
+
+```python
+import mlflow
+mlflow.openai.autolog()
+mlflow.langchain.autolog()
+mlflow.anthropic.autolog()
+mlflow.litellm.autolog()
+```
+
+OpenAI, Anthropic, LangChain, LangGraph, LlamaIndex, DSPy, CrewAI, AutoGen, Bedrock, Ollama 등을 지원합니다.
+
+<Warning>
+  Serverless compute에서는 autolog가 자동으로 켜지지 않습니다. 위 autolog 함수를 코드에서 명시적으로 호출해야 합니다.
+</Warning>
+
+## 수동 계측
+
+프레임워크를 쓰지 않거나 커스텀 로직을 추적하려면 `@mlflow.trace` 데코레이터로 함수를 감쌉니다. `span_type`으로 span 종류를 지정합니다.
+
+```python
+import mlflow
+from mlflow.entities import SpanType
+
+@mlflow.trace(span_type=SpanType.AGENT)
+def run_agent(query: str):
+    docs = retrieve(query)
+    return generate_answer(query, docs)
+
+@mlflow.trace(span_type=SpanType.RETRIEVER)
+def retrieve(query: str):
+    return vector_store.search(query)
+
+@mlflow.trace(span_type=SpanType.TOOL)
+def call_external_tool(name: str):
+    return external_api.call(name)
+```
+
+함수 단위보다 더 세밀하게 span 경계를 제어하려면 `mlflow.start_span()`을 직접 사용합니다.

@@ -1,0 +1,86 @@
+---
+title: "Databricks Apps Telemetry & 외부 OTel 연동"
+---
+
+<Note>
+  이 페이지는 앱 runtime observability와 외부 backend 연동을 다룹니다. Agent 내부 Trace는 [MLflow Tracing](/blog/guides/practical-tips/agent-observability/mlflow-tracing) 계층에서 별도로 다룹니다.
+</Note>
+
+## Databricks Apps Telemetry
+
+Databricks Apps Telemetry는 앱 자체의 runtime observability를 담당합니다. MLflow Agent trace와는 별도 계층이며 현재 **Public Preview**입니다. 앱의 traces/logs/metrics를 OTel로 수집해 Unity Catalog에 저장합니다.
+
+### 활성화
+
+App Settings의 **App telemetry**에서 저장할 UC catalog/schema(필요하면 table prefix)를 지정한 뒤 앱을 redeploy 합니다.
+
+### 생성되는 테이블
+
+| 테이블 | 생성 조건 |
+| --- | --- |
+| `otel_logs` | redeploy 후 자동 생성 |
+| `otel_spans` | 커스텀 계측 필요 |
+| `otel_metrics` | 커스텀 계측 필요 |
+
+로그는 활성화만 하면 자동으로 쌓이지만, span과 metric은 앱에 계측 코드를 추가해야 채워집니다.
+
+### FastAPI 예시
+
+`requirements.txt`에 OTel 패키지를 추가합니다.
+
+```text
+fastapi
+uvicorn
+opentelemetry-distro
+opentelemetry-exporter-otlp-proto-grpc
+opentelemetry-instrumentation-fastapi
+```
+
+`app.yaml`에서 `opentelemetry-instrument`로 앱을 실행합니다.
+
+```yaml
+command:
+  - opentelemetry-instrument
+  - uvicorn
+  - app:app
+  - --host
+  - 0.0.0.0
+  - --port
+  - "8000"
+
+env:
+  - name: OTEL_TRACES_SAMPLER
+    value: always_on
+```
+
+telemetry가 활성화되면 Databricks Apps가 OTLP collector endpoint, protocol, service name, batch 관련 env를 runtime에 자동 주입합니다. 데이터가 쌓이는지 확인합니다.
+
+```sql
+SELECT * FROM <catalog>.<schema>.otel_spans LIMIT 10;
+```
+
+<Warning>
+  대상 테이블은 workspace와 **같은 region**의 managed Delta table이어야 합니다.
+</Warning>
+
+## 외부 OTel backend로 내보내기
+
+Datadog, Grafana, OTel Collector 같은 외부 backend로 Trace를 내보낼 때는 MLflow의 OTLP export를 사용합니다.
+
+```python
+import os
+os.environ["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = "https://<OTEL-COLLECTOR>/v1/traces"
+os.environ["OTEL_SERVICE_NAME"] = "my-agent"
+```
+
+### 3가지 export 모드
+
+| 모드 | 설명 |
+| --- | --- |
+| MLflow Tracking만 | 기본. Databricks/MLflow에만 저장 |
+| OTel Collector만 | 외부 backend로만 전송 |
+| 둘 다 (dual export) | MLflow와 OTel Collector에 동시 전송 |
+
+<Warning>
+  **dual export**(MLflow와 OTel Collector 동시 전송)는 `MLFLOW_TRACE_ENABLE_OTLP_DUAL_EXPORT=true` 환경변수로 켭니다. `OTEL_SERVICE_NAME`만으로는 dual export가 되지 않습니다 — `OTEL_SERVICE_NAME`은 trace 그룹핑(서비스 이름 지정)용입니다. 이 환경변수 설정들은 모두 **첫 Trace가 생성되기 전에** 적용해야 합니다.
+</Warning>
