@@ -16,6 +16,7 @@ Custom Instructions는 Genie Code에게 **항상 이 규칙을 따르라**는 �
 - 워크스페이스 지침이 개인보다 우선 적용됩니다. 최대 약 20,000자.
 - Genie Code의 인라인 제안·`/fix`에도 적용됩니다 (Autocomplete 제외).
 - 워크샵에서는 아래 내용을 **개인 Custom Instructions**로 설정합니다. Settings(⚙️) → **Custom Instructions**에 붙여넣으세요.
+- 붙여넣기 전에 아래 **`ccm_factory_hong` 두 곳을 본인 실제 카탈로그명**(예: 사번·이니셜을 붙인 `ccm_factory_kim`)으로 바꾸세요. 이 한 줄이 **가이드의 모든 `ccm_factory` 프롬프트를 자동으로 내 카탈로그로 연결**하는 핵심입니다.
 
 ```markdown
 ## 기본 규칙
@@ -23,8 +24,11 @@ Custom Instructions는 Genie Code에게 **항상 이 규칙을 따르라**는 �
 - PySpark 기본 사용 (pandas 대신), SQL은 Databricks SQL 문법
 - Serverless 제약 준수: R/Scala/RDD/DBFS mount/init script 금지, %pip install pyspark 금지
 
+## 카탈로그 (중요)
+- 내 전용 카탈로그는 `ccm_factory_hong` 이다. (공유 워크스페이스 충돌 방지)
+- **가이드/프롬프트에 나오는 `ccm_factory`는 전부 내 카탈로그 `ccm_factory_hong`을 가리킨다.** 모든 SQL·코드에서 `ccm_factory.<schema>.<table>` 는 `ccm_factory_hong.<schema>.<table>` 로 해석·사용하라.
+
 ## 네이밍
-- 카탈로그: ccm_factory_<본인ID>  (내 전용 카탈로그 — 이후 프롬프트에서 "내 카탈로그"는 이걸 가리킴. 공유 워크스페이스 충돌 방지)
 - 스키마: bronze / silver / gold / quarantine
 - 테이블/컬럼: snake_case
 

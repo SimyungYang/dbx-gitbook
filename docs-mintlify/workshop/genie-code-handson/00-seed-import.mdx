@@ -8,30 +8,33 @@ title: "시드 데이터 다운로드 & 적재"
 
 > 📦 **다운로드**: [ccm_factory_seed.zip](https://github.com/SimyungYang/dbx-gitbook/releases/download/ccm-seed-v1/ccm_factory_seed.zip) — Bronze 17테이블 parquet, 약 **60MB**. 압축 내부 구조는 `ccm_factory/<table>/part.parquet` 입니다.
 
-**1단계 —** 받은 zip을 내 UC Volume에 업로드.
+**1단계 —** zip을 워크스페이스 볼륨에 바로 내려받기 (권장).
 
-Catalog Explorer에서 `ccm_factory.bronze.raw_files` 볼륨을 열고 **Upload** 버튼으로 zip을 올립니다. 경로가 헷갈리면 Genie Code에 물어보세요.
+로컬에 받아 업로드하면 브라우저·용량 제약이 있습니다. Genie Code가 공개 URL에서 볼륨으로 **직접 다운로드**하게 하면 간단합니다.
 
 ```
-ccm_factory.bronze.raw_files 볼륨에 시드 zip을 업로드하려고 해. Catalog Explorer 업로드 방법과 업로드 후 최종 경로를 알려줘.
+아래 zip 파일을 시드 데이터로 쓰려고 해. 내 카탈로그의 bronze.raw_files 볼륨에 바로 다운로드해줘.
+https://github.com/SimyungYang/dbx-gitbook/releases/download/ccm-seed-v1/ccm_factory_seed.zip
 ```
+
+> 대안(직접 다운로드가 막히면): 위 링크를 로컬에 받은 뒤 Catalog Explorer → `bronze.raw_files` 볼륨 → **Upload** 버튼으로 올립니다.
 
 **2단계 —** 압축을 풀고 구조를 확인.
 
 ```
-/Volumes/ccm_factory/bronze/raw_files/ccm_factory_seed.zip 을 풀어서, ccm_factory/ 아래 테이블별 parquet 폴더 17개가 있는지 목록으로 보여줘.
+방금 볼륨에 받은 ccm_factory_seed.zip 을 풀어서, ccm_factory/ 아래 테이블별 parquet 폴더 17개가 있는지 목록으로 보여줘.
 ```
 
 **3단계 —** parquet → Delta 17개 테이블로 적재.
 
 ```
-풀린 각 parquet 폴더(`ccm_factory/<table>/`)를 읽어서 ccm_factory.bronze 스키마에 동일한 이름의 Delta 테이블 17개로 CREATE OR REPLACE TABLE 저장해줘.
+풀린 각 parquet 폴더(`ccm_factory/<table>/`)를 읽어서 내 카탈로그의 bronze 스키마에 동일한 이름의 Delta 테이블 17개로 CREATE OR REPLACE TABLE 저장해줘.
 ```
 
 **4단계 —** 적재 확인.
 
 ```
-ccm_factory.bronze 의 테이블 17개 row count를 표로 보여주고, 참조 무결성(serial_id / equipment_id / material_lot_id)이 정상인지 간단히 점검해줘.
+내 카탈로그 bronze 의 테이블 17개 row count를 표로 보여주고, 참조 무결성(serial_id / equipment_id / material_lot_id)이 정상인지 간단히 점검해줘.
 ```
 
 > 💡 이 시드에는 결측·중복·이상치·참조무결성 위반 등 **의도적 데이터 품질 이슈**가 심어져 있습니다 — [02. EDA](02-eda)·[03. 파이프라인](03-transformation-pipeline)에서 찾아내고 정제하는 실습 소재이니 정상입니다.
