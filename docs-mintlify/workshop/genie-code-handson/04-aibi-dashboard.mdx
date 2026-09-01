@@ -2,12 +2,6 @@
 title: "생산·품질 대시보드"
 ---
 
-| 항목 | 내용 |
-|------|------|
-| **소요 시간** | ~50분 |
-| **사전 조건** | [03. 변환 파이프라인](03-transformation-pipeline) 완료 (Gold 테이블 10개 필요) |
-| **실습 환경** | Genie Code |
-
 > **핵심 메시지**: "대시보드는 **'아는 질문'** 에 답한다. (아직 모르는 질문은 다음 모듈의 Genie가 답한다.)"
 
 ### 목적 & 다루는 테이블
@@ -69,7 +63,7 @@ gold.daily_yield_summary, gold.first_pass_yield, gold.station_cycle_time 테이�
 운영 지표 3개를 더 추가해줘: 라인×일 수율 히트맵(X축 날짜, Y축 라인, 색상 수율), 근무조(shift)별 수율 비교(막대: DAY/SWING/NIGHT), 고객(customer)별 생산 비중(도넛).
 ```
 
-> 💡 `customer`는 세 소스 테이블에 없고 `@ccm_factory.bronze.product_master`의 컬럼입니다. 고객별 비중 위젯은 `daily_yield_summary`(또는 `first_pass_yield`)를 `product_master`와 `model_code`로 조인해 만들도록 프롬프트에 명시하세요.
+> 💡 `customer`는 세 소스 테이블에 없고 `@ccm_factory.bronze.product_master`의 컬럼입니다. 고객별 비중 위젯은 `daily_yield_summary`(model_code 보유)를 `product_master`와 `model_code`로 조인해 만들도록 프롬프트에 명시하세요.
 
 **5단계 —** 필터 추가.
 

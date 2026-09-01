@@ -1,12 +1,10 @@
 ---
-title: "카메라 모듈 스마트팩토리 E2E"
+title: "스마트팩토리 E2E"
 ---
-
-> **소요**: 1일 (약 6~7시간) | **대상**: 데이터 분석 경험 보유(L200) | **환경**: Genie Code · Serverless
 
 Databricks **Genie Code**로 자연어 프롬프트만으로 데이터 파이프라인부터 AI 에이전트까지 End-to-End로 구축하는 1일 핸즈온입니다.
 
-**카메라 모듈(CCM, Compact Camera Module) 스마트팩토리** 데이터를 소재로, 있을 법한 Bronze 원천 데이터를 만들고 → 정제 파이프라인 → 대시보드/Genie → 비정형 처리 → Agent Bricks 에이전트까지 이어집니다.
+데이터는 **스마트팩토리**(카메라 모듈 라인) 시나리오를 사용합니다. 있을 법한 Bronze 원천을 만들고 → 정제 파이프라인 → 대시보드/Genie → 비정형 처리 → Agent Bricks 에이전트까지 이어집니다.
 
 > 📌 **표기 규칙 — 카탈로그 이름**: 이 가이드는 카탈로그를 편의상 `ccm_factory`로 표기합니다. **공유 워크스페이스**에서는 충돌 방지를 위해 본인 고유 카탈로그 `ccm_factory_<본인ID>`(예: `ccm_factory_hong`)를 만들고, 가이드의 `ccm_factory`를 **본인 카탈로그로 바꿔** 읽으세요. [모듈 0](00-genie-code-intro-setup)에서 이 이름을 Custom Instructions에 등록해 두면, 이후 "내 카탈로그의 …"라고만 해도 Genie Code가 자동으로 본인 카탈로그를 씁니다. (별도 워크스페이스를 배정받았다면 `ccm_factory` 그대로 사용)
 
@@ -22,7 +20,7 @@ Databricks **Genie Code**로 자연어 프롬프트만으로 데이터 파이프
 
 ## 이 워크샵의 목표
 
-- **Genie Code = 만능 빌더**: SQL/Python을 직접 쓰지 않고, 자연어 프롬프트만으로 Databricks의 다양한 기능을 빠르고 안전하게 구축한다
+- **Genie Code로 구축**: SQL/Python을 직접 쓰지 않고, 자연어 프롬프트만으로 Databricks의 다양한 기능을 빠르고 안전하게 구축한다
 - **안전한 구성 우선**: Genie Code의 "Allow in this thread" 실행 승인, Custom Instructions 안전 규칙, Serverless 제약을 지킨다
 - **기능 체감**: 수율·불량·OEE·예측정비 같은 질문을 Genie Code로 데이터에서 답해 보며 Databricks 기능을 몸으로 익힌다 (카메라 모듈은 소재)
 

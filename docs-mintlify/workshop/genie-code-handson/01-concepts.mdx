@@ -12,11 +12,9 @@ sidebarTitle: "개념 소개"
 | **Faker / dbldatagen** | Faker=현실적인 가짜값(이름·날짜·코드) 생성, dbldatagen=분포·상관 제어에 강함(비율·범위 지정 대량 생성) |
 | **Delta Lake** | ACID 트랜잭션·Time Travel을 지원하는 기본 테이블 형식. 전 17테이블 저장 형식 |
 | **Parquet** | 컬럼 단위 압축 오픈 파일 포맷. Delta 내부 저장 + 시드 데이터 교환 포맷 |
-| **COPY INTO / CTAS** | 파일 반복 적재 / 쿼리 결과의 테이블화. 시드 parquet 임포트·공유 카탈로그 복제 |
+| **CTAS / CREATE TABLE** | 쿼리 결과·파일을 테이블로 저장. 시드 parquet 임포트·공유 카탈로그 복제 |
 | **UC Volumes** | UC 거버넌스 아래 파일 저장 영역(`/Volumes/...`). 시드 parquet·비정형 파일 저장 |
 | **의도적 데이터 품질 이슈** | 교육 목적으로 심은 결함·상관(중복·단위 오류·규칙 위반 등). 이후 EDA·정제·AI 함수 실습의 재료 |
-
-> MDX 참고: 스키마 표의 `MAP<STRING,STRING>`·`ARRAY<STRING>` 같은 타입은 백틱으로 감싸 표기합니다.
 
 공식 문서: [PySpark](https://docs.databricks.com/en/pyspark/index.html) · [Delta Lake](https://docs.databricks.com/en/delta/index.html) · [UC Volumes](https://docs.databricks.com/en/volumes/index.html) · [dbldatagen](https://github.com/databrickslabs/dbldatagen) · [Faker](https://pypi.org/project/Faker/)
 
