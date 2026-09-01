@@ -7,7 +7,6 @@ title: "개요 & 프로파일링"
 | **소요 시간** | ~40분 |
 | **사전 조건** | [01. 가상 데이터 생성](01-data-generation) 완료 (Bronze 17테이블 로드됨) |
 | **실습 환경** | Genie Code, Serverless |
-| **사용 MCP 도구** | `execute_sql`, `get_table_stats_and_schema` |
 
 ### 이 모듈의 목적과 다루는 테이블
 
@@ -21,7 +20,6 @@ title: "개요 & 프로파일링"
 | 기능 | 설명 | 공식 문서 |
 |------|------|----------|
 | **DataFrame API 프로파일링** | `describe()`/`summary()`로 컬럼별 통계(평균·표준편차·분위수)를 한 번에 계산. | [docs](https://docs.databricks.com/en/pyspark/index.html) |
-| **`get_table_stats_and_schema` (MCP)** | 테이블의 스키마·row count·컬럼 통계를 Genie Code가 바로 조회. | [GitHub](https://github.com/databricks-solutions/ai-dev-kit) |
 | **노트북 시각화** | `display()` 결과에서 막대/히스토그램/히트맵을 클릭 몇 번으로 생성. | [docs](https://docs.databricks.com/en/visualizations/index.html) |
 | **Data Profiles** | 노트북 셀 결과의 "Data Profile" 탭으로 분포·결측을 자동 요약. | [docs](https://docs.databricks.com/en/notebooks/visualizations/index.html) |
 

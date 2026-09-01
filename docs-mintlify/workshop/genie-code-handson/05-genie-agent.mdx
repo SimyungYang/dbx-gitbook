@@ -6,8 +6,7 @@ title: "Genie Space 3개 생성"
 |------|------|
 | **소요 시간** | ~60분 |
 | **사전 조건** | [04. AI/BI 대시보드](04-aibi-dashboard) 완료 (Gold 테이블 필요) |
-| **실습 환경** | Genie Code + AI Dev Kit MCP 연결 |
-| **사용 MCP 도구** | `manage_genie` (보조: `execute_sql`, `manage_uc_objects`) |
+| **실습 환경** | Genie Code |
 
 > **핵심 메시지**: "대시보드는 **아는 질문**에 답하고, Genie는 **아직 모르는 질문**에 답한다. 그리고 Genie의 정확도는 **튜닝으로 만든다.**"
 
@@ -23,7 +22,6 @@ title: "Genie Space 3개 생성"
 |------|------|----------|
 | **Genie Space** | 비개발자가 **자연어로 질문**하면 AI가 SQL을 생성해 답하는 공간(NL2SQL). 테이블·비즈니스 용어·샘플 질문을 가르치면 정확도가 오른다. | [docs](https://docs.databricks.com/en/genie/index.html) |
 | **Genie Agent** | 여러 Genie Space를 **도구로 묶은** 데이터 분석 에이전트. 질문 의도에 맞는 Space를 골라 답한다. | [docs](https://docs.databricks.com/en/generative-ai/agent-bricks/index.html) |
-| **AI Dev Kit MCP** | Genie Code에서 `manage_genie`로 Genie Space를 **자연어로 생성·관리**. | [GitHub](https://github.com/databricks-solutions/ai-dev-kit) |
 
 ## 개요
 
@@ -38,7 +36,7 @@ Gold 테이블을 기반으로:
 
 ## Part A: Genie Space 3개 생성
 
-> 💡 `manage_genie` MCP 도구가 필요합니다. 실패하면 사이드바 **Genie → + New**로 UI에서 만들 수 있습니다.
+> 💡 Genie Code에게 자연어로 요청해 만듭니다. 사이드바 **Genie → + New**로 UI에서 직접 만들 수도 있습니다.
 
 ### Genie Space 1: 생산·수율 분석
 

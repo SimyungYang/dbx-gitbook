@@ -8,10 +8,10 @@ title: "범례 · 환경 · 카탈로그"
 
 | 배지 | 의미 |
 |------|------|
-| 🟢 **네이티브** | Genie Code 기본 기능만으로 실행 (AI Dev Kit MCP 불필요) — SQL·데이터 조회·CTAS·AI 함수 등 |
-| 🔵 **MCP/UI** | 크로스 프로덕트 생성. AI Dev Kit MCP가 있으면 한 대화로, 없으면 해당 **UI**(Genie · Dashboards · Agent Bricks · Lakeflow)에서 생성 |
+| 🟢 **네이티브** | Genie Code 기본 기능만으로 실행 — SQL·데이터 조회·CTAS·AI 함수 등 |
+| 🔵 **UI** | 크로스 프로덕트 생성 — 각 제품 UI(Genie · Dashboards · Agent Bricks · Lakeflow)에서 생성 |
 
-> **AI Dev Kit MCP는 선택입니다.** 대부분은 🟢 네이티브로 되고, 🔵는 MCP 없이도 UI에서 만들 수 있습니다(모듈 0 Part F 참조). 프롬프트는 필요에 맞게 표(테이블명·수치)를 바꿔 재사용하세요.
+> 대부분의 작업은 🟢 네이티브로 실행되고, 🔵는 각 제품 UI에서 만듭니다. 프롬프트는 필요에 맞게 표(테이블명·수치)를 바꿔 재사용하세요.
 
 ---
 
@@ -32,16 +32,6 @@ title: "범례 · 환경 · 카탈로그"
 Custom Instructions가 적용됐는지 테스트해줘.
 ccm_factory.bronze 스키마에 test_table 이름으로 1행짜리 Delta 테이블을 만들고 바로 삭제해줘.
 권한·컴퓨트가 정상인지 확인용이야.
-```
-
-**활성 MCP 도구 확인** 🔵 — 모듈 0 · Part F (MCP 사용 시)
-```
-현재 활성화된 MCP 도구가 몇 개이고 어떤 도구들인지 목록으로 보여줘. 20개 제한에 걸리지 않는지도 확인해줘.
-```
-
-**MCP 앱 warm-up** 🔵 — 모듈 0 · Part F (MCP 사용 시)
-```
-현재 사용자 정보 알려줘
 ```
 
 ---

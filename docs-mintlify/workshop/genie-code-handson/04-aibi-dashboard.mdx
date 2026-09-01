@@ -6,8 +6,7 @@ title: "생산·품질 대시보드"
 |------|------|
 | **소요 시간** | ~50분 |
 | **사전 조건** | [03. 변환 파이프라인](03-transformation-pipeline) 완료 (Gold 테이블 10개 필요) |
-| **실습 환경** | Genie Code + AI Dev Kit MCP |
-| **사용 MCP 도구** | `manage_dashboard` (보조: `execute_sql`, `get_table_stats_and_schema`, `manage_app`) |
+| **실습 환경** | Genie Code |
 
 > **핵심 메시지**: "대시보드는 **'아는 질문'** 에 답한다. (아직 모르는 질문은 다음 모듈의 Genie가 답한다.)"
 
@@ -22,7 +21,7 @@ title: "생산·품질 대시보드"
 | 기능 | 설명 | 공식 문서 |
 |------|------|----------|
 | **AI/BI Dashboard** | 코드 없이 SQL 기반 대시보드를 만드는 기능. KPI 카운터·차트·필터를 조합해 운영 대시보드를 구성. | [docs](https://docs.databricks.com/en/dashboards/index.html) |
-| **Genie Code로 대시보드 생성** | 자연어 한 줄로 여러 위젯을 가진 대시보드를 생성/수정. MCP `manage_dashboard`로 크로스 프로덕트 생성. | [AI Dev Kit](https://github.com/databricks-solutions/ai-dev-kit) |
+| **Genie Code로 대시보드 생성** | 자연어 한 줄로 여러 위젯을 가진 대시보드를 생성/수정. | [docs](https://docs.databricks.com/en/dashboards/index.html) |
 
 ## 개요
 
@@ -34,7 +33,7 @@ title: "생산·품질 대시보드"
 | **품질/불량 분석** | 품질(QA)·공정기술팀 | `defect_pareto`, `material_defect_correlation`, `aa_quality_trend`, `spc_process_capability` |
 | **설비 운영/OEE** | 설비보전·제조운영팀 | `oee_by_equipment`, `equipment_health_score` |
 
-> **Tip**: 대시보드 생성은 `manage_dashboard` MCP 도구를 사용합니다. 무거운 도구이니 시작 전 `현재 사용자 정보 알려줘`로 MCP 앱을 깨워두세요. 코드/위젯 생성 시 **Plan 확인 → "Allow in this thread"** (Always Allow 금지).
+> **Tip**: 대시보드는 Genie Code에게 자연어로 요청해 생성합니다. 코드/위젯 생성 시 **Plan 확인 → "Allow in this thread"** (Always Allow 금지).
 
 ---
 

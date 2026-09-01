@@ -1903,7 +1903,8 @@
           {
             "group": "워크샵 개요",
             "pages": [
-              "workshop/genie-code-handson/overview"
+              "workshop/genie-code-handson/overview",
+              "workshop/genie-code-handson/vibe-coding"
             ]
           },
           {
@@ -1917,8 +1918,7 @@
               "workshop/genie-code-handson/00-skills",
               "workshop/genie-code-handson/00-catalog-setup",
               "workshop/genie-code-handson/00-seed-import",
-              "workshop/genie-code-handson/00-permissions",
-              "workshop/genie-code-handson/00-mcp-setup"
+              "workshop/genie-code-handson/00-permissions"
             ]
           },
           {

@@ -6,8 +6,7 @@ title: "개요 & 품질 문제 이해"
 |------|------|
 | **소요 시간** | ~70분 |
 | **사전 조건** | [02. 데이터 EDA](02-eda) 완료 (Bronze 17테이블 + 품질 이슈 파악) |
-| **실습 환경** | Genie Code + AI Dev Kit MCP, Serverless |
-| **사용 MCP 도구** | `manage_pipeline`, `manage_jobs`, `manage_job_runs` |
+| **실습 환경** | Genie Code, Serverless |
 
 > **핵심 메시지**: "Raw 로그를 신뢰할 수 있는 수율·품질·설비 데이터로 바꾸는 과정을, 자연어 한 줄로 선언하고 자동화한다."
 
@@ -43,7 +42,7 @@ title: "개요 & 품질 문제 이해"
 
 > 품질 위반 레코드를 격리하는 `quarantine` 스키마는 [모듈 0](00-genie-code-intro-setup)에서 이미 생성했습니다.
 
-> **작업 흐름(전 모듈 공통)**: Genie Code가 코드를 생성하면 **Plan 확인 → "Allow in this thread"(절대 Always Allow 아님) → Accept all → Run**. 기존 테이블은 DROP하지 말고 `CREATE OR REPLACE`. 무거운 변환도 SQL로 되면 `execute_code`보다 `execute_sql`을 우선(클러스터 대기·타임아웃 회피).
+> **작업 흐름(전 모듈 공통)**: Genie Code가 코드를 생성하면 **Plan 확인 → "Allow in this thread"(절대 Always Allow 아님) → Accept all → Run**. 기존 테이블은 DROP하지 말고 `CREATE OR REPLACE`. 무거운 변환도 SQL로 처리할 수 있으면 노트북 코드보다 SQL을 우선하세요(클러스터 대기·타임아웃 회피).
 
 > **📓 작업 노트북**: 이 모듈의 코드는 새 노트북 `03_CCM_Transform_<본인ID>`(사이드바 New → Notebook, 언어 Python, 컴퓨트 Serverless)를 만들어 그 안에서 작성합니다. Part A~C의 Silver·Gold CTAS SQL 셀이 여기 쌓이고, **Part D는 이 노트북의 CTAS SQL을 참고해 별도 SDP 소스 노트북 `03_CCM_SDP_<본인ID>`을 만듭니다**.
 

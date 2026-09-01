@@ -120,7 +120,7 @@ gold.field_return_insights를 활용해서:
 
 ## 10. Agent Bricks (Knowledge Assistant · Supervisor)
 
-> KA/Supervisor 생성은 🔵 MCP(`manage_ka`/`manage_mas`) 또는 **Agent Bricks** UI. 지식 문서 생성은 🟢 네이티브.
+> KA/Supervisor 생성은 🔵 **Agent Bricks** UI에서. 지식 문서 생성은 🟢 네이티브.
 
 **제조 지식 베이스 생성** 🟢 — 모듈 7 · Part A
 ```
@@ -266,12 +266,6 @@ Lakebase 데이터베이스를 만들어줘.
 <테이블>의 <FK 컬럼>이 <마스터 테이블>에 모두 존재하는지, NULL/중복/이상치가 있는지 요약해줘.
 ```
 
-**MCP 상태 점검** 🔵 (MCP 사용 시)
-```
-MCP 서버 상태를 확인해줘: 연결된 서버 목록·상태, 활성 도구 수(20개 제한 대비),
-manage_uc_objects로 ccm_factory 카탈로그 조회 테스트. 문제가 있으면 원인·해결을 알려줘.
-```
-
 ---
 
-> **다시 강조:** 🔵 프롬프트도 AI Dev Kit MCP 없이 각 제품 UI에서 만들 수 있습니다. MCP는 "한 대화로 여러 개를 자동으로" 만들 때의 편의 기능이며, 워크샵 완주에 필수가 아닙니다.
+> **다시 강조:** 🔵 프롬프트는 각 제품 UI(Genie · Dashboards · Agent Bricks · Lakeflow)에서 만듭니다. 워크샵은 Genie Code 네이티브 기능과 Databricks UI만으로 완주할 수 있습니다.
