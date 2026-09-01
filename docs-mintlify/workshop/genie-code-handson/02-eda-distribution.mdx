@@ -26,6 +26,8 @@ title: "분포 탐색"
 - 규격을 넘는 이상치(mtf > 100 등)가 보이면 표시
 ```
 
+> 💡 `active_alignment`·`final_image_test`에는 `model_code`가 없습니다 — `serial_id → @ccm_factory.bronze.traceability`로 `model_code`를 얻어 `@ccm_factory.bronze.product_master`(spec_mtf_min·module_type)에 조인하도록 함께 요청하세요.
+
 > 💡 MTF(Modulation Transfer Function)는 렌즈-센서 정렬 품질을 나타내는 해상력 지표입니다. 중심(center)보다 코너(corner)가 낮은 것이 정상이며, 코너 MTF가 급락하면 틸트(tilt) 불량을 의심합니다.
 
 ### 설비/라인/모델 차원 분포
@@ -38,5 +40,7 @@ title: "분포 탐색"
 4. 근무조(shift)별 불량률 비교 (DAY/SWING/NIGHT)
 시각화도 함께 만들어줘.
 ```
+
+> 💡 `traceability`·`production_events`에는 `line_id`가 없습니다 — `wo_id → @ccm_factory.bronze.work_orders`로 `line_id`를 가져와 조인하세요(라인 차원 집계 시).
 
 ---

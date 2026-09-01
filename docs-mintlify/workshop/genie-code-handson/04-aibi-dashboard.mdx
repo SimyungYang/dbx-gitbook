@@ -116,6 +116,8 @@ gold.defect_pareto, gold.material_defect_correlation, gold.aa_quality_trend, gol
 상관 분석 위젯 3개를 추가해줘: 자재 공급사별 불량률(가로 막대, supplier별 — Sup_S7/S8 부각 예상), 자재 로트↔불량 상관 상위(막대: @ccm_factory.gold.material_defect_correlation 상위 10), root_cause 분포(가로 막대: MATERIAL/EQUIPMENT/PROCESS/OPERATOR/ENVIRONMENT).
 ```
 
+> 💡 `root_cause` 분포는 `defect_pareto`에 대표값 `top_root_cause`만 있습니다. 레코드 단위 분포가 필요하면 데이터셋에 `@ccm_factory.silver.defect_normalized`(`root_cause_code`)를 추가해 그 컬럼으로 그룹핑하세요.
+
 **4단계 —** AA 화질 & 공정능력 위젯 3개 추가.
 
 ```

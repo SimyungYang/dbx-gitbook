@@ -66,10 +66,9 @@ silver.final_test_clean, silver.serials_cleaned, silver.production_flow를 결�
 
 컬럼:
 - line_id, model_code, shift, event_date
-- input_qty: 투입 시리얼 수, output_qty: FINAL 통과(PASS) 수
-- yield_pct: output_qty / input_qty * 100
-- fail_qty, scrap_qty, rework_qty
-- avg_mtf_center, avg_snr_db
+- input_qty: 투입 시리얼 수, good_qty: FINAL 통과(PASS) 수, defect_qty: input_qty − good_qty
+- yield_pct: good_qty / input_qty * 100
+- avg_mtf_center: 최종검사 평균 MTF
 - top_defect_category: 최다 불량 카테고리
 
 @ccm_factory.bronze.product_master/equipment 조인으로 customer, module_type 추가.
@@ -166,6 +165,11 @@ silver.sensor_metrics_5min, silver.downtime_clean, silver.defect_normalized를 �
 
 @ccm_factory.bronze.equipment_master 조인으로 vendor, install_date 추가.
 event_date 파티셔닝, equipment_id Z-ORDER, COMMENT 추가.
+```
+
+**나머지 Gold (aa_quality_trend · material_defect_correlation · station_cycle_time · product_traceability_360)** 🟢 — 모듈 3 · Part C
+```
+나머지 Gold 4개(aa_quality_trend 모델×일, material_defect_correlation 자재로트×일, station_cycle_time 스테이션×일, product_traceability_360 시리얼)도 모듈 3 Part C의 "Gold 컬럼 표준"에 정의된 이름 그대로 만들어줘.
 ```
 
 **Gold 확인** 🟢 — 모듈 3 · Part C

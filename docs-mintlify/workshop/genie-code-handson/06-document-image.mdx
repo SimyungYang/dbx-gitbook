@@ -70,7 +70,7 @@ silver.parsed_8d_reports의 parsed_text에서 ai_extract로 8D 핵심 항목을 
 ```
 **3단계 —** 결과 저장.
 ```
-확인되면 결과를 @ccm_factory.gold.quality_8d_structured 테이블로 저장해줘.
+확인되면 추출 항목을 각각 problem_definition, root_cause, corrective_action, affected_model 개별 컬럼으로 평탄화해서 @ccm_factory.gold.quality_8d_structured 테이블로 저장해줘.
 ```
 
 ---

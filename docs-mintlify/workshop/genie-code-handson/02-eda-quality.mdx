@@ -14,7 +14,7 @@ ccm_factory.bronze 전체에 대해 데이터 품질 리포트를 만들어줘:
 1. 참조 무결성:
    - @ccm_factory.bronze.production_events / @ccm_factory.bronze.active_alignment / @ccm_factory.bronze.aoi_inspection / @ccm_factory.bronze.final_image_test 의 equipment_id 가 @ccm_factory.bronze.equipment_master 에 없는 건수
    - @ccm_factory.bronze.traceability / @ccm_factory.bronze.production_events 의 serial 관련 참조가 어긋나는 건수
-   - @ccm_factory.bronze.defect_events 등의 material 참조가 @ccm_factory.bronze.material_lot_master 에 없는 건수
+   - @ccm_factory.bronze.traceability 의 material_lot_ids 가 @ccm_factory.bronze.material_lot_master 에 없는 건수 (defect_events엔 자재 FK가 없으니 traceability 경유로 점검)
 2. 중복: @ccm_factory.bronze.production_events 에서 동일 (serial_id, timestamp) 중복 건수
 3. 이상치:
    - @ccm_factory.bronze.active_alignment.mtf_center_pct > 100 건수
