@@ -30,7 +30,11 @@ title: "개요 & 진행 방식"
 
 생성 결과는 모두 **Delta Lake** 테이블로 저장합니다 — 트랜잭션·스키마 관리·Time Travel을 기본 제공하는 표준 테이블 형식이라, 이후 재현과 정제 실습의 안전판이 됩니다.
 
-> **Tip**: `Cmd+I`로 Genie Code 패널을 열고 프롬프트 입력. 코드 생성 시 **Plan 확인 → "Allow in this thread" → Accept all → Run**. "Always Allow"는 누르지 마세요.
+> **Tip**
+>
+> - `Cmd+I`로 Genie Code 패널을 열고 프롬프트 입력.
+> - 코드 생성 시 **Plan 확인 → "Allow in this thread" → Accept all → Run**.
+> - "Always Allow"는 누르지 마세요.
 
 > **📓 작업 노트북**: 이 모듈의 코드는 새 노트북 `01_CCM_Data_<본인ID>`(사이드바 New → Notebook, 언어 Python, 컴퓨트 Serverless)를 만들어 그 안에서 작성합니다.
 
@@ -53,7 +57,13 @@ title: "개요 & 진행 방식"
 
 ## Part A: 샘플 데이터셋 임포트 (실제 교육 기본)
 
-> **사전 조건**: 시드 데이터를 확보하는 방법은 세 가지입니다 — **(방식 0) 아래 다운로드 링크의 zip**, (방식 1) 강사가 공유한 볼륨의 parquet, (방식 2) Delta Sharing/Marketplace. 가장 간단한 **방식 0**을 권장합니다.
+> **사전 조건**: 시드 데이터를 확보하는 방법은 세 가지입니다.
+>
+> - **(방식 0) 아래 다운로드 링크의 zip**
+> - (방식 1) 강사가 공유한 볼륨의 parquet
+> - (방식 2) Delta Sharing/Marketplace
+>
+> 가장 간단한 **방식 0**을 권장합니다.
 
 ### 방식 0 — 시드 데이터 zip 다운로드 후 임포트 (가장 간단·자립형) ★
 
@@ -161,6 +171,10 @@ catalog: ccm_factory
 
 ### Part B 생성 순서
 
-> **17개를 한 번에 만들 필요 없습니다.** 마스터 3개(equipment_master → product_master → material_lot_master)를 먼저 만들고, 나머지는 카테고리별로 진행하세요. 모든 로그가 이 마스터들을 참조합니다. 시연에서는 **마스터 1~2개만 실제 실행**하고 나머지 프롬프트는 읽으며 이해하는 것으로 충분합니다.
+> **17개를 한 번에 만들 필요 없습니다.**
+>
+> - 마스터 3개(equipment_master → product_master → material_lot_master)를 먼저 만들고, 나머지는 카테고리별로 진행하세요.
+> - 모든 로그가 이 마스터들을 참조합니다.
+> - 시연에서는 **마스터 1~2개만 실제 실행**하고 나머지 프롬프트는 읽으며 이해하는 것으로 충분합니다.
 
 ---

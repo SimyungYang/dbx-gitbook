@@ -95,7 +95,10 @@ gold.daily_yield_summary, gold.first_pass_yield, gold.station_cycle_time 테이�
 gold.defect_pareto, gold.material_defect_correlation, gold.aa_quality_trend, gold.spc_process_capability 테이블로 "품질/불량 분석 대시보드"를 AI/BI 대시보드로 새로 만들어줘. 우선 불량 코드별 파레토(막대+누적선, defect_code 상위 15, 누적 % 라인)와 불량 카테고리별 분포(Stacked Bar: PLACEMENT/BONDING/ALIGNMENT/CONTAMINATION/IMAGE_QUALITY, 값은 defect_count와 critical_count 비중)부터.
 ```
 
-> ⚠️ `defect_pareto`에는 severity 컬럼이 없습니다(카테고리별 `defect_count`·`critical_count`만 존재). severity(CRITICAL/MAJOR/MINOR) 단위로 분해하려면 데이터셋에 `@ccm_factory.silver.defect_normalized`(레코드 단위 severity 보유)를 추가한 뒤 그 컬럼으로 그룹핑하세요. 추가 없이는 위처럼 `critical_count 비중` 기반으로 만듭니다.
+> ⚠️ `defect_pareto`에는 severity 컬럼이 없습니다(카테고리별 `defect_count`·`critical_count`만 존재).
+>
+> - severity(CRITICAL/MAJOR/MINOR) 단위로 분해하려면 데이터셋에 `@ccm_factory.silver.defect_normalized`(레코드 단위 severity 보유)를 추가한 뒤 그 컬럼으로 그룹핑하세요.
+> - 추가 없이는 위처럼 `critical_count 비중` 기반으로 만듭니다.
 
 **2단계 —** 맨 위에 KPI 카운터 3개 추가.
 

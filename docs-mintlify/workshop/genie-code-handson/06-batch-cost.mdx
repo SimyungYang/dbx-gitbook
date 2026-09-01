@@ -23,7 +23,10 @@ title: "배치 적용 & 비용·안전"
 field_returns에는 event_date 컬럼이 없고 시간 컬럼은 return_date뿐이야. event_date = DATE(return_date) 파생 컬럼을 추가한 뒤 그 컬럼으로 파티션하고, 모든 컬럼에 COMMENT를 달아줘.
 ```
 
-> **Databricks Document Intelligence 배치추론**: 대량 문서/이미지는 SQL AI 함수의 배치 추론으로 스케줄 처리할 수 있습니다. 정기적으로 신규 필드 리턴을 자동 분류하려면 이 결과 생성 SQL을 [모듈 3](03-transformation-pipeline)의 Job/파이프라인에 편입하세요.
+> **Databricks Document Intelligence 배치추론**
+>
+> - 대량 문서/이미지는 SQL AI 함수의 배치 추론으로 스케줄 처리할 수 있습니다.
+> - 정기적으로 신규 필드 리턴을 자동 분류하려면 이 결과 생성 SQL을 [모듈 3](03-transformation-pipeline)의 Job/파이프라인에 편입하세요.
 
 ### 활용 확인
 
