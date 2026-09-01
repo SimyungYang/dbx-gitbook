@@ -232,6 +232,25 @@ COMMENT ON COLUMN ccm_factory.gold.spc_process_capability.cpk IS
   (예: "'품질이 나쁘다'의 기준을 수율/불량률/MTF 중 무엇으로 볼까요?")
 ```
 
+**Benchmark 등록·실행 (정확도 정량 측정)** 🔵 — 모듈 5 · Part B Step 6
+```
+"품질·불량 분석" Genie Space에 Benchmark를 만들어줘. 위 샘플 질문의 정답 SQL을 벤치마크 항목으로 등록하고, 실행해서 각 질문의 정답률(Genie 생성 SQL과 정답 SQL 일치)을 표로 보여줘.
+```
+
+**Metric View 생성 (mv_yield)** 🟢 — 모듈 5 · Part E
+```
+@ccm_factory.gold.daily_yield_summary를 소스로 하는 Metric View를 ccm_factory.gold.mv_yield로 만들어줘.
+- dimension: line_id, model_code, shift, event_date
+- measure: Yield Pct = SUM(good_qty) / SUM(input_qty) * 100
+생성 후 "생산·수율 분석" Genie Space에 포함하고, 수율 질문은 이 measure를 우선 쓰도록 General Instructions에 규칙을 추가해줘.
+```
+
+**Genie Agent 생성 (스마트팩토리 데이터 분석가)** 🔵 — 모듈 5 · Part C
+```
+Genie Agent를 하나 만들어줘. 이름은 '스마트팩토리 데이터 분석가'.
+연결할 Genie Space는 "생산·수율 분석", "품질·불량 분석", "설비·OEE 분석" 3개. 질문 의도에 맞는 Space로 라우팅하도록 구성해줘.
+```
+
 **Genie Agent 생성 확인** 🔵 — 모듈 5 · Part C
 ```
 "스마트팩토리 데이터 분석가" Genie Agent가 정상 생성됐고, 연결된 Genie Space 3개를 모두 인식하는지 확인해줘.
