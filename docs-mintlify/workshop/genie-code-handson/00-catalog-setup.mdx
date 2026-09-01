@@ -53,8 +53,8 @@ ccm_factory_<본인ID>의 모든 스키마와 COMMENT를 보여줘.
 방금 만든 카탈로그명이 [Custom Instructions](00-custom-instructions#custom-instructions--genie-code의-시스템-프롬프트)에 등록돼 있어야, 이후 모든 모듈의 `ccm_factory.…` 프롬프트가 **자동으로 내 카탈로그를 가리킵니다**. 방금 만든 이름과 일치하는지 확인하고, 다르면 지금 업데이트하세요.
 
 ```
-내 Custom Instructions를 확인해줘. '카탈로그' 규칙에 방금 만든 내 카탈로그명이 정확히 들어가 있는지 보고, 
-가이드의 ccm_factory를 내 카탈로그로 해석하라는 매핑 규칙이 있는지 점검해줘. 없거나 다르면 내 실제 카탈로그명으로 업데이트해줘.
+내 Custom Instructions를 확인해줘. '카탈로그' 규칙에 방금 만든 내 카탈로그명이 정확히 들어가 있는지 보고,
+가이드의 ccm_factory를 내 카탈로그로 해석하라는 매핑 규칙, 접두어 없는 bronze/silver/gold/quarantine도 내 카탈로그로 해석하는 규칙, USE CATALOG 선행 규칙이 모두 있는지 점검해줘. 없거나 다르면 내 실제 카탈로그명으로 업데이트해줘.
 ```
 
 > 💡 이 매핑 덕분에 이후 프롬프트는 가이드 그대로 `ccm_factory.bronze.…`로 붙여넣어도 Genie Code가 내 카탈로그(`ccm_factory_<본인ID>`)에서 실행합니다. (별도 워크스페이스면 이 단계는 건너뛰어도 됩니다.)

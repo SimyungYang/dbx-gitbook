@@ -26,7 +26,9 @@ Custom Instructions는 Genie Code에게 **항상 이 규칙을 따르라**는 �
 
 ## 카탈로그 (중요)
 - 내 전용 카탈로그는 `ccm_factory_hong` 이다. (공유 워크스페이스 충돌 방지)
+- **작업을 시작할 때 항상 `USE CATALOG ccm_factory_hong` 를 먼저 실행**해 기본 카탈로그를 고정하라.
 - **가이드/프롬프트에 나오는 `ccm_factory`는 전부 내 카탈로그 `ccm_factory_hong`을 가리킨다.** 모든 SQL·코드에서 `ccm_factory.<schema>.<table>` 는 `ccm_factory_hong.<schema>.<table>` 로 해석·사용하라.
+- **카탈로그 접두어 없이 `bronze.` / `silver.` / `gold.` / `quarantine.` 로 시작하는 테이블도 전부 내 카탈로그(`ccm_factory_hong.<schema>.<table>`)로 해석하라.** 다른 카탈로그의 같은 이름 스키마는 절대 쓰지 마라.
 
 ## 네이밍
 - 스키마: bronze / silver / gold / quarantine
