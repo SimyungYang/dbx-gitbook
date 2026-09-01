@@ -16,7 +16,7 @@ title: "SDP 파이프라인 & Job 스케줄"
 
 ### SDP 파이프라인 생성 프롬프트
 
-> **재현성 팁.** SDP 노트북 생성은 "앞 대화에서 만든 21개 변환 로직"을 세션이 기억한다는 전제에 기대지 않도록 합니다. Part B·C에서 만든 Silver/Gold CTAS SQL을 **노트북 셀에 그대로 보존**해두고, 그 SQL을 SDP 정의(Streaming Table / Materialized View)로 옮기세요. 새 세션에서 시작한다면 CTAS SQL부터 다시 확보한 뒤 아래를 진행합니다.
+> **팁**: 앞서 Silver/Gold CTAS SQL을 작성한 노트북을 참고해, 그 SQL을 SDP 정의(Streaming Table / Materialized View)로 옮기세요.
 
 **1단계 —** 전환 뼈대 + 타겟 메타.
 ```
