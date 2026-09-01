@@ -45,6 +45,8 @@ title: "개요 & 품질 문제 이해"
 
 > **작업 흐름(전 모듈 공통)**: Genie Code가 코드를 생성하면 **Plan 확인 → "Allow in this thread"(절대 Always Allow 아님) → Accept all → Run**. 기존 테이블은 DROP하지 말고 `CREATE OR REPLACE`. 무거운 변환도 SQL로 되면 `execute_code`보다 `execute_sql`을 우선(클러스터 대기·타임아웃 회피).
 
+> **📓 작업 노트북**: 이 모듈의 코드는 새 노트북 `03_CCM_Transform_<본인ID>`(사이드바 New → Notebook, 언어 Python, 컴퓨트 Serverless)를 만들어 그 안에서 작성합니다. Part A~C의 Silver·Gold CTAS SQL 셀이 여기 쌓이고, **Part D의 SDP 전환이 바로 이 노트북의 CTAS SQL을 참고**합니다.
+
 ---
 
 ## Part A: 데이터 품질 문제 이해하기
