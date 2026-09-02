@@ -1,0 +1,84 @@
+---
+title: "Genie Ontology란"
+---
+
+<Info>
+이 문서는 Genie가 자연어 질의를 정확한 SQL로 바꾸는 근거인 **Genie Ontology**를 다룹니다. 함께 보면 좋은 문서:
+- [Genie Space 운영 개요](/blog/guides/genie-space/overview)
+- [Data 구성과 컨텍스트](/blog/guides/genie-space/data-config)
+- [Domain과 Pages로 컨텍스트 구조화](/blog/guides/genie-space/ontology-domains-pages)
+- [Metric View로 지표 표준화](/blog/guides/genie-space/ontology-metric-views)
+</Info>
+
+## Genie Ontology란
+
+Genie는 질문에 답하기 전에 어떤 테이블과 컬럼, 지표를 써야 하는지 판단합니다. 이 판단의 근거가 되는 비즈니스 컨텍스트 전체를 **Genie Ontology**라고 부릅니다.
+
+Genie의 컨텍스트는 두 계층으로 나뉩니다. 두 계층이 합쳐져 하나의 **unified context layer**를 이루고, Genie는 이 통합 계층을 참조해 검색하고 SQL을 생성합니다.
+
+| 계층 | 무엇인가 | 누가 만드는가 |
+|------|----------|----------------|
+| **Human-modeled layer** | 조직이 명시적으로 정의하고 거버넌스하는 비즈니스 컨텍스트 | 사람이 직접 모델링 |
+| **Auto-inferred layer** | 자산과 사용 패턴에서 Genie가 자동으로 추론한 컨텍스트 | Genie가 자동 추론 |
+
+Human-modeled layer는 사람이 직접 정의하고 통제하는 부분이므로, 여기를 얼마나 풍부하고 정확하게 채우느냐가 Genie 품질을 좌우합니다. 자세한 정의는 [Unity Catalog 비즈니스 시맨틱 문서](https://docs.databricks.com/aws/en/uc-semantics)를 참고하세요.
+
+## 왜 중요한가
+
+모델링된 컨텍스트가 풍부하고 정확할수록 검색 결과와 SQL 정확도가 함께 올라갑니다. 이유는 세 가지입니다.
+
+- Genie가 자연어 질의를 **올바른 테이블과 컬럼, 지표에 매핑**합니다.
+- 매핑이 정확하면 **정확한 SQL을 생성**할 근거가 생깁니다.
+- 권위 있는 자산과 표준 지표를 우선하므로 **모호하거나 경쟁하는 답을 줄입니다**.
+
+반대로 컨텍스트가 비어 있으면 Genie는 auto-inferred layer에만 의존합니다. 이 경우 컬럼 이름이나 사용 패턴만으로 추측하므로 오답 확률이 높아집니다.
+
+## 두 계층이 합쳐지는 방식
+
+```text
+[ Human-modeled layer ]              [ Auto-inferred layer ]
+  - Domains & Subdomains               - assets (테이블/컬럼/뷰)
+  - Pages (business concepts)          - usage (질의/조회 패턴)
+  - Metric Views (표준 KPI)
+  - Certification & Deprecation
+            \                              /
+             \                            /
+              v                          v
+        +------------------------------------+
+        |       Unified Context Layer        |
+        +------------------------------------+
+                        |
+                        v
+        Genie 자연어 검색 · SQL 생성 (정확도 향상)
+```
+
+## Human-modeled layer의 4개 구성요소
+
+Human-modeled layer는 아래 네 가지로 구성됩니다. 각 요소가 Genie 동작에 미치는 영향을 정리했습니다.
+
+| 구성요소 | 역할 | Genie에 미치는 영향 |
+|----------|------|----------------------|
+| **Metric Views** | 비즈니스 KPI를 정의·거버넌스하는 재사용 가능한 SQL 객체. Unity Catalog securable object | metrics·dimensions·aggregation을 사전 정의해 지표 계산의 모호성을 제거 |
+| **Domains & Subdomains** | 비즈니스 목적별로 자산을 묶는 조직 계층. 사람이 목적 기준으로 데이터를 탐색·발견 | 관련 자산 범위를 좁혀 Genie가 맞는 자산을 찾도록 도움 |
+| **Pages** | 비즈니스 개념을 정의하는 거버넌스된 Page. 사람과 Genie가 참조하는 authoritative source | 용어·정의를 권위 있는 근거로 삼아 답변 |
+| **Certification & Deprecation** | 자산이 신뢰 가능한지 또는 낡았는지 표시하는 신호 | certification은 조직이 보증한 자산으로 Genie를 유도 |
+
+<Note>
+이 네 가지는 Unity Catalog의 비즈니스 시맨틱 기능입니다. 이 문서에서는 검증된 동작만 설명하며, 개별 기능의 GA/Preview 상태는 다루지 않습니다.
+</Note>
+
+## 다음 단계
+
+각 구성요소를 어떻게 설정하고 최적화하는지는 아래 하위 문서에서 이어집니다.
+
+<CardGroup cols={3}>
+  <Card title="Domain과 Pages" icon="sitemap" href="/blog/guides/genie-space/ontology-domains-pages">
+    비즈니스 목적별 구조화와 권위 있는 개념 정의
+  </Card>
+  <Card title="Metric View" icon="chart-line" href="/blog/guides/genie-space/ontology-metric-views">
+    KPI를 표준화해 지표 계산 정확도 향상
+  </Card>
+  <Card title="최적화 체크리스트" icon="list-check" href="/blog/guides/genie-space/ontology-optimization">
+    검색 결과와 SQL 정확도를 높이는 우선순위 점검
+  </Card>
+</CardGroup>

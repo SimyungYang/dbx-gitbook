@@ -1,0 +1,77 @@
+---
+title: "Metric View로 지표 표준화"
+---
+
+<Info>
+이 문서는 Genie Ontology에서 지표 정확도를 좌우하는 **Metric View**를 다룹니다. 함께 보면 좋은 문서:
+- [Genie Ontology란](/blog/guides/genie-space/ontology-overview)
+- [Domain과 Pages로 컨텍스트 구조화](/blog/guides/genie-space/ontology-domains-pages)
+- [Genie 검색 결과 최적화 체크리스트](/blog/guides/genie-space/ontology-optimization)
+</Info>
+
+## Metric View란
+
+Metric View는 비즈니스 KPI를 정의하고 거버넌스하는 재사용 가능한 SQL 객체이며, Unity Catalog securable object입니다. 핵심은 **measure 정의와 dimension을 분리**한다는 점입니다.
+
+- **Measure** — 지표를 한 번만 정의합니다. 예를 들어 매출 합계나 고객 distinct count를 한 곳에 정의합니다.
+- **Dimension/Field** — 그룹핑·필터링·집계에 쓰는 필드입니다. 사용자는 어떤 필드로든 그룹핑할 수 있습니다.
+
+지표를 한 번 정의해 두면 사용자는 원하는 축으로 자유롭게 쪼개 볼 수 있습니다. 매번 SUM이나 COUNT를 다시 쓸 필요가 없습니다.
+
+### 구성요소
+
+| 구성요소 | 역할 |
+|----------|------|
+| **Sources** | 소스 테이블·뷰·쿼리 |
+| **Measures** | 정량 값 (합계·개수 등) |
+| **Dimensions/Fields** | 그룹핑·필터·집계에 쓰는 필드 |
+
+Metric View는 star·snowflake 스키마와 multi-level join을 지원합니다. **SQL DDL** 또는 **Catalog Explorer UI**로 만들 수 있고, UI에는 **YAML 검증**이 내장되어 있습니다.
+
+한번 정의한 Metric View는 SQL editor, notebook, 대시보드, **Genie Agents**, alert, 그리고 Power BI·Tableau·Sigma 같은 외부 BI에서 함께 소비합니다. 자세한 내용은 [Metric views 문서](https://docs.databricks.com/aws/en/metric-views/)를 참고하세요.
+
+## 왜 Genie에 효과적인가
+
+[Genie best practices 문서](https://docs.databricks.com/aws/en/genie/best-practices)는 Metric View가 Genie Agents에 특히 효과적이라고 설명합니다. metrics·dimensions·aggregation을 사전 정의하기 때문입니다.
+
+- 지표 계산 방식이 고정되므로 **모호성이 사라집니다**. "매출"을 어떻게 합산할지 Genie가 추측하지 않습니다.
+- 표준 정의를 그대로 쓰므로 **정확한 지표를 산출**합니다.
+- Metric View는 **Agent metadata**를 지원합니다. **synonyms, display names, formatting rules**를 붙여 Agent 정확도를 높입니다.
+
+synonyms는 사용자가 쓰는 다양한 표현을 지표에 연결하고, display name은 사람이 읽기 좋은 이름을 주며, formatting rule은 결과 표현을 통일합니다.
+
+## 일러스트레이티브 YAML 예시
+
+아래는 Metric View YAML의 구조를 보여 주는 **일반 예시**입니다. 실제 스키마 키는 문서 기준으로 확인하세요.
+
+```yaml
+# 일러스트레이티브 예시 — 실제 키/스키마는 아래 reference 링크로 확인
+version: "..."
+source: catalog.schema.sales_fact
+filter: order_status = 'completed'
+dimensions:
+  - name: order_date
+    expr: order_date
+  - name: region
+    expr: customer_region
+measures:
+  - name: revenue
+    expr: SUM(amount)
+  - name: active_customers
+    expr: COUNT(DISTINCT customer_id)
+```
+
+<Note>
+위 예시는 구조 이해용입니다. 정확한 YAML 키와 문법은 [Metric views 문서](https://docs.databricks.com/aws/en/metric-views/)의 "Metric view YAML syntax reference"를 반드시 확인하세요.
+</Note>
+
+## 최적화 팁
+
+- **핵심 KPI를 Metric View로 표준화하고 certify**합니다. 매출·활성 고객·gross margin처럼 자주 묻는 지표부터 정의하고 신뢰 신호를 부여합니다.
+- **synonyms와 display name을 부여**합니다. 사용자가 부르는 여러 이름을 지표에 연결하면 Genie가 매핑하기 쉬워집니다.
+- **읽기 쉬운 measure 정의와 설명을 붙입니다**. measure마다 무엇을 계산하는지 설명을 달면 Genie가 올바른 지표를 고릅니다.
+- 비즈니스 시맨틱은 **SQL expression으로 정의**합니다. revenue, active_customers, gross_margin 같은 지표와 필터를 SQL expression으로 표현합니다.
+
+<Tip>
+표준 KPI를 certified Metric View로 모아 두면, Genie는 매번 집계 로직을 새로 짜는 대신 검증된 정의를 재사용합니다. 이것이 지표 정확도를 올리는 가장 확실한 방법입니다.
+</Tip>

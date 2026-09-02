@@ -1,0 +1,57 @@
+---
+title: "Domain과 Pages로 컨텍스트 구조화"
+---
+
+<Info>
+이 문서는 Genie Ontology의 Human-modeled layer 중 **Domains·Pages·Certification**을 다룹니다. 함께 보면 좋은 문서:
+- [Genie Ontology란](/blog/guides/genie-space/ontology-overview)
+- [Metric View로 지표 표준화](/blog/guides/genie-space/ontology-metric-views)
+- [Genie 검색 결과 최적화 체크리스트](/blog/guides/genie-space/ontology-optimization)
+</Info>
+
+## Domains & Subdomains — 자산을 비즈니스 목적으로 묶기
+
+Domain은 비즈니스 목적별로 자산을 묶는 조직 계층입니다. 사람은 카탈로그 구조가 아니라 비즈니스 목적을 기준으로 데이터를 탐색하고 찾습니다. Subdomain으로 더 세분화할 수 있습니다.
+
+Domain이 잘 정리되어 있으면 Genie도 이득을 봅니다.
+
+- Domain은 자산에 **의미 앵커**를 제공합니다. "매출"이라는 질문이 들어오면 매출 Domain 안의 자산으로 범위가 좁혀집니다.
+- 소유권과 구조가 명확할수록 Genie가 **관련 자산을 좁혀서 찾습니다**. 후보가 줄면 잘못된 테이블을 고를 확률이 낮아집니다.
+
+자세한 개념은 [Unity Catalog 비즈니스 시맨틱 문서](https://docs.databricks.com/aws/en/uc-semantics)를 참고하세요.
+
+## Pages — 비즈니스 개념의 authoritative source
+
+Page는 비즈니스 개념을 정의하는 거버넌스된 문서입니다. 사람과 Genie가 함께 참조하는 **authoritative source** 역할을 합니다.
+
+Page에는 다음을 담습니다.
+
+- **용어와 정의** — "active customer"가 무엇을 뜻하는지 조직 공식 정의
+- **핵심 KPI** — 개념과 연결된 표준 지표
+- **관련 링크** — 근거가 되는 테이블, Metric View, 대시보드
+
+Genie는 이 Page를 권위 있는 근거로 삼아 답변합니다. 같은 용어를 사람마다 다르게 이해하는 상황을 줄여 줍니다.
+
+## Certification & Deprecation — 신뢰 신호로 유도
+
+Certification과 Deprecation은 자산이 신뢰 가능한지 또는 낡았는지 표시하는 신호입니다.
+
+| 신호 | 의미 | Genie 동작 |
+|------|------|------------|
+| **Certified** | 조직이 신뢰를 보증한 자산 | certified 자산으로 Genie를 유도 |
+| **Deprecated** | 더 이상 쓰지 말아야 할 낡은 자산 | 회피하도록 유도 |
+
+Certification은 조직이 보증한 자산 쪽으로 Genie를 이끌기 때문에, 같은 데이터가 여러 곳에 있을 때 어느 것을 써야 하는지 판단하는 기준이 됩니다.
+
+## 최적화 팁
+
+Domain·Pages·Certification을 다음처럼 정리하면 Genie 검색 품질이 올라갑니다.
+
+- **도메인 경계를 명확히** 나눕니다. 자산이 어느 Domain에 속하는지 모호하면 범위 좁히기 효과가 사라집니다.
+- **핵심 개념마다 Page를 작성**합니다. 조직에서 자주 묻는 개념부터 authoritative source로 정의합니다.
+- **권위 있는 자산을 certify**합니다. 신뢰할 표준 테이블·뷰·Metric View에 certification을 부여합니다.
+- **중복·경쟁 정의를 정리**합니다. 같은 개념에 서로 다른 정의가 남아 있으면 Genie가 흔들립니다. 하나를 표준으로 남기고 나머지는 deprecate합니다.
+
+<Tip>
+Domain으로 범위를 좁히고, Page로 개념을 못 박고, certification으로 표준 자산을 가리키는 세 가지를 함께 적용하면 Genie가 "무엇을 봐야 하는지"를 훨씬 덜 헤맵니다.
+</Tip>

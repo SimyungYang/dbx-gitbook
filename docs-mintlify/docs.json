@@ -1173,6 +1173,15 @@
                   }
                 ]
               },
+              {
+                "group": "Genie Ontology 최적화",
+                "pages": [
+                  "blog/guides/genie-space/ontology-overview",
+                  "blog/guides/genie-space/ontology-domains-pages",
+                  "blog/guides/genie-space/ontology-metric-views",
+                  "blog/guides/genie-space/ontology-optimization"
+                ]
+              },
               "blog/guides/genie-space/performance-tuning",
               "blog/guides/genie-space/consumer-access",
               "blog/guides/genie-space/autogenie"

@@ -1,0 +1,64 @@
+---
+title: "Genie 검색 결과 최적화 체크리스트"
+---
+
+<Info>
+이 문서는 앞선 Ontology 문서를 실행 순서로 정리한 체크리스트입니다. 함께 보면 좋은 문서:
+- [Genie Ontology란](/blog/guides/genie-space/ontology-overview)
+- [Domain과 Pages로 컨텍스트 구조화](/blog/guides/genie-space/ontology-domains-pages)
+- [Metric View로 지표 표준화](/blog/guides/genie-space/ontology-metric-views)
+</Info>
+
+## 우선순위 체크리스트
+
+Genie의 검색 결과와 SQL 정확도를 높이려면 아래 순서로 컨텍스트를 정비합니다. 각 항목에 "왜 좋아지는가"를 한 줄로 덧붙였습니다. 근거는 [Genie best practices](https://docs.databricks.com/aws/en/genie/best-practices)와 [Unity Catalog 비즈니스 시맨틱](https://docs.databricks.com/aws/en/uc-semantics) 문서입니다.
+
+| 순서 | 할 일 | 왜 검색·정확도가 좋아지는가 |
+|------|-------|------------------------------|
+| 1 | 핵심 KPI를 **certified Metric View**로 표준화 | metrics·dimensions·aggregation을 사전 정의해 지표 계산 모호성을 제거 |
+| 2 | **Domains·Pages**로 권위 컨텍스트 구성 | 관련 자산 범위를 좁히고 개념을 authoritative source로 못 박음 |
+| 3 | 컬럼 **description·synonyms** 충실화 | Genie가 컬럼을 더 잘 이해하고 골라 더 정확한 SQL 작성 |
+| 4 | 복잡 질의에 **example SQL** 제공 | 해석이 어려운 다단계·복합 질문을 완성된 예시로 안내 |
+| 5 | 비즈니스 시맨틱은 **SQL expression**으로 정의 | 텍스트 설명보다 실행 가능한 정의가 정확. 텍스트 instruction은 최후 수단 |
+| 6 | **certified 우선·deprecated 회피** | 조직이 보증한 자산으로 Genie를 유도하고 낡은 자산을 피함 |
+| 7 | **측정·반복**으로 synonyms·정의 개선 | 실제 질의와 피드백을 보고 부족한 컨텍스트를 지속 보강 |
+
+## 항목별 근거
+
+### 1. 핵심 KPI를 certified Metric View로
+
+Metric view는 metrics·dimensions·aggregation을 미리 정의하므로 Genie Agents에 특히 효과적입니다. 표준 정의를 certify해 두면 Genie가 검증된 지표를 재사용합니다. 자세한 방법은 [Metric View로 지표 표준화](/blog/guides/genie-space/ontology-metric-views)를 보세요.
+
+### 2. Domains·Pages로 권위 컨텍스트
+
+Domain은 관련 자산 범위를 좁히고, Page는 비즈니스 개념을 authoritative source로 정의합니다. 방법은 [Domain과 Pages로 컨텍스트 구조화](/blog/guides/genie-space/ontology-domains-pages)에 정리했습니다.
+
+### 3. 컬럼 description·synonyms
+
+Genie는 Unity Catalog 컬럼 이름과 description으로 응답을 생성합니다. 품질 좋은 description과 synonyms는 Genie가 컬럼을 더 잘 이해하고, 관련 질문에 그 컬럼을 고르며, 더 정확한 SQL을 쓰도록 돕습니다.
+
+### 4. 복잡 질의에 example SQL
+
+해석이 어렵거나 여러 단계로 나뉘거나 복합적인 질문에는 완성된 example SQL 쿼리를 제공합니다. Genie가 따라 쓸 정답 형태를 갖게 됩니다.
+
+### 5. 비즈니스 시맨틱은 SQL expression으로
+
+지표와 필터 같은 비즈니스 시맨틱은 SQL expression으로 정의합니다. SQL expression과 예시로 해결되지 않을 때만 텍스트 instruction을 **최후 수단**으로 씁니다.
+
+### 6. certified 우선·deprecated 회피
+
+certification은 조직이 보증한 자산으로 Genie를 유도합니다. deprecated 신호는 낡은 자산을 피하게 합니다.
+
+### 7. 측정·반복
+
+실제 질의 결과와 사용자 피드백을 보고 synonyms와 정의를 계속 다듬습니다. Ontology는 한 번 만들고 끝내는 것이 아니라 반복해서 개선하는 대상입니다.
+
+## 안티패턴
+
+<Warning>
+다음은 Genie 정확도를 떨어뜨리는 대표적인 안티패턴입니다.
+
+- **동일 KPI의 경쟁 정의 방치** — 같은 지표에 서로 다른 정의가 남아 있으면 Genie가 어느 것을 쓸지 흔들립니다. 하나를 표준으로 certify하고 나머지는 deprecate하세요.
+- **텍스트 instruction 남발** — 텍스트 지시는 최후 수단입니다. SQL expression과 example SQL로 표현할 수 있는 것을 텍스트로 나열하면 정확도가 떨어집니다.
+- **미문서화 컬럼** — description과 synonyms가 없는 컬럼은 Genie가 이름만 보고 추측합니다. 핵심 컬럼부터 설명을 채우세요.
+</Warning>
